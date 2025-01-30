@@ -1,0 +1,81 @@
+/* Container */
+.container {
+    width: 100%;
+    max-width: 600px;  /* Aumentei a largura para dar mais espaço */
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;  /* Garante que os elementos fiquem à esquerda */
+}
+
+/* Títulos */
+h1, h2 {
+    font-size: 24px;
+    color: #007bff;
+    text-align: left;  /* Alinhamento à esquerda */
+    margin-bottom: 20px;
+}
+
+/* Botões */
+.submit-btn {
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.submit-btn:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+/* Formulário com ícones (Agendar) */
+.page-agendar .input-group label {
+    font-size: 16px;
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;  /* Alinha ícones com o texto */
+    text-align: left;
+}
+
+.page-agendar .input-group label i {
+    margin-right: 8px; /* Espaço entre ícone e texto */
+    font-size: 18px;  /* Tamanho do ícone */
+}
+
+.page-agendar .input-group input,
+.page-agendar .input-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    margin-top: 6px;
+}
+
+/* Link de voltar para o calendário */
+.page-agendar .voltar-link {
+    display: flex;
+    align-items: center;
+    color: #007bff;
+    font-size: 18px;
+    margin-top: 20px;
+}
+
+.page-agendar .voltar-link i {
+    margin-right: 8px; /* Espaço entre ícone e texto */
+}
+
+.page-agendar .voltar-link:hover {
+    text-decoration: underline;
+}

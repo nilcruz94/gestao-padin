@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Registrar Novo Usuário</title>
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+</head>
+<body>
+    
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+    <div class="titulo-container">
+        <h1 class="titulo-site">Gestão de Ponto - E.M José Padin Mouta</h1>
+    </div>
+    
+    <div class="container">
+        <h2>Registrar Novo Usuário</h2>
+        <form method="POST" id="register-form">
+            <!-- Nome Completo -->
+            <label for="nome"><i class="fas fa-user"></i> Nome Completo:</label>
+            <input type="text" id="nome" name="nome" required>
+            <div id="nome-error" class="error-message"></div>
+        
+            <!-- Registro -->
+            <label for="registro"><i class="fas fa-id-badge"></i> Registro:</label>
+            <input type="text" id="registro" name="registro" required>
+            <div id="registro-error" class="error-message"></div>
+        
+            <!-- E-mail -->
+            <label for="email"><i class="fas fa-envelope"></i> E-mail:</label>
+            <input type="email" id="email" name="email" required>
+            <div id="email-error" class="error-message"></div>
+        
+            <!-- Senha -->
+            <label for="senha"><i class="fas fa-lock"></i> Senha:</label>
+            <input type="password" id="senha" name="senha" required>
+            <div id="senha-error" class="error-message"></div>
+        
+            <!-- Confirmar Senha -->
+            <label for="confirmar_senha"><i class="fas fa-lock"></i> Confirmar Senha:</label>
+            <input type="password" id="confirmar_senha" name="confirmar_senha" required>
+            <div id="confirmar-senha-error" class="error-message"></div>
+        
+            <!-- Tipo de usuário
+            <label for="tipo"><i class="fas fa-user-tag"></i> Tipo de Usuário:</label>
+            <select id="tipo" name="tipo" required>
+                <option value="funcionario">Funcionário</option>
+                <option value="administrador">Administrador</option>
+            </select>  -->
+
+            <!-- Exibir mensagens de flash (sucesso ou erro) -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <ul>
+                    {% for category, message in messages %}
+                        {% if category != 'success' %}  <!-- Exclui as mensagens de sucesso -->
+                            <li class="{{ category }}">{{ message }}</li>
+                        {% endif %}
+                    {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %}
+
+            <input type="submit" value="Registrar" class="submit-btn">
+        </form>
+    </div>
+</body>
+
+<footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+</footer>
+
+</html>

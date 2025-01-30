@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deferir Banco de Horas</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f6f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .registro {
+            border-bottom: 1px solid #eee;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+        }
+
+        .registro p {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .deferir {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .deferir:hover {
+            background-color: #218838;
+        }
+
+        .indeferir {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .indeferir:hover {
+            background-color: #c82333;
+        }
+
+        .no-records {
+            text-align: center;
+            color: #888;
+            font-size: 16px;
+        }
+
+        .back-link {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .back-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Rodapé */
+        footer {
+            background-color: #333;  /* Cor grafite */
+            color: #fff;
+            text-align: center;
+            padding: 10px 0;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            font-size: 14px;
+            border-top: 1px solid #444;  /* Linha de separação no topo do rodapé */
+        }
+
+        footer p {
+            margin: 0;
+        }
+
+        /* Flash message styles */
+        .flash-message {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 100%;
+        }
+
+        .flash-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .flash-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .flash-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        /* Container para o título */
+        .titulo-container {
+            width: 100%;
+            text-align: center;
+            margin-top: 30px; /* Espaço entre o topo da tela e o título */
+        }
+
+        /* Estilo para o título no topo do site */
+        .titulo-site {
+            font-family: 'Arial', sans-serif;
+            font-size: 36px; /* Tamanho grande para destaque */
+            font-weight: bold;
+            color: #007bff; /* Cor azul profissional */
+            text-transform: uppercase; /* Deixa o título em maiúsculas */
+            letter-spacing: 2px; /* Espaçamento entre as letras */
+            margin: 0; /* Remove margens extras */
+            padding-bottom: 10px;
+            border-bottom: 2px solid #007bff; /* Linha embaixo para dar ênfase */
+        }
+
+        h1, h2 {
+            font-size: 24px;
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Link de voltar para o calendário */
+        .back-link {
+            display: flex;
+            align-items: center;
+            color: #007bff;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+
+        .back-link i {
+            margin-right: 8px; /* Espaço entre ícone e texto */
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="titulo-container">
+        <h1 class="titulo-site">Gestão de Ponto - E.M José Padin Mouta</h1>
+    </div>
+
+    <h1>Deferir Banco de Horas</h1>
+
+    <!-- Bloco de Mensagem de Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="container">
+        <!-- Verifica se há registros para deferir -->
+        {% if registros %}
+            <form action="/banco_horas/deferir" method="POST">
+                {% for registro in registros %}
+                    <div class="registro">
+                        <p><strong>{{ registro.funcionario.nome }} - {{ registro.horas }} horas e {{ registro.minutos }} minutos</strong></p>
+                        <p>Data: {{ registro.data_realizacao }}</p>
+                        <input type="hidden" name="registro_id" value="{{ registro.id }}">
+                        <div class="buttons">
+                            <button type="submit" name="action" value="deferir" class="button deferir">Deferir</button>
+                            <button type="submit" name="action" value="indeferir" class="button indeferir">Indeferir</button>
+                        </div>
+                    </div>
+                    <hr>
+                {% endfor %}
+            </form>
+        {% else %}
+            <p class="no-records">Não há registros de horas a serem deferidas.</p>
+        {% endif %}
+    </div>
+
+    <div class="back-link">
+        <a href="/banco_horas">
+        <i class="fas fa-arrow-left"></i>Voltar ao Menu Banco de Horas</a>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+    </footer>
+
+</body>
+</html>

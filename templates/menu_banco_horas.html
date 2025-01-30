@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banco de Horas</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Título do site -->
+    <div class="titulo-container">
+        <h1 class="titulo-site">Gestão de Folgas - E.M José Padin Mouta</h1>
+    </div>
+
+    <div class="menu-container">
+        <h1>Banco de Horas</h1>
+        <a href="{{ url_for('cadastrar_horas') }}" class="menu-item">Cadastrar Horas</a>
+        <a href="{{ url_for('consultar_horas') }}" class="menu-item">Consultar Horas</a>
+        
+        {% if is_admin %}
+        <a href="{{ url_for('deferir_horas') }}" class="menu-item">Deferir Horas</a>
+        {% endif %}
+
+        <a href="{{ url_for('index') }}" class="menu-item">Voltar</a>
+    </div>
+
+    <!-- Rodapé -->
+    <footer class="footer">
+        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+    </footer>
+</body>
+</html>
+
+<style>
+
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f6f9;
+        text-align: center;
+        margin: 0;
+        padding: 0; /* Remove espaçamento extra */
+    }
+
+    .titulo-container {
+        padding: 20px 0;
+    }
+
+    .menu-container {
+        background: white;
+        width: 350px;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin: 20px auto 0; /* Aproxima do título */
+        text-align: center;
+    }
+    
+    h1 {
+        color: #007bff;
+    }
+
+    .menu-item {
+        display: block;
+        margin: 10px 0;
+        padding: 10px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+    }
+
+    .menu-item:hover {
+        background-color: #0056b3;
+    }
+</style>
+</html>

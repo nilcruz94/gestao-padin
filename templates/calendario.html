@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Calendário de Folgas - E.M José Padin Mouta</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            padding: 20px;
+        }
+
+        /* Container */
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #007bff;
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .calendar .weekdays {
+            font-weight: bold;
+            background-color: #0080ff;
+            color: rgb(0, 0, 0);
+            text-align: center;
+            padding: 5px 0;
+            border-radius: 4px;
+            font-size: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .calendar .day {
+            background-color: #f4f6f9;
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .calendar .day.folga {
+            background-color: orange;
+            color: white;
+            font-weight: bold;
+        }
+
+        .calendar .day.folga:hover {
+            background-color: #e67e22;
+        }
+
+        .calendar .agenda-em-espera {
+            background-color: orange;
+            color: white;
+            font-weight: bold;
+        }
+
+        .calendar .agenda-em-espera:hover {
+            background-color: #e67e22;
+        }
+
+        .calendar .agenda-deferido {
+            background-color: green;
+            color: white;
+            font-weight: bold;
+        }
+
+        .calendar .agenda-deferido:hover {
+            background-color: #27ae60;
+        }
+
+        .calendar .agenda-indeferido {
+            background-color: red;
+            color: white;
+            font-weight: bold;
+        }
+
+        .calendar .agenda-indeferido:hover {
+            background-color: #e74c3c;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .navigation .button-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .navigation a {
+            padding: 6px 12px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 20px;
+            line-height: 1.2;
+        }
+
+        .navigation a i {
+            margin: 0 5px;
+            font-size: 16px;
+        }
+
+        .navigation a:hover {
+            background-color: #0056b3;
+        }
+
+        .home-button {
+            margin-left: 10px;
+            margin-right: 10px;
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border-radius: 50%;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .home-button i {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .home-button:hover {
+            background-color: #0056b3;
+        }
+
+        .agendamento {
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .agendamento + .agendamento {
+            margin-top: 5px;
+        }
+
+        .agendamento:not(:last-child) {
+            border-bottom: 1px solid #ddd;
+        }
+
+        .legenda {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f4f6f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .legenda h3 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #007bff;
+        }
+
+        .legenda div {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .legenda div span {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .legenda .cor {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+        }
+
+        /* Rodapé */
+        footer {
+            background-color: #333;  /* Cor grafite */
+            color: #fff;
+            text-align: center;
+            padding: 10px 0;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            font-size: 14px;
+            border-top: 1px solid #444;
+        }
+
+        footer p {
+            margin: 0;
+        }
+
+        /* Container para o título */
+        .titulo-container {
+            width: 100%;
+            text-align: center;
+            margin-top: 30px;
+            margin-bottom: 40px;
+        }
+
+        /* Estilo para o título no topo do site */
+        .titulo-site {
+            font-family: 'Arial', sans-serif;
+            font-size: 36px;
+            font-weight: bold;
+            color: #007bff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #007bff;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="titulo-container">
+        <h1 class="titulo-site">Gestão de Ponto - E.M José Padin Mouta</h1>
+    </div>
+
+    <div class="container">
+        <div class="navigation">
+            <div class="button-container">
+                <a href="{{ url_for('index') }}" class="home-button">
+                    <i class="fas fa-home"></i>
+                </a>
+
+                <a href="{{ url_for('calendario', year=prev_year, month=prev_month) }}">
+                    <i class="fas fa-arrow-left"></i> Mês Anterior
+                </a>
+            </div>
+            <h2>{{ datetime.date(year, month, 1).strftime('%B %Y') }}</h2>
+            <div class="button-container">
+                <a href="{{ url_for('calendario', year=next_year, month=next_month) }}">
+                    Próximo Mês <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="calendar">
+            <div class="day weekdays">Seg</div>
+            <div class="day weekdays">Ter</div>
+            <div class="day weekdays">Qua</div>
+            <div class="day weekdays">Qui</div>
+            <div class="day weekdays">Sex</div>
+            <div class="day weekdays">Sáb</div>
+            <div class="day weekdays">Dom</div>
+
+            {% set start_day = datetime.date(year, month, 1).weekday() %}
+            {% set next_month = (month + 1) if month < 12 else 1 %}
+            {% set next_year = year if month < 12 else year + 1 %}
+            {% set days_in_month = (datetime.date(next_year, next_month, 1) - datetime.timedelta(days=1)).day %}
+
+            {% for _ in range(start_day) %}
+                <div></div>
+            {% endfor %}
+
+            {% for day in range(1, days_in_month + 1) %}
+                {% set current_day = datetime.date(year, month, day) %}
+                {% set folgas = folgas_por_data.get(current_day, []) %}
+                <div class="day">
+                    {{ day }}<br>
+                    {% if folgas %}
+                        {% for folga in folgas %}
+                            <div class="agendamento
+                                {% if folga.status == 'em_espera' %}
+                                    agenda-em-espera
+                                {% elif folga.status == 'deferido' %}
+                                    agenda-deferido
+                                {% elif folga.status == 'indeferido' %}
+                                    agenda-indeferido
+                                {% endif %}">
+                                {{ folga.funcionario.nome }} - {{ folga.motivo }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="legenda">
+            <h3>Legenda:</h3>
+            <div>
+                <span>Em Espera:</span>
+                <div class="cor" style="background-color: orange;"></div>
+            </div>
+            <div>
+                <span>Deferido:</span>
+                <div class="cor" style="background-color: green;"></div>
+            </div>
+            <div>
+                <span>Indeferido:</span>
+                <div class="cor" style="background-color: red;"></div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+<footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+</footer>
+
+</html>

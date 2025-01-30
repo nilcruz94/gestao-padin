@@ -1,0 +1,167 @@
+/* Estilos gerais */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f6f9;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.calendar-container {
+    width: 80%;
+    max-width: 1200px;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    color: #007bff;
+    margin-bottom: 30px;
+}
+
+.calendar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+}
+
+.calendar .day {
+    display: inline-block;
+    width: 14.2%; /* Para 7 dias por linha */
+    padding: 10px;
+    box-sizing: border-box;
+    text-align: center;
+    border: 1px solid #ddd; /* Borda clara para separar os dias */
+    margin: 2px 0;
+    background-color: #fff; /* Cor de fundo do dia */
+    position: relative;
+}
+
+.calendar .day.weekdays {
+    background-color: #343a40; /* Cor de fundo cinza escuro */
+    color: white; /* Cor do texto (branco) */
+    font-weight: bold; /* Deixar o texto em negrito */
+    text-align: center; /* Alinhar o texto horizontalmente no centro */
+    vertical-align: middle; /* Alinhar o texto verticalmente no centro */
+    padding: 12px 0; /* Espaçamento superior e inferior para aumentar a altura */
+    border-radius: 4px; /* Bordas arredondadas */
+    font-size: 16px; /* Tamanho da fonte maior para destaque */
+    height: 50px; /* Definir uma altura fixa para os dias da semana */
+}
+
+.calendar .day.weekdays:hover {
+    background-color: #495057; /* Cor de hover (cinza mais claro) */
+}
+
+.calendar .day.agenda-em-espera {
+    background-color: #f39c12; /* Laranja */
+}
+
+.calendar .day.agenda-deferido {
+    background-color: #28a745; /* Verde */
+}
+
+.calendar .day.agenda-indeferido {
+    background-color: #dc3545; /* Vermelho */
+}
+
+.calendar .day.agenda {
+    position: relative;
+}
+
+.calendar .day .agendamento {
+    color: #fff; /* Cor do texto branca */
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+.month {
+    width: 23%;
+    margin: 10px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.month h2 {
+    text-align: center;
+    color: #007bff;
+    margin-bottom: 20px;
+}
+
+.days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+}
+
+.day {
+    padding: 10px;
+    text-align: center;
+    background-color: #fff;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.day span {
+    font-size: 14px;
+    color: #333;
+}
+
+.day:hover {
+    background-color: #f1f1f1;
+}
+
+.folga {
+    font-size: 12px;
+    margin-top: 5px;
+    padding: 2px 5px;
+    color: white;
+    border-radius: 5px;
+}
+
+.folga p {
+    margin: 0;
+    font-size: 12px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .calendar {
+        flex-direction: column;
+    }
+    .month {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+}
+
+/* Rodapé */
+footer {
+    background-color: #333;  /* Cor grafite */
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    font-size: 14px;
+    border-top: 1px solid #444;  /* Linha de separação no topo do rodapé */
+}
+
+footer p {
+    margin: 0;
+}

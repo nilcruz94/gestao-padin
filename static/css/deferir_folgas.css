@@ -1,0 +1,297 @@
+/* Estilos Gerais */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f6f9;
+    display: flex;
+    flex-direction: column; /* Empilhar os itens em coluna */
+    justify-content: flex-start; /* Alinha os itens no topo */
+    align-items: center; /* Centraliza horizontalmente */
+    height: 100vh;
+    color: #333;
+}
+
+/* Container */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-top: 30px;
+    padding-bottom: 50px; /* Adicionando espaço no fundo */
+}
+
+/* Título */
+h1 {
+    font-size: 23px;
+    color: #007bff;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Tabela */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+th, td {
+    padding: 15px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #f4f6f9;
+    font-weight: bold;
+    color: #333;
+    text-transform: uppercase;
+}
+
+/* Distância entre os ths */
+th {
+    padding: 15px 20px;  /* Aumenta o padding */
+}
+
+/* Linha da Tabela */
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+td {
+    font-size: 14px;
+}
+
+/* Centralizar e estilizar o botão "Atualizar" */
+td form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Botões */
+button, select {
+    padding: 8px 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-size: 14px;
+    align-items: center;
+}
+
+button:hover, select:hover {
+    background-color: #0056b3;
+}
+
+/* Adicionando maior distância entre o select e o submit */
+select {
+    margin-bottom: 10px; /* Aumenta a distância entre o select e o botão */
+}
+
+/* Botão "Atualizar" */
+button[type="submit"] {
+    background-color: #28a745; /* Verde */
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    text-align: center;
+    width: 120px; /* Define uma largura fixa */
+}
+
+button[type="submit"]:hover {
+    background-color: #218838; /* Verde mais escuro no hover */
+    transform: scale(1.05);
+}
+
+/* Status */
+td.status {
+    font-weight: bold;
+}
+
+td.status:before {
+    content: "Status: ";
+}
+
+.status-em-espera {
+    color: orange;
+}
+
+.status-deferido {
+    color: green;
+}
+
+.status-indeferido {
+    color: red;
+}
+
+/* Links */
+a {
+    color: #007bff;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 20px;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .container {
+        width: 90%;
+    }
+
+    table {
+        font-size: 12px;
+    }
+}
+
+/* Rodapé */
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+    width: 100%;
+    font-size: 14px;
+    border-top: 1px solid #444;
+    position: relative; /* Pode ser alterado para absolute/fixed dependendo do comportamento desejado */
+    margin-top: auto; /* Faz o footer ficar no final da página */
+}
+
+footer p {
+    margin: 0;
+}
+
+/* Container para o título */
+.titulo-container {
+    width: 100%;
+    text-align: center;
+    margin-top: 30px; /* Espaço entre o topo da tela e o título */
+}
+
+/* Estilo para o título no topo do site */
+.titulo-site {
+    font-family: 'Arial', sans-serif;
+    font-size: 36px; /* Tamanho grande para destaque */
+    font-weight: bold;
+    color: #007bff; /* Cor azul profissional */
+    text-transform: uppercase; /* Deixa o título em maiúsculas */
+    letter-spacing: 2px; /* Espaçamento entre as letras */
+    margin: 0; /* Remove margens extras */
+    padding-bottom: 10px;
+    border-bottom: 2px solid #007bff; /* Linha embaixo para dar ênfase */
+}
+
+/* Adicionando foco nos campos */
+select:focus, button:focus {
+    border: 2px solid #007bff;
+    outline: none;
+}
+
+/* Melhorando o feedback de sucesso/erro */
+.flash-message {
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.flash-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.flash-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Estilo para o link "Voltar para a Página Inicial" */
+.voltar-link {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 20px;  /* Espaço entre o conteúdo acima e o link */
+    color: #007bff;
+    font-size: 16px;
+    text-decoration: none;
+    padding: 10px;
+    border-radius: 4px;
+    background-color: #f4f6f9;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.voltar-link i {
+    margin-right: 8px;  /* Espaço entre o ícone e o texto */
+}
+
+/* Estiliza o formulário para exibir os botões lado a lado */
+.form-acoes {
+    display: flex;
+    gap: 10px; /* Espaço entre os botões */
+    justify-content: center; /* Centraliza os botões */
+}
+
+/* Formulário para alinhar os botões corretamente */
+.form-acoes {
+    display: flex;
+    justify-content: center; /* Centraliza os botões */
+    align-items: center; /* Alinha verticalmente */
+    gap: 10px; /* Espaço entre os botões */
+}
+
+/* Botão "Deferir" (Verde) */
+.btn-deferir {
+    background-color: #28a745; /* Verde */
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    align-items: center;
+}
+
+.btn-deferir:hover {
+    background-color: #218838; /* Verde mais escuro */
+    transform: scale(1.05);
+}
+
+/* Botão "Indeferir" (Vermelho) */
+.btn-indeferir {
+    background-color: #dc3545 !important; /* Vermelho - com !important para garantir prioridade */
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    align-items: center;
+}
+
+.btn-indeferir:hover {
+    background-color: #c82333 !important; /* Vermelho mais escuro */
+    transform: scale(1.05);
+}

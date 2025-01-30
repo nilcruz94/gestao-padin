@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banco de Horas - E.M José Padin Mouta</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha384-DyZ88mC6Up2uqSdsKUyI35PpCfwkHB2f2Q4z8s1U3B1ii+ib9dFZeX5Jh8VZzf5k" crossorigin="anonymous">
+</head>
+<style>
+
+.container {
+    width: 100%; /* Aumenta a largura do container */
+    max-width: 1200px; /* Limita a largura máxima para não ficar muito largo */
+    margin: 0 auto; /* Centraliza o conteúdo */
+    margin-top: 10px;
+    padding-top: 30px; /* Espaço extra acima da tabela */
+}
+
+.table-container {
+    overflow-x: auto; /* Rolagem horizontal */
+    overflow-y: auto; /* Rolagem vertical */
+    max-height: 400px; /* Ajuste conforme necessário */
+    border: 1px solid #ddd; /* Opcional: borda para destacar a tabela */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 8px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+th {
+    background-color: #f4f4f4;
+    position: sticky;
+    top: 0;
+}
+
+</style>
+<body>
+
+    <div class="titulo-container">
+        <h1 class="titulo-site">Gestão de Ponto - E.M José Padin Mouta</h1>
+    </div>
+
+    <div class="container">
+        <h2>Banco de Horas de {{ current_user.nome }}</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        {% if registros %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Horas Trabalhadas</th>
+                        <th>Status</th>
+                        <th>Motivo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registro in registros %}
+                        {% if registro.status in ['Deferido', 'Horas a Serem Deferidas', 'Indeferido'] %}
+                            <tr class="status-{{ registro.status|replace('_', '-') }}">
+                                <td>{{ registro.data_realizacao.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ registro.horas }} horas e {{ registro.minutos }} minutos</td>
+                                <td>
+                                    {% if registro.status == 'Horas a Serem Deferidas' %}
+                                        <span class="status-em-espera">Em Espera</span>
+                                    {% elif registro.status == 'Indeferido' %}
+                                        <span class="status-indeferido">Indeferido</span>
+                                    {% else %}
+                                        <span class="status-deferido">Deferido</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ registro.motivo }}</td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Horas Deferidas</th>
+                        <th>Horas em Espera</th>
+                        <th>Horas a Usufruir</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ horas_deferidas }} horas e {{ minutos_deferidos }} minutos</td>
+                        <td>{{ horas_em_espera }} horas e {{ minutos_em_espera }} minutos</td>
+                        <td>{{ horas_a_usufruir }} horas e {{ minutos_a_usufruir }} minutos</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="no-data">
+            <p>Você não possui registros no banco de horas.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <footer>
+        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+    </footer>
+</body>
+</html>

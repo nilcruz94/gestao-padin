@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Histórico de Folgas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="page-historico">
+
+    <div class="titulo-container">
+        <h1 class="titulo-site">Gestão de Ponto - E.M José Padin Mouta</h1>
+    </div>
+
+    <div class="container">
+        <h2><i class="fas fa-history"></i> Seu Histórico de Ponto</h2>
+
+        <div class="historico-container">
+            <div class="historico-item">
+                <i class="fas fa-calendar-check"></i> 
+                <p><strong>Abonadas (AB):</strong> {{ folgas_contabilizadas['AB'] }} folga(s)</p>
+            </div>
+            <div class="historico-item">
+                <i class="fas fa-clock"></i> 
+                <p><strong>Banco de Horas (BH):</strong> {{ folgas_contabilizadas['BH'] }} folga(s)</p>
+            </div>
+            <div class="historico-item">
+                <i class="fas fa-tint"></i> 
+                <p><strong>Doação de Sangue (DS):</strong> {{ folgas_contabilizadas['DS'] }} folga(s)</p>
+            </div>
+            <div class="historico-item">
+                <i class="fas fa-hand-holding-heart"></i> 
+                <p><strong>TRE (TRE):</strong> {{ folgas_contabilizadas['TRE'] }} folga(s)</p>
+            </div>
+            <div class="historico-item">
+                <i class="fas fa-times-circle"></i> 
+                <p><strong>Falta Simples (FS):</strong> {{ folgas_contabilizadas['FS'] }} folga(s)</p>
+            </div>
+        </div>
+
+        <a href="{{ url_for('index') }}" class="voltar-link">
+            <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
+        </a>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+    </footer>
+
+</body>
+</html>
