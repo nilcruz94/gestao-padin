@@ -14,7 +14,7 @@
             var dataReferenciaInput = document.getElementById("data_referencia");
             var horasGroup = document.getElementById("horas_group");
             var minutosGroup = document.getElementById("minutos_group");
-            
+
             if (motivo === "BH") {
                 dataReferenciaGroup.style.display = "block"; // Exibe o campo de Data de Referência
                 dataReferenciaInput.setAttribute("required", "true"); // Torna a data de referência obrigatória
@@ -27,8 +27,8 @@
                 minutosGroup.style.display = "none"; // Esconde o campo de Minutos
 
                 // Define os campos de horas e minutos como "N/A" quando o motivo não for Banco de Horas
-                document.getElementById("quantidade_horas").value = "N/A";
-                document.getElementById("quantidade_minutos").value = "N/A";
+                document.getElementById("quantidade_horas").value = "0";
+                document.getElementById("quantidade_minutos").value = "0";
             }
         }
 
@@ -48,8 +48,8 @@
 
             // Verifica se o motivo é Banco de Horas e se as horas ou minutos estão vazios
             if (motivo === "BH") {
-                if (!horasInput.value || !minutosInput.value) {
-                    alert("As horas e os minutos são obrigatórios quando o motivo for Banco de Horas.");
+                if (isNaN(horasInput.value) || isNaN(minutosInput.value) || horasInput.value.trim() === "" || minutosInput.value.trim() === "") {
+                    alert("As horas e os minutos são obrigatórios e devem ser números válidos quando o motivo for Banco de Horas.");
                     event.preventDefault(); // Impede o envio do formulário
                     return false;
                 }
@@ -57,7 +57,7 @@
 
             return true;
         }
-        
+
         // Chama a função de toggle ao carregar a página ou ao mudar a seleção
         window.onload = toggleDataReferencia;
     </script>
@@ -144,12 +144,12 @@
             <div class="form-group horas-minutos-group" id="horas_group" style="display: none;">
                 <div class="input-group">
                     <label for="quantidade_horas"><i class="fas fa-clock"></i> Horas:</label>
-                    <input type="number" id="quantidade_horas" name="quantidade_horas" min="0" placeholder="Horas">
+                    <input type="number" id="quantidade_horas" name="quantidade_horas" min="0" placeholder="Horas" value="0" required>
                 </div>
 
                 <div class="input-group">
                     <label for="quantidade_minutos"><i class="fas fa-clock"></i> Minutos:</label>
-                    <input type="number" id="quantidade_minutos" name="quantidade_minutos" min="0" max="59" placeholder="Minutos">
+                    <input type="number" id="quantidade_minutos" name="quantidade_minutos" min="0" max="59" placeholder="Minutos" value="0" required>
                 </div>
             </div>
 
@@ -168,10 +168,10 @@
                 var motivo = this.value;
                 var tipoFolgaField = document.getElementById('tipo_folga');
                 var dataBancoHorasField = document.getElementById('data_banco_horas');
-        
+
                 // Atualiza o campo tipo_folga conforme a seleção
                 tipoFolgaField.value = motivo;
-        
+
                 // Mostra ou oculta o campo de data de referência para Banco de Horas
                 if (motivo === 'BH') {
                     dataBancoHorasField.style.display = 'block';

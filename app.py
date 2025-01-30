@@ -146,9 +146,13 @@ def agendar():
             # Se não for tipo 'BH', a data de referência será None
             data_referencia = None
 
-        # Pega as horas e minutos fornecidos no formulário
-        horas = int(request.form['quantidade_horas']) if 'quantidade_horas' in request.form else 0
-        minutos = int(request.form['quantidade_minutos']) if 'quantidade_minutos' in request.form else 0
+        try:
+            horas = int(request.form['quantidade_horas']) if request.form['quantidade_horas'].strip() else 0
+            minutos = int(request.form['quantidade_minutos']) if request.form['quantidade_minutos'].strip() else 0
+        except ValueError:
+            flash("Horas ou minutos inválidos.", "danger")
+            return redirect(url_for('agendar'))  # Redireciona para evitar o acúmulo de flash
+
         
         # Converte as horas para minutos
         total_minutos = (horas * 60) + minutos
@@ -157,7 +161,7 @@ def agendar():
         usuario = User.query.get(current_user.id)  # Pega o usuário logado
         if usuario.banco_horas < total_minutos:
             flash("Você não possui horas suficientes no banco de horas para este agendamento.", "danger")
-            return redirect(url_for('agendar'))
+            return redirect(url_for('index'))
 
         # Criação do novo agendamento com tanto o motivo quanto o tipo de folga
         novo_agendamento = Agendamento(
@@ -579,5 +583,5 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+if __name__ == '__main__':
+    app.run(debug=True)
