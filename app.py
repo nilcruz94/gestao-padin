@@ -262,7 +262,9 @@ def register():
         email = request.form['email']
         senha = request.form['senha']
         confirmar_senha = request.form['confirmar_senha']
-        tipo = request.form['tipo']
+        
+        # Se o campo 'tipo' não for enviado, atribua um valor padrão (por exemplo, 'user')
+        tipo = request.form.get('tipo', 'user')  # Aqui, 'user' é o valor padrão
 
         # Verifica se as senhas coincidem
         if senha != confirmar_senha:
@@ -284,7 +286,7 @@ def register():
         # Criptografa a senha usando pbkdf2:sha256 (método compatível)
         senha_hash = generate_password_hash(senha, method='pbkdf2:sha256')
 
-        # Criação do novo usuário
+        # Criação do novo usuário com o tipo, que agora é opcional
         new_user = User(nome=nome, registro=registro, email=email, senha=senha_hash, tipo=tipo)
         db.session.add(new_user)
         db.session.commit()
@@ -293,6 +295,7 @@ def register():
         return redirect(url_for('login'))
 
     return render_template('register.html')
+
 
 # Rota Deletar Agendamento
 @app.route('/delete_agendamento/<int:id>', methods=['POST'])
