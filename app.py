@@ -9,7 +9,9 @@ import calendar
 import datetime
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///folgas.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://folgas_user:BLS6AMWRXX0vuFBM6q7oHKKwJChaK8dk@dpg-cuece7hopnds738g0usg-a.virginia-postgres.render.com/folgas_3tqr'
+app.config['SQLALCHEMY_POOL_RECYCLE'] = 299
+app.config['SQLALCHEMY_POOL_TIMEOUT'] = 30
 app.config['SECRET_KEY'] = 'supersecretkey'
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -23,7 +25,7 @@ class User(UserMixin, db.Model):
     registro = db.Column(db.String(150), nullable=False, unique=True)
     email = db.Column(db.String(150), nullable=False, unique=True)
     senha = db.Column(db.String(150), nullable=False)
-    tipo = db.Column(db.String(10), nullable=False)  # "funcionario" ou "administrador"
+    tipo = db.Column(db.String(20), nullable=False)  # Aumentei o tamanho para 20 caracteres
     
     # Banco de horas em minutos
     banco_horas = db.Column(db.Integer, default=0, nullable=False)
@@ -573,13 +575,14 @@ def deferir_horas():
     return render_template('deferir_horas.html', registros=registros)
 
 
-# Inicialização do Banco de Dados
 @app.route('/criar_banco')
 def criar_banco():
-    db.create_all()
-    return "Banco de dados criado com sucesso!"
-
-
+    try:
+        db.create_all()  # Tenta criar as tabelas no banco
+        return "Banco de dados criado com sucesso!"
+    except Exception as e:
+        return f"Erro ao criar o banco: {str(e)}"
+    
 # Login Manager
 @login_manager.user_loader
 def load_user(user_id):

@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:latest
+    container_name: gestao-padin
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: neto1536
+      POSTGRES_DB: folgas
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    container_name: folgas-app
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://folgas_user:1xrBtiUdWBbWnzW2gxY2h8CU2PRhQEir@dpg-cueaq3d2ng1s7386b3dg-a/folgas
+
+volumes:
+  postgres_data:
