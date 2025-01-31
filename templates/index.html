@@ -69,6 +69,13 @@
                 <i class="fas fa-history"></i> Banco de Horas
             </a>
 
+            <!-- Exibindo o link de "Aprovar Usuários" apenas para administradores -->
+            {% if current_user.tipo == 'administrador' %}
+            <a href="{{ url_for('aprovar_usuarios') }}" class="menu-item">
+                <i class="fas fa-user-check"></i> Aprovar Usuários
+            </a>
+            {% endif %}
+
             <a href="{{ url_for('logout') }}" class="logout-btn">
                 <i class="fas fa-sign-out-alt"></i> Sair
             </a>

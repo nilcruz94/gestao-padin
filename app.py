@@ -26,6 +26,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(150), nullable=False, unique=True)
     senha = db.Column(db.String(150), nullable=False)
     tipo = db.Column(db.String(20), nullable=False)  # Aumentei o tamanho para 20 caracteres
+    status = db.Column(db.String(20), default='pendente')  # 'pendente', 'aprovado', 'rejeitado'
     
     # Banco de horas em minutos
     banco_horas = db.Column(db.Integer, default=0, nullable=False)
@@ -83,13 +84,23 @@ def login():
         email = request.form['email']
         senha = request.form['password']
         user = User.query.filter_by(email=email).first()
+        
+        # Verifica se o usuário existe e a senha está correta
         if user and check_password_hash(user.senha, senha):
+            # Verifica o status do usuário
+            if user.status == 'pendente':
+                flash('Seu registro está pendente de aprovação. Por favor, aguarde a confirmação do administrador.', 'warning')
+                return render_template('login.html')
+            elif user.status == 'rejeitado':  # Bloqueia acesso caso o status seja "rejeitado"
+                flash('Seu acesso foi recusado. Contate um administrador.', 'danger')
+                return render_template('login.html')
+            
             login_user(user)
             return redirect(url_for('index'))
         else:
             flash('Email ou senha incorretos', 'danger')
+    
     return render_template('login.html')
-
 
 # Rota de Logout
 @app.route('/logout')
@@ -252,7 +263,6 @@ def calendario(year, month):
         fim_ano=fim_ano
     )
 
-# Rota de Registro (para Novo Usuário)
 from email_validator import validate_email, EmailNotValidError
 
 # Rota de Registro (para Novo Usuário)
@@ -288,15 +298,61 @@ def register():
         # Criptografa a senha usando pbkdf2:sha256 (método compatível)
         senha_hash = generate_password_hash(senha, method='pbkdf2:sha256')
 
-        # Criação do novo usuário com o tipo, que agora é opcional
-        new_user = User(nome=nome, registro=registro, email=email, senha=senha_hash, tipo=tipo)
+        # Criação do novo usuário com o status 'pendente', aguardando aprovação
+        new_user = User(
+            nome=nome, 
+            registro=registro, 
+            email=email, 
+            senha=senha_hash, 
+            tipo=tipo, 
+            status='pendente'  # Novo campo para controlar a aprovação
+        )
+
         db.session.add(new_user)
         db.session.commit()
 
-        flash('Usuário registrado com sucesso. Faça login para continuar.', 'success')
+        flash('Usuário registrado com sucesso. Aguardando aprovação do administrador.', 'info')
         return redirect(url_for('login'))
 
     return render_template('register.html')
+
+
+# Rota Aprovar Usuarios
+@app.route('/aprovar_usuarios', methods=['GET', 'POST'])
+@login_required
+def aprovar_usuarios():
+    # Verifica se o usuário logado é administrador
+    if current_user.tipo != 'administrador':
+        flash('Você não tem permissão para acessar essa página.', 'danger')
+        return redirect(url_for('index'))  # Redireciona para a página inicial ou outra página apropriada
+
+    # Exibe todos os usuários com status 'pendente'
+    usuarios_pendentes = User.query.filter_by(status='pendente').all()
+
+    if request.method == 'POST':
+        usuario_id = request.form.get('usuario_id')  # Recupera o ID do usuário a ser aprovado ou recusado
+        acao = request.form.get('acao')  # Recupera a ação do formulário (aprovar ou recusar)
+
+        # Verifica se a ação foi recebida corretamente
+        if acao is None:
+            flash('Ação não especificada', 'danger')
+            return redirect(url_for('aprovar_usuarios'))
+
+        usuario = User.query.get(usuario_id)  # Busca o usuário pelo ID
+        if usuario:
+            if acao == 'aprovar':
+                usuario.status = 'aprovado'  # Altera o status do usuário para 'aprovado'
+                flash(f'Usuário {usuario.nome} aprovado com sucesso!', 'success')
+            elif acao == 'recusar':
+                usuario.status = 'rejeitado'  # Altera o status do usuário para 'rejeitado'
+                flash(f'Usuário {usuario.nome} recusado.', 'danger')
+
+            db.session.commit()  # Salva as alterações no banco de dados
+
+        return redirect(url_for('aprovar_usuarios'))  # Redireciona de volta para a página de aprovação de usuários
+
+    # Retorna o template com a lista de usuários pendentes
+    return render_template('aprovar_usuarios.html', usuarios=usuarios_pendentes)
 
 
 # Rota Deletar Agendamento

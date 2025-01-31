@@ -302,7 +302,7 @@
                                 {% elif folga.status == 'indeferido' %}
                                     agenda-indeferido
                                 {% endif %}">
-                                {{ folga.funcionario.nome }} - {{ folga.motivo }}
+                                {{ folga.funcionario.nome.split()[0] }} {{ folga.funcionario.nome.split()[1][0] }}. - {{ folga.motivo }}
                             </div>
                         {% endfor %}
                     {% endif %}

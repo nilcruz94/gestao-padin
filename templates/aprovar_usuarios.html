@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprovar Cadastro de Usuários</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f6f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .usuario {
+            border-bottom: 1px solid #eee;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+        }
+
+        .usuario p {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .aprovar {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .aprovar:hover {
+            background-color: #218838;
+        }
+
+        .recusar {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .recusar:hover {
+            background-color: #c82333;
+        }
+
+        .no-records {
+            text-align: center;
+            color: #888;
+            font-size: 16px;
+        }
+
+        .back-link {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .back-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 10px 0;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            font-size: 14px;
+            border-top: 1px solid #444;
+        }
+
+        footer p {
+            margin: 0;
+        }
+
+        .flash-message {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 100%;
+        }
+
+        .flash-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .flash-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .flash-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .titulo-container {
+            width: 100%;
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .titulo-site {
+            font-family: 'Arial', sans-serif;
+            font-size: 36px;
+            font-weight: bold;
+            color: #007bff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #007bff;
+        }
+
+        h1, h2 {
+            font-size: 24px;
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            color: #007bff;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+
+        .back-link i {
+            margin-right: 8px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="titulo-container">
+        <h1 class="titulo-site">Gestão de Usuários - E.M José Padin Mouta</h1>
+    </div>
+
+    <h1>Aprovar Cadastro de Usuários</h1>
+
+    <!-- Bloco de Mensagem de Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="container">
+        <!-- Verifica se há usuários pendentes -->
+        {% if usuarios %}
+            <form action="/aprovar_usuarios" method="POST">
+                {% for usuario in usuarios %}
+                    <div class="usuario">
+                        <p><strong>{{ usuario.nome }} ({{ usuario.registro }})</strong></p>
+                        <p>Email: {{ usuario.email }}</p>
+                        <p>Registro aguardando aprovação.</p>
+                        <input type="hidden" name="usuario_id" value="{{ usuario.id }}">
+                        <div class="buttons">
+                            <button type="submit" name="acao" value="aprovar" class="button aprovar">Aprovar</button>
+                            <button type="submit" name="acao" value="recusar" class="button recusar">Recusar</button>
+                        </div>
+                    </div>
+                    <hr>
+                {% endfor %}
+            </form>
+        {% else %}
+            <p class="no-records">Não há registros de usuários aguardando aprovação.</p>
+        {% endif %}
+    </div>
+
+    <div class="back-link">
+        <a href="/index">
+            <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial</a>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+    </footer>
+
+</body>
+</html>
