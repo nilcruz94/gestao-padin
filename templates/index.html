@@ -41,11 +41,14 @@
     <div class="container">
         <h1>Bem-vindo, <span class="nome-usuario">{{ current_user.nome }}</span>!</h1>
         <div class="form-container">
+
+            <!-- Adicionando o menu "Meu Perfil" -->
+            <a href="{{ url_for('perfil') }}" class="menu-item">
+            <i class="fas fa-user"></i> Meu Perfil
+            </a>
+            
             <a href="{{ url_for('agendar') }}" class="menu-item">
                 <i class="fas fa-calendar-day"></i> Realizar Justificativa
-            </a>
-            <a href="{{ url_for('calendario') }}" class="menu-item">
-                <i class="fas fa-calendar-alt"></i> Ver Calendário
             </a>
 
             <!-- Link "Minhas Justificativas" para funcionários -->
@@ -53,6 +56,10 @@
                 <i class="fas fa-list-alt"></i> Minhas Justificativas
             </a>
             
+            <a href="{{ url_for('calendario') }}" class="menu-item">
+                <i class="fas fa-calendar-alt"></i> Ver Calendário
+            </a>
+
             <!-- Exibindo o link de "Deferir Folgas" apenas para administradores -->
             {% if current_user.tipo == 'administrador' %}
                 <a href="{{ url_for('deferir_folgas') }}" class="menu-item">
@@ -60,14 +67,14 @@
                 </a>
             {% endif %}
 
-            <!-- Adicionando o menu "Histórico" -->
-            <a href="{{ url_for('historico') }}" class="menu-item">
-                <i class="fas fa-history"></i> Histórico
-            </a>
-
             <a href="{{ url_for('banco_horas') }}" class="menu-item">
                 <i class="fas fa-history"></i> Banco de Horas
             </a>
+
+            <!-- Adicionando o menu "Histórico" -->
+            <a href="{{ url_for('historico') }}" class="menu-item">
+                <i class="fas fa-history"></i> Histórico
+            </a>            
 
             <!-- Exibindo o link de "Aprovar Usuários" apenas para administradores -->
             {% if current_user.tipo == 'administrador' %}
@@ -75,11 +82,6 @@
                 <i class="fas fa-user-check"></i> Aprovar Usuários
             </a>
             {% endif %}
-
-             <!-- Adicionando o menu "Meu Perfil" -->
-            <a href="{{ url_for('perfil') }}" class="menu-item">
-            <i class="fas fa-user"></i> Meu Perfil
-            </a>
 
             <a href="{{ url_for('logout') }}" class="logout-btn">
                 <i class="fas fa-sign-out-alt"></i> Sair

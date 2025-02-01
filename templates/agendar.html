@@ -2,11 +2,11 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agendar Folga</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <!-- FontAwesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>
         // Função que exibe ou esconde os campos de Data de Referência, Horas e Minutos dependendo da seleção do motivo
         function toggleDataReferencia() {
@@ -68,13 +68,11 @@
             display: flex;
             gap: 10px; /* Espaçamento entre os campos */
             margin-top: 10px;
-            flex-wrap: wrap;
         }
 
         .horas-minutos-group .input-group {
             display: flex;
             align-items: center; /* Alinha os ícones e inputs */
-            width: 48%; /* Ajuste para telas menores */
         }
 
         /* Ícone à esquerda do label */
@@ -88,26 +86,68 @@
         .horas-minutos-group label {
             display: flex;
             align-items: center;
+            font-weight: normal; /* Retira o negrito do label */
         }
 
         .horas-minutos-group input {
-            width: 100%; /* Ajuste da largura dos inputs */
+            width: 120px; /* Ajuste da largura dos inputs */
             padding-left: 30px; /* Espaço para o ícone */
         }
 
-        /* Responsividade */
-        @media (max-width: 768px) {
+        /* Responsividade: ajuste para telas pequenas */
+        @media screen and (max-width: 768px) {
+            body {
+                font-size: 16px;
+            }
+
             .titulo-container {
                 text-align: center;
+                padding: 20px;
             }
-            h1 {
-                font-size: 1.5em;
+
+            .container {
+                padding: 10px;
             }
-            .input-group label, .input-group input, .input-group select {
+
+            .input-group input,
+            .input-group select {
                 width: 100%;
             }
+
+            .form-group {
+                margin-bottom: 15px;
+            }
+
+            .horas-minutos-group {
+                flex-direction: column;
+            }
+
             .horas-minutos-group .input-group {
                 width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .submit-btn {
+                width: 100%;
+            }
+
+            footer {
+                position: relative;
+                text-align: center;
+                padding: 10px;
+                font-size: 14px;
+            }
+        }
+
+        /* Responsividade para telas muito pequenas */
+        @media screen and (max-width: 480px) {
+            .titulo-site {
+                font-size: 24px;
+            }
+
+            .submit-btn {
+                padding: 15px;
+                font-size: 16px;
             }
         }
     </style>
@@ -162,12 +202,12 @@
             <!-- Campo de Horas e Minutos (aparece quando 'Banco de Horas' é selecionado) -->
             <div class="form-group horas-minutos-group" id="horas_group" style="display: none;">
                 <div class="input-group">
-                    <label for="quantidade_horas"><i class="fas fa-clock"></i> Horas:</label>
+                    <label for="quantidade_horas"><i class="fas fa-clock"></i> Horas a utilizar:</label>
                     <input type="number" id="quantidade_horas" name="quantidade_horas" min="0" placeholder="Horas" value="0" required>
                 </div>
 
                 <div class="input-group">
-                    <label for="quantidade_minutos"><i class="fas fa-clock"></i> Minutos:</label>
+                    <label for="quantidade_minutos"><i class="fas fa-clock"></i> Minutos a utilizar:</label>
                     <input type="number" id="quantidade_minutos" name="quantidade_minutos" min="0" max="59" placeholder="Minutos" value="0" required>
                 </div>
             </div>
