@@ -214,6 +214,29 @@ footer p {
     margin: 0;
 }
 
+/* Para dispositivos móveis */
+@media (max-width: 768px) {
+    footer {
+        position: relative; /* No mobile, o footer será posicionado no final do conteúdo */
+        width: 100%;
+        text-align: center;
+        padding: 10px 0;
+        font-size: 14px;
+    }
+}
+
+/* Para dispositivos maiores (computadores) */
+@media (min-width: 769px) {
+    footer {
+        position: fixed; /* No desktop, o footer ficará fixo na parte inferior da tela */
+        width: 100%;
+        bottom: 0;
+        text-align: center;
+        padding: 10px 0;
+        font-size: 14px;
+    }
+}
+
 /* Container para o título */
 .titulo-container {
     width: 100%;
