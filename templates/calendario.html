@@ -204,41 +204,62 @@
 
         /* Rodapé */
         footer {
-            background-color: #333;  /* Cor grafite */
+            background-color: #333; /* Cor grafite */
             color: #fff;
             text-align: center;
             padding: 10px 0;
             position: fixed;
             bottom: 0;
-            width: 100%;
+            left: 0; /* Garante que começa do canto esquerdo */
+            width: 100%; /* Ocupará toda a largura da tela */
             font-size: 14px;
             border-top: 1px solid #444;
+            box-sizing: border-box; /* Evita problemas com padding/margem */
         }
 
         footer p {
             margin: 0;
         }
 
-        /* Container para o título */
+        /* Titulo Container */
         .titulo-container {
-            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             text-align: center;
-            margin-top: 30px;
-            margin-bottom: 40px;
+            width: 100%;
+            margin: 20px 0;
         }
 
         /* Estilo para o título no topo do site */
         .titulo-site {
-            font-family: 'Arial', sans-serif;
-            font-size: 36px;
-            font-weight: bold;
-            color: #007bff;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin: 0;
+            font-family: 'Montserrat', sans-serif; /* Fonte moderna */
+            font-size: 42px; /* Ajuste o tamanho conforme necessário */
+            font-weight: 600; /* Peso de fonte mais leve */
+            color: #007bff; /* Cor azul profissional */
+            text-transform: uppercase; /* Maiúsculas para o título */
+            letter-spacing: 2px; /* Espaçamento entre as letras */
+            margin: 0s;
             padding-bottom: 10px;
-            border-bottom: 2px solid #007bff;
+            text-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Leve sombra para dar profundidade */
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 2px solid #007bff; /* Linha embaixo para dar ênfase */
         }
+
+        .voltar-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.1rem;
+            color: #2980b9;
+            text-decoration: none;
+        }
+
+        .voltar-link:hover {
+            text-decoration: underline;
+}
 
     </style>
 
@@ -247,9 +268,8 @@
 <body>
 
     <div class="titulo-container">
-        <h1 class="titulo-site">Gestão de Ponto - E.M José Padin Mouta</h1>
+        <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
     </div>
-
     <div class="container">
         <div class="navigation">
             <div class="button-container">
@@ -326,8 +346,11 @@
             </div>
         </div>
     </div>
-
 </body>
+
+<a href="{{ url_for('index') }}" class="voltar-link">
+    <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
+</a>
 
 <footer>
     <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
