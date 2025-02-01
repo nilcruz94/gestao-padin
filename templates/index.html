@@ -11,7 +11,7 @@
 <body>
 
     <div class="titulo-container">
-        <h1 class="titulo-site">Gestão de Ponto - E.M José Padin Mouta</h1>
+        <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -75,6 +75,11 @@
                 <i class="fas fa-user-check"></i> Aprovar Usuários
             </a>
             {% endif %}
+
+             <!-- Adicionando o menu "Meu Perfil" -->
+            <a href="{{ url_for('perfil') }}" class="menu-item">
+            <i class="fas fa-user"></i> Meu Perfil
+            </a>
 
             <a href="{{ url_for('logout') }}" class="logout-btn">
                 <i class="fas fa-sign-out-alt"></i> Sair

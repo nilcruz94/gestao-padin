@@ -111,10 +111,34 @@ a:hover {
     text-align: center;
 }
 
-/* Responsividade */
+/* Responsividade para dispositivos móveis */
 @media (max-width: 768px) {
     .container {
-        width: 90%;
+        margin-top: 20px;
+        padding: 15px;
+    }
+
+    h2 {
+        font-size: 20px;
+    }
+
+    h1.titulo-site {
+        font-size: 32px;
+    }
+
+
+    label {
+        font-size: 13px;
+    }
+
+    input {
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    .submit-btn {
+        font-size: 14px;
+        padding: 12px;
     }
 }
 
@@ -438,5 +462,6 @@ th {
     background-color: #F44336; /* Vermelho */
     color: white;
 }
+
 
 

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request, flash
+from flask import Flask, session, render_template, redirect, url_for, request, flash
 from flask import jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -18,6 +18,7 @@ migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+
 # Modelo User (Funcionario e Administrador)
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -25,11 +26,15 @@ class User(UserMixin, db.Model):
     registro = db.Column(db.String(150), nullable=False, unique=True)
     email = db.Column(db.String(150), nullable=False, unique=True)
     senha = db.Column(db.String(150), nullable=False)
-    tipo = db.Column(db.String(20), nullable=False)  # Aumentei o tamanho para 20 caracteres
+    tipo = db.Column(db.String(20), nullable=False)  # 'funcionario' ou 'administrador'
     status = db.Column(db.String(20), default='pendente')  # 'pendente', 'aprovado', 'rejeitado'
     
     # Banco de horas em minutos
     banco_horas = db.Column(db.Integer, default=0, nullable=False)
+
+    # Novos campos
+    celular = db.Column(db.String(20), nullable=True)  # Aceita formato internacional +55 11 99999-9999
+    data_nascimento = db.Column(db.Date, nullable=True)  # Armazena a data de nascimento
 
     # Relacionamento com Agendamento
     agendamentos = db.relationship('Agendamento', backref='user_funcionario', lazy=True)
@@ -126,7 +131,6 @@ def minhas_justificativas():
     return render_template('minhas_justificativas.html', agendamentos=agendamentos)
 
 # Rota Agendar
-# Rota de Agendamento de Banco de Horas
 @app.route('/agendar', methods=['GET', 'POST'])
 def agendar():
     if request.method == 'POST':
@@ -199,7 +203,7 @@ def agendar():
         
         # Após o processamento, exibe a mensagem de sucesso e redireciona para a página inicial
         return redirect(url_for('index'))  # Redireciona para a página inicial, com a mensagem de sucesso
-
+    
     return render_template('agendar.html')
 
 # Rota de Calendário de Folgas
@@ -630,6 +634,31 @@ def deferir_horas():
 
     return render_template('deferir_horas.html', registros=registros)
 
+@app.route('/perfil', methods=['GET', 'POST'])
+@login_required
+def perfil():
+    usuario = current_user
+    
+    if request.method == 'POST':
+        # Recupera os dados do formulário
+        celular = request.form['celular']
+        data_nascimento = request.form['data_nascimento']
+        
+        # Atualiza o usuário com os novos dados
+        usuario.celular = celular
+        usuario.data_nascimento = data_nascimento
+        
+        # Salva as alterações no banco de dados
+        try:
+            db.session.commit()
+            flash('Perfil atualizado com sucesso!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Erro ao atualizar o perfil. Tente novamente mais tarde.', 'danger')
+        
+        return redirect(url_for('perfil'))
+    
+    return render_template('perfil.html', usuario=usuario)
 
 @app.route('/criar_banco')
 def criar_banco():

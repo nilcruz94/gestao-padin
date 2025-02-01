@@ -1,0 +1,193 @@
+<!DOCTYPE html> 
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Perfil</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <div class="titulo-container">
+        <h1 class="titulo-site">Gestão de Folgas E.M José Padin Mouta</h1>
+    </div>
+
+    <div class="container">
+        <h1>Meu Perfil</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for category, message in messages %}
+                        <li class="{{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('perfil') }}" id="perfil-form">
+            <!-- Campo Nome -->
+            <div class="editable-field">
+                <label for="nome">
+                    <i class="fas fa-user icon-blue"></i> Nome:
+                </label>
+                <input type="text" id="nome" name="nome" value="{{ usuario.nome }}" disabled>
+            </div>
+
+            <!-- Campo Registro -->
+            <div class="editable-field">
+                <label for="registro">
+                    <i class="fas fa-id-badge icon-blue"></i> Registro:
+                </label>
+                <input type="text" id="registro" name="registro" value="{{ usuario.registro }}" disabled>
+            </div>
+
+            <!-- Campo Email -->
+            <div class="editable-field">
+                <label for="email">
+                    <i class="fas fa-envelope icon-blue"></i> Email:
+                </label>
+                <input type="email" id="email" name="email" value="{{ usuario.email }}" disabled>
+            </div>
+
+            <!-- Campo Celular -->
+            <div class="editable-field">
+                <label for="celular">
+                    <i class="fas fa-mobile-alt icon-blue"></i> Celular:
+                </label>
+                <div class="input-edit">
+                    <input type="tel" id="celular" name="celular" value="{{ usuario.celular }}" placeholder="Adicione seu celular" readonly class="locked">
+                    <span class="edit-icon" onclick="editField('celular')">✏️</span>
+                </div>
+            </div>
+
+            <!-- Campo Data de Nascimento -->
+            <div class="editable-field">
+                <label for="data_nascimento">
+                    <i class="fas fa-birthday-cake icon-blue"></i> Data de Nascimento:
+                </label>
+                <div class="input-edit">
+                    <input type="date" id="data_nascimento" name="data_nascimento" value="{{ usuario.data_nascimento }}" readonly class="locked">
+                    <span class="edit-icon" onclick="editField('data_nascimento')">✏️</span>
+                </div>
+            </div>         
+            <button type="submit" class="submit-btn">Salvar Alterações</button>
+        </form>
+    </div>
+    
+    <script>
+        function editField(fieldId) {
+            const field = document.getElementById(fieldId);
+            if (field.hasAttribute("readonly")) {
+                field.removeAttribute("readonly");
+                field.classList.remove("locked");
+            } else {
+                field.setAttribute("readonly", "");
+                field.classList.add("locked");
+            }
+        }
+    </script>
+
+    <style>
+        /* Container maior e centralizado */
+        .container {
+            width: 80%;
+            max-width: 1000px;
+            margin: 0 auto;
+            margin-top: 10px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Estilo para os campos editáveis com label acima do input */
+        .editable-field {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Alinha a label à esquerda, sem o negrito e com espaçamento abaixo */
+        .editable-field label {
+            font-weight: normal;
+            font-size: 14px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Classe para os ícones azuis */
+        .icon-blue {
+            color: #007BFF; /* Cor azul para os ícones */
+            margin-right: 10px; /* Espaço entre o ícone e o texto */
+        }
+
+        /* Contêiner para agrupar o input e o ícone; posição relativa para posicionar o ícone */
+        .input-edit {
+            position: relative;
+        }
+
+        /* Input que cobre toda a largura do contêiner */
+        .input-edit input {
+            width: 100%;
+            height: 40px;              /* Altura definida para igualar aos demais campos */
+            padding: 6px 40px 6px 10px;  /* Padding à direita maior para dar espaço ao ícone */
+            font-size: 14px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        /* Estilo para inputs bloqueados (readonly + classe locked) */
+        .input-edit input.locked {
+            background-color: #f0f0f0; /* Cor de fundo mais clara para indicar bloqueio */
+            color: #6c757d;          /* Cor do texto em tom mais discreto */
+            cursor: not-allowed;
+        }
+
+        /* Ícone de edição posicionado dentro do input, à direita */
+        .edit-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 18px;
+            color: #007BFF;
+        }
+
+        /* Muda a cor do ícone ao passar o mouse */
+        .edit-icon:hover {
+            color: #0056b3;
+        }
+
+        /* Controle de visibilidade do ícone conforme o estado do input */
+        .input-edit input:not([readonly]) + .edit-icon {
+            visibility: hidden;
+        }
+
+        .submit-btn {
+            margin-top: 20px;
+            padding: 10px 15px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s ease; /* Transição apenas na cor */
+        }
+
+        .submit-btn:hover {
+            background-color: #0fb300;
+            /* Garante que nenhuma transformação ou alteração de padding ocorra */
+            transform: none;
+            padding: 10px 15px;
+        }
+
+    </style>
+
+</body>
+<footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+</footer>
+</html>

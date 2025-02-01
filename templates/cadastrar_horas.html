@@ -11,8 +11,8 @@
             font-family: 'Arial', sans-serif;
             background-color: #f4f6f9;
             display: flex;
-            flex-direction: column; /* Mantém os elementos em coluna */
-            justify-content: flex-start; /* Alinha tudo ao topo */
+            flex-direction: column;
+            justify-content: flex-start;
             height: 100vh;
             margin: 0;
         }
@@ -44,24 +44,29 @@
         }
 
         label {
-        font-size: 14px;
-        color: #555;
-        margin-bottom: 4px; /* Diminuído de 8px para 4px */
-        display: block;
-        font-weight: bold;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        label i {
+            margin-right: 8px; /* Espaçamento entre o ícone e o texto */
         }
 
         input[type="text"],
         input[type="number"],
         input[type="date"] {
-        width: 100%;
-        padding: 12px;
-        margin-bottom: 10px; /* Diminuído de 20px para 10px */
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        font-size: 16px;
-        box-sizing: border-box;
-        background-color: #f9f9f9;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+            background-color: #f9f9f9;
         }
 
         input[type="text"]:focus,
@@ -113,36 +118,24 @@
             background-color: #004080;
         }
 
-        /* Estilo para inputs no estado de erro */
-        .error {
-            border-color: #e74c3c;
-            background-color: #f8d7da;
-        }
-
-        .error:focus {
-            border-color: #c0392b;
-            background-color: #fff;
-        }
-
-        /* Link de voltar para o calendário */
         .back-link {
             display: flex;
-            justify-content: center; /* Centraliza a div horizontalmente */
+            justify-content: center;
             align-items: center;
             color: #007bff;
             font-size: 18px;
             margin-top: 20px;
-            width: 100%; /* Garante que a div ocupe toda a largura do container */
-            box-sizing: border-box; /* Certifica que o padding e margem não ultrapassem a largura total */
-            text-align: center; /* Centraliza o conteúdo dentro da div */
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
         }
 
         .back-link i {
-            margin-right: 8px; /* Espaço entre ícone e texto */
+            margin-right: 8px;
         }
 
         .back-link a {
-            display: inline-block; /* Garante que o link se comporte como um bloco, permitindo centralização */
+            display: inline-block;
         }
 
         .back-link:hover {
@@ -153,27 +146,28 @@
 </head>
 <body>
     <div class="titulo-container">
-        <h1 class="titulo-site">Gestão de Folgas - E.M José Padin Mouta</h1>
+        <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
     </div>
 
     <div class="container">
         <h2>Cadastro de Banco de Horas</h2>
         <form action="/banco_horas/cadastrar" method="POST">
-            <label for="nome">Nome Completo:</label>
+            <label for="nome"><i class="fas fa-user"></i> Nome Completo:</label>
             <input type="text" id="nome" name="nome" value="{{ nome }}" readonly>
 
-            <label for="registro">Registro:</label>
+            <label for="registro"><i class="fas fa-id-card"></i> Registro:</label>
             <input type="text" id="registro" name="registro" value="{{ registro }}" readonly>
 
-            <label for="quantidade_horas">Quantidade de Horas:</label>
+            <label for="quantidade_horas"><i class="fas fa-clock"></i> Quantidade de Horas:</label>
             <div class="horas-minutos">
                 <input type="number" id="quantidade_horas" name="quantidade_horas" min="0" max="24" required placeholder="Horas">
                 <input type="number" id="quantidade_minutos" name="quantidade_minutos" min="0" max="59" required placeholder="Minutos">
             </div>
-            <label for="data_realizacao">Data da Realização:</label>
+
+            <label for="data_realizacao"><i class="fas fa-calendar-alt"></i> Data da Realização:</label>
             <input type="date" id="data_realizacao" name="data_realizacao" required>
-            <!-- Campo para o motivo -->
-            <label for="motivo">Motivo (máximo 40 caracteres):</label>
+
+            <label for="motivo"><i class="fas fa-list-alt"></i> Motivo (máximo 40 caracteres):</label>
             <input type="text" id="motivo" name="motivo" maxlength="40" required placeholder="Digite o motivo (opcional)">
 
             <button type="submit" class="submit-btn">Cadastrar Horas</button>
@@ -182,15 +176,12 @@
 
     <div class="back-link">
         <a href="/banco_horas">
-        <i class="fas fa-arrow-left"></i>Voltar ao Menu Banco de Horas</a>
+            <i class="fas fa-arrow-left"></i>Voltar ao Menu Banco de Horas</a>
     </div>
 
-        <!-- Rodapé -->
-        <footer class="footer">
-            <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-        </footer>
-    </body>
-    </html>
-
+    <!-- Rodapé -->
+    <footer class="footer">
+        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+    </footer>
 </body>
 </html>
