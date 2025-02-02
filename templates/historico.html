@@ -32,16 +32,7 @@
             border-bottom: 2px solid #007bff; /* Linha embaixo para dar ênfase */
             text-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Leve sombra para dar profundidade */
         }
-
-        .container {
-            max-width: 800px;  /* Limita a largura no desktop */
-            margin: 0 auto;    /* Centraliza o container */
-            background-color: #fff;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
+        
         h2 {
             font-size: 24px;
             color: #007bff;
@@ -165,11 +156,11 @@
                 <p><strong>Falta Simples (FS):</strong> {{ folgas_contabilizadas['FS'] }} folga(s)</p>
             </div>
         </div>
-
-        <a href="{{ url_for('index') }}" class="voltar-link">
-            <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
-        </a>
     </div>
+
+    <a href="{{ url_for('index') }}" class="voltar-link">
+        <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
+    </a>
 
     <footer>
         <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>

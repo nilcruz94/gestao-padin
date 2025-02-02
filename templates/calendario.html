@@ -18,10 +18,19 @@
             max-width: 900px;
             margin: 0 auto;
             background-color: #fff;
-            border-radius: 8px;
+            border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             padding: 20px;
             margin-bottom: 5px;
+            border: 1px solid rgba(0, 0, 0, 0.07); /* Contorno sutil */
+            backdrop-filter: blur(6px); /* Leve efeito de desfoque */
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        /* Efeito ao passar o mouse */
+        .container:hover {
+            transform: translateY(-3px); /* Pequeno levantamento */
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2); /* Sombra mais intensa */
         }
 
         h2 {

@@ -105,10 +105,6 @@
                 padding: 20px;
             }
 
-            .container {
-                padding: 10px;
-            }
-
             .input-group input,
             .input-group select {
                 width: 100%;
@@ -129,6 +125,10 @@
 
             .submit-btn {
                 width: 100%;
+            }
+
+            .submit-btn:hover {
+                background-color: #0fb300;
             }
 
             footer {
@@ -266,12 +266,12 @@
                 }
             });
         </script>
-
-        <!-- Link para voltar ao calendário -->
-        <a href="{{ url_for('index') }}" class="voltar-link">
-            <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
-        </a>
     </div>
+
+            <!-- Link para voltar ao calendário -->
+            <a href="{{ url_for('index') }}" class="voltar-link">
+                <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
+            </a>
 
     <footer>
         <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>

@@ -97,7 +97,7 @@ button, select {
 }
 
 button:hover, select:hover {
-    background-color: #0056b3;
+    background-color: #0fb300;
 }
 
 /* Adicionando maior distância entre o select e o submit */
