@@ -25,7 +25,7 @@ class User(UserMixin, db.Model):
     nome = db.Column(db.String(150), nullable=False)
     registro = db.Column(db.String(150), nullable=False, unique=True)
     email = db.Column(db.String(150), nullable=False, unique=True)
-    senha = db.Column(db.String(150), nullable=False)
+    senha = db.Column(db.String(256), nullable=False)
     tipo = db.Column(db.String(20), nullable=False)  # 'funcionario' ou 'administrador'
     status = db.Column(db.String(20), default='pendente')  # 'pendente', 'aprovado', 'rejeitado'
     
@@ -107,6 +107,46 @@ def login():
     
     return render_template('login.html')
 
+# Rota de Recuperar Senha
+@app.route('/recuperar_senha', methods=['GET', 'POST'])
+def recuperar_senha():
+    if request.method == 'POST':
+        email = request.form['email']
+        registro = request.form['registro']
+        usuario = User.query.filter_by(email=email, registro=registro).first()
+        
+        if usuario:
+            session['user_id'] = usuario.id  # Armazena temporariamente o ID do usuário
+            return redirect(url_for('redefinir_senha'))
+        else:
+            flash('Usuário não encontrado. Verifique os dados e tente novamente.', 'danger')
+    
+    return render_template('recuperar_senha.html')
+
+# Rota de Redefinir Senha
+@app.route('/redefinir_senha', methods=['GET', 'POST'])
+def redefinir_senha():
+    if 'user_id' not in session:
+        flash('Acesso não autorizado.', 'danger')
+        return redirect(url_for('recuperar_senha'))
+    
+    if request.method == 'POST':
+        nova_senha = request.form['nova_senha']
+        confirmar_senha = request.form['confirmar_senha']
+        
+        if nova_senha != confirmar_senha:
+            flash('As senhas não coincidem. Tente novamente.', 'danger')
+        else:
+            usuario = User.query.get(session['user_id'])
+            # Utilizando generate_password_hash para gerar o hash da nova senha
+            usuario.senha = generate_password_hash(nova_senha)
+            db.session.commit()
+            session.pop('user_id', None)  # Remove o usuário da sessão após redefinir
+            flash('Senha redefinida com sucesso! Faça login.', 'success')
+            return redirect(url_for('login'))
+    
+    return render_template('redefinir_senha.html')
+
 # Rota de Logout
 @app.route('/logout')
 @login_required
@@ -114,7 +154,6 @@ def logout():
     logout_user()
     flash("Você saiu do sistema. Para acessá-lo, faça login novamente.", "success")
     return redirect(url_for('login'))
-
 
 # Página Principal (Index)
 @app.route('/index')
