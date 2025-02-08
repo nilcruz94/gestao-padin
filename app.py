@@ -190,6 +190,31 @@ def agendar():
             flash("Data inválida.", "danger")
             return redirect(url_for('agendar'))  # Redireciona para evitar o acúmulo de flash
 
+        # Verificar se já existe uma folga 'AB' aprovada no mês
+        agendamento_existente = Agendamento.query.filter(
+            Agendamento.funcionario_id == current_user.id,
+            Agendamento.motivo == 'AB',
+            db.extract('year', Agendamento.data) == data_folga.year,
+            db.extract('month', Agendamento.data) == data_folga.month,
+            Agendamento.status != 'indeferido'
+        ).first()
+
+        if agendamento_existente:
+            flash("Você já possui um agendamento com o motivo 'AB' neste mês.", "danger")
+            return render_template('agendar.html')
+
+        # Contar quantos agendamentos 'AB' foram deferidos no ano atual
+        agendamentos_ab_deferidos = Agendamento.query.filter(
+            Agendamento.funcionario_id == current_user.id,
+            Agendamento.motivo == 'AB',
+            db.extract('year', Agendamento.data) == data_folga.year,
+            Agendamento.status == 'deferido'
+        ).count()
+
+        if agendamentos_ab_deferidos >= 6:
+            flash("Você já atingiu o limite de 6 folgas 'AB' deferidas neste ano.", "danger")
+            return render_template('agendar.html')  # Mantém na mesma página ✅
+
         # Pega a data de referência, se fornecida (apenas para banco de horas)
         if tipo_folga == 'BH' and data_referencia:
             try:
@@ -208,8 +233,7 @@ def agendar():
         except ValueError:
             flash("Horas ou minutos inválidos.", "danger")
             return redirect(url_for('agendar'))  # Redireciona para evitar o acúmulo de flash
-
-        
+ 
         # Converte as horas para minutos
         total_minutos = (horas * 60) + minutos
         
