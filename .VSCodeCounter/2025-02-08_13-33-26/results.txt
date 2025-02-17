@@ -1,0 +1,71 @@
+Date : 2025-02-08 13:33:26
+Directory : c:\Users\Neto\Desktop\folga_system
+Total : 32 files,  4184 codes, 242 comments, 778 blanks, all 5204 lines
+
+Languages
++------------------+------------+------------+------------+------------+------------+
+| language         | files      | code       | comment    | blank      | total      |
++------------------+------------+------------+------------+------------+------------+
+| HTML             |         17 |      2,514 |         59 |        410 |      2,983 |
+| CSS              |          4 |        890 |         58 |        152 |      1,100 |
+| Python           |          6 |        639 |        112 |        184 |        935 |
+| JavaScript       |          1 |         46 |          6 |          7 |         59 |
+| Ini              |          1 |         39 |          0 |         13 |         52 |
+| YAML             |          1 |         26 |          0 |          4 |         30 |
+| pip requirements |          1 |         23 |          0 |          1 |         24 |
+| Docker           |          1 |          7 |          7 |          7 |         21 |
++------------------+------------+------------+------------+------------+------------+
+
+Directories
++---------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                          | files      | code       | comment    | blank      | total      |
++---------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                             |         32 |      4,184 |        242 |        778 |      5,204 |
+| . (Files)                                                                                                     |          6 |        589 |         92 |        143 |        824 |
+| migrations                                                                                                    |          4 |        145 |         27 |         66 |        238 |
+| migrations (Files)                                                                                            |          2 |        105 |         17 |         44 |        166 |
+| migrations\versions                                                                                           |          2 |         40 |         10 |         22 |         72 |
+| static                                                                                                        |          5 |        936 |         64 |        159 |      1,159 |
+| static\css                                                                                                    |          4 |        890 |         58 |        152 |      1,100 |
+| static\js                                                                                                     |          1 |         46 |          6 |          7 |         59 |
+| templates                                                                                                     |         17 |      2,514 |         59 |        410 |      2,983 |
++---------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++---------------------------------------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| filename                                                                                                      | language         | code       | comment    | blank      | total      |
++---------------------------------------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| c:\Users\Neto\Desktop\folga_system\Dockerfile                                                                 | Docker           |          7 |          7 |          7 |         21 |
+| c:\Users\Neto\Desktop\folga_system\app.py                                                                     | Python           |        528 |         85 |        129 |        742 |
+| c:\Users\Neto\Desktop\folga_system\criar_banco.py                                                             | Python           |          5 |          0 |          1 |          6 |
+| c:\Users\Neto\Desktop\folga_system\docker-compose.yml                                                         | YAML             |         26 |          0 |          4 |         30 |
+| c:\Users\Neto\Desktop\folga_system\migrations\alembic.ini                                                     | Ini              |         39 |          0 |         13 |         52 |
+| c:\Users\Neto\Desktop\folga_system\migrations\env.py                                                          | Python           |         66 |         17 |         31 |        114 |
+| c:\Users\Neto\Desktop\folga_system\migrations\versions\8c572fff25a9_aumenta_o_tamanho_da_coluna_tipo_para_.py | Python           |         23 |          5 |         11 |         39 |
+| c:\Users\Neto\Desktop\folga_system\migrations\versions\ccfff68c77d4_adicionando_status_no_modelo_user.py      | Python           |         17 |          5 |         11 |         33 |
+| c:\Users\Neto\Desktop\folga_system\models.py                                                                  | Python           |          0 |          0 |          1 |          1 |
+| c:\Users\Neto\Desktop\folga_system\requirements.txt                                                           | pip requirements |         23 |          0 |          1 |         24 |
+| c:\Users\Neto\Desktop\folga_system\static\css\agendar.css                                                     | CSS              |         67 |          5 |         10 |         82 |
+| c:\Users\Neto\Desktop\folga_system\static\css\calendario.css                                                  | CSS              |        141 |          3 |         23 |        167 |
+| c:\Users\Neto\Desktop\folga_system\static\css\deferir_folgas.css                                              | CSS              |        233 |         23 |         42 |        298 |
+| c:\Users\Neto\Desktop\folga_system\static\css\style.css                                                       | CSS              |        449 |         27 |         77 |        553 |
+| c:\Users\Neto\Desktop\folga_system\static\js\script.js                                                        | JavaScript       |         46 |          6 |          7 |         59 |
+| c:\Users\Neto\Desktop\folga_system\templates\agendar.html                                                     | HTML             |        252 |         11 |         44 |        307 |
+| c:\Users\Neto\Desktop\folga_system\templates\aprovar_usuarios.html                                            | HTML             |        221 |          2 |         37 |        260 |
+| c:\Users\Neto\Desktop\folga_system\templates\banco_horas.html                                                 | HTML             |        115 |         10 |         19 |        144 |
+| c:\Users\Neto\Desktop\folga_system\templates\cadastrar_horas.html                                             | HTML             |        152 |          1 |         27 |        180 |
+| c:\Users\Neto\Desktop\folga_system\templates\calendario.html                                                  | HTML             |        354 |          0 |         55 |        409 |
+| c:\Users\Neto\Desktop\folga_system\templates\consultar_horas.html                                             | HTML             |        114 |          0 |         14 |        128 |
+| c:\Users\Neto\Desktop\folga_system\templates\deferir_folgas.html                                              | HTML             |        248 |          2 |         36 |        286 |
+| c:\Users\Neto\Desktop\folga_system\templates\deferir_horas.html                                               | HTML             |        203 |          2 |         34 |        239 |
+| c:\Users\Neto\Desktop\folga_system\templates\historico.html                                                   | HTML             |        149 |          0 |         22 |        171 |
+| c:\Users\Neto\Desktop\folga_system\templates\index.html                                                       | HTML             |        108 |          6 |         22 |        136 |
+| c:\Users\Neto\Desktop\folga_system\templates\login.html                                                       | HTML             |         57 |          1 |          9 |         67 |
+| c:\Users\Neto\Desktop\folga_system\templates\menu_banco_horas.html                                            | HTML             |         74 |          2 |         13 |         89 |
+| c:\Users\Neto\Desktop\folga_system\templates\minhas_justificativas.html                                       | HTML             |        160 |          4 |         23 |        187 |
+| c:\Users\Neto\Desktop\folga_system\templates\perfil.html                                                      | HTML             |        160 |          5 |         28 |        193 |
+| c:\Users\Neto\Desktop\folga_system\templates\recuperar_senha.html                                             | HTML             |         46 |          0 |          5 |         51 |
+| c:\Users\Neto\Desktop\folga_system\templates\redefinir_senha.html                                             | HTML             |         46 |          0 |          7 |         53 |
+| c:\Users\Neto\Desktop\folga_system\templates\register.html                                                    | HTML             |         55 |         13 |         15 |         83 |
+| Total                                                                                                         |                  |      4,184 |        242 |        778 |      5,204 |
++---------------------------------------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+

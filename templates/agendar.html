@@ -198,6 +198,7 @@
     <div class="titulo-container">
         <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
     </div>
+    
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         {% for category, message in messages %}
@@ -208,7 +209,8 @@
             {% endif %}
         {% endfor %}
         {% endif %}
-    {% endwith %}  
+    {% endwith %}
+
     <div class="container">
         <h1><i class="fas fa-calendar-day"></i> Realizar Justificativa </h1>
 

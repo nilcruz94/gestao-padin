@@ -190,18 +190,20 @@ def agendar():
             flash("Data inválida.", "danger")
             return redirect(url_for('agendar'))  # Redireciona para evitar o acúmulo de flash
 
-        # Verificar se já existe uma folga 'AB' aprovada no mês
-        agendamento_existente = Agendamento.query.filter(
-            Agendamento.funcionario_id == current_user.id,
-            Agendamento.motivo == 'AB',
-            db.extract('year', Agendamento.data) == data_folga.year,
-            db.extract('month', Agendamento.data) == data_folga.month,
-            Agendamento.status != 'indeferido'
-        ).first()
+        # Apenas verifica a existência de uma 'AB' no mês se o usuário estiver tentando marcar uma 'AB'
+        if motivo == 'AB':
+            agendamento_existente = Agendamento.query.filter(
+                Agendamento.funcionario_id == current_user.id,
+                Agendamento.motivo == 'AB',  # Filtra pelo motivo correto
+                db.extract('year', Agendamento.data) == data_folga.year,
+                db.extract('month', Agendamento.data) == data_folga.month
+            ).first()  # Busca a primeira folga 'AB' do mês
 
-        if agendamento_existente:
-            flash("Você já possui um agendamento com o motivo 'AB' neste mês.", "danger")
-            return render_template('agendar.html')
+            # Se já houver uma 'AB' no mês e ela não estiver indeferida, impede o agendamento
+            if agendamento_existente and agendamento_existente.status != 'indeferido':
+                flash("Você já possui um agendamento 'AB' aprovado ou em análise neste mês.", "danger")
+                return render_template('agendar.html')  # Bloqueia o agendamento
+
 
         # Contar quantos agendamentos 'AB' foram deferidos no ano atual
         agendamentos_ab_deferidos = Agendamento.query.filter(
