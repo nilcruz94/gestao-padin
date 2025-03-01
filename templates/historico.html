@@ -19,18 +19,16 @@
             margin-bottom: 30px;
         }
 
-       
         .titulo-site {
-            font-family: 'Montserrat', sans-serif; /* Fonte moderna */
-            font-size: 42px; /* Ajuste o tamanho conforme necessário */
-            font-weight: 600; /* Peso de fonte mais leve */
-            color: #007bff; /* Cor azul profissional */
-            text-transform: uppercase; /* Maiúsculas para o título */
-            letter-spacing: 2px; /* Espaçamento entre as letras */
-            margin: 0s;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 42px;
+            font-weight: 600;
+            color: #007bff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #007bff; /* Linha embaixo para dar ênfase */
-            text-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Leve sombra para dar profundidade */
+            border-bottom: 2px solid #007bff;
+            text-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
         }
         
         h2 {
@@ -42,11 +40,10 @@
 
         .historico-container {
             display: flex;
-            flex-direction: column; /* Coloca os itens na vertical no desktop */
+            flex-direction: column;
             gap: 15px;
         }
 
-        /* Responsividade para telas menores */
         @media (max-width: 768px) {
             .historico-container {
                 display: grid;
@@ -62,7 +59,6 @@
             display: flex;
             align-items: center;
             font-size: 16px;
-            text-align: left;
         }
 
         .historico-item i {
@@ -85,18 +81,18 @@
         }
 
         footer {
-            background: linear-gradient(to right, #222, #444); /* Gradiente sutil */
+            background: linear-gradient(to right, #222, #444);
             color: #ddd;
             text-align: center;
             padding: 15px 0;
             width: 100%;
             font-size: 14px;
             border-top: 2px solid #555;
-            position: fixed; /* Padrão: fixo no desktop */
+            position: fixed;
             bottom: 0;
             left: 0;
             font-family: 'Poppins', sans-serif;
-            box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3); /* Sombra leve no topo */
+            box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
         }
 
         footer p {
@@ -116,7 +112,6 @@
             color: #00aaff;
         }
 
-        /* Responsivo: footer fica relativo em telas menores */
         @media (max-width: 768px) {
             footer {
                 position: relative;
@@ -149,8 +144,12 @@
             </div>
             <div class="historico-item">
                 <i class="fas fa-hand-holding-heart"></i> 
-                <p><strong>TRE (TRE):</strong> {{ folgas_contabilizadas['TRE'] }} folga(s)</p>
-            </div>
+                <p><strong>TREs a Usufruir:</strong> {{ folgas_contabilizadas['TRE_total'] }} folga(s)</p>
+            </div>            
+            <div class="historico-item">
+                <i class="fas fa-times-circle"></i> 
+                <p><strong>TREs Usufruídas:</strong> {{ folgas_contabilizadas['TRE_usufruidas'] }} folga(s)</p>
+            </div>        
             <div class="historico-item">
                 <i class="fas fa-times-circle"></i> 
                 <p><strong>Falta Simples (FS):</strong> {{ folgas_contabilizadas['FS'] }} folga(s)</p>

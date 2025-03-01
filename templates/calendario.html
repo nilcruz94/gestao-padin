@@ -346,16 +346,16 @@
             <div class="day weekdays">Sex</div>
             <div class="day weekdays">Sáb</div>
             <div class="day weekdays">Dom</div>
-
+        
             {% set start_day = datetime.date(year, month, 1).weekday() %}
             {% set next_month = (month + 1) if month < 12 else 1 %}
             {% set next_year = year if month < 12 else year + 1 %}
             {% set days_in_month = (datetime.date(next_year, next_month, 1) - datetime.timedelta(days=1)).day %}
-
+        
             {% for _ in range(start_day) %}
                 <div></div>
             {% endfor %}
-
+        
             {% for day in range(1, days_in_month + 1) %}
                 {% set current_day = datetime.date(year, month, day) %}
                 {% set folgas = folgas_por_data.get(current_day, []) %}
@@ -371,14 +371,22 @@
                                 {% elif folga.status == 'indeferido' %}
                                     agenda-indeferido
                                 {% endif %}">
+                                
+                                <!-- Exibição do nome e motivo -->
                                 {{ folga.funcionario.nome.split()[0] }} {{ folga.funcionario.nome.split()[1][0] }}. - {{ folga.motivo }}
+                                
+                                <!-- Exibição do substituto, se houver -->
+                                {% if folga.nome_substituto %}
+                                    <br><strong style="color: #ADD8E6;">Substituto:</strong> <span style="color: #ADD8E6;">{{ folga.nome_substituto }}</span>
+                                {% endif %}
                             </div>
                         {% endfor %}
                     {% endif %}
                 </div>
             {% endfor %}
         </div>
-
+        
+           
         <div class="legenda">
             <h3>Legenda:</h3>
             <div>

@@ -85,16 +85,12 @@
             </a>
             
             <a href="{{ url_for('agendar') }}" class="menu-item">
-                <i class="fas fa-calendar-day"></i> Realizar Justificativa
+                <i class="fas fa-calendar-day"></i> Agendar Folga
             </a>
 
             <!-- Link "Minhas Justificativas" para funcionários -->
             <a href="{{ url_for('minhas_justificativas') }}" class="menu-item">
-                <i class="fas fa-list-alt"></i> Minhas Justificativas
-            </a>
-            
-            <a href="{{ url_for('calendario') }}" class="menu-item">
-                <i class="fas fa-calendar-alt"></i> Ver Calendário
+                <i class="fas fa-list-alt"></i> Minhas Folgas
             </a>
 
             <!-- Exibindo o link de "Deferir Folgas" apenas para administradores -->
@@ -102,7 +98,11 @@
                 <a href="{{ url_for('deferir_folgas') }}" class="menu-item">
                     <i class="fas fa-check-circle"></i> Deferir Folgas
                 </a>
-            {% endif %}
+            {% endif %}            
+            
+            <a href="{{ url_for('calendario') }}" class="menu-item">
+                <i class="fas fa-calendar-alt"></i> Ver Calendário
+            </a>
 
             <a href="{{ url_for('banco_horas') }}" class="menu-item">
                 <i class="fas fa-history"></i> Banco de Horas
