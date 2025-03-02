@@ -323,16 +323,6 @@
             });
 
             function toggleSubstituto() {
-<<<<<<< HEAD
-                var select = document.getElementById("substituicao");
-                var substitutoGroup = document.getElementById("substituto_group");
-
-                if (select.value === "Sim") {
-                    substitutoGroup.style.display = "block";
-                } else {
-                    substitutoGroup.style.display = "none";
-                    document.getElementById("nome_substituto").value = ""; // Limpa o campo caso selecione "Não"
-=======
                 var substituicao = document.getElementById("havera_substituicao").value;
                 var substitutoGroup = document.getElementById("substituto_group");
                 var nomeSubstitutoInput = document.getElementById("nome_substituto");
@@ -344,7 +334,6 @@
                     substitutoGroup.style.display = "none";
                     nomeSubstitutoInput.removeAttribute("required");
                     nomeSubstitutoInput.value = ""; // Limpa o campo ao ocultar
->>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
                 }
             }
 

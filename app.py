@@ -29,16 +29,9 @@ class User(UserMixin, db.Model):
     senha = db.Column(db.String(256), nullable=False)
     tipo = db.Column(db.String(20), nullable=False)  # 'funcionario' ou 'administrador'
     status = db.Column(db.String(20), default='pendente')  # 'pendente', 'aprovado', 'rejeitado'
-<<<<<<< HEAD
-
-    # TREs
-    tre_total = db.Column(db.Integer, default=0, nullable=False)  # TREs disponíveis
-    tre_usufruidas = db.Column(db.Integer, default=0, nullable=False)  # TREs já utilizadas
-=======
     # Adicionando os campos para TRE
     tre_total = db.Column(db.Integer, default=0)  # TREs a usufruir
     tre_usufruidas = db.Column(db.Integer, default=0)  # TREs já utilizadas
->>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
     
     # Banco de horas em minutos
     banco_horas = db.Column(db.Integer, default=0, nullable=False)
@@ -58,22 +51,6 @@ class Agendamento(db.Model):
     status = db.Column(db.String(50), nullable=False)  # 'pendente', 'deferido', 'indeferido'
     data = db.Column(db.Date, nullable=False)
     motivo = db.Column(db.String(100), nullable=False)
-<<<<<<< HEAD
-    tipo_folga = db.Column(db.String(50))  # 'TRE', 'Férias', etc.
-    data_referencia = db.Column(db.Date)  # Data base para cálculo, se necessário
-    horas = db.Column(db.Integer, nullable=True)  
-    minutos = db.Column(db.Integer, nullable=True)
-    # Novos campos
-    substituicao = db.Column(db.String(3), nullable=False, default="Não")  # "Sim" ou "Não"
-    nome_substituto = db.Column(db.String(255), nullable=True)  # Nome do substituto (se houver)
-
-    # Relacionamento com User
-    funcionario = db.relationship('User', backref='agendamentos_funcionario', lazy=True)
-
-    def is_tre_deferido(self):
-        """Verifica se o agendamento é um TRE deferido."""
-        return self.tipo_folga == "TRE" and self.status == "deferido"
-=======
     tipo_folga = db.Column(db.String(50))  # Coluna tipo_folga
     data_referencia = db.Column(db.Date)  # Coluna data_referencia
     horas = db.Column(db.Integer, nullable=True)  # Coluna para horas
@@ -83,7 +60,6 @@ class Agendamento(db.Model):
 
     # Relacionamento com o modelo User
     funcionario = db.relationship('User', backref='agendamentos_funcionario', lazy=True)
->>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
 
 # Modelo de Folga (relacionamento com User)
 class Folga(db.Model):
@@ -224,15 +200,6 @@ def agendar():
         motivo = request.form['motivo']  # Motivo da folga
         data_referencia = request.form.get('data_referencia')  # Obtém o valor de data_referencia
 
-<<<<<<< HEAD
-        # Novo campo: Substituição
-        substituicao = request.form.get('substituicao', 'Não')  # 'Sim' ou 'Não' (padrão: 'Não')
-        nome_substituto = request.form.get('nome_substituto') if substituicao == 'Sim' else None  # Apenas se 'Sim'
-
-        if tipo_folga == 'AB':
-            motivo = 'AB'  # Se for AB, coloca "Abonada" no campo motivo
-            tipo_folga = 'AB'  # Define o tipo de folga como 'AB'
-=======
         # Captura os valores de substituição
         substituicao = request.form.get("havera_substituicao")  # "Sim" ou "Não"
         nome_substituto = request.form.get("nome_substituto")  # Nome do substituto
@@ -245,7 +212,6 @@ def agendar():
         if tipo_folga == 'AB':
             motivo = 'AB'
             tipo_folga = 'AB'
->>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
 
         # Converte a data de folga para o formato datetime
         try:
@@ -254,10 +220,7 @@ def agendar():
             flash("Data inválida.", "danger")
             return redirect(url_for('agendar'))
 
-<<<<<<< HEAD
-=======
         # Verifica se já existe um 'AB' deferido no mês
->>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
         if motivo == 'AB':
             agendamento_existente = Agendamento.query.filter(
                 Agendamento.funcionario_id == current_user.id,
@@ -270,10 +233,7 @@ def agendar():
                 flash("Você já possui um agendamento 'AB' aprovado ou em análise neste mês.", "danger")
                 return render_template('agendar.html')
 
-<<<<<<< HEAD
-=======
         # Verifica limite de 6 folgas 'AB' deferidas no ano
->>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
         agendamentos_ab_deferidos = Agendamento.query.filter(
             Agendamento.funcionario_id == current_user.id,
             Agendamento.motivo == 'AB',
@@ -285,10 +245,7 @@ def agendar():
             flash("Você já atingiu o limite de 6 folgas 'AB' deferidas neste ano.", "danger")
             return render_template('agendar.html')
 
-<<<<<<< HEAD
-=======
         # Converte data de referência, se for Banco de Horas
->>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
         if tipo_folga == 'BH' and data_referencia:
             try:
                 data_referencia = datetime.datetime.strptime(data_referencia, '%Y-%m-%d').date()
@@ -306,25 +263,16 @@ def agendar():
             flash("Horas ou minutos inválidos.", "danger")
             return redirect(url_for('agendar'))
 
-<<<<<<< HEAD
-        total_minutos = (horas * 60) + minutos
-        
-=======
         # Converte horas para minutos
         total_minutos = (horas * 60) + minutos
 
         # Verifica se o usuário tem saldo suficiente no banco de horas
->>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
         usuario = User.query.get(current_user.id)
         if usuario.banco_horas < total_minutos:
             flash("Você não possui horas suficientes no banco de horas para este agendamento.", "danger")
             return redirect(url_for('index'))
 
-<<<<<<< HEAD
-        # Criação do novo agendamento com substituição
-=======
         # Criar e salvar no banco
->>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
         novo_agendamento = Agendamento(
             funcionario_id=current_user.id,
             status='em_espera',
@@ -335,11 +283,7 @@ def agendar():
             horas=horas,
             minutos=minutos,
             substituicao=substituicao,
-<<<<<<< HEAD
-            nome_substituto=nome_substituto  # Apenas se 'Sim'
-=======
             nome_substituto=nome_substituto  # Agora o nome do substituto é salvo corretamente
->>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
         )
 
         try:
@@ -349,15 +293,9 @@ def agendar():
         except Exception as e:
             db.session.rollback()
             flash(f"Erro ao salvar agendamento: {str(e)}", "danger")
-<<<<<<< HEAD
-        
-        return redirect(url_for('index'))
-    
-=======
 
         return redirect(url_for('index'))
 
->>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
     return render_template('agendar.html')
 
 
@@ -680,21 +618,9 @@ def deferir_folgas():
 
         if folga:
             usuario = User.query.get(folga.funcionario_id)  # Recupera o usuário
-<<<<<<< HEAD
-
-            # 🟢 Caso seja TRE e for deferida, incrementamos TREs usufruídas e decrementamos TREs a usufruir
-            if folga.motivo == 'TRE' and novo_status == 'deferido':
-                if usuario.tre_total > 0:  # Evita número negativo
-                    usuario.tre_usufruidas += 1  # Adiciona uma TRE usufruída
-                    usuario.tre_total -= 1  # Remove uma TRE disponível
-
-            # 🟢 Caso seja Banco de Horas (BH), verificamos e subtraímos do banco de horas
-            elif folga.motivo == 'BH' and novo_status == 'deferido':
-=======
             
             # Verifica se a folga é do tipo "Banco de Horas"
             if folga.motivo == 'BH' and novo_status == 'deferido':
->>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
                 total_minutos = (folga.horas * 60) + folga.minutos  # Total em minutos da folga
                 
                 if usuario.banco_horas >= total_minutos:
@@ -723,11 +649,6 @@ def deferir_folgas():
 
             # Atualiza o status da folga para o status desejado
             folga.status = novo_status
-<<<<<<< HEAD
-            db.session.commit()  # 🔹 Salva todas as alterações no banco
-
-            flash(f"A folga de {folga.funcionario.nome} foi {novo_status} com sucesso!", "success" if novo_status == 'deferido' else "danger")
-=======
 
             try:
                 db.session.commit()
@@ -735,7 +656,6 @@ def deferir_folgas():
             except Exception as e:
                 db.session.rollback()
                 flash(f"Erro ao atualizar folga: {str(e)}", "danger")
->>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
         else:
             flash("Agendamento não encontrado.", "danger")
 
@@ -764,15 +684,9 @@ def historico():
         'TRE': 0,  # TREs restantes (será atualizado abaixo)
         'FS': 0   # Falta Simples
     }
-<<<<<<< HEAD
-
-    # Contabiliza as folgas de agendamentos deferidos
-    agendamentos = Agendamento.query.filter_by(funcionario_id=current_user.id, status="deferido").all()
-=======
     
     # Contabiliza as folgas de agendamentos
     agendamentos = Agendamento.query.filter_by(funcionario_id=current_user.id).all()
->>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
     for agendamento in agendamentos:
         if agendamento.motivo in folgas_contabilizadas:
             folgas_contabilizadas[agendamento.motivo] += 1
@@ -783,20 +697,9 @@ def historico():
         if folga.motivo in folgas_contabilizadas:
             folgas_contabilizadas[folga.motivo] += 1
 
-<<<<<<< HEAD
-    # 🔹 Obtém os valores corretos do banco, garantindo que não sejam None
-    total_tres = usuario.tre_total if usuario.tre_total is not None else 0
-    tres_usufruidas = usuario.tre_usufruidas if usuario.tre_usufruidas is not None else 0
-
-    # 🔹 TREs restantes (não pode ser negativo)
-    folgas_contabilizadas['TRE_total'] = total_tres
-    folgas_contabilizadas['TRE_usufruidas'] = tres_usufruidas
-    folgas_contabilizadas['TRE'] = max(total_tres - tres_usufruidas, 0)
-=======
     # Obtendo os valores de TREs do banco de dados
     tre_total = current_user.tre_total  # TREs a Usufruir
     tre_usufruidas = current_user.tre_usufruidas  # TREs já usadas
->>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
 
     # Passa os dados para o template
     return render_template(
