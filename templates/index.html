@@ -91,14 +91,34 @@
             <!-- Link "Minhas Justificativas" para funcionários -->
             <a href="{{ url_for('minhas_justificativas') }}" class="menu-item">
                 <i class="fas fa-list-alt"></i> Minhas Folgas
+<<<<<<< HEAD
             </a>
+=======
+            </a>            
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
 
             <!-- Exibindo o link de "Deferir Folgas" apenas para administradores -->
             {% if current_user.tipo == 'administrador' %}
                 <a href="{{ url_for('deferir_folgas') }}" class="menu-item">
                     <i class="fas fa-check-circle"></i> Deferir Folgas
                 </a>
+<<<<<<< HEAD
             {% endif %}            
+=======
+            {% endif %}
+            
+            <!-- Link "Minhas Justificativas" para funcionários -->
+            <a href="{{ url_for('relatar_esquecimento') }}" class="menu-item">
+                <i class="fas fa-question-circle"></i> Relatar Esquecimento
+            </a>      
+
+            <!-- Exibindo o link de "Aprovar Usuários" apenas para administradores -->
+            {% if current_user.tipo == 'administrador' %}
+            <a href="{{ url_for('relatorio_ponto') }}" class="menu-item">
+                <i class="fas fa-chart-bar"></i> Relatório de Ponto
+            </a>
+            {% endif %}
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
             
             <a href="{{ url_for('calendario') }}" class="menu-item">
                 <i class="fas fa-calendar-alt"></i> Ver Calendário
@@ -110,8 +130,8 @@
 
             <!-- Adicionando o menu "Histórico" -->
             <a href="{{ url_for('historico') }}" class="menu-item">
-                <i class="fas fa-history"></i> Histórico
-            </a>            
+                <i class="fas fa-clock"></i> Histórico
+            </a>       
 
             <!-- Exibindo o link de "Aprovar Usuários" apenas para administradores -->
             {% if current_user.tipo == 'administrador' %}

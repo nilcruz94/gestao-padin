@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Esquecimento de Ponto</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script>
+        // Função de validação do formulário
+        function validateForm(event) {
+            var horaEntrada = document.getElementById("hora_primeira_entrada").value;
+            var horaSaida = document.getElementById("hora_primeira_saida").value;
+            var horaEntrada2 = document.getElementById("hora_segunda_entrada").value;
+            var horaSaida2 = document.getElementById("hora_segunda_saida").value;
+
+            // Verificar se ao menos um campo de horário foi preenchido
+            if (!horaEntrada && !horaSaida && !horaEntrada2 && !horaSaida2) {
+                alert("Você deve preencher ao menos um campo de horário.");
+                event.preventDefault();
+                return false;
+            }
+
+            return true;
+        }
+    </script>
+<style>
+    /* Estilo para o formulário e inputs */
+    .input-group {
+        margin-bottom: 15px;
+    }
+
+    .input-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    .submit-btn {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 100%;
+    }
+
+    .submit-btn:hover {
+        background-color: #0056b3;
+    }
+
+    /* Estilo para mensagens de erro */
+    .danger {
+        color: red;
+        background-color: #f8d7da;
+        padding: 10px;
+        border: 1px solid red;
+        border-radius: 5px;
+        margin-bottom: 15px;
+    }
+
+    /* Estilo para mensagens de sucesso */
+    .success {
+        color: green;
+        background-color: #d4edda;
+        padding: 10px;
+        border: 1px solid green;
+        border-radius: 5px;
+        margin-bottom: 15px;
+    }
+
+    footer {
+        text-align: center;
+        margin-top: 20px;
+        position: relative;
+    }
+
+    /* Ajusta o botão de voltar */
+    .back-link {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #007bff;
+        font-size: 18px;
+        margin-top: 20px;
+        width: 100%;
+        box-sizing: border-box;
+        text-align: center;
+        padding-bottom: 30px; /* Evita que o footer cubra o botão */
+    }
+
+    .back-link i {
+        margin-right: 8px;
+    }
+
+    .back-link a {
+        display: inline-block;
+    }
+
+    .back-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Media Queries para Responsividade */
+    @media (max-width: 768px) {
+        .submit-btn {
+            width: auto;
+            padding: 12px 20px;
+        }
+
+        .input-group input {
+            padding: 12px;
+        }
+
+        .back-link a {
+            font-size: 16px;
+        }
+
+        footer {
+            font-size: 14px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .submit-btn {
+            padding: 15px 20px;
+            font-size: 16px;
+        }
+
+        .input-group input {
+            padding: 15px;
+        }
+
+        .back-link a {
+            font-size: 14px;
+        }
+
+        footer {
+            font-size: 12px;
+        }
+
+        /* Ajustando o layout para telas pequenas */
+        .container {
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+    }
+</style>
+</head>
+<body>
+    <div class="titulo-container">
+        <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="alert {{ 'danger' if messages[0][0] == 'danger' else 'success' }} mt-3">
+                {{ messages[0][1] }}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+
+    <div class="container">
+        <h1><i class="fas fa-clock"></i> Registrar Esquecimento de Ponto</h1>
+    
+        <!-- Formulário para registrar esquecimento -->
+        <form method="POST" onsubmit="return validateForm(event)">
+            <!-- Nome do Funcionário -->
+            <div class="input-group">
+                <label for="nome"><i class="fas fa-user"></i> Nome do Funcionário</label>
+                <input type="text" id="nome" name="nome" value="{{ current_user.nome }}" readonly>
+            </div>
+    
+            <!-- Registro do Funcionário -->
+            <div class="input-group">
+                <label for="registro"><i class="fas fa-id-card"></i> Registro Funcional</label>
+                <input type="text" id="registro" name="registro" value="{{ current_user.registro }}" readonly>
+            </div>
+    
+            <!-- Data do Esquecimento -->
+            <div class="input-group">
+                <label for="data_esquecimento"><i class="fas fa-calendar-alt"></i> Data do Esquecimento</label>
+                <input type="date" id="data_esquecimento" name="data_esquecimento">
+            </div>
+    
+            <!-- Campo de Hora Primeira Entrada -->
+            <div class="input-group">
+                <label for="hora_primeira_entrada"><i class="fas fa-clock"></i> Hora da Primeira Entrada (opcional):</label>
+                <input type="time" id="hora_primeira_entrada" name="hora_primeira_entrada">
+            </div>
+    
+            <!-- Campo de Hora Primeira Saída -->
+            <div class="input-group">
+                <label for="hora_primeira_saida"><i class="fas fa-clock"></i> Hora da Primeira Saída (opcional):</label>
+                <input type="time" id="hora_primeira_saida" name="hora_primeira_saida">
+            </div>
+    
+            <!-- Campo de Hora Segunda Entrada -->
+            <div class="input-group">
+                <label for="hora_segunda_entrada"><i class="fas fa-clock"></i> Hora da Segunda Entrada (opcional):</label>
+                <input type="time" id="hora_segunda_entrada" name="hora_segunda_entrada">
+            </div>
+    
+            <!-- Campo de Hora Segunda Saída -->
+            <div class="input-group">
+                <label for="hora_segunda_saida"><i class="fas fa-clock"></i> Hora da Segunda Saída (opcional):</label>
+                <input type="time" id="hora_segunda_saida" name="hora_segunda_saida">
+            </div>
+    
+            <!-- Botão para submeter o formulário -->
+            <button type="submit" class="submit-btn">
+                <i class="fas fa-save"></i> Enviar Registro
+            </button>
+        </form>
+    </div>
+
+     <!-- Link para voltar à página inicial -->
+
+     <div class="back-link">
+         <a href="/index">
+            <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
+        </a>
+    </div>
+    
+
+    <footer>
+        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+    </footer>
+</body>
+</html>

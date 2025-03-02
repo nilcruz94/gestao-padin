@@ -6,7 +6,8 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager
 import calendar
-import datetime
+import datetime  # Mantém o módulo inteiro
+from datetime import timedelta  # Importa só o timedelta
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://folgas_user:BLS6AMWRXX0vuFBM6q7oHKKwJChaK8dk@dpg-cuece7hopnds738g0usg-a.virginia-postgres.render.com/folgas_3tqr'
@@ -28,10 +29,16 @@ class User(UserMixin, db.Model):
     senha = db.Column(db.String(256), nullable=False)
     tipo = db.Column(db.String(20), nullable=False)  # 'funcionario' ou 'administrador'
     status = db.Column(db.String(20), default='pendente')  # 'pendente', 'aprovado', 'rejeitado'
+<<<<<<< HEAD
 
     # TREs
     tre_total = db.Column(db.Integer, default=0, nullable=False)  # TREs disponíveis
     tre_usufruidas = db.Column(db.Integer, default=0, nullable=False)  # TREs já utilizadas
+=======
+    # Adicionando os campos para TRE
+    tre_total = db.Column(db.Integer, default=0)  # TREs a usufruir
+    tre_usufruidas = db.Column(db.Integer, default=0)  # TREs já utilizadas
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
     
     # Banco de horas em minutos
     banco_horas = db.Column(db.Integer, default=0, nullable=False)
@@ -51,6 +58,7 @@ class Agendamento(db.Model):
     status = db.Column(db.String(50), nullable=False)  # 'pendente', 'deferido', 'indeferido'
     data = db.Column(db.Date, nullable=False)
     motivo = db.Column(db.String(100), nullable=False)
+<<<<<<< HEAD
     tipo_folga = db.Column(db.String(50))  # 'TRE', 'Férias', etc.
     data_referencia = db.Column(db.Date)  # Data base para cálculo, se necessário
     horas = db.Column(db.Integer, nullable=True)  
@@ -65,6 +73,17 @@ class Agendamento(db.Model):
     def is_tre_deferido(self):
         """Verifica se o agendamento é um TRE deferido."""
         return self.tipo_folga == "TRE" and self.status == "deferido"
+=======
+    tipo_folga = db.Column(db.String(50))  # Coluna tipo_folga
+    data_referencia = db.Column(db.Date)  # Coluna data_referencia
+    horas = db.Column(db.Integer, nullable=True)  # Coluna para horas
+    minutos = db.Column(db.Integer, nullable=True)  # Coluna para minutos
+    substituicao = db.Column(db.String(3), nullable=False, default="Não")  # 'Sim' ou 'Não'
+    nome_substituto = db.Column(db.String(255), nullable=True)  # Nome do substituto (se houver)
+
+    # Relacionamento com o modelo User
+    funcionario = db.relationship('User', backref='agendamentos_funcionario', lazy=True)
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
 
 # Modelo de Folga (relacionamento com User)
 class Folga(db.Model):
@@ -92,6 +111,22 @@ class BancoDeHoras(db.Model):
     usufruido = db.Column(db.Boolean, default=False)  # NOVO CAMPO
 
     funcionario = db.relationship('User', backref='banco_de_horas')
+
+class EsquecimentoPonto(db.Model):
+    __tablename__ = 'esquecimento_ponto'
+
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(150), nullable=False)
+    registro = db.Column(db.String(150), nullable=False)
+    data_esquecimento = db.Column(db.Date, nullable=False)
+    hora_primeira_entrada = db.Column(db.Time, nullable=True)
+    hora_primeira_saida = db.Column(db.Time, nullable=True)
+    hora_segunda_entrada = db.Column(db.Time, nullable=True)
+    hora_segunda_saida = db.Column(db.Time, nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    # Relacionamento com User
+    usuario = db.relationship('User', backref=db.backref('esquecimentos_ponto', lazy=True))
 
 # Rota de Login
 @app.route('/login', methods=['GET', 'POST'])
@@ -189,6 +224,7 @@ def agendar():
         motivo = request.form['motivo']  # Motivo da folga
         data_referencia = request.form.get('data_referencia')  # Obtém o valor de data_referencia
 
+<<<<<<< HEAD
         # Novo campo: Substituição
         substituicao = request.form.get('substituicao', 'Não')  # 'Sim' ou 'Não' (padrão: 'Não')
         nome_substituto = request.form.get('nome_substituto') if substituicao == 'Sim' else None  # Apenas se 'Sim'
@@ -196,6 +232,20 @@ def agendar():
         if tipo_folga == 'AB':
             motivo = 'AB'  # Se for AB, coloca "Abonada" no campo motivo
             tipo_folga = 'AB'  # Define o tipo de folga como 'AB'
+=======
+        # Captura os valores de substituição
+        substituicao = request.form.get("havera_substituicao")  # "Sim" ou "Não"
+        nome_substituto = request.form.get("nome_substituto")  # Nome do substituto
+
+        # Se não houver substituição, o nome do substituto deve ser None
+        if substituicao == "Não":
+            nome_substituto = None
+
+        # Se o tipo de folga for 'AB', vamos usar "AB" tanto em tipo_folga quanto em motivo
+        if tipo_folga == 'AB':
+            motivo = 'AB'
+            tipo_folga = 'AB'
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
 
         # Converte a data de folga para o formato datetime
         try:
@@ -204,6 +254,10 @@ def agendar():
             flash("Data inválida.", "danger")
             return redirect(url_for('agendar'))
 
+<<<<<<< HEAD
+=======
+        # Verifica se já existe um 'AB' deferido no mês
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
         if motivo == 'AB':
             agendamento_existente = Agendamento.query.filter(
                 Agendamento.funcionario_id == current_user.id,
@@ -216,6 +270,10 @@ def agendar():
                 flash("Você já possui um agendamento 'AB' aprovado ou em análise neste mês.", "danger")
                 return render_template('agendar.html')
 
+<<<<<<< HEAD
+=======
+        # Verifica limite de 6 folgas 'AB' deferidas no ano
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
         agendamentos_ab_deferidos = Agendamento.query.filter(
             Agendamento.funcionario_id == current_user.id,
             Agendamento.motivo == 'AB',
@@ -227,6 +285,10 @@ def agendar():
             flash("Você já atingiu o limite de 6 folgas 'AB' deferidas neste ano.", "danger")
             return render_template('agendar.html')
 
+<<<<<<< HEAD
+=======
+        # Converte data de referência, se for Banco de Horas
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
         if tipo_folga == 'BH' and data_referencia:
             try:
                 data_referencia = datetime.datetime.strptime(data_referencia, '%Y-%m-%d').date()
@@ -236,6 +298,7 @@ def agendar():
         else:
             data_referencia = None
 
+        # Captura horas e minutos
         try:
             horas = int(request.form['quantidade_horas']) if request.form['quantidade_horas'].strip() else 0
             minutos = int(request.form['quantidade_minutos']) if request.form['quantidade_minutos'].strip() else 0
@@ -243,14 +306,25 @@ def agendar():
             flash("Horas ou minutos inválidos.", "danger")
             return redirect(url_for('agendar'))
 
+<<<<<<< HEAD
         total_minutos = (horas * 60) + minutos
         
+=======
+        # Converte horas para minutos
+        total_minutos = (horas * 60) + minutos
+
+        # Verifica se o usuário tem saldo suficiente no banco de horas
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
         usuario = User.query.get(current_user.id)
         if usuario.banco_horas < total_minutos:
             flash("Você não possui horas suficientes no banco de horas para este agendamento.", "danger")
             return redirect(url_for('index'))
 
+<<<<<<< HEAD
         # Criação do novo agendamento com substituição
+=======
+        # Criar e salvar no banco
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
         novo_agendamento = Agendamento(
             funcionario_id=current_user.id,
             status='em_espera',
@@ -261,7 +335,11 @@ def agendar():
             horas=horas,
             minutos=minutos,
             substituicao=substituicao,
+<<<<<<< HEAD
             nome_substituto=nome_substituto  # Apenas se 'Sim'
+=======
+            nome_substituto=nome_substituto  # Agora o nome do substituto é salvo corretamente
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
         )
 
         try:
@@ -271,9 +349,15 @@ def agendar():
         except Exception as e:
             db.session.rollback()
             flash(f"Erro ao salvar agendamento: {str(e)}", "danger")
+<<<<<<< HEAD
         
         return redirect(url_for('index'))
     
+=======
+
+        return redirect(url_for('index'))
+
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
     return render_template('agendar.html')
 
 
@@ -449,6 +533,113 @@ def delete_agendamento(id):
     return redirect(url_for('minhas_justificativas'))
 
 
+@app.route('/relatar_esquecimento', methods=['GET', 'POST'])
+@login_required  # Garante que o usuário esteja logado
+def relatar_esquecimento():
+    if request.method == 'POST':
+        data_esquecimento = request.form.get('data_esquecimento')
+        hora_primeira_entrada = request.form.get('hora_primeira_entrada') or None
+        hora_primeira_saida = request.form.get('hora_primeira_saida') or None
+        hora_segunda_entrada = request.form.get('hora_segunda_entrada') or None
+        hora_segunda_saida = request.form.get('hora_segunda_saida') or None
+
+        # Verifica se ao menos um horário foi preenchido
+        if not any([hora_primeira_entrada, hora_primeira_saida, hora_segunda_entrada, hora_segunda_saida]):
+            flash(('danger', 'Você deve preencher ao menos um campo de horário.'))
+            return redirect(url_for('relatar_esquecimento'))
+
+        # Criando o novo registro no banco de dados
+        # Ajuste na conversão da data
+        novo_esquecimento = EsquecimentoPonto(
+            user_id=current_user.id,
+            nome=current_user.nome,
+            registro=current_user.registro,
+            data_esquecimento=datetime.datetime.strptime(data_esquecimento, '%Y-%m-%d').date(),
+            hora_primeira_entrada=hora_primeira_entrada,
+            hora_primeira_saida=hora_primeira_saida,
+            hora_segunda_entrada=hora_segunda_entrada,
+            hora_segunda_saida=hora_segunda_saida
+        )
+
+        db.session.add(novo_esquecimento)
+        db.session.commit()
+        flash(('Registro de esquecimento enviado com sucesso!'))
+        return redirect(url_for('relatar_esquecimento'))
+
+    return render_template('relatar_esquecimento.html')
+
+from datetime import date, timedelta
+from flask import request, render_template, redirect, url_for, flash
+from flask_login import login_required, current_user
+
+@app.route('/relatorio_ponto')
+@login_required
+def relatorio_ponto():
+    if current_user.tipo != 'administrador':  # Apenas administradores podem acessar
+        flash("Acesso negado.", "danger")
+        return redirect(url_for('index'))
+
+    # Obtém o mês selecionado a partir da query string (GET)
+    mes_selecionado = request.args.get('mes', type=int)
+
+    # Lista vazia para os registros filtrados
+    registros = []
+    periodo_inicio = periodo_fim = None  # Inicializa como None para evitar erro
+
+    if mes_selecionado:  # Apenas se um mês foi selecionado
+        ano_atual = datetime.datetime.now().year  # Obtém o ano atual
+        mes_anterior = 12 if mes_selecionado == 1 else mes_selecionado - 1
+        ano_mes_anterior = ano_atual - 1 if mes_selecionado == 1 else ano_atual
+
+        # Define o período correto de busca (10 do mês anterior até 09 do mês atual)
+        periodo_inicio = datetime.datetime(ano_mes_anterior, mes_anterior, 10)
+        periodo_fim = datetime.datetime(ano_atual, mes_selecionado, 9, 23, 59, 59)  # Final do dia 09
+
+        # Buscar os agendamentos dentro do período
+        agendamentos = Agendamento.query.filter(
+            Agendamento.data >= periodo_inicio,
+            Agendamento.data <= periodo_fim
+        ).join(User).order_by(User.nome.asc()).all()
+
+        # Buscar os esquecimentos dentro do período
+        esquecimentos = EsquecimentoPonto.query.filter(
+            EsquecimentoPonto.data_esquecimento >= periodo_inicio,
+            EsquecimentoPonto.data_esquecimento <= periodo_fim
+        ).join(User).order_by(User.nome.asc()).all()
+
+        # Adiciona os resultados à lista `registros`
+        for agendamento in agendamentos:
+            registros.append({
+                'usuario': agendamento.funcionario,  
+                'tipo': 'Agendamento',
+                'data': agendamento.data,
+                'motivo': agendamento.motivo,
+                'horapentrada': 'N/A',
+                'horapsaida': 'N/A',
+                'horasentrada': 'N/A',
+                'horassaida': 'N/A',
+            })
+
+        for esquecimento in esquecimentos:
+            registros.append({
+                'usuario': esquecimento.usuario,  
+                'tipo': 'Esquecimento de Ponto',
+                'data': esquecimento.data_esquecimento,
+                'motivo': 'N/A',
+                'horapentrada': esquecimento.hora_primeira_entrada,
+                'horapsaida': esquecimento.hora_primeira_saida,
+                'horasentrada': esquecimento.hora_segunda_entrada,
+                'horassaida': esquecimento.hora_segunda_saida,
+            })
+
+    return render_template(
+        'relatorio_ponto.html',
+        registros=registros,
+        mes_selecionado=mes_selecionado,
+        periodo_inicio=periodo_inicio,
+        periodo_fim=periodo_fim
+    )
+
 # Rota de Criação de Admin
 @app.route('/criar_admin')
 def criar_admin():
@@ -489,6 +680,7 @@ def deferir_folgas():
 
         if folga:
             usuario = User.query.get(folga.funcionario_id)  # Recupera o usuário
+<<<<<<< HEAD
 
             # 🟢 Caso seja TRE e for deferida, incrementamos TREs usufruídas e decrementamos TREs a usufruir
             if folga.motivo == 'TRE' and novo_status == 'deferido':
@@ -498,6 +690,11 @@ def deferir_folgas():
 
             # 🟢 Caso seja Banco de Horas (BH), verificamos e subtraímos do banco de horas
             elif folga.motivo == 'BH' and novo_status == 'deferido':
+=======
+            
+            # Verifica se a folga é do tipo "Banco de Horas"
+            if folga.motivo == 'BH' and novo_status == 'deferido':
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
                 total_minutos = (folga.horas * 60) + folga.minutos  # Total em minutos da folga
                 
                 if usuario.banco_horas >= total_minutos:
@@ -519,11 +716,26 @@ def deferir_folgas():
                     flash("O funcionário não tem horas suficientes no banco de horas para este agendamento.", "danger")
                     return redirect(url_for('deferir_folgas'))  # Redireciona de volta para a página de deferimento
 
+            # Se a folga for TRE e estiver sendo deferida, atualiza os campos no usuário
+            if folga.motivo == 'TRE' and novo_status == 'deferido':
+                usuario.tre_total -= 1
+                usuario.tre_usufruidas += 1
+
             # Atualiza o status da folga para o status desejado
             folga.status = novo_status
+<<<<<<< HEAD
             db.session.commit()  # 🔹 Salva todas as alterações no banco
 
             flash(f"A folga de {folga.funcionario.nome} foi {novo_status} com sucesso!", "success" if novo_status == 'deferido' else "danger")
+=======
+
+            try:
+                db.session.commit()
+                flash(f"A folga de {folga.funcionario.nome} foi {novo_status} com sucesso!", "success" if novo_status == 'deferido' else "danger")
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Erro ao atualizar folga: {str(e)}", "danger")
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
         else:
             flash("Agendamento não encontrado.", "danger")
 
@@ -552,9 +764,15 @@ def historico():
         'TRE': 0,  # TREs restantes (será atualizado abaixo)
         'FS': 0   # Falta Simples
     }
+<<<<<<< HEAD
 
     # Contabiliza as folgas de agendamentos deferidos
     agendamentos = Agendamento.query.filter_by(funcionario_id=current_user.id, status="deferido").all()
+=======
+    
+    # Contabiliza as folgas de agendamentos
+    agendamentos = Agendamento.query.filter_by(funcionario_id=current_user.id).all()
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
     for agendamento in agendamentos:
         if agendamento.motivo in folgas_contabilizadas:
             folgas_contabilizadas[agendamento.motivo] += 1
@@ -565,6 +783,7 @@ def historico():
         if folga.motivo in folgas_contabilizadas:
             folgas_contabilizadas[folga.motivo] += 1
 
+<<<<<<< HEAD
     # 🔹 Obtém os valores corretos do banco, garantindo que não sejam None
     total_tres = usuario.tre_total if usuario.tre_total is not None else 0
     tres_usufruidas = usuario.tre_usufruidas if usuario.tre_usufruidas is not None else 0
@@ -573,9 +792,19 @@ def historico():
     folgas_contabilizadas['TRE_total'] = total_tres
     folgas_contabilizadas['TRE_usufruidas'] = tres_usufruidas
     folgas_contabilizadas['TRE'] = max(total_tres - tres_usufruidas, 0)
+=======
+    # Obtendo os valores de TREs do banco de dados
+    tre_total = current_user.tre_total  # TREs a Usufruir
+    tre_usufruidas = current_user.tre_usufruidas  # TREs já usadas
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
 
     # Passa os dados para o template
-    return render_template('historico.html', folgas_contabilizadas=folgas_contabilizadas)
+    return render_template(
+        'historico.html',
+        folgas_contabilizadas=folgas_contabilizadas,
+        tre_total=tre_total,
+        tre_usufruidas=tre_usufruidas
+    )
 
 # Rota de Cadastro de Banco de Horas
 @app.route('/banco_horas/cadastrar', methods=['GET', 'POST']) 

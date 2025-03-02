@@ -67,19 +67,6 @@
             color: #007bff;
         }
 
-        .voltar-link {
-            display: block;
-            margin-top: 20px;
-            text-align: center;
-            color: #007bff;
-            text-decoration: none;
-            font-size: 16px;
-        }
-
-        .voltar-link:hover {
-            text-decoration: underline;
-        }
-
         footer {
             background: linear-gradient(to right, #222, #444);
             color: #ddd;
@@ -142,7 +129,9 @@
                 <i class="fas fa-tint"></i> 
                 <p><strong>Doação de Sangue (DS):</strong> {{ folgas_contabilizadas['DS'] }} folga(s)</p>
             </div>
+
             <div class="historico-item">
+<<<<<<< HEAD
                 <i class="fas fa-hand-holding-heart"></i> 
                 <p><strong>TREs a Usufruir:</strong> {{ folgas_contabilizadas['TRE_total'] }} folga(s)</p>
             </div>            
@@ -150,6 +139,17 @@
                 <i class="fas fa-times-circle"></i> 
                 <p><strong>TREs Usufruídas:</strong> {{ folgas_contabilizadas['TRE_usufruidas'] }} folga(s)</p>
             </div>        
+=======
+                <i class="fas fa-medal"></i> 
+                <p><strong>TREs a Usufruir:</strong> {{ current_user.tre_total }} folga(s)</p>
+            </div>
+
+            <div class="historico-item">
+                <i class="fas fa-check-circle"></i> 
+                <p><strong>TREs Usufruídas:</strong> {{ current_user.tre_usufruidas }} folga(s)</p>
+            </div>
+
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
             <div class="historico-item">
                 <i class="fas fa-times-circle"></i> 
                 <p><strong>Falta Simples (FS):</strong> {{ folgas_contabilizadas['FS'] }} folga(s)</p>
@@ -157,9 +157,10 @@
         </div>
     </div>
 
-    <a href="{{ url_for('index') }}" class="voltar-link">
-        <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
-    </a>
+    <div class="voltar-link">
+        <a href="/index">
+            <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial</a>
+    </div>
 
     <footer>
         <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>

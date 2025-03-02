@@ -1,0 +1,199 @@
+<!DOCTYPE html> 
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <title>Relatório de Ponto</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f6f9;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            height: 100vh;
+            margin: 0;
+        }
+        .titulo-container {
+            text-align: center;
+            padding: 15px 0;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            width: 100%;
+        }
+
+        .mes-titulo {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .filtrar-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .filtrar-btn:hover {
+            background-color: #39b300e1;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #007bff;
+        }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: auto;
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: visible !important;
+        }
+        
+        .form-select {
+            width: 100%;
+            max-width: 300px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .form-container {
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        .voltar-link {
+            text-align: center;
+            display: block;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        .voltar-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .voltar-link a:hover {
+            text-decoration: underline;
+        }
+        .footer {
+            text-align: center;
+            padding: 15px;
+            background-color: #343a40;
+            color: white;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="titulo-container">
+        <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+    </div>
+    <div class="container">
+        <h1>Relatório de Ponto</h1>
+
+        <!-- Formulário de Seleção de Mês -->
+        <div class="form-container">
+            <form action="{{ url_for('relatorio_ponto') }}" method="GET">
+                <label for="mes">Escolha um pagamento:</label>
+                <select name="mes" id="mes" class="form-select" required>
+                    <option value="" disabled selected>Selecione o mês</option>
+                    {% set meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"] %}
+                    {% for i in range(1, 13) %}
+                        <option value="{{ i }}" {% if i == mes_selecionado %}selected{% endif %}>{{ meses[i-1] }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="filtrar-btn">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+            </form>
+        </div>
+
+        {% if mes_selecionado %}
+            <div class="mes-titulo">
+                Pagamento de {{ meses[mes_selecionado - 1] }} ({{ periodo_inicio.strftime('%d/%m/%Y') }} a {{ periodo_fim.strftime('%d/%m/%Y') }})
+            </div>
+            
+            {% if registros %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Tipo</th>
+                            <th>Data</th>
+                            <th>Motivo</th>
+                            <th>1ª Entrada</th>
+                            <th>1ª Saída</th>
+                            <th>2ª Entrada</th>
+                            <th>2ª Saída</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in registros %}
+                        <tr>
+                            <td>{{ item.usuario.nome.title() if item.usuario else 'Sem Nome' }}</td>
+                            <td>{{ item.tipo }}</td>
+                            <td>{{ item.data.strftime('%d/%m/%Y') if item.data else 'Sem Data' }}</td>
+                            <td>{{ item.motivo if item.motivo else 'Sem Motivo' }}</td>
+
+                            {% if item.tipo == 'Esquecimento de Ponto' %}
+                                <td>{{ item.horapentrada if item.horapentrada else '—' }}</td>
+                                <td>{{ item.horapsaida if item.horapsaida else '—' }}</td>
+                                <td>{{ item.horasentrada if item.horasentrada else '—' }}</td>
+                                <td>{{ item.horassaida if item.horassaida else '—' }}</td>
+                            {% else %}
+                                <td colspan="4" style="text-align: center;">—</td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p style="text-align: center; color: red;">Nenhum registro encontrado para este período.</p>
+            {% endif %}
+        {% endif %}
+
+        <div class="voltar-link">
+            <a href="{{ url_for('index') }}">
+                <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
+            </a>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+    </footer>
+</body>
+</html>

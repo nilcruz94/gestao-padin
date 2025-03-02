@@ -27,6 +27,12 @@
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
         }
 
+        .substituto {
+            color: #272727b4; /* Azul mais forte */
+            font-weight: bold;
+            font-size: 12px;
+        }
+
         /* Efeito ao passar o mouse */
         .container:hover {
             transform: translateY(-3px); /* Pequeno levantamento */
@@ -360,7 +366,7 @@
                 {% set current_day = datetime.date(year, month, day) %}
                 {% set folgas = folgas_por_data.get(current_day, []) %}
                 <div class="day">
-                    {{ day }}<br>
+                    {{ day }}
                     {% if folgas %}
                         {% for folga in folgas %}
                             <div class="agendamento
@@ -374,10 +380,15 @@
                                 
                                 <!-- Exibição do nome e motivo -->
                                 {{ folga.funcionario.nome.split()[0] }} {{ folga.funcionario.nome.split()[1][0] }}. - {{ folga.motivo }}
+<<<<<<< HEAD
                                 
                                 <!-- Exibição do substituto, se houver -->
                                 {% if folga.nome_substituto %}
                                     <br><strong style="color: #ADD8E6;">Substituto:</strong> <span style="color: #ADD8E6;">{{ folga.nome_substituto }}</span>
+=======
+                                {% if folga.nome_substituto %}
+                                    <span class="substituto"> (Substituto: {{ folga.nome_substituto }})</span>
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
                                 {% endif %}
                             </div>
                         {% endfor %}
@@ -386,7 +397,12 @@
             {% endfor %}
         </div>
         
+<<<<<<< HEAD
            
+=======
+        
+
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
         <div class="legenda">
             <h3>Legenda:</h3>
             <div>

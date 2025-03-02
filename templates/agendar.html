@@ -245,6 +245,21 @@
                     <option value="FS">Falta Simples (FS)</option>
                 </select>
             </div>
+            
+            <!-- Campo para selecionar se haverá substituição -->
+            <div class="input-group">
+                <label for="havera_substituicao"><i class="fas fa-user-check"></i> Haverá Substituição? (para professores):</label>
+                <select id="havera_substituicao" name="havera_substituicao" required onchange="toggleSubstituto()">
+                    <option value="Não">Não</option>
+                    <option value="Sim">Sim</option>
+                </select>
+            </div>
+
+            <!-- Campo para nome do substituto (inicialmente oculto) -->
+            <div class="input-group" id="substituto_group" style="display: none;">
+                <label for="nome_substituto"><i class="fas fa-user"></i> Nome do Substituto(a)</label>
+                <input type="text" id="nome_substituto" name="nome_substituto">
+            </div>
 
             <!-- Campo para indicar se haverá substituto -->
             <div class="input-group">
@@ -308,6 +323,7 @@
             });
 
             function toggleSubstituto() {
+<<<<<<< HEAD
                 var select = document.getElementById("substituicao");
                 var substitutoGroup = document.getElementById("substituto_group");
 
@@ -316,6 +332,19 @@
                 } else {
                     substitutoGroup.style.display = "none";
                     document.getElementById("nome_substituto").value = ""; // Limpa o campo caso selecione "Não"
+=======
+                var substituicao = document.getElementById("havera_substituicao").value;
+                var substitutoGroup = document.getElementById("substituto_group");
+                var nomeSubstitutoInput = document.getElementById("nome_substituto");
+
+                if (substituicao === "Sim") {
+                    substitutoGroup.style.display = "block";
+                    nomeSubstitutoInput.setAttribute("required", "true");
+                } else {
+                    substitutoGroup.style.display = "none";
+                    nomeSubstitutoInput.removeAttribute("required");
+                    nomeSubstitutoInput.value = ""; // Limpa o campo ao ocultar
+>>>>>>> ee0a3e7 (substitutos, relatorio de ponto, esquecimento.)
                 }
             }
 
