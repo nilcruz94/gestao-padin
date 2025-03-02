@@ -261,21 +261,6 @@
                 <input type="text" id="nome_substituto" name="nome_substituto">
             </div>
 
-            <!-- Campo para indicar se haverá substituto -->
-            <div class="input-group">
-                <label for="substituicao"><i class="fas fa-user-check"></i> Haverá Substituto? (para professores):</label>
-                <select id="substituicao" name="substituicao" onchange="toggleSubstituto()">
-                    <option value="Nao" {% if current_user.substituicao == 'Nao' %}selected{% endif %}>Não</option>
-                    <option value="Sim" {% if current_user.substituicao == 'Sim' %}selected{% endif %}>Sim</option>
-                </select>
-            </div>
-            <!-- Campo para inserir o nome do substituto (inicialmente oculto, mas mostrado se necessário) -->
-            <div class="input-group" id="substituto_group" style="{% if current_user.substituicao == 'sim' %}display: block;{% else %}display: none;{% endif %}">
-                <label for="nome_substituto"><i class="fas fa-user"></i> Nome do Substituto:</label>
-                <input type="text" id="nome_substituto" name="nome_substituto" placeholder="Digite o nome do substituto" value="{{ current_user.nome_substituto or '' }}">
-            </div>
-
-
             <!-- Campo de Data de Referência (aparece quando 'Banco de Horas' é selecionado) -->
             <div class="form-group" id="data_banco_horas" style="display: none;">
                 <label for="data_referencia">Data de Referência (Dia que o banco de horas foi acumulado):</label>
