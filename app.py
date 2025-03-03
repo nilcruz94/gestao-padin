@@ -40,6 +40,15 @@ class User(UserMixin, db.Model):
     celular = db.Column(db.String(20), nullable=True)  # Aceita formato internacional +55 11 99999-9999
     data_nascimento = db.Column(db.Date, nullable=True)  # Armazena a data de nascimento
 
+    # Novos campos
+    cpf = db.Column(db.String(14), nullable=False, unique=True)  # Exemplo: 123.456.789-00
+    rg = db.Column(db.String(20), nullable=False, unique=True)  # Exemplo: 12.345.678-9 ou MG-12.345.678
+    data_emissao_rg = db.Column(db.Date, nullable=True)
+    orgao_emissor = db.Column(db.String(20), nullable=True)  # Exemplo: SSP-SP, DETRAN, etc.
+
+    # Graduação diretamente como String
+    graduacao = db.Column(db.String(50), nullable=True)  # Ex: 'Técnico', 'Mestrado', 'Doutorado'
+
     # Relacionamento com Agendamento
     agendamentos = db.relationship('Agendamento', backref='user_funcionario', lazy=True)
 
@@ -177,11 +186,34 @@ def logout():
     flash("Você saiu do sistema. Para acessá-lo, faça login novamente.", "success")
     return redirect(url_for('login'))
 
-# Página Principal (Index)
 @app.route('/index')
 @login_required
 def index():
-    return render_template('index.html')
+    usuario = current_user  # Obtém o usuário logado
+
+    # Lista dos campos que precisam ser preenchidos
+    campos_verificar = {
+        "Celular": usuario.celular,
+        "Data de Nascimento": usuario.data_nascimento,
+        "CPF": usuario.cpf,
+        "RG": usuario.rg,
+        "Data de Emissão do RG": usuario.data_emissao_rg,
+        "Órgão Emissor": usuario.orgao_emissor,
+        "Graduação": usuario.graduacao
+    }
+
+    # Filtra os campos que estão vazios
+    campos_pendentes = [campo for campo, valor in campos_verificar.items() if not valor]
+
+    # Se houver campos pendentes, exibe um aviso com link para edição
+    if campos_pendentes:
+        mensagem = f"""
+            Atenção! Complete seu perfil. Os seguintes campos estão em branco: {', '.join(campos_pendentes)}.
+            <a href="{url_for('perfil')}" class="link-perfil">Clique aqui para preenchê-los</a>.
+        """
+        flash(mensagem, "warning")
+
+    return render_template('index.html', usuario=usuario)
 
 # Rota Minahs Justificativas (Index)
 @app.route('/minhas_justificativas')
@@ -855,31 +887,33 @@ def deferir_horas():
 
     return render_template('deferir_horas.html', registros=registros)
 
-@app.route('/perfil', methods=['GET', 'POST'])
+@app.route('/perfil', methods=['GET', 'POST']) 
 @login_required
 def perfil():
-    usuario = current_user
+    usuario = current_user  # Obtém o usuário logado
     
     if request.method == 'POST':
-        # Recupera os dados do formulário
-        celular = request.form['celular']
-        data_nascimento = request.form['data_nascimento']
-        
-        # Atualiza o usuário com os novos dados
-        usuario.celular = celular
-        usuario.data_nascimento = data_nascimento
-        
-        # Salva as alterações no banco de dados
         try:
+            # Recupera os dados do formulário
+            usuario.celular = request.form.get('celular') or None
+            usuario.data_nascimento = request.form.get('data_nascimento') or None
+            usuario.cpf = request.form.get('cpf') or None
+            usuario.rg = request.form.get('rg') or None
+            usuario.data_emissao_rg = request.form.get('data_emissao_rg') or None
+            usuario.orgao_emissor = request.form.get('orgao_emissor') or None
+            usuario.graduacao = request.form.get('graduacao') or None
+            
+            # Salva as alterações no banco de dados
             db.session.commit()
             flash('Perfil atualizado com sucesso!', 'success')
         except Exception as e:
             db.session.rollback()
-            flash('Erro ao atualizar o perfil. Tente novamente mais tarde.', 'danger')
+            flash(f'Erro ao atualizar o perfil: {str(e)}', 'danger')
         
         return redirect(url_for('perfil'))
     
     return render_template('perfil.html', usuario=usuario)
+
 
 @app.route('/criar_banco')
 def criar_banco():
