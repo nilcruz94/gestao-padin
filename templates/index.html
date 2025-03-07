@@ -131,12 +131,10 @@
                 </a>
             {% endif %}
             
-            <!-- Link "Minhas Justificativas" para funcionários -->
             <a href="{{ url_for('relatar_esquecimento') }}" class="menu-item">
                 <i class="fas fa-question-circle"></i> Relatar Esquecimento
             </a>      
 
-            <!-- Exibindo o link de "Aprovar Usuários" apenas para administradores -->
             {% if current_user.tipo == 'administrador' %}
             <a href="{{ url_for('relatorio_ponto') }}" class="menu-item">
                 <i class="fas fa-chart-bar"></i> Relatório de Ponto
@@ -151,12 +149,10 @@
                 <i class="fas fa-history"></i> Banco de Horas
             </a>
 
-            <!-- Adicionando o menu "Histórico" -->
             <a href="{{ url_for('historico') }}" class="menu-item">
                 <i class="fas fa-clock"></i> Histórico
             </a>       
 
-            <!-- Exibindo o link de "Aprovar Usuários" apenas para administradores -->
             {% if current_user.tipo == 'administrador' %}
             <a href="{{ url_for('aprovar_usuarios') }}" class="menu-item">
                 <i class="fas fa-user-check"></i> Aprovar Usuários

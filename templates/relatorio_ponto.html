@@ -115,6 +115,11 @@
             color: white;
             margin-top: 20px;
         }
+
+        .conferido {
+        background-color: #d4edda !important;
+        }
+
     </style>
 </head>
 <body>
@@ -150,6 +155,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th>Registro</th>
                             <th>Nome</th>
                             <th>Tipo</th>
                             <th>Data</th>
@@ -163,6 +169,7 @@
                     <tbody>
                         {% for item in registros %}
                         <tr>
+                            <td>{{ item.usuario.registro if item.usuario else 'Sem Registro' }}</td>
                             <td>{{ item.usuario.nome.title() if item.usuario else 'Sem Nome' }}</td>
                             <td>{{ item.tipo }}</td>
                             <td>{{ item.data.strftime('%d/%m/%Y') if item.data else 'Sem Data' }}</td>
@@ -195,5 +202,39 @@
     <footer>
         <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
     </footer>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const linhas = document.querySelectorAll("tbody tr");
+
+        // Carregar registros conferidos do localStorage
+        let conferidos = JSON.parse(localStorage.getItem("conferidos")) || [];
+
+        linhas.forEach((linha) => {
+            const registro = linha.cells[0].innerText.trim(); // Identificador único
+
+            // Verifica se o registro já foi conferido e aplica a classe
+            if (conferidos.includes(registro)) {
+                linha.classList.add("conferido");
+            }
+
+            linha.addEventListener("click", function () {
+                if (conferidos.includes(registro)) {
+                    // Remover conferência
+                    conferidos = conferidos.filter(item => item !== registro);
+                    linha.classList.remove("conferido");
+                } else {
+                    // Adicionar conferência
+                    conferidos.push(registro);
+                    linha.classList.add("conferido");
+                }
+
+                // Salvar no localStorage
+                localStorage.setItem("conferidos", JSON.stringify(conferidos));
+            });
+        });
+    });
+</script>
+
 </body>
 </html>

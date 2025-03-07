@@ -581,6 +581,7 @@ def relatorio_ponto():
         for agendamento in agendamentos:
             registros.append({
                 'usuario': agendamento.funcionario,  
+                'registro': agendamento.funcionario.registro,  # Adicionando o registro do usuário
                 'tipo': 'Agendamento',
                 'data': agendamento.data,
                 'motivo': agendamento.motivo,
@@ -593,6 +594,7 @@ def relatorio_ponto():
         for esquecimento in esquecimentos:
             registros.append({
                 'usuario': esquecimento.usuario,  
+                'registro': esquecimento.usuario.registro,  # Adicionando o registro do usuário
                 'tipo': 'Esquecimento de Ponto',
                 'data': esquecimento.data_esquecimento,
                 'motivo': 'N/A',
