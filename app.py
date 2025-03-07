@@ -66,6 +66,8 @@ class Agendamento(db.Model):
     minutos = db.Column(db.Integer, nullable=True)  # Coluna para minutos
     substituicao = db.Column(db.String(3), nullable=False, default="Não")  # 'Sim' ou 'Não'
     nome_substituto = db.Column(db.String(255), nullable=True)  # Nome do substituto (se houver)
+    # Novo campo
+    conferido = db.Column(db.Boolean, default=False)
 
     # Relacionamento com o modelo User
     funcionario = db.relationship('User', backref='agendamentos_funcionario', lazy=True)
@@ -109,6 +111,8 @@ class EsquecimentoPonto(db.Model):
     hora_segunda_entrada = db.Column(db.Time, nullable=True)
     hora_segunda_saida = db.Column(db.Time, nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    # Novo campo
+    conferido = db.Column(db.Boolean, default=False)  
 
     # Relacionamento com User
     usuario = db.relationship('User', backref=db.backref('esquecimentos_ponto', lazy=True))
@@ -545,43 +549,37 @@ from flask_login import login_required, current_user
 @app.route('/relatorio_ponto')
 @login_required
 def relatorio_ponto():
-    if current_user.tipo != 'administrador':  # Apenas administradores podem acessar
+    if current_user.tipo != 'administrador':  
         flash("Acesso negado.", "danger")
         return redirect(url_for('index'))
 
-    # Obtém o mês selecionado a partir da query string (GET)
     mes_selecionado = request.args.get('mes', type=int)
-
-    # Lista vazia para os registros filtrados
     registros = []
-    periodo_inicio = periodo_fim = None  # Inicializa como None para evitar erro
+    periodo_inicio = periodo_fim = None  
 
-    if mes_selecionado:  # Apenas se um mês foi selecionado
-        ano_atual = datetime.datetime.now().year  # Obtém o ano atual
+    if mes_selecionado:
+        ano_atual = datetime.datetime.now().year
         mes_anterior = 12 if mes_selecionado == 1 else mes_selecionado - 1
         ano_mes_anterior = ano_atual - 1 if mes_selecionado == 1 else ano_atual
 
-        # Define o período correto de busca (10 do mês anterior até 09 do mês atual)
         periodo_inicio = datetime.datetime(ano_mes_anterior, mes_anterior, 10)
-        periodo_fim = datetime.datetime(ano_atual, mes_selecionado, 9, 23, 59, 59)  # Final do dia 09
+        periodo_fim = datetime.datetime(ano_atual, mes_selecionado, 9, 23, 59, 59)
 
-        # Buscar os agendamentos dentro do período
         agendamentos = Agendamento.query.filter(
             Agendamento.data >= periodo_inicio,
             Agendamento.data <= periodo_fim
         ).join(User).order_by(User.nome.asc()).all()
 
-        # Buscar os esquecimentos dentro do período
         esquecimentos = EsquecimentoPonto.query.filter(
             EsquecimentoPonto.data_esquecimento >= periodo_inicio,
             EsquecimentoPonto.data_esquecimento <= periodo_fim
         ).join(User).order_by(User.nome.asc()).all()
 
-        # Adiciona os resultados à lista `registros`
         for agendamento in agendamentos:
             registros.append({
+                'id': agendamento.id,
                 'usuario': agendamento.funcionario,  
-                'registro': agendamento.funcionario.registro,  # Adicionando o registro do usuário
+                'registro': agendamento.funcionario.registro,
                 'tipo': 'Agendamento',
                 'data': agendamento.data,
                 'motivo': agendamento.motivo,
@@ -589,12 +587,14 @@ def relatorio_ponto():
                 'horapsaida': 'N/A',
                 'horasentrada': 'N/A',
                 'horassaida': 'N/A',
+                'conferido': agendamento.conferido  # Inclui o campo conferido
             })
 
         for esquecimento in esquecimentos:
             registros.append({
+                'id': esquecimento.id,
                 'usuario': esquecimento.usuario,  
-                'registro': esquecimento.usuario.registro,  # Adicionando o registro do usuário
+                'registro': esquecimento.usuario.registro,
                 'tipo': 'Esquecimento de Ponto',
                 'data': esquecimento.data_esquecimento,
                 'motivo': 'N/A',
@@ -602,6 +602,7 @@ def relatorio_ponto():
                 'horapsaida': esquecimento.hora_primeira_saida,
                 'horasentrada': esquecimento.hora_segunda_entrada,
                 'horassaida': esquecimento.hora_segunda_saida,
+                'conferido': esquecimento.conferido  # Inclui o campo conferido
             })
 
     return render_template(
@@ -611,6 +612,27 @@ def relatorio_ponto():
         periodo_inicio=periodo_inicio,
         periodo_fim=periodo_fim
     )
+
+@app.route('/atualizar_conferido', methods=['POST'])
+@login_required
+def atualizar_conferido():
+    data = request.get_json()
+    registro_id = data.get("id")
+    tipo = data.get("tipo")
+    status = data.get("conferido")  # Booleano True/False
+
+    if tipo == "Agendamento":
+        registro = Agendamento.query.get(registro_id)
+    else:
+        registro = EsquecimentoPonto.query.get(registro_id)
+
+    if registro:
+        registro.conferido = status
+        db.session.commit()
+        return jsonify({"success": True})
+
+    return jsonify({"success": False}), 400
+
 
 # Rota de Criação de Admin
 @app.route('/criar_admin')
