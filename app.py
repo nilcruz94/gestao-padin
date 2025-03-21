@@ -565,15 +565,16 @@ def relatorio_ponto():
         periodo_inicio = datetime.datetime(ano_mes_anterior, mes_anterior, 10)
         periodo_fim = datetime.datetime(ano_atual, mes_selecionado, 9, 23, 59, 59)
 
+        # Ordena por data em ordem crescente
         agendamentos = Agendamento.query.filter(
             Agendamento.data >= periodo_inicio,
             Agendamento.data <= periodo_fim
-        ).join(User).order_by(User.nome.asc()).all()
+        ).order_by(Agendamento.data.asc()).all()
 
         esquecimentos = EsquecimentoPonto.query.filter(
             EsquecimentoPonto.data_esquecimento >= periodo_inicio,
             EsquecimentoPonto.data_esquecimento <= periodo_fim
-        ).join(User).order_by(User.nome.asc()).all()
+        ).order_by(EsquecimentoPonto.data_esquecimento.asc()).all()
 
         for agendamento in agendamentos:
             registros.append({
@@ -587,7 +588,7 @@ def relatorio_ponto():
                 'horapsaida': 'N/A',
                 'horasentrada': 'N/A',
                 'horassaida': 'N/A',
-                'conferido': agendamento.conferido  # Inclui o campo conferido
+                'conferido': agendamento.conferido
             })
 
         for esquecimento in esquecimentos:
@@ -602,7 +603,7 @@ def relatorio_ponto():
                 'horapsaida': esquecimento.hora_primeira_saida,
                 'horasentrada': esquecimento.hora_segunda_entrada,
                 'horassaida': esquecimento.hora_segunda_saida,
-                'conferido': esquecimento.conferido  # Inclui o campo conferido
+                'conferido': esquecimento.conferido
             })
 
     return render_template(
@@ -937,6 +938,32 @@ def perfil():
         return redirect(url_for('perfil'))
     
     return render_template('perfil.html', usuario=usuario)
+
+@app.route('/relatorio_horas_extras')
+@login_required
+def relatorio_horas_extras():
+    # Verifica se o usuário logado é administrador
+    if current_user.tipo != 'administrador':
+        flash("Acesso negado. Você não tem permissão para acessar este relatório.", "danger")
+        return redirect(url_for('index'))
+    
+    # Consulta todos os usuários
+    usuarios = User.query.all()
+    usuarios_relatorio = []
+    for usuario in usuarios:
+        total_minutos = usuario.banco_horas  # Total de minutos armazenados
+        horas = total_minutos // 60
+        minutos = total_minutos % 60
+        
+        usuarios_relatorio.append({
+            "nome": usuario.nome,
+            "registro": usuario.registro,
+            "email": usuario.email,
+            "horas": horas,
+            "minutos": minutos
+        })
+
+    return render_template('relatorio_horas_extras.html', usuarios=usuarios_relatorio)
 
 
 @app.route('/criar_banco')

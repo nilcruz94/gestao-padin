@@ -1,174 +1,213 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Índice</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <!-- FontAwesome para ícones -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Índice</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <!-- FontAwesome para ícones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
 <style>
-    /* Estilo para o link de logout */
-    a.logout-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        padding: 15px;
-        background-color: #dc3545; /* Fundo vermelho */
-        color: white; /* Texto branco */
-        text-decoration: none;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: bold;
-        transition: box-shadow 0.3s ease-in-out; /* Foco com sombra */
-    }
-
-    a.logout-btn:hover {
-        box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.2); /* Foco: sombra ao passar o mouse */
-        background-color: #dc3545; /* Fundo vermelho */
-    }
-    /* Remover estilo hover para os outros links */
-    a {
-        text-decoration: none;
-    }
-
-    a:hover {
-        text-decoration: none; /* Remover qualquer efeito de sublinhado ou cor */
-    }
-
-    .container {
-        margin-bottom: 60px;
-        margin-top: 20px;
-    }
-
-    .flash-container {
-    margin: 15px;
-    padding: 10px;
-    }
-
-    .flash {
-        padding: 10px;
-        border-radius: 5px;
-        text-align: center;
-        font-weight: bold;
-        color: white;
-        opacity: 1; /* Garante que a mensagem apareça */
-    }
-
-    .flash.warning {
-    background-color: #ff9800; /* Cor de alerta */
-    padding: 10px;
-    border-radius: 5px;
-    text-align: center;
-    font-weight: bold;
-    color: white;
-    }
-
-    .flash .link-perfil {
-    color: #fff;
-    font-weight: bold;
-    text-decoration: underline;
-    }
-
-    .flash .link-perfil:hover {
-    color: #004085;
-    text-decoration: none;
-    }
-
+  /* Estilo para o link de logout */
+  a.logout-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 15px;
+      background-color: #dc3545;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      transition: box-shadow 0.3s ease-in-out;
+      margin-top: 20px;
+  }
+  a.logout-btn:hover {
+      box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.2);
+      background-color: #dc3545;
+  }
+  
+  a {
+      text-decoration: none;
+  }
+  a:hover {
+      text-decoration: none;
+  }
+  
+  /* Container principal que envolve todo o conteúdo */
+  .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 20px auto;
+      box-sizing: border-box;
+      padding: 20px;
+  }
+  
+  .flash-container {
+      margin: 15px;
+      padding: 10px;
+  }
+  
+  .flash {
+      padding: 10px;
+      border-radius: 5px;
+      text-align: center;
+      font-weight: bold;
+      color: white;
+      opacity: 1;
+  }
+  
+  .flash.warning {
+      background-color: #ff9800;
+      padding: 10px;
+      border-radius: 5px;
+      text-align: center;
+      font-weight: bold;
+      color: white;
+  }
+  
+  .flash .link-perfil {
+      color: #fff;
+      font-weight: bold;
+      text-decoration: underline;
+  }
+  
+  .flash .link-perfil:hover {
+      color: #004085;
+      text-decoration: none;
+  }
+  
+  /* Estilização para os títulos de seção */
+  .section-title {
+      margin-bottom: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+  }
+  
+  /* Form container para organizar o conteúdo interno em coluna */
+  .form-container {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+  }
+  
+  /* Container para organizar as seções lado a lado */
+  .menu-columns {
+      display: flex;
+      gap: 20px;
+      width: 100%;
+  }
+  
+  .menu-column {
+      flex: 1;
+      min-width: 300px;
+  }
+  
+  /* Media Queries para dispositivos móveis */
+  @media (max-width: 768px) {
+      .menu-columns {
+          flex-direction: column;
+          gap: 10px;
+      }
+      .menu-column {
+          min-width: auto;
+      }
+      .section-title {
+          font-size: 18px;
+          margin-bottom: 8px;
+      }
+      a.logout-btn {
+          font-size: 14px;
+          padding: 12px;
+      }
+  }
 </style>
+
 <body>
+  <div class="titulo-container">
+      <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+  </div>
 
-    <div class="titulo-container">
-        <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
-    </div>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+      <div class="flash-container">
+          {% for category, message in messages %}
+              <div class="flash {{ category }}">
+                  {{ message | safe }}
+              </div>
+          {% endfor %}
+      </div>
+      <script>
+          setTimeout(() => {
+              document.querySelectorAll('.flash').forEach(flash => {
+                  flash.style.transition = 'opacity 1s ease';
+                  flash.style.opacity = '0';
+                  setTimeout(() => flash.remove(), 1000);
+              });
+          }, 8000);
+      </script>
+  {% endif %}
+  {% endwith %}
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <div class="flash-container">
-            {% for category, message in messages %}
-                <div class="flash {{ category }}">
-                    {{ message | safe }}  <!-- Permite HTML dentro da mensagem -->
-                </div>
-            {% endfor %}
-        </div>
-        <script>
-            setTimeout(() => {
-                document.querySelectorAll('.flash').forEach(flash => {
-                    flash.style.transition = 'opacity 1s ease';
-                    flash.style.opacity = '0';
-                    setTimeout(() => flash.remove(), 1000);
-                });
-            }, 8000);
-        </script>
-    {% endif %}
-{% endwith %}
+  <div class="container">
+      <h1>Bem-vindo, <span class="nome-usuario">{{ current_user.nome }}</span>!</h1>
+      <div class="form-container">
+          <div class="menu-columns">
+              <!-- Funcionalidades Gerais -->
+              <div class="menu-column">
+                  <h2 class="section-title">Funcionalidades Gerais</h2>
+                  <a href="{{ url_for('perfil') }}" class="menu-item">
+                      <i class="fas fa-user"></i> Meu Perfil
+                  </a>
+                  <a href="{{ url_for('agendar') }}" class="menu-item">
+                      <i class="fas fa-calendar-day"></i> Agendar Folga
+                  </a>
+                  <a href="{{ url_for('minhas_justificativas') }}" class="menu-item">
+                      <i class="fas fa-list-alt"></i> Minhas Folgas
+                  </a>
+                  <a href="{{ url_for('relatar_esquecimento') }}" class="menu-item">
+                      <i class="fas fa-question-circle"></i> Relatar Esquecimento
+                  </a>
+                  <a href="{{ url_for('calendario') }}" class="menu-item">
+                      <i class="fas fa-calendar-alt"></i> Ver Calendário
+                  </a>
+                  <a href="{{ url_for('banco_horas') }}" class="menu-item">
+                      <i class="fas fa-history"></i> Banco de Horas
+                  </a>
+                  <a href="{{ url_for('historico') }}" class="menu-item">
+                      <i class="fas fa-clock"></i> Histórico
+                  </a>
+              </div>
 
-    <div class="container">
-        <h1>Bem-vindo, <span class="nome-usuario">{{ current_user.nome }}</span>!</h1>
-        <div class="form-container">
-
-            <!-- Adicionando o menu "Meu Perfil" -->
-            <a href="{{ url_for('perfil') }}" class="menu-item">
-            <i class="fas fa-user"></i> Meu Perfil
-            </a>
-            
-            <a href="{{ url_for('agendar') }}" class="menu-item">
-                <i class="fas fa-calendar-day"></i> Agendar Folga
-            </a>
-
-            <!-- Link "Minhas Justificativas" para funcionários -->
-            <a href="{{ url_for('minhas_justificativas') }}" class="menu-item">
-                <i class="fas fa-list-alt"></i> Minhas Folgas
-            </a>            
-
-            <!-- Exibindo o link de "Deferir Folgas" apenas para administradores -->
-            {% if current_user.tipo == 'administrador' %}
-                <a href="{{ url_for('deferir_folgas') }}" class="menu-item">
-                    <i class="fas fa-check-circle"></i> Deferir Folgas
-                </a>
-            {% endif %}
-            
-            <a href="{{ url_for('relatar_esquecimento') }}" class="menu-item">
-                <i class="fas fa-question-circle"></i> Relatar Esquecimento
-            </a>      
-
-            {% if current_user.tipo == 'administrador' %}
-            <a href="{{ url_for('relatorio_ponto') }}" class="menu-item">
-                <i class="fas fa-chart-bar"></i> Relatório de Ponto
-            </a>
-            {% endif %}
-            
-            <a href="{{ url_for('calendario') }}" class="menu-item">
-                <i class="fas fa-calendar-alt"></i> Ver Calendário
-            </a>
-
-            <a href="{{ url_for('banco_horas') }}" class="menu-item">
-                <i class="fas fa-history"></i> Banco de Horas
-            </a>
-
-            <a href="{{ url_for('historico') }}" class="menu-item">
-                <i class="fas fa-clock"></i> Histórico
-            </a>       
-
-            {% if current_user.tipo == 'administrador' %}
-            <a href="{{ url_for('aprovar_usuarios') }}" class="menu-item">
-                <i class="fas fa-user-check"></i> Aprovar Usuários
-            </a>
-            {% endif %}
-
-            <a href="{{ url_for('logout') }}" class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i> Sair
-            </a>
-
-        </div>
-    </div>
+              <!-- Funcionalidades Administrativas -->
+              {% if current_user.tipo == 'administrador' %}
+              <div class="menu-column">
+                  <h2 class="section-title">Funcionalidades Administrativas</h2>
+                  <a href="{{ url_for('deferir_folgas') }}" class="menu-item">
+                      <i class="fas fa-check-circle"></i> Deferir Folgas
+                  </a>
+                  <a href="{{ url_for('relatorio_ponto') }}" class="menu-item">
+                      <i class="fas fa-chart-bar"></i> Relatório de Ponto
+                  </a>
+                  <a href="{{ url_for('aprovar_usuarios') }}" class="menu-item">
+                      <i class="fas fa-user-check"></i> Aprovar Usuários
+                  </a>
+              </div>
+              {% endif %}
+          </div>
+          <a href="{{ url_for('logout') }}" class="logout-btn">
+              <i class="fas fa-sign-out-alt"></i> Sair
+          </a>
+      </div>
+  </div>
 </body>
 
 <footer>
-    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
 </footer>
-
 </html>

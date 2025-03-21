@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Horas Extras</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Estilização para centralizar e limitar o container */
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 5px;
+        }
+        h1 {
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+        /* Estilização para a tabela */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: #fff;
+        }
+        /* Estilização para o campo de busca */
+        .search-container {
+            margin-top: 20px;
+        }
+        .search-container input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        /* Estilização para o link de voltar */
+        .voltar-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .voltar-link:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Relatório de Horas Extras</h1>
+        
+        <!-- Campo para busca por nome -->
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Localizar pessoa pelo nome...">
+        </div>
+        
+        <table id="usuariosTable">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Registro</th>
+                    <th>Email</th>
+                    <th>Horas Extras Disponíveis</th>
+                </tr>
+            </thead>
+            <tbody>
+                {# Ordena os usuários de forma decrescente pela quantidade de horas extras #}
+                {% set usuarios_sorted = usuarios|sort(attribute='horas', reverse=True) %}
+                {% for usuario in usuarios_sorted %}
+                <tr>
+                    <td>{{ usuario.nome }}</td>
+                    <td>{{ usuario.registro }}</td>
+                    <td>{{ usuario.email }}</td>
+                    <td>{{ usuario.horas }}h {{ usuario.minutos }}m</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <a href="{{ url_for('banco_horas') }}" class="voltar-link">Voltar</a>
+    </div>
+    
+    <script>
+        // Função para filtrar a tabela conforme o nome digitado
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('keyup', function() {
+            const filter = searchInput.value.toLowerCase();
+            const table = document.getElementById('usuariosTable');
+            const tr = table.getElementsByTagName('tr');
+            for (let i = 1; i < tr.length; i++) { // Ignora a linha do cabeçalho
+                const td = tr[i].getElementsByTagName('td')[0];
+                if (td) {
+                    const textValue = td.textContent || td.innerText;
+                    tr[i].style.display = textValue.toLowerCase().includes(filter) ? "" : "none";
+                }
+            }
+        });
+    </script>
+</body>
+</html>

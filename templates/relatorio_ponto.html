@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -25,14 +25,12 @@
             font-weight: bold;
             width: 100%;
         }
-
         .mes-titulo {
             text-align: center;
             font-size: 20px;
             font-weight: bold;
             margin-top: 15px;
         }
-
         .filtrar-btn {
             background-color: #007bff;
             color: white;
@@ -43,11 +41,9 @@
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
-
         .filtrar-btn:hover {
             background-color: #39b300e1;
         }
-
         h2 {
             text-align: center;
             margin-bottom: 20px;
@@ -69,7 +65,6 @@
             justify-content: center;
             overflow: visible !important;
         }
-        
         .form-select {
             width: 100%;
             max-width: 300px;
@@ -115,11 +110,27 @@
             color: white;
             margin-top: 20px;
         }
-
         .conferido {
-        background-color: #d4edda !important;
+            background-color: #d4edda !important;
         }
-
+        /* Estilização aprimorada para o contador */
+        .contador {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            color: #333;
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            padding: 15px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        .contador p {
+            margin: 5px 0;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -152,6 +163,13 @@
             </div>
             
             {% if registros %}
+                <!-- Contadores de Registros com espaçamento e estilização aprimorada -->
+                <div class="contador">
+                    <p><strong>Total de registros:</strong> {{ registros|length }}</p>
+                    <p><strong>Total de Esquecimentos:</strong> {{ registros|selectattr('tipo', 'equalto', 'Esquecimento de Ponto')|list|length }}</p>
+                    <p><strong>Total de Agendamentos:</strong> {{ registros|selectattr('tipo', 'equalto', 'Agendamento')|list|length }}</p>
+                </div>
+
                 <table>
                     <thead>
                         <tr>
@@ -167,7 +185,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for item in registros %}
+                        {# Ordena os registros por data em ordem crescente #}
+                        {% for item in registros|sort(attribute='data') %}
                         <tr 
                             data-id="{{ item.id }}" 
                             data-tipo="{{ item.tipo }}" 
