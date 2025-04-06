@@ -965,6 +965,45 @@ def relatorio_horas_extras():
 
     return render_template('relatorio_horas_extras.html', usuarios=usuarios_relatorio)
 
+# Rota para visualização de todos os agendamentos (só para administradores)
+@app.route('/admin/agendamentos', methods=['GET'])
+@login_required
+def admin_agendamentos():
+    if current_user.tipo != 'administrador':
+        flash("Acesso negado.", "danger")
+        return redirect(url_for('index'))
+    
+    # Recupera todos os agendamentos ordenados pela data (mais recentes primeiro)
+    agendamentos = Agendamento.query.order_by(Agendamento.data.desc()).all()
+    return render_template('admin_agendamentos.html', agendamentos=agendamentos)
+
+# Rota para exclusão de um agendamento pelo administrador
+@app.route('/admin/delete_agendamento/<int:id>', methods=['POST'])
+@login_required
+def admin_delete_agendamento(id):
+    if current_user.tipo != 'administrador':
+        flash("Acesso negado.", "danger")
+        return redirect(url_for('index'))
+    
+    agendamento = Agendamento.query.get_or_404(id)
+    db.session.delete(agendamento)
+    db.session.commit()
+    flash("Agendamento excluído com sucesso.", "success")
+    return redirect(url_for('admin_agendamentos'))
+
+
+@app.route('/user_info_all', methods=['GET'])
+@login_required
+def user_info_all():
+    if current_user.tipo != 'administrador':
+        flash("Acesso negado. Esta página é exclusiva para administradores.", "danger")
+        return redirect(url_for('index'))
+    
+    # Recupera todos os usuários ordenados pelo nome
+    users = User.query.order_by(User.nome.asc()).all()
+    return render_template('user_info_all.html', users=users)
+
+
 
 @app.route('/criar_banco')
 def criar_banco():

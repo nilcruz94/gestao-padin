@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Informações de Todos os Usuários</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <!-- FontAwesome para ícones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* Container geral */
+    .container {
+      width: 95%;
+      max-width: 900px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      padding: 20px;
+      margin: 40px auto;
+      border: 1px solid rgba(0, 0, 0, 0.07);
+      backdrop-filter: blur(6px);
+    }
+    /* Cabeçalho padrão */
+    .titulo-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .titulo-site {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 42px;
+      font-weight: 600;
+      color: #007bff;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #007bff;
+      text-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    /* Título da área de usuários */
+    .area-titulo {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #007bff;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    /* Search Container */
+    .search-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .search-container input[type="text"] {
+      width: 80%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    /* Card de cada usuário */
+    .user-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      background-color: #f9f9f9;
+      overflow: hidden;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+    }
+    .user-header {
+      background-color: #f4f4f4;
+      padding: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #007bff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .user-header i {
+      transition: transform 0.3s ease;
+    }
+    .user-header.active i {
+      transform: rotate(180deg);
+    }
+    .user-details {
+      padding: 15px;
+      display: none;
+      background-color: #fff;
+    }
+    .user-details table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .user-details th,
+    .user-details td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    .user-details th {
+      width: 40%;
+      color: #333;
+      font-weight: bold;
+    }
+    /* Link de voltar */
+    .voltar-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      font-size: 18px;
+      color: #007bff;
+      text-decoration: none;
+    }
+    .voltar-link i {
+      margin-right: 8px;
+    }
+    .voltar-link:hover {
+      text-decoration: underline;
+    }
+    /* Footer */
+    footer {
+      background: linear-gradient(to right, #222, #444);
+      color: #ddd;
+      text-align: center;
+      padding: 15px 0;
+      width: 100%;
+      font-size: 14px;
+      border-top: 2px solid #555;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      font-family: 'Poppins', sans-serif;
+      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+    }
+    footer p {
+      margin: 5px 0;
+      font-size: 15px;
+      font-weight: 300;
+    }
+    footer a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease-in-out;
+    }
+    footer a:hover {
+      color: #00aaff;
+    }
+  </style>
+</head>
+<body>
+  <!-- Cabeçalho do site -->
+  <div class="titulo-container">
+    <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+  </div>
+  
+  <div class="container">
+    <div class="area-titulo">Informações de Todos os Usuários</div>
+    
+    <div class="search-container">
+      <input type="text" id="searchInput" placeholder="Pesquisar funcionário por nome..." onkeyup="filterCards()">
+    </div>
+    
+    {% for user in users %}
+    <div class="user-card">
+      <div class="user-header" onclick="toggleDetails(this)">
+        {{ user.nome|title }}
+        <i class="fas fa-chevron-down"></i>
+      </div>
+      <div class="user-details">
+        <table>
+          <tr>
+            <th>Registro</th>
+            <td>{{ user.registro|default('Não informado') }}</td>
+          </tr>
+          <tr>
+            <th>Email</th>
+            <td>{{ user.email|default('Não informado') }}</td>
+          </tr>
+          <tr>
+            <th>Celular</th>
+            <td>{{ user.celular|default('Não informado') }}</td>
+          </tr>
+          <tr>
+            <th>Data de Nascimento</th>
+            <td>
+              {% if user.data_nascimento %}
+                {{ user.data_nascimento.strftime('%d/%m/%Y') }}
+              {% else %}
+                Não informado
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th>CPF</th>
+            <td>{{ user.cpf|default('Não informado') }}</td>
+          </tr>
+          <tr>
+            <th>RG</th>
+            <td>{{ user.rg|default('Não informado') }}</td>
+          </tr>
+          <tr>
+            <th>Data Emissão RG</th>
+            <td>
+              {% if user.data_emissao_rg %}
+                {{ user.data_emissao_rg.strftime('%d/%m/%Y') }}
+              {% else %}
+                Não informado
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th>Órgão Emissor</th>
+            <td>{{ user.orgao_emissor|default('Não informado') }}</td>
+          </tr>
+          <tr>
+            <th>Graduação</th>
+            <td>{{ user.graduacao|default('Não informado') }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    {% endfor %}
+    
+    <a href="{{ url_for('index') }}" class="voltar-link">
+      <i class="fas fa-arrow-left"></i> Voltar ao Início
+    </a>
+  </div>
+  
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
+  
+  <script>
+    function toggleDetails(header) {
+      var details = header.nextElementSibling;
+      if (details.style.display === "block") {
+        details.style.display = "none";
+        header.classList.remove("active");
+      } else {
+        details.style.display = "block";
+        header.classList.add("active");
+      }
+    }
+    function filterCards() {
+      var input = document.getElementById("searchInput");
+      var filter = input.value.toUpperCase();
+      var cards = document.getElementsByClassName("user-card");
+      for (var i = 0; i < cards.length; i++) {
+        var header = cards[i].getElementsByClassName("user-header")[0];
+        if (header) {
+          var txtValue = header.textContent || header.innerText;
+          cards[i].style.display = txtValue.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+        }
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visualizar Agendamentos - Administração</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <!-- FontAwesome para ícones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* Ajustes gerais para a página de agendamentos */
+    .container {
+      width: 95%;
+      max-width: 900px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      padding: 20px;
+      margin: 40px auto;
+      border: 1px solid rgba(0, 0, 0, 0.07);
+      backdrop-filter: blur(6px);
+    }
+    /* Cabeçalho padrão do site */
+    .titulo-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      width: 100%;
+      margin: 20px 0;
+    }
+    .titulo-site {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 42px;
+      font-weight: 600;
+      color: #007bff;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #007bff;
+      text-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    /* Título da área de agendamentos */
+    .area-titulo {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #007bff;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    /* Barra de busca */
+    .search-container {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .search-container input[type="text"] {
+      width: 80%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    /* Agrupamento por funcionário */
+    .employee-group {
+      margin-bottom: 20px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      overflow: hidden;
+      background-color: #f9f9f9;
+    }
+    .employee-header {
+      background-color: #f4f4f4;
+      padding: 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .employee-header .emp-info {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+    }
+    .employee-header i {
+      transition: transform 0.3s ease;
+    }
+    /* Conteúdo escondido por padrão */
+    .toggle-content {
+      display: none;
+      padding: 10px;
+    }
+    /* Tabela interna de agendamentos */
+    .toggle-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    .toggle-content th, .toggle-content td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    .toggle-content th {
+      background-color: #e9e9e9;
+    }
+    /* Estilos dos status */
+    .status-deferido, .status-em-espera, .status-indeferido {
+      white-space: nowrap;
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .status-deferido {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .status-em-espera {
+      background-color: #FF9800;
+      color: white;
+    }
+    .status-indeferido {
+      background-color: #F44336;
+      color: white;
+    }
+    /* Botão de exclusão */
+    .submit-btn {
+      padding: 6px 12px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    .submit-btn:hover {
+      background-color: #0fb300;
+      transform: scale(1.05);
+    }
+    /* Link de voltar */
+    .voltar-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      font-size: 18px;
+      color: #007bff;
+      text-decoration: none;
+    }
+    .voltar-link i {
+      margin-right: 8px;
+    }
+    .voltar-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <!-- Cabeçalho padrão do site -->
+  <div class="titulo-container">
+    <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+  </div>
+
+  <div class="container">
+    <div class="area-titulo">Agendamentos - Administração</div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message | safe }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="search-container">
+      <input type="text" id="searchInput" placeholder="Localizar funcionário por nome..." onkeyup="filtrarTabela()">
+    </div>
+
+    <!-- Agrupando agendamentos por funcionário -->
+    {% for group in agendamentos|groupby('funcionario.nome') %}
+      <div class="employee-group">
+        <div class="employee-header" onclick="toggleDetails('details-{{ loop.index }}', this)">
+          <div class="emp-info">
+            {{ group.grouper|title }}
+          </div>
+          <i class="fas fa-chevron-down" id="arrow-{{ loop.index }}"></i>
+        </div>
+        <div id="details-{{ loop.index }}" class="toggle-content">
+          <!-- Tabela dos agendamentos do funcionário -->
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Motivo</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for app in group.list %}
+              <tr>
+                <td>{{ app.data.strftime('%d/%m/%Y') }}</td>
+                <td>{{ app.motivo }}</td>
+                <td>
+                  {% set status = app.status.lower() %}
+                  {% if status == 'deferido' %}
+                    <span class="status-deferido">Deferido</span>
+                  {% elif status == 'em_espera' or status == 'pendente' %}
+                    <span class="status-em-espera">Em Espera</span>
+                  {% elif status == 'indeferido' %}
+                    <span class="status-indeferido">Indeferido</span>
+                  {% else %}
+                    {{ app.status }}
+                  {% endif %}
+                </td>
+                <td>
+                  <form action="{{ url_for('admin_delete_agendamento', id=app.id) }}" method="post" onsubmit="return confirm('Deseja realmente excluir este agendamento?');">
+                    <button type="submit" class="submit-btn">Excluir</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% else %}
+      <p style="text-align: center;">Nenhum agendamento encontrado.</p>
+    {% endfor %}
+
+    <a href="{{ url_for('index') }}" class="voltar-link">
+      <i class="fas fa-arrow-left"></i> Voltar ao Início
+    </a>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
+
+  <script>
+    function toggleDetails(id, header) {
+      var content = document.getElementById(id);
+      var arrow = header.querySelector("i");
+      if (content.style.display === "none" || content.style.display === "") {
+        content.style.display = "block";
+        arrow.style.transform = "rotate(180deg)";
+      } else {
+        content.style.display = "none";
+        arrow.style.transform = "rotate(0deg)";
+      }
+    }
+    function filtrarTabela() {
+      var input = document.getElementById("searchInput");
+      var filter = input.value.toUpperCase();
+      // Seleciona todos os grupos de funcionários
+      var groups = document.getElementsByClassName("employee-group");
+      for (var i = 0; i < groups.length; i++) {
+        var header = groups[i].getElementsByClassName("emp-info")[0];
+        if (header) {
+          var txtValue = header.textContent || header.innerText;
+          groups[i].style.display = txtValue.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+        }
+      }
+    }
+  </script>
+</body>
+</html>

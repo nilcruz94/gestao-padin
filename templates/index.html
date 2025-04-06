@@ -197,6 +197,14 @@
                   <a href="{{ url_for('aprovar_usuarios') }}" class="menu-item">
                       <i class="fas fa-user-check"></i> Aprovar Usuários
                   </a>
+                  <!-- Novo campo para visualizar agendamentos -->
+                  <a href="{{ url_for('admin_agendamentos') }}" class="menu-item">
+                      <i class="fas fa-calendar-alt"></i> Visualizar Agendamentos
+                  </a>
+                  <!-- Novo campo para visualizar prontuários -->
+                  <a href="{{ url_for('user_info_all') }}" class="menu-item">
+                      <i class="fas fa-folder-open"></i> Prontuários
+                  </a>
               </div>
               {% endif %}
           </div>
