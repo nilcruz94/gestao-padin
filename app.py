@@ -1003,8 +1003,6 @@ def user_info_all():
     users = User.query.order_by(User.nome.asc()).all()
     return render_template('user_info_all.html', users=users)
 
-
-
 @app.route('/criar_banco')
 def criar_banco():
     try:
