@@ -11,8 +11,6 @@ from datetime import timedelta  # Importa só o timedelta
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from xhtml2pdf import pisa
-import io
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://folgas_user:BLS6AMWRXX0vuFBM6q7oHKKwJChaK8dk@dpg-cuece7hopnds738g0usg-a.virginia-postgres.render.com/folgas_3tqr'
@@ -158,40 +156,6 @@ def enviar_email(destinatario, assunto, mensagem_html, mensagem_texto=None):
         print("E-mail enviado com sucesso!")
     except Exception as e:
         print("Erro ao enviar e-mail:", e)
-
-@app.route('/baixar_protocolo/<int:agendamento_id>')
-@login_required
-def baixar_protocolo(agendamento_id):
-    agendamento = Agendamento.query.get_or_404(agendamento_id)
-    
-    # Verifica se o usuário tem permissão para ver este agendamento
-    if current_user.tipo != 'administrador' and agendamento.funcionario_id != current_user.id:
-        flash("Acesso negado.", "danger")
-        return redirect(url_for('minhas_justificativas'))
-    
-    if agendamento.status not in ['deferido', 'indeferido']:
-        flash("Protocolo disponível somente para agendamentos deferidos ou indeferidos.", "danger")
-        return redirect(url_for('minhas_justificativas'))
-    
-    from datetime import datetime
-    # Aqui, a variável 'data_geracao' é definida com a data atual no formato dia/mês/ano
-    html = render_template('protocolo.html',
-                           agendamento=agendamento,
-                           data_geracao=datetime.now().strftime('%d/%m/%Y')
-                           )
-    
-    result = io.BytesIO()
-    pdf = pisa.CreatePDF(html, dest=result)
-    
-    if not pdf.err:
-        response = make_response(result.getvalue())
-        response.headers['Content-Type'] = 'application/pdf'
-        response.headers['Content-Disposition'] = f'attachment; filename=protocolo_agendamento_{agendamento.id}.pdf'
-        return response
-    else:
-        flash("Erro ao gerar o protocolo.", "danger")
-        return redirect(url_for('minhas_justificativas'))
-
 
 # Rota de Login
 @app.route('/login', methods=['GET', 'POST'])

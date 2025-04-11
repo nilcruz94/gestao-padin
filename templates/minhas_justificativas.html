@@ -54,10 +54,6 @@
                             <a href="javascript:void(0);" class="delete-btn" onclick="confirmDelete({{ agendamento.id }})">
                                 <i class="fas fa-times"></i>
                             </a>
-                        {% elif agendamento.status in ['deferido', 'indeferido'] %}
-                            <a href="{{ url_for('baixar_protocolo', agendamento_id=agendamento.id) }}" class="protocol-link" target="_blank">
-                                <i class="fas fa-file-pdf"></i> Baixar Protocolo
-                            </a>
                         {% endif %}
                     </td>
                 </tr>
@@ -97,7 +93,7 @@
 
         // Função para abrir a janela de confirmação
         function confirmDelete(agendamentoId) {
-            agendamentoIdToDelete = agendamentoId;  
+            agendamentoIdToDelete = agendamentoId;
             document.getElementById("confirmModal").style.display = "block";
             document.getElementById("confirmDeleteForm").action = "/delete_agendamento/" + agendamentoIdToDelete;
         }
@@ -164,19 +160,6 @@
 
         .delete-btn:hover {
             color: #c0392b;
-        }
-
-        /* Estilo para o link de protocolo */
-        .protocol-link {
-            font-size: 16px;
-            color: #007bff;
-            text-decoration: none;
-            margin-left: 5px;
-        }
-
-        .protocol-link i {
-            margin-right: 3px;
-            font-size: 18px;
         }
 
         .protocol-link:hover {
