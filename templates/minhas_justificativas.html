@@ -51,9 +51,13 @@
                     </td>
                     <td>
                         {% if agendamento.status == 'em_espera' %}
-                        <a href="javascript:void(0);" class="delete-btn" onclick="confirmDelete({{ agendamento.id }})">
-                            <i class="fas fa-times"></i> <!-- Ícone do "x" -->
-                        </a>
+                            <a href="javascript:void(0);" class="delete-btn" onclick="confirmDelete({{ agendamento.id }})">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        {% elif agendamento.status in ['deferido', 'indeferido'] %}
+                            <a href="{{ url_for('baixar_protocolo', agendamento_id=agendamento.id) }}" class="protocol-link" target="_blank">
+                                <i class="fas fa-file-pdf"></i> Baixar Protocolo
+                            </a>
                         {% endif %}
                     </td>
                 </tr>
@@ -66,6 +70,7 @@
         </div>
         {% endif %}
     </div>
+
     <!-- Janela de Confirmação -->
     <div id="confirmModal" class="modal">
         <div class="modal-content">
@@ -78,10 +83,9 @@
         </div>
     </div>
 
-        <a href="{{ url_for('index') }}" class="voltar-link">
-            <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
-        </a>
-    </div>
+    <a href="{{ url_for('index') }}" class="voltar-link">
+        <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
+    </a>
 
     <!-- Rodapé -->
     <footer class="footer">
@@ -95,8 +99,6 @@
         function confirmDelete(agendamentoId) {
             agendamentoIdToDelete = agendamentoId;  
             document.getElementById("confirmModal").style.display = "block";
-
-            // Atualiza o formulário de exclusão com o ID do agendamento
             document.getElementById("confirmDeleteForm").action = "/delete_agendamento/" + agendamentoIdToDelete;
         }
 
@@ -154,14 +156,31 @@
 
         /* Estilos para o botão de exclusão */
         .delete-btn {
-            font-size: 20px; /* Tamanho do ícone */
-            color: #e74c3c; /* Cor vermelha */
-            cursor: pointer; /* Mostra o cursor de mão ao passar por cima */
-            text-decoration: none; /* Remove a linha de sublinhado */
+            font-size: 20px;
+            color: #e74c3c;
+            cursor: pointer;
+            text-decoration: none;
         }
 
         .delete-btn:hover {
-            color: #c0392b; /* Cor ao passar o mouse sobre o ícone */
+            color: #c0392b;
+        }
+
+        /* Estilo para o link de protocolo */
+        .protocol-link {
+            font-size: 16px;
+            color: #007bff;
+            text-decoration: none;
+            margin-left: 5px;
+        }
+
+        .protocol-link i {
+            margin-right: 3px;
+            font-size: 18px;
+        }
+
+        .protocol-link:hover {
+            text-decoration: underline;
         }
 
         .no-data {
@@ -171,15 +190,9 @@
             color: #555;
         }
 
-        .delete-btn i {
-            font-size: 24px; /* Aumenta o tamanho do ícone */
-            color: #e74c3c; /* Cor vermelha para o ícone */
-        }
-
         td {
-            text-align: center; /* Alinha o conteúdo da célula ao centro */
+            text-align: center;
         }
-
     </style>
 
 </body>

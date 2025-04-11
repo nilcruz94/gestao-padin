@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Protocolo de Agendamento - E.M José Padin Mouta</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background-color: #fff;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      color: #333;
+      padding: 20px;
+      margin: 0;
+      line-height: 1.5;
+      position: relative;  /* Referência para o rodapé fixo */
+      min-height: 297mm;  /* Força o body a ocupar a altura de uma folha A4 */
+    }
+    .container {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    header img {
+      max-width: 100%;
+      height: auto;
+    }
+    .escola-nome {
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      margin: 10px 0 20px;
+      color: #2a5d9f;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    main p {
+      margin-bottom: 8px;
+    }
+    .assinatura {
+      text-align: center;
+      margin-top: 40px;
+    }
+    .assinatura p {
+      margin: 0;
+      line-height: 1;
+      padding: 0;
+    }
+    /* Rodapé fixo: posição alterada para ficar mais para baixo */
+    .rodape-fixo {
+      position: absolute;
+      bottom: -20px;  /* Valor negativo para posicionar mais abaixo; ajuste conforme necessário */
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .rodape-fixo p {
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Cabeçalho -->
+    <header>
+      <table width="100%">
+        <tr>
+          <td align="center">
+            <img src="{{ url_for('static', filename='img/cabecalho_municipio.png', _external=True) }}" 
+                 alt="Logo do Município" width="500">
+          </td>
+        </tr>
+      </table>
+    </header>
+
+    <!-- Nome da Escola -->
+    <div class="escola-nome">Escola Municipal José Padin Mouta</div>
+
+    <!-- Corpo da Mensagem -->
+    <main>
+      <p>Prezado(a) Nilson Cruz,</p>
+      <p>
+        Informamos que a sua solicitação de folga para o dia <strong>07/03/2025</strong> foi 
+        <strong style="color: green;">DEFERIDA</strong> pela direção da unidade escolar.
+      </p>
+      <p><strong>Motivo do Agendamento:</strong> Banco de Horas</p>
+      <p>Este protocolo foi gerado em <strong>{{ data_geracao }}</strong>.</p>
+    
+      <div class="assinatura">
+        <p>Luciana Rocha Augustinho</p>
+        <p>Diretora da Unidade Escolar</p>
+      </div>
+    
+    </main>
+  </div>
+
+  <!-- Rodapé fixo com os dados: endereço, telefone e e-mail -->
+  <div class="rodape-fixo">
+    <p>Rua: Bororós, nº 150, Vila Tupi, Praia Grande - SP, CEP: 11703-390</p>
+    <p>Telefone: 3496-5321 | E-mail: em.padin@praiagrande.sp.gov.br</p>
+  </div>
+</body>
+</html>

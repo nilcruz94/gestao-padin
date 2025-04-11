@@ -1,4 +1,4 @@
-from flask import Flask, session, render_template, redirect, url_for, request, flash
+from flask import Flask, session, render_template, redirect, url_for, request, flash, make_response, abort
 from flask import jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -8,6 +8,11 @@ from flask_login import LoginManager
 import calendar
 import datetime  # Mantém o módulo inteiro
 from datetime import timedelta  # Importa só o timedelta
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from xhtml2pdf import pisa
+import io
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://folgas_user:BLS6AMWRXX0vuFBM6q7oHKKwJChaK8dk@dpg-cuece7hopnds738g0usg-a.virginia-postgres.render.com/folgas_3tqr'
@@ -18,6 +23,12 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+# Configurações do SMTP (suas configurações)
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+SMTP_USER = "nilcr94@gmail.com"           
+SMTP_PASS = "jbbfjudjzxzqrxiv"     
 
 
 # Modelo User (Funcionario e Administrador)
@@ -116,6 +127,71 @@ class EsquecimentoPonto(db.Model):
 
     # Relacionamento com User
     usuario = db.relationship('User', backref=db.backref('esquecimentos_ponto', lazy=True))
+
+
+def enviar_email(destinatario, assunto, mensagem_html, mensagem_texto=None):
+    """
+    Envia um e-mail com mensagem HTML. Opcionalmente, pode incluir uma alternativa em texto puro.
+    """
+    msg = MIMEMultipart("alternative")
+    msg['From'] = SMTP_USER
+    msg['To'] = destinatario
+    msg['Subject'] = assunto
+
+    # Se não fornecer a versão em texto, cria uma simples a partir do HTML
+    if not mensagem_texto:
+        mensagem_texto = "Por favor, visualize este e-mail em um cliente que suporte HTML."
+
+    # Cria as partes do e-mail
+    parte_texto = MIMEText(mensagem_texto, 'plain')
+    parte_html = MIMEText(mensagem_html, 'html')
+
+    msg.attach(parte_texto)
+    msg.attach(parte_html)
+    
+    try:
+        servidor = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        servidor.starttls()
+        servidor.login(SMTP_USER, SMTP_PASS)
+        servidor.send_message(msg)
+        servidor.quit()
+        print("E-mail enviado com sucesso!")
+    except Exception as e:
+        print("Erro ao enviar e-mail:", e)
+
+@app.route('/baixar_protocolo/<int:agendamento_id>')
+@login_required
+def baixar_protocolo(agendamento_id):
+    agendamento = Agendamento.query.get_or_404(agendamento_id)
+    
+    # Verifica se o usuário tem permissão para ver este agendamento
+    if current_user.tipo != 'administrador' and agendamento.funcionario_id != current_user.id:
+        flash("Acesso negado.", "danger")
+        return redirect(url_for('minhas_justificativas'))
+    
+    if agendamento.status not in ['deferido', 'indeferido']:
+        flash("Protocolo disponível somente para agendamentos deferidos ou indeferidos.", "danger")
+        return redirect(url_for('minhas_justificativas'))
+    
+    from datetime import datetime
+    # Aqui, a variável 'data_geracao' é definida com a data atual no formato dia/mês/ano
+    html = render_template('protocolo.html',
+                           agendamento=agendamento,
+                           data_geracao=datetime.now().strftime('%d/%m/%Y')
+                           )
+    
+    result = io.BytesIO()
+    pdf = pisa.CreatePDF(html, dest=result)
+    
+    if not pdf.err:
+        response = make_response(result.getvalue())
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename=protocolo_agendamento_{agendamento.id}.pdf'
+        return response
+    else:
+        flash("Erro ao gerar o protocolo.", "danger")
+        return redirect(url_for('minhas_justificativas'))
+
 
 # Rota de Login
 @app.route('/login', methods=['GET', 'POST'])
@@ -664,7 +740,7 @@ def deferir_folgas():
     else:
         # Exibir apenas folgas do próprio funcionário com status pendente ou em espera
         folgas = Agendamento.query.filter(
-            Agendamento.funcionario_id == current_user.id, 
+            Agendamento.funcionario_id == current_user.id,
             Agendamento.status.in_(['em_espera', 'pendente'])
         ).all()
 
@@ -675,15 +751,14 @@ def deferir_folgas():
 
         if folga:
             usuario = User.query.get(folga.funcionario_id)  # Recupera o usuário
-            
-            # Verifica se a folga é do tipo "Banco de Horas"
+
+            # Caso seja do tipo "Banco de Horas" e o status seja deferido
             if folga.motivo == 'BH' and novo_status == 'deferido':
                 total_minutos = (folga.horas * 60) + folga.minutos  # Total em minutos da folga
-                
                 if usuario.banco_horas >= total_minutos:
                     usuario.banco_horas -= total_minutos  # Subtrai do banco de horas
 
-                    # Registra na tabela BancoDeHoras
+                    # Registra a operação na tabela BancoDeHoras
                     novo_banco_horas = BancoDeHoras(
                         funcionario_id=usuario.id,
                         horas=folga.horas,
@@ -694,38 +769,133 @@ def deferir_folgas():
                         status="Deferida",
                         data_criacao=datetime.datetime.utcnow(),
                     )
-                    db.session.add(novo_banco_horas)  # Adiciona o registro de Banco de Horas
+                    db.session.add(novo_banco_horas)
                 else:
                     flash("O funcionário não tem horas suficientes no banco de horas para este agendamento.", "danger")
-                    return redirect(url_for('deferir_folgas'))  # Redireciona de volta para a página de deferimento
+                    return redirect(url_for('deferir_folgas'))
 
-            # Se a folga for TRE e estiver sendo deferida, atualiza os campos no usuário
+            # Caso a folga seja do tipo TRE e esteja sendo deferida, atualiza os campos
             if folga.motivo == 'TRE' and novo_status == 'deferido':
                 usuario.tre_total -= 1
                 usuario.tre_usufruidas += 1
 
-            # Atualiza o status da folga para o status desejado
+            # Atualiza o status do agendamento
             folga.status = novo_status
 
             try:
                 db.session.commit()
-                flash(f"A folga de {folga.funcionario.nome} foi {novo_status} com sucesso!", "success" if novo_status == 'deferido' else "danger")
+                flash(f"A folga de {folga.funcionario.nome} foi {novo_status} com sucesso!",
+                      "success" if novo_status == 'deferido' else "danger")
+                
+                # Monta e envia o e-mail para notificar o usuário com mensagem formal e adicional
+                if novo_status == 'deferido':
+                    assunto = "E.M José Padin Mouta - Deferimento de Folga"
+                    mensagem_html = f"""
+                    <html>
+                      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
+                        <p>Prezado(a) Senhor(a) <strong>{usuario.nome}</strong>,</p>
+                        <p>
+                          Cumprimentando-o(a), informamos que a sua solicitação de 
+                          <strong style="color: #007bff;">FOLGA</strong> para o dia 
+                          <strong style="color: #007bff;">{folga.data.strftime('%d/%m/%Y')}</strong> foi 
+                          <strong style="color: #5cb85c;">DEFERIDA</strong> pela direção da unidade escolar.
+                          Assim, seu afastamento para a referida data está devidamente registrado.
+                        </p>
+                        <p>
+                          Agradecemos a colaboração e estamos à disposição para quaisquer esclarecimentos adicionais.
+                        </p>
+                        <p>
+                          Caso necessite, você pode acessar o protocolo do agendamento através do nosso sistema.
+                        </p>
+                        <br>
+                        <p>Atenciosamente,</p>
+                        <p>
+                          Nilson Cruz<br>
+                          Secretário da Unidade Escolar<br>
+                          3496-5321<br>
+                          E.M José Padin Mouta
+                        </p>
+                      </body>
+                    </html>
+                    """
+                    mensagem_texto = f"""Prezado(a) Senhor(a) {usuario.nome},
+
+Cumprimentando-o(a), informamos que a sua solicitação de FOLGA para o dia {folga.data.strftime('%d/%m/%Y')} foi DEFERIDA pela direção da unidade escolar.
+Assim, seu afastamento para a referida data está devidamente registrado.
+
+Agradecemos a colaboração e estamos à disposição para quaisquer esclarecimentos adicionais.
+
+Caso necessite, você pode acessar o protocolo do agendamento através do nosso sistema.
+
+Atenciosamente,
+
+Nilson Cruz
+Secretário da Unidade Escolar
+3496-5321
+E.M José Padin Mouta
+"""
+                else:
+                    assunto = "E.M José Padin Mouta - Indeferimento de Folga"
+                    mensagem_html = f"""
+                    <html>
+                      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
+                        <p>Prezado(a) Senhor(a) <strong>{usuario.nome}</strong>,</p>
+                        <p>
+                          Cumprimentando-o(a), comunicamos que, após análise criteriosa, a sua solicitação de 
+                          <strong style="color: #007bff;">FOLGA</strong> para o dia 
+                          <strong style="color: #007bff;">{folga.data.strftime('%d/%m/%Y')}</strong> não pôde ser 
+                          <strong style="color: #d9534f;">INDEFERIDA</strong> pela direção da unidade escolar.
+                        </p>
+                        <p>
+                          Lamentamos o inconveniente e estamos à disposição para eventuais esclarecimentos ou para discutir alternativas viáveis. Agradecemos a sua compreensão.
+                        </p>
+                        <p>
+                          Caso necessite, você pode acessar o protocolo do agendamento através do nosso sistema.
+                        </p>
+                        <br>
+                        <p>Atenciosamente,</p>
+                        <p>
+                          Nilson Cruz<br>
+                          Secretário da Unidade Escolar<br>
+                          3496-5321<br>
+                          E.M José Padin Mouta
+                        </p>
+                      </body>
+                    </html>
+                    """
+                    mensagem_texto = f"""Prezado(a) Senhor(a) {usuario.nome},
+
+Cumprimentando-o(a), comunicamos que, após análise criteriosa, a sua solicitação de FOLGA para o dia {folga.data.strftime('%d/%m/%Y')} não pôde ser DEFERIDA pela direção da unidade escolar.
+
+Lamentamos o inconveniente e estamos à disposição para eventuais esclarecimentos ou para discutir alternativas viáveis. Agradecemos a sua compreensão.
+
+Caso necessite, você pode acessar o protocolo do agendamento através do nosso sistema.
+
+Atenciosamente,
+
+Nilson Cruz
+Secretário da Unidade Escolar
+3496-5321
+E.M José Padin Mouta
+"""
+                enviar_email(usuario.email, assunto, mensagem_html, mensagem_texto)
             except Exception as e:
                 db.session.rollback()
                 flash(f"Erro ao atualizar folga: {str(e)}", "danger")
         else:
             flash("Agendamento não encontrado.", "danger")
 
-    # Atualiza os registros sem redirecionar
+    # Reconsulta os registros após a operação para atualizá-los na página
     if current_user.tipo == 'administrador':
         folgas = Agendamento.query.filter(Agendamento.status.in_(['em_espera', 'pendente'])).all()
     else:
         folgas = Agendamento.query.filter(
-            Agendamento.funcionario_id == current_user.id, 
+            Agendamento.funcionario_id == current_user.id,
             Agendamento.status.in_(['em_espera', 'pendente'])
         ).all()
 
     return render_template('deferir_folgas.html', folgas=folgas)
+
 
 @app.route('/historico', methods=['GET'])
 @login_required
