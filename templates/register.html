@@ -8,9 +8,12 @@
     <!-- FontAwesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
+    <!-- Adicionando jQuery e Inputmask -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js"></script>
 </head>
 <body>
-    
+
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 
     <div class="titulo-container">
@@ -45,38 +48,64 @@
             <input type="password" id="confirmar_senha" name="confirmar_senha" required>
             <div id="confirmar-senha-error" class="error-message"></div>
         
-            <!-- Tipo de usuário
-            <label for="tipo"><i class="fas fa-user-tag"></i> Tipo de Usuário:</label>
-            <select id="tipo" name="tipo" required>
-                <option value="funcionario">Funcionário</option>
-                <option value="administrador">Administrador</option>
-            </select>  -->
+            <!-- CPF -->
+            <label for="cpf"><i class="fas fa-id-card"></i> CPF:</label>
+            <input type="text" id="cpf" name="cpf" required>
+            <div id="cpf-error" class="error-message"></div>
 
-            <!-- Exibir mensagens de flash (sucesso ou erro) -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    <ul>
-                    {% for category, message in messages %}
-                        {% if category != 'success' %}  <!-- Exclui as mensagens de sucesso -->
-                            <li class="{{ category }}">{{ message }}</li>
-                        {% endif %}
-                    {% endfor %}
-                    </ul>
-                {% endif %}
-            {% endwith %}
+            <!-- RG -->
+            <label for="rg"><i class="fas fa-id-card"></i> RG:</label>
+            <input type="text" id="rg" name="rg" required>
+            <div id="rg-error" class="error-message"></div>
+
+            <!-- Data de Nascimento -->
+            <label for="data_nascimento"><i class="fas fa-birthday-cake"></i> Data de Nascimento:</label>
+            <input type="date" id="data_nascimento" name="data_nascimento" required>
+            <div id="data_nascimento-error" class="error-message"></div>
+
+            <!-- Celular -->
+            <label for="celular"><i class="fas fa-mobile-alt"></i> Celular:</label>
+            <input type="text" id="celular" name="celular" required>
+            <div id="celular-error" class="error-message"></div>
+
+            <!-- Cargo -->
+            <label for="cargo"><i class="fas fa-briefcase"></i> Cargo:</label>
+            <select id="cargo" name="cargo" required>
+                <option value="Agente Administrativo">Agente Administrativo</option>
+                <option value="Assistente de Direção">Assistente de Direção</option>
+                <option value="Assistente Tecnico Pedagogico">Assistente Técnico Pedagógico</option>
+                <option value="Diretor de Unidade Escolar">Diretor de Unidade Escolar</option>
+                <option value="Educador de Desenvolvimento Infantil">Educador de Desenvolvimento Infantil</option>
+                <option value="Pedagoga Comunitaria">Pedagoga Comunitária</option>
+                <option value="Professor Adjunto">Professor Adjunto</option>
+                <option value="Professor I">Professor I</option>
+                <option value="Professor II">Professor II</option>
+                <option value="Professor III">Professor III</option>
+                <option value="Professor IV">Professor IV</option>
+                <option value="Secretário de Unidade Escolar">Secretário de Unidade Escolar</option>
+                <option value="Servente">Servente</option>
+                <option value="Servente I">Servente I</option>
+                <option value="Servente II">Servente II</option>
+                <option value="Trabalhador">Trabalhador</option>
+                <option value="Atendente de Educação I">Atendente de Educação I</option>
+                <option value="Atendente de Educação II">Atendente de Educação II</option>
+            </select>
 
             <input type="submit" value="Registrar" class="submit-btn">
         </form>
     </div>
+
+    <footer>
+        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+    </footer>
+
+    <script>
+        // Aplicando as máscaras nos campos CPF, RG e Celular
+        $(document).ready(function(){
+            $("#cpf").inputmask("999.999.999-99");  // Máscara de CPF
+            $("#rg").inputmask("99.999.999-9");     // Máscara de RG
+            $("#celular").inputmask("(99) 99999-9999");  // Máscara de Celular
+        });
+    </script>
 </body>
-
-<div class="voltar-link">
-    <a href="/login">
-        <i class="fas fa-arrow-left"></i> Voltar para a pagina de Login</a>
-</div>
-
-<footer>
-    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-</footer>
-
 </html>

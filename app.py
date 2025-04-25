@@ -41,6 +41,7 @@ class User(UserMixin, db.Model):
     # Adicionando os campos para TRE
     tre_total = db.Column(db.Integer, default=0)  # TREs a usufruir
     tre_usufruidas = db.Column(db.Integer, default=0)  # TREs já utilizadas
+    cargo = db.Column(db.String(100), nullable=True)  # Este campo pode ser preenchido depois
     
     # Banco de horas em minutos
     banco_horas = db.Column(db.Integer, default=0, nullable=False)
@@ -120,12 +121,12 @@ class EsquecimentoPonto(db.Model):
     hora_segunda_entrada = db.Column(db.Time, nullable=True)
     hora_segunda_saida = db.Column(db.Time, nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    # Novo campo
-    conferido = db.Column(db.Boolean, default=False)  
+    conferido = db.Column(db.Boolean, default=False)
 
-    # Relacionamento com User
+    # Novo campo para armazenar o motivo (opcional)
+    motivo = db.Column(db.Text, nullable=True)
+
     usuario = db.relationship('User', backref=db.backref('esquecimentos_ponto', lazy=True))
-
 
 def enviar_email(destinatario, assunto, mensagem_html, mensagem_texto=None):
     """
@@ -148,9 +149,9 @@ def enviar_email(destinatario, assunto, mensagem_html, mensagem_texto=None):
     msg.attach(parte_html)
     
     try:
-        servidor = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        servidor = smtplib.SMTP( SMTP_SERVER, SMTP_PORT)
         servidor.starttls()
-        servidor.login(SMTP_USER, SMTP_PASS)
+        servidor.login(SMTP_USER, SMTP_PASS)  
         servidor.send_message(msg)
         servidor.quit()
         print("E-mail enviado com sucesso!")
@@ -230,32 +231,50 @@ def logout():
     flash("Você saiu do sistema. Para acessá-lo, faça login novamente.", "success")
     return redirect(url_for('login'))
 
-@app.route('/index')
+@app.route('/index', methods=['GET', 'POST'])
 @login_required
 def index():
     usuario = current_user  # Obtém o usuário logado
 
-    # Lista dos campos que precisam ser preenchidos
-    campos_verificar = {
+    # Lista dos campos obrigatórios que precisam ser verificados
+    campos_obrigatorios = {
         "Celular": usuario.celular,
         "Data de Nascimento": usuario.data_nascimento,
         "CPF": usuario.cpf,
         "RG": usuario.rg,
-        "Data de Emissão do RG": usuario.data_emissao_rg,
-        "Órgão Emissor": usuario.orgao_emissor,
-        "Graduação": usuario.graduacao
+        "Cargo": usuario.cargo  # Verifica o campo cargo também
     }
 
-    # Filtra os campos que estão vazios
-    campos_pendentes = [campo for campo, valor in campos_verificar.items() if not valor]
+    # Filtra os campos obrigatórios que estão vazios
+    campos_pendentes = [campo for campo, valor in campos_obrigatorios.items() if not valor]
 
-    # Se houver campos pendentes, exibe um aviso com link para edição
+    # Se houver campos obrigatórios pendentes, redireciona para a página de preenchimento
     if campos_pendentes:
+        # Gera uma mensagem com os campos obrigatórios faltantes
         mensagem = f"""
             Atenção! Complete seu perfil. Os seguintes campos estão em branco: {', '.join(campos_pendentes)}.
+            <a href="{url_for('informar_dados')}" class="link-perfil">Clique aqui para preenchê-los</a>.
+        """
+        flash(mensagem, "warning")  # Flash message para mostrar a mensagem de alerta
+        return redirect(url_for('informar_dados'))  # Redireciona para a página de preencher os dados obrigatórios
+
+    # Lista dos campos opcionais que não são obrigatórios
+    campos_opcionais = {
+        "Data de Emissão do RG": usuario.data_emissao_rg,
+        "Órgão Emissor": usuario.orgao_emissor,
+        "Graduação": usuario.graduacao,
+    }
+
+    # Verifica se os campos opcionais estão vazios e exibe uma mensagem de aviso
+    campos_faltantes_opcionais = [campo for campo, valor in campos_opcionais.items() if not valor]
+
+    # Se houver campos opcionais faltando, exibe uma mensagem
+    if campos_faltantes_opcionais:
+        mensagem_opcional = f"""
+            Você pode completar seu perfil com os seguintes dados: {', '.join(campos_faltantes_opcionais)}.
             <a href="{url_for('perfil')}" class="link-perfil">Clique aqui para preenchê-los</a>.
         """
-        flash(mensagem, "warning")
+        flash(mensagem_opcional, "info")  # Flash message para campos opcionais
 
     return render_template('index.html', usuario=usuario)
 
@@ -271,32 +290,36 @@ def minhas_justificativas():
 @app.route('/agendar', methods=['GET', 'POST'])
 def agendar():
     if request.method == 'POST':
-        tipo_folga = request.form['tipo_folga']  # Tipo de folga (Simples, Banco de Horas, AB)
-        data_folga = request.form['data']  # Data da folga
-        motivo = request.form['motivo']  # Motivo da folga
-        data_referencia = request.form.get('data_referencia')  # Obtém o valor de data_referencia
+        tipo_folga       = request.form['tipo_folga']         # Código do motivo: 'AB', 'BH', 'DS', 'TRE', 'FS'
+        data_folga       = request.form['data']               # Data da folga
+        motivo           = request.form['motivo']             # Mesmo código acima
+        data_referencia  = request.form.get('data_referencia')# Para Banco de Horas
 
-        # Captura os valores de substituição
-        substituicao = request.form.get("havera_substituicao")  # "Sim" ou "Não"
-        nome_substituto = request.form.get("nome_substituto")  # Nome do substituto
+        substituicao     = request.form.get("havera_substituicao")  # "Sim" ou "Não"
+        nome_substituto  = request.form.get("nome_substituto")
 
-        # Se não houver substituição, o nome do substituto deve ser None
         if substituicao == "Não":
             nome_substituto = None
 
-        # Se o tipo de folga for 'AB', vamos usar "AB" tanto em tipo_folga quanto em motivo
         if tipo_folga == 'AB':
-            motivo = 'AB'
+            motivo     = 'AB'
             tipo_folga = 'AB'
 
-        # Converte a data de folga para o formato datetime
+        # mapeia o código para descrição legível
+        descricao_motivo = {
+            'AB':  'Abonada',
+            'BH':  'Banco de Horas',
+            'DS':  'Doação de Sangue',
+            'TRE': 'TRE',
+            'FS':  'Falta Simples'
+        }.get(motivo, 'Agendamento')
+
         try:
             data_folga = datetime.datetime.strptime(data_folga, '%Y-%m-%d').date()
         except ValueError:
             flash("Data inválida.", "danger")
             return redirect(url_for('agendar'))
 
-        # Verifica se já existe um 'AB' deferido no mês
         if motivo == 'AB':
             agendamento_existente = Agendamento.query.filter(
                 Agendamento.funcionario_id == current_user.id,
@@ -304,24 +327,20 @@ def agendar():
                 db.extract('year', Agendamento.data) == data_folga.year,
                 db.extract('month', Agendamento.data) == data_folga.month
             ).first()
-
             if agendamento_existente and agendamento_existente.status != 'indeferido':
                 flash("Você já possui um agendamento 'AB' aprovado ou em análise neste mês.", "danger")
                 return render_template('agendar.html')
 
-        # Verifica limite de 6 folgas 'AB' deferidas no ano
         agendamentos_ab_deferidos = Agendamento.query.filter(
             Agendamento.funcionario_id == current_user.id,
             Agendamento.motivo == 'AB',
             db.extract('year', Agendamento.data) == data_folga.year,
             Agendamento.status == 'deferido'
         ).count()
-
         if agendamentos_ab_deferidos >= 6:
             flash("Você já atingiu o limite de 6 folgas 'AB' deferidas neste ano.", "danger")
             return render_template('agendar.html')
 
-        # Converte data de referência, se for Banco de Horas
         if tipo_folga == 'BH' and data_referencia:
             try:
                 data_referencia = datetime.datetime.strptime(data_referencia, '%Y-%m-%d').date()
@@ -331,41 +350,81 @@ def agendar():
         else:
             data_referencia = None
 
-        # Captura horas e minutos
         try:
-            horas = int(request.form['quantidade_horas']) if request.form['quantidade_horas'].strip() else 0
+            horas   = int(request.form['quantidade_horas'])   if request.form['quantidade_horas'].strip()   else 0
             minutos = int(request.form['quantidade_minutos']) if request.form['quantidade_minutos'].strip() else 0
         except ValueError:
             flash("Horas ou minutos inválidos.", "danger")
             return redirect(url_for('agendar'))
 
-        # Converte horas para minutos
         total_minutos = (horas * 60) + minutos
-
-        # Verifica se o usuário tem saldo suficiente no banco de horas
         usuario = User.query.get(current_user.id)
         if usuario.banco_horas < total_minutos:
             flash("Você não possui horas suficientes no banco de horas para este agendamento.", "danger")
             return redirect(url_for('index'))
 
-        # Criar e salvar no banco
         novo_agendamento = Agendamento(
-            funcionario_id=current_user.id,
-            status='em_espera',
-            data=data_folga,
-            motivo=motivo,
-            tipo_folga=tipo_folga,
-            data_referencia=data_referencia,
-            horas=horas,
-            minutos=minutos,
-            substituicao=substituicao,
-            nome_substituto=nome_substituto  # Agora o nome do substituto é salvo corretamente
+            funcionario_id   = current_user.id,
+            status           = 'em_espera',
+            data             = data_folga,
+            motivo           = motivo,
+            tipo_folga       = tipo_folga,
+            data_referencia  = data_referencia,
+            horas            = horas,
+            minutos          = minutos,
+            substituicao     = substituicao,
+            nome_substituto  = nome_substituto
         )
 
         try:
+            # salva o agendamento
             db.session.add(novo_agendamento)
             db.session.commit()
-            flash("Agendamento realizado com sucesso. A folga aguarda deferimento.", "success")
+
+            # prepara dados para o e-mail
+            assunto  = "E.M José Padin Mouta – Confirmação de Agendamento"
+            nome     = current_user.nome
+            data_str = novo_agendamento.data.strftime('%d/%m/%Y')
+
+            mensagem_html = f"""
+            <html>
+              <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
+                <p>Prezado(a) Senhor(a) <strong>{nome}</strong>,</p>
+                <p>
+                  Sua solicitação de <strong>{descricao_motivo}</strong> para o dia
+                  <strong>{data_str}</strong> foi registrada com sucesso e encontra-se
+                  em <strong style="color: #FFA500;">EM ESPERA</strong>, aguardando análise da direção.
+                </p>
+                <p>Você será notificado assim que houver uma decisão.</p>
+                <br>
+                <p>Atenciosamente,</p>
+                <p>
+                  Nilson Cruz<br>
+                  Secretário da Unidade Escolar<br>
+                  E.M José Padin Mouta
+                </p>
+              </body>
+            </html>
+            """
+
+            mensagem_texto = f"""Prezado(a) Senhor(a) {nome},
+
+Sua solicitação de {descricao_motivo} para o dia {data_str} foi registrada com sucesso e encontra-se EM ESPERA, aguardando análise da direção.
+
+Você será notificado assim que houver uma decisão.
+
+Atenciosamente,
+
+Nilson Cruz
+Secretário da Unidade Escolar
+E.M José Padin Mouta
+"""
+
+            # envia o e-mail
+            enviar_email(current_user.email, assunto, mensagem_html, mensagem_texto)
+
+            flash("Agendamento realizado com sucesso. Você receberá um e-mail de confirmação.", "success")
+
         except Exception as e:
             db.session.rollback()
             flash(f"Erro ao salvar agendamento: {str(e)}", "danger")
@@ -373,7 +432,6 @@ def agendar():
         return redirect(url_for('index'))
 
     return render_template('agendar.html')
-
 
 # Rota de Calendário de Folgas
 @app.route('/calendario', defaults={'year': 2025, 'month': 1}, methods=['GET', 'POST'])
@@ -436,20 +494,71 @@ def calendario(year, month):
         fim_ano=fim_ano
     )
 
+
+@app.route('/informar_dados', methods=['GET', 'POST'])
+@login_required
+def informar_dados():
+    usuario = current_user
+
+    if request.method == 'POST':
+        # Verifique se os campos obrigatórios estão sendo atualizados
+        campos_atualizar = {
+            'cpf': request.form.get('cpf'),
+            'rg': request.form.get('rg'),
+            'data_nascimento': request.form.get('data_nascimento'),
+            'celular': request.form.get('celular'),
+            'cargo': request.form.get('cargo')
+        }
+
+        # Atualiza os campos faltantes no banco de dados
+        for campo, valor in campos_atualizar.items():
+            if valor:
+                setattr(usuario, campo, valor)  # Atualiza o atributo do usuário
+
+        # Valida o cargo se ele foi fornecido
+        if campos_atualizar['cargo']:
+            cargos_validos = [
+                "Agente Administrativo", "Professor I", "Professor Adjunto", 
+                "Professor II", "Professor III", "Professor IV", 
+                "Servente I", "Servente II", "Servente", 
+                "Diretor de Unidade Escolar", "Assistente de Direção", 
+                "Pedagoga Comunitaria", "Assistente Tecnico Pedagogico", 
+                "Secretario de Unidade Escolar", "Educador de Desenvolvimento Infantil", 
+                "Atendente de Educação I", "Atendente de Educação II", 
+                "Trabalhador"
+            ]
+            cargo = campos_atualizar['cargo']
+            if cargo not in cargos_validos:
+                flash('Cargo inválido. Por favor, selecione um cargo válido.', 'danger')
+                return render_template('informar_dados.html', usuario=usuario)  # Se cargo for inválido, retorna ao formulário
+
+        # Salva os dados atualizados no banco
+        db.session.commit()
+
+        flash("Dados atualizados com sucesso! Você agora pode acessar o sistema.", "success")
+        return redirect(url_for('index'))  # Redireciona de volta para a página principal
+
+    return render_template('informar_dados.html', usuario=usuario)
+
+
+
 from email_validator import validate_email, EmailNotValidError
 
-# Rota de Registro (para Novo Usuário)
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    usuario = current_user  # Obtém o usuário logado
+    
     if request.method == 'POST':
         nome = request.form['nome']
         registro = request.form['registro']
         email = request.form['email']
         senha = request.form['senha']
         confirmar_senha = request.form['confirmar_senha']
-        
-        # Se o campo 'tipo' não for enviado, atribua um valor padrão (por exemplo, 'user')
-        tipo = request.form.get('tipo', 'user')  # Aqui, 'user' é o valor padrão
+        cpf = request.form['cpf']
+        rg = request.form['rg']
+        data_nascimento = request.form['data_nascimento']
+        celular = request.form['celular']
+        cargo = request.form['cargo']
 
         # Verifica se as senhas coincidem
         if senha != confirmar_senha:
@@ -468,17 +577,38 @@ def register():
             flash('Este e-mail já está em uso', 'danger')
             return render_template('register.html')
 
+        # Verifica se todos os campos obrigatórios estão preenchidos
+        campos_obrigatorios = {
+            "CPF": cpf,
+            "RG": rg,
+            "Data de Nascimento": data_nascimento,
+            "Celular": celular,
+            "Cargo": cargo
+        }
+
+        campos_pendentes = [campo for campo, valor in campos_obrigatorios.items() if not valor]
+        
+        if campos_pendentes:
+            mensagem = f"Os seguintes campos são obrigatórios: {', '.join(campos_pendentes)}."
+            flash(mensagem, 'danger')
+            return redirect(url_for('informar_dados'))  # Redireciona para a página de informar dados
+
         # Criptografa a senha usando pbkdf2:sha256 (método compatível)
         senha_hash = generate_password_hash(senha, method='pbkdf2:sha256')
 
         # Criação do novo usuário com o status 'pendente', aguardando aprovação
         new_user = User(
-            nome=nome, 
-            registro=registro, 
-            email=email, 
-            senha=senha_hash, 
-            tipo=tipo, 
-            status='pendente'  # Novo campo para controlar a aprovação
+            nome=nome,
+            registro=registro,
+            email=email,
+            senha=senha_hash,
+            tipo='funcionario',  # Por padrão, o tipo é 'funcionario', mas você pode personalizar conforme necessário
+            status='pendente',  # Novo campo para controlar a aprovação
+            cpf=cpf,
+            rg=rg,
+            data_nascimento=data_nascimento,
+            celular=celular,
+            cargo=cargo
         )
 
         db.session.add(new_user)
@@ -488,7 +618,6 @@ def register():
         return redirect(url_for('login'))
 
     return render_template('register.html')
-
 
 # Rota Aprovar Usuarios
 @app.route('/aprovar_usuarios', methods=['GET', 'POST'])
@@ -548,7 +677,7 @@ def delete_agendamento(id):
 
 
 @app.route('/relatar_esquecimento', methods=['GET', 'POST'])
-@login_required  # Garante que o usuário esteja logado
+@login_required
 def relatar_esquecimento():
     if request.method == 'POST':
         data_esquecimento = request.form.get('data_esquecimento')
@@ -557,30 +686,39 @@ def relatar_esquecimento():
         hora_segunda_entrada = request.form.get('hora_segunda_entrada') or None
         hora_segunda_saida = request.form.get('hora_segunda_saida') or None
 
-        # Verifica se ao menos um horário foi preenchido
         if not any([hora_primeira_entrada, hora_primeira_saida, hora_segunda_entrada, hora_segunda_saida]):
-            flash(('danger', 'Você deve preencher ao menos um campo de horário.'))
+            flash('Você deve preencher ao menos um campo de horário.', 'danger')
             return redirect(url_for('relatar_esquecimento'))
 
-        # Criando o novo registro no banco de dados
-        # Ajuste na conversão da data
+        motivo = request.form.get('motivo') or None
+
+        # Observe que agora chamamos datetime.datetime.strptime
+        nova_data = datetime.datetime.strptime(data_esquecimento, '%Y-%m-%d').date()
+
         novo_esquecimento = EsquecimentoPonto(
             user_id=current_user.id,
             nome=current_user.nome,
             registro=current_user.registro,
-            data_esquecimento=datetime.datetime.strptime(data_esquecimento, '%Y-%m-%d').date(),
+            data_esquecimento=nova_data,
             hora_primeira_entrada=hora_primeira_entrada,
             hora_primeira_saida=hora_primeira_saida,
             hora_segunda_entrada=hora_segunda_entrada,
-            hora_segunda_saida=hora_segunda_saida
+            hora_segunda_saida=hora_segunda_saida,
+            motivo=motivo
         )
 
-        db.session.add(novo_esquecimento)
-        db.session.commit()
-        flash(('Registro de esquecimento enviado com sucesso!'))
+        try:
+            db.session.add(novo_esquecimento)
+            db.session.commit()
+            flash('Registro de esquecimento enviado com sucesso!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao salvar o registro: {e}', 'danger')
+
         return redirect(url_for('relatar_esquecimento'))
 
     return render_template('relatar_esquecimento.html')
+
 
 from datetime import date, timedelta
 from flask import request, render_template, redirect, url_for, flash
@@ -603,47 +741,48 @@ def relatorio_ponto():
         ano_mes_anterior = ano_atual - 1 if mes_selecionado == 1 else ano_atual
 
         periodo_inicio = datetime.datetime(ano_mes_anterior, mes_anterior, 10)
-        periodo_fim = datetime.datetime(ano_atual, mes_selecionado, 9, 23, 59, 59)
+        periodo_fim     = datetime.datetime(ano_atual, mes_selecionado, 9, 23, 59, 59)
 
-        # Ordena por data em ordem crescente
+        # Agendamentos
         agendamentos = Agendamento.query.filter(
             Agendamento.data >= periodo_inicio,
             Agendamento.data <= periodo_fim
         ).order_by(Agendamento.data.asc()).all()
 
+        for ag in agendamentos:
+            registros.append({
+                'id':            ag.id,
+                'usuario':       ag.funcionario,
+                'registro':      ag.funcionario.registro,
+                'tipo':          'Agendamento',
+                'data':          ag.data,
+                'motivo':        ag.motivo,
+                'horapentrada':  '—',
+                'horapsaida':    '—',
+                'horasentrada':  '—',
+                'horassaida':    '—',
+                'conferido':     ag.conferido
+            })
+
+        # Esquecimentos de Ponto
         esquecimentos = EsquecimentoPonto.query.filter(
             EsquecimentoPonto.data_esquecimento >= periodo_inicio,
             EsquecimentoPonto.data_esquecimento <= periodo_fim
         ).order_by(EsquecimentoPonto.data_esquecimento.asc()).all()
 
-        for agendamento in agendamentos:
+        for esc in esquecimentos:
             registros.append({
-                'id': agendamento.id,
-                'usuario': agendamento.funcionario,  
-                'registro': agendamento.funcionario.registro,
-                'tipo': 'Agendamento',
-                'data': agendamento.data,
-                'motivo': agendamento.motivo,
-                'horapentrada': 'N/A',
-                'horapsaida': 'N/A',
-                'horasentrada': 'N/A',
-                'horassaida': 'N/A',
-                'conferido': agendamento.conferido
-            })
-
-        for esquecimento in esquecimentos:
-            registros.append({
-                'id': esquecimento.id,
-                'usuario': esquecimento.usuario,  
-                'registro': esquecimento.usuario.registro,
-                'tipo': 'Esquecimento de Ponto',
-                'data': esquecimento.data_esquecimento,
-                'motivo': 'N/A',
-                'horapentrada': esquecimento.hora_primeira_entrada,
-                'horapsaida': esquecimento.hora_primeira_saida,
-                'horasentrada': esquecimento.hora_segunda_entrada,
-                'horassaida': esquecimento.hora_segunda_saida,
-                'conferido': esquecimento.conferido
+                'id':            esc.id,
+                'usuario':       esc.usuario,
+                'registro':      esc.usuario.registro,
+                'tipo':          'Esquecimento de Ponto',
+                'data':          esc.data_esquecimento,
+                'motivo':        esc.motivo,                  # <<< aqui pegamos o motivo do banco
+                'horapentrada':  esc.hora_primeira_entrada or '—',
+                'horapsaida':    esc.hora_primeira_saida  or '—',
+                'horasentrada':  esc.hora_segunda_entrada or '—',
+                'horassaida':    esc.hora_segunda_saida   or '—',
+                'conferido':     esc.conferido
             })
 
     return render_template(

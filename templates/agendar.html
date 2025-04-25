@@ -27,7 +27,7 @@
                 horasGroup.style.display = "none"; // Esconde o campo de Horas
                 minutosGroup.style.display = "none"; // Esconde o campo de Minutos
 
-                // Define os campos de horas e minutos como "N/A" quando o motivo não for Banco de Horas
+                // Define os campos de horas e minutos como "0" quando o motivo não for Banco de Horas
                 document.getElementById("quantidade_horas").value = "0";
                 document.getElementById("quantidade_minutos").value = "0";
             }
@@ -59,7 +59,7 @@
             return true;
         }
   
-       // Chama a função de toggle ao carregar a página ou ao mudar a seleção
+        // Chama a função de toggle ao carregar a página ou ao mudar a seleção
         window.onload = toggleDataReferencia;
     </script>
     <style>
@@ -151,46 +151,98 @@
             }
         }
 
-            /* Titulo Container */
-            .titulo-container {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                text-align: center;
-                width: 100%;
-                margin: 20px 0;
-            }
+        /* Titulo Container */
+        .titulo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            width: 100%;
+            margin: 20px 0;
+        }
 
-            /* Estilo para o título no topo do site */
-            .titulo-site {
-                font-family: 'Montserrat', sans-serif; /* Fonte moderna */
-                font-size: 42px; /* Ajuste o tamanho conforme necessário */
-                font-weight: 600; /* Peso de fonte mais leve */
-                color: #007bff; /* Cor azul profissional */
-                text-transform: uppercase; /* Maiúsculas para o título */
-                letter-spacing: 2px; /* Espaçamento entre as letras */
-                margin: 0s;
-                padding-bottom: 10px;
-                border-bottom: 2px solid #007bff; /* Linha embaixo para dar ênfase */
-                text-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Leve sombra para dar profundidade */
-                text-align: center;
-                align-items: center;
-                justify-content: center;
-            }
-            .danger {
+        /* Estilo para o título no topo do site */
+        .titulo-site {
+            font-family: 'Montserrat', sans-serif; /* Fonte moderna */
+            font-size: 42px; /* Ajuste o tamanho conforme necessário */
+            font-weight: 600; /* Peso de fonte mais leve */
+            color: #007bff; /* Cor azul profissional */
+            text-transform: uppercase; /* Maiúsculas para o título */
+            letter-spacing: 2px; /* Espaçamento entre as letras */
+            margin: 0s;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #007bff; /* Linha embaixo para dar ênfase */
+            text-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Leve sombra para dar profundidade */
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .danger {
             color: red;
             background-color: #f8d7da;
             padding: 10px;
             border: 1px solid red;
             border-radius: 5px;
-            }
+        }
 
         .error-message {
             color: red;
             font-size: 12px;
             display: none; /* Oculta por padrão */
-            }
+        }
 
+        /* Seção de status */
+        .info-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            margin: 30px auto;
+            border-radius: 8px;
+            max-width: 900px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .info-section h2 {
+            margin-top: 0;
+            color: #007bff;
+            font-size: 20px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+        .info-section p {
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+        .info-section ul {
+            list-style: disc;
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        .info-section ul li {
+            margin-bottom: 5px;
+        }
+
+        /* Link para voltar à página inicial (somente texto e seta, sem background) */
+        .voltar-link {
+            display: inline-block;
+            text-align: center;
+            color: #007bff;
+            font-size: 16px;
+            margin-top: 20px;
+            text-decoration: none; /* Remove a decoração do link */
+        }
+
+        .voltar-link i {
+            margin-right: 5px; /* Adiciona um pequeno espaço entre o texto e a seta */
+        }
+
+        footer {
+            position: relative;
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            margin-top: 50px; /* Garante que o footer não sobreponha o conteúdo */
+        }
     </style>
 </head>
 
@@ -199,20 +251,20 @@
         <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
     </div>
     
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
         {% for category, message in messages %}
             {% if category == "danger" %}
-            <div class="danger">
-                {{ message }}
-            </div>
+                <div class="danger">
+                    {{ message }}
+                </div>
             {% endif %}
         {% endfor %}
-        {% endif %}
+    {% endif %}
     {% endwith %}
 
     <div class="container">
-        <h1><i class="fas fa-calendar-day"></i> Realizar Justificativa </h1>
+        <h1><i class="fas fa-calendar-day"></i> Realizar Agendamento </h1>
 
         <!-- Formulário de justificativa -->
         <form method="POST" onsubmit="return validateForm(event)">
@@ -245,7 +297,7 @@
                     <option value="FS">Falta Simples (FS)</option>
                 </select>
             </div>
-            
+
             <!-- Campo para selecionar se haverá substituição -->
             <div class="input-group">
                 <label for="havera_substituicao"><i class="fas fa-user-check"></i> Haverá Substituição? (para professores):</label>
@@ -285,50 +337,27 @@
 
             <!-- Botão para submeter o formulário -->
             <button type="submit" class="submit-btn">
-                <i class="fas fa-calendar-check"></i> Enviar justificativa
+                <i class="fas fa-calendar-check"></i> Solicitar Agendamento
             </button>
         </form>
-
-        <script>
-            // Script para atualizar o tipo_folga e mostrar/ocultar o campo de data de referência
-            document.getElementById('motivo').addEventListener('change', function() {
-                var motivo = this.value;
-                var tipoFolgaField = document.getElementById('tipo_folga');
-                var dataBancoHorasField = document.getElementById('data_banco_horas');
-
-                // Atualiza o campo tipo_folga conforme a seleção
-                tipoFolgaField.value = motivo;
-
-                // Mostra ou oculta o campo de data de referência para Banco de Horas
-                if (motivo === 'BH') {
-                    dataBancoHorasField.style.display = 'block';
-                } else {
-                    dataBancoHorasField.style.display = 'none';
-                }
-            });
-
-            function toggleSubstituto() {
-                var substituicao = document.getElementById("havera_substituicao").value;
-                var substitutoGroup = document.getElementById("substituto_group");
-                var nomeSubstitutoInput = document.getElementById("nome_substituto");
-
-                if (substituicao === "Sim") {
-                    substitutoGroup.style.display = "block";
-                    nomeSubstitutoInput.setAttribute("required", "true");
-                } else {
-                    substitutoGroup.style.display = "none";
-                    nomeSubstitutoInput.removeAttribute("required");
-                    nomeSubstitutoInput.value = ""; // Limpa o campo ao ocultar
-                }
-            }
-
-        </script>
     </div>
 
-            <!-- Link para voltar ao calendário -->
-            <a href="{{ url_for('index') }}" class="voltar-link">
-                <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
-            </a>
+    <!-- Novo Container de Informações sobre o agendamento -->
+    <div class="info-section">
+        <h2><i class="fas fa-info-circle"></i> Informações sobre seu agendamento</h2>
+        <p>Ao enviar sua solicitação, você receberá um <strong>protocolo de agendamento</strong> por e-mail. Caso não localize em sua caixa de entrada, verifique sua pasta de spam e, se necessário, marque nosso domínio como confiável para futuras mensagens.</p>
+        <p>Quando sua solicitação for <strong>deferida</strong> ou <strong>indeferida</strong>, você também será notificado automaticamente por e-mail.</p>
+        <p>Você pode acompanhar o status da sua solicitação em:</p>
+        <ul>
+            <li><a href="{{ url_for('minhas_justificativas') }}">Minhas Justificativas</a></li>
+            <li><a href="{{ url_for('calendario') }}">Calendário</a></li>
+        </ul>
+    </div>
+
+    <!-- Link para voltar à página inicial -->
+    <a href="{{ url_for('index') }}" class="voltar-link">
+        <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
+    </a>
 
     <footer>
         <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>

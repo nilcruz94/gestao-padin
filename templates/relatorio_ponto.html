@@ -44,12 +44,6 @@
         .filtrar-btn:hover {
             background-color: #39b300e1;
         }
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 24px;
-            color: #007bff;
-        }
         .container {
             width: 100%;
             max-width: 1200px;
@@ -90,6 +84,11 @@
             background-color: #007bff;
             color: white;
         }
+        /* Evita quebra de linha na coluna Tipo */
+        .col-tipo {
+            white-space: nowrap;
+            text-align: center;
+        }
         .voltar-link {
             text-align: center;
             display: block;
@@ -113,7 +112,6 @@
         .conferido {
             background-color: #d4edda !important;
         }
-        /* Estilização aprimorada para o contador */
         .contador {
             margin-top: 20px;
             margin-bottom: 20px;
@@ -140,7 +138,6 @@
     <div class="container">
         <h1>Relatório de Ponto</h1>
 
-        <!-- Formulário de Seleção de Mês -->
         <div class="form-container">
             <form action="{{ url_for('relatorio_ponto') }}" method="GET">
                 <label for="mes">Escolha um pagamento:</label>
@@ -159,11 +156,11 @@
 
         {% if mes_selecionado %}
             <div class="mes-titulo">
-                Pagamento de {{ meses[mes_selecionado - 1] }} ({{ periodo_inicio.strftime('%d/%m/%Y') }} a {{ periodo_fim.strftime('%d/%m/%Y') }})
+                Pagamento de {{ meses[mes_selecionado - 1] }}
+                ({{ periodo_inicio.strftime('%d/%m/%Y') }} a {{ periodo_fim.strftime('%d/%m/%Y') }})
             </div>
             
             {% if registros %}
-                <!-- Contadores de Registros com espaçamento e estilização aprimorada -->
                 <div class="contador">
                     <p><strong>Total de registros:</strong> {{ registros|length }}</p>
                     <p><strong>Total de Esquecimentos:</strong> {{ registros|selectattr('tipo', 'equalto', 'Esquecimento de Ponto')|list|length }}</p>
@@ -175,7 +172,7 @@
                         <tr>
                             <th>Registro</th>
                             <th>Nome</th>
-                            <th>Tipo</th>
+                            <th class="col-tipo">Tipo</th>
                             <th>Data</th>
                             <th>Motivo</th>
                             <th>1ª Entrada</th>
@@ -185,25 +182,24 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {# Ordena os registros por data em ordem crescente #}
                         {% for item in registros|sort(attribute='data') %}
-                        <tr 
-                            data-id="{{ item.id }}" 
-                            data-tipo="{{ item.tipo }}" 
-                            data-conferido="{{ 'true' if item.conferido else 'false' }}" 
+                        <tr
+                            data-id="{{ item.id }}"
+                            data-tipo="{{ item.tipo }}"
+                            data-conferido="{{ 'true' if item.conferido else 'false' }}"
                             class="{% if item.conferido %}conferido{% endif %}"
                         >
                             <td>{{ item.registro }}</td>
                             <td>{{ item.usuario.nome.title() if item.usuario else 'Sem Nome' }}</td>
-                            <td>{{ item.tipo }}</td>
+                            <td class="col-tipo">{{ item.tipo }}</td>
                             <td>{{ item.data.strftime('%d/%m/%Y') if item.data else 'Sem Data' }}</td>
                             <td>{{ item.motivo if item.motivo else 'Sem Motivo' }}</td>
 
                             {% if item.tipo == 'Esquecimento de Ponto' %}
-                                <td>{{ item.horapentrada if item.horapentrada else '—' }}</td>
-                                <td>{{ item.horapsaida if item.horapsaida else '—' }}</td>
-                                <td>{{ item.horasentrada if item.horasentrada else '—' }}</td>
-                                <td>{{ item.horassaida if item.horassaida else '—' }}</td>
+                                <td>{{ item.horapentrada }}</td>
+                                <td>{{ item.horapsaida }}</td>
+                                <td>{{ item.horasentrada }}</td>
+                                <td>{{ item.horassaida }}</td>
                             {% else %}
                                 <td colspan="4" style="text-align: center;">—</td>
                             {% endif %}
@@ -241,9 +237,7 @@
 
                     fetch("/atualizar_conferido", {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
+                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             id: registroId,
                             tipo: tipo,
@@ -254,7 +248,7 @@
                     .then(data => {
                         if (!data.success) {
                             alert("Erro ao atualizar conferência.");
-                            linha.classList.toggle("conferido"); // Reverter se falhar
+                            linha.classList.toggle("conferido"); // Reverte caso falhe
                         }
                     })
                     .catch(error => {

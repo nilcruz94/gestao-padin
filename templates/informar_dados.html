@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete seu Perfil</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <!-- FontAwesome para ícones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
+  <!-- Adicionando jQuery e Inputmask -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js"></script>
+</head>
+
+<style>
+  /* Estilo para o link de logout */
+  a.logout-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 15px;
+      background-color: #dc3545;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      transition: box-shadow 0.3s ease-in-out;
+      margin-top: 20px;
+  }
+  a.logout-btn:hover {
+      box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.2);
+      background-color: #dc3545;
+  }
+  
+  a {
+      text-decoration: none;
+  }
+  a:hover {
+      text-decoration: none;
+  }
+  
+  /* Container principal que envolve todo o conteúdo */
+  .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 20px auto;
+      box-sizing: border-box;
+      padding: 20px;
+  }
+
+  .section-title {
+      margin-bottom: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+  }
+
+  .form-container {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+  }
+
+  /* Estilização para o formulário */
+  form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+  }
+
+  /* Estilização para os campos de formulário */
+  select, input, button {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+  }
+
+  button {
+      background-color: #28a745;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+  }
+
+  button:hover {
+      background-color: #218838;
+  }
+
+  /* Flash message container */
+  .flash-container {
+      margin: 15px;
+      padding: 10px;
+  }
+
+  .flash {
+      padding: 10px;
+      border-radius: 5px;
+      text-align: center;
+      font-weight: bold;
+      color: white;
+      opacity: 1;
+  }
+
+  .flash.warning {
+      background-color: #ff9800;
+      padding: 10px;
+      border-radius: 5px;
+      text-align: center;
+      font-weight: bold;
+      color: white;
+  }
+
+  .flash .link-perfil {
+      color: #fff;
+      font-weight: bold;
+      text-decoration: underline;
+  }
+
+  .flash .link-perfil:hover {
+      color: #004085;
+      text-decoration: none;
+  }
+</style>
+
+<body>
+  <div class="titulo-container">
+      <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+      <div class="flash-container">
+          {% for category, message in messages %}
+              <div class="flash {{ category }}">
+                  {{ message | safe }}
+              </div>
+          {% endfor %}
+      </div>
+      <script>
+          setTimeout(() => {
+              document.querySelectorAll('.flash').forEach(flash => {
+                  flash.style.transition = 'opacity 1s ease';
+                  flash.style.opacity = '0';
+                  setTimeout(() => flash.remove(), 1000);
+              });
+          }, 8000);
+      </script>
+  {% endif %}
+  {% endwith %}
+
+  <div class="container">
+      <h1 class="section-title">Complete seu Perfil</h1>
+      <div class="form-container">
+          <form method="POST">
+              <!-- Campo CPF -->
+              <div class="editable-field">
+                  <label for="cpf">CPF:</label>
+                  <input type="text" id="cpf" name="cpf" value="{{ usuario.cpf or '' }}" required>
+              </div>
+
+              <!-- Campo RG -->
+              <div class="editable-field">
+                  <label for="rg">RG:</label>
+                  <input type="text" id="rg" name="rg" value="{{ usuario.rg or '' }}" required>
+              </div>
+
+              <!-- Campo Data de Nascimento -->
+              <div class="editable-field">
+                  <label for="data_nascimento">Data de Nascimento:</label>
+                  <input type="date" id="data_nascimento" name="data_nascimento" value="{{ usuario.data_nascimento or '' }}" required>
+              </div>
+
+              <!-- Campo Celular -->
+              <div class="editable-field">
+                  <label for="celular">Celular:</label>
+                  <input type="text" id="celular" name="celular" value="{{ usuario.celular or '' }}" required>
+              </div>
+
+              <!-- Campo Cargo com lista suspensa em ordem alfabética -->
+              <div class="editable-field">
+                  <label for="cargo">Cargo:</label>
+                  <select id="cargo" name="cargo" required>
+                      <option value="Agente Administrativo" {% if usuario.cargo == 'Agente Administrativo' %}selected{% endif %}>Agente Administrativo</option>
+                      <option value="Assistente de Direção" {% if usuario.cargo == 'Assistente de Direção' %}selected{% endif %}>Assistente de Direção</option>
+                      <option value="Assistente Tecnico Pedagogico" {% if usuario.cargo == 'Assistente Tecnico Pedagogico' %}selected{% endif %}>Assistente Técnico Pedagógico</option>
+                      <option value="Atendente de Educação I" {% if usuario.cargo == 'Atendente de Educação I' %}selected{% endif %}>Atendente de Educação I</option>
+                      <option value="Atendente de Educação II" {% if usuario.cargo == 'Atendente de Educação II' %}selected{% endif %}>Atendente de Educação II</option>
+                      <option value="Diretor de Unidade Escolar" {% if usuario.cargo == 'Diretor de Unidade Escolar' %}selected{% endif %}>Diretor de Unidade Escolar</option>
+                      <option value="Educador de Desenvolvimento Infantil" {% if usuario.cargo == 'Educador de Desenvolvimento Infantil' %}selected{% endif %}>Educador de Desenvolvimento Infantil</option>
+                      <option value="Pedagoga Comunitaria" {% if usuario.cargo == 'Pedagoga Comunitaria' %}selected{% endif %}>Pedagoga Comunitária</option>
+                      <option value="Professor Adjunto" {% if usuario.cargo == 'Professor Adjunto' %}selected{% endif %}>Professor Adjunto</option>
+                      <option value="Professor I" {% if usuario.cargo == 'Professor I' %}selected{% endif %}>Professor I</option>
+                      <option value="Professor II" {% if usuario.cargo == 'Professor II' %}selected{% endif %}>Professor II</option>
+                      <option value="Professor III" {% if usuario.cargo == 'Professor III' %}selected{% endif %}>Professor III</option>
+                      <option value="Professor IV" {% if usuario.cargo == 'Professor IV' %}selected{% endif %}>Professor IV</option>
+                      <option value="Secretário de Unidade Escolar" {% if usuario.cargo == 'Secretário de Unidade Escolar' %}selected{% endif %}>Secretário de Unidade Escolar</option>
+                      <option value="Servente" {% if usuario.cargo == 'Servente' %}selected{% endif %}>Servente</option>
+                      <option value="Servente I" {% if usuario.cargo == 'Servente I' %}selected{% endif %}>Servente I</option>
+                      <option value="Servente II" {% if usuario.cargo == 'Servente II' %}selected{% endif %}>Servente II</option>
+                      <option value="Trabalhador" {% if usuario.cargo == 'Trabalhador' %}selected{% endif %}>Trabalhador</option>
+                  </select>
+              </div>
+
+              <button type="submit">Salvar</button>
+          </form>
+      </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
+
+  <script>
+      // Aplicando as máscaras nos campos CPF, RG e Celular
+      $(document).ready(function(){
+          $("#cpf").inputmask("999.999.999-99");  // Máscara de CPF
+          $("#rg").inputmask("99.999.999-9");     // Máscara de RG
+          $("#celular").inputmask("(99) 99999-9999");  // Máscara de Celular
+      });
+  </script>
+</body>
+</html>
