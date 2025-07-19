@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Histórico de Folgas</title>
+    <title>Folgas</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -114,35 +114,17 @@
     </div>
 
     <div class="container">
-        <h2><i class="fas fa-history"></i> Seu Histórico de Ponto</h2>
+        <h2><i class="fas fa-history"></i> Suas folgas restantes:</h2>
 
         <div class="historico-container">
             <div class="historico-item">
                 <i class="fas fa-calendar-check"></i> 
-                <p><strong>Abonadas (AB):</strong> {{ folgas_contabilizadas['AB'] }} folga(s)</p>
-            </div>
-            <div class="historico-item">
-                <i class="fas fa-clock"></i> 
-                <p><strong>Banco de Horas (BH):</strong> {{ folgas_contabilizadas['BH'] }} folga(s)</p>
-            </div>
-            <div class="historico-item">
-                <i class="fas fa-tint"></i> 
-                <p><strong>Doação de Sangue (DS):</strong> {{ folgas_contabilizadas['DS'] }} folga(s)</p>
-            </div>
+                <p><strong>Abonadas:</strong> {{ saldo_abonadas }} restantes de {{ limite_abonadas_ano }} permitidas no ano</p>
+            </div>            
 
             <div class="historico-item">
                 <i class="fas fa-medal"></i> 
-                <p><strong>TREs a Usufruir:</strong> {{ current_user.tre_total }} folga(s)</p>
-            </div>
-
-            <div class="historico-item">
-                <i class="fas fa-check-circle"></i> 
-                <p><strong>TREs Usufruídas:</strong> {{ current_user.tre_usufruidas }} folga(s)</p>
-            </div>
-
-            <div class="historico-item">
-                <i class="fas fa-times-circle"></i> 
-                <p><strong>Falta Simples (FS):</strong> {{ folgas_contabilizadas['FS'] }} folga(s)</p>
+                <p><strong>TREs:</strong> {{ current_user.tre_total }} restante(s)</p>
             </div>
         </div>
     </div>

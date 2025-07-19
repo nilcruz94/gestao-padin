@@ -206,8 +206,8 @@
     <div class="container">
         <!-- Verifica se há registros para deferir -->
         {% if registros %}
-            <form action="/banco_horas/deferir" method="POST">
-                {% for registro in registros %}
+            {% for registro in registros %}
+                <form action="/banco_horas/deferir" method="POST">
                     <div class="registro">
                         <p><strong>{{ registro.funcionario.nome }} - {{ registro.horas }} horas e {{ registro.minutos }} minutos</strong></p>
                         <p>Data: {{ registro.data_realizacao }}</p>
@@ -217,9 +217,9 @@
                             <button type="submit" name="action" value="indeferir" class="button indeferir">Indeferir</button>
                         </div>
                     </div>
-                    <hr>
-                {% endfor %}
-            </form>
+                </form>
+                <hr>
+            {% endfor %}
         {% else %}
             <p class="no-records">Não há registros de horas a serem deferidas.</p>
         {% endif %}

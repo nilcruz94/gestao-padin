@@ -67,15 +67,15 @@ class Agendamento(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    status = db.Column(db.String(50), nullable=False)  # 'pendente', 'deferido', 'indeferido'
+    status = db.Column(db.String(50), nullable=False)
     data = db.Column(db.Date, nullable=False)
     motivo = db.Column(db.String(100), nullable=False)
-    tipo_folga = db.Column(db.String(50))  # Coluna tipo_folga
-    data_referencia = db.Column(db.Date)  # Coluna data_referencia
-    horas = db.Column(db.Integer, nullable=True)  # Coluna para horas
-    minutos = db.Column(db.Integer, nullable=True)  # Coluna para minutos
-    substituicao = db.Column(db.String(3), nullable=False, default="Não")  # 'Sim' ou 'Não'
-    nome_substituto = db.Column(db.String(255), nullable=True)  # Nome do substituto (se houver)
+    tipo_folga = db.Column(db.String(50)) 
+    data_referencia = db.Column(db.Date) 
+    horas = db.Column(db.Integer, nullable=True) 
+    minutos = db.Column(db.Integer, nullable=True) 
+    substituicao = db.Column(db.String(3), nullable=False, default="Não")  
+    nome_substituto = db.Column(db.String(255), nullable=True)  
     # Novo campo
     conferido = db.Column(db.Boolean, default=False)
 
@@ -105,7 +105,7 @@ class BancoDeHoras(db.Model):
     data_criacao = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     data_atualizacao = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
     motivo = db.Column(db.String(40), nullable=True)
-    usufruido = db.Column(db.Boolean, default=False)  # NOVO CAMPO
+    usufruido = db.Column(db.Boolean, default=False) 
 
     funcionario = db.relationship('User', backref='banco_de_horas')
 
@@ -123,7 +123,7 @@ class EsquecimentoPonto(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     conferido = db.Column(db.Boolean, default=False)
 
-    # Novo campo para armazenar o motivo (opcional)
+    
     motivo = db.Column(db.Text, nullable=True)
 
     usuario = db.relationship('User', backref=db.backref('esquecimentos_ponto', lazy=True))
@@ -999,44 +999,50 @@ E.M José Padin Mouta
 
     return render_template('deferir_folgas.html', folgas=folgas)
 
+import datetime
 
 @app.route('/historico', methods=['GET'])
 @login_required
 def historico():
-    # Obtém os dados do usuário logado
     usuario = User.query.get(current_user.id)
 
-    # Inicializa as contagens de folgas
+    # Ano atual
+    ano_atual = datetime.datetime.now().year
+
+    # Limite anual de folgas abonadas
+    limite_abonadas_ano = 6
+
+    # Contabiliza folgas abonadas (motivo 'AB') no ano atual usando Agendamento
+    abonadas_ano_atual = Agendamento.query.filter(
+        Agendamento.funcionario_id == current_user.id,
+        Agendamento.motivo == 'AB',
+        Agendamento.data >= datetime.date(ano_atual, 1, 1),
+        Agendamento.data <= datetime.date(ano_atual, 12, 31)
+    ).count()
+
+    # Calcula quantas ainda podem ser usadas
+    saldo_abonadas = limite_abonadas_ano - abonadas_ano_atual
+    if saldo_abonadas < 0:
+        saldo_abonadas = 0
+
     folgas_contabilizadas = {
-        'AB': 0,  # Abonada
-        'BH': 0,  # Banco de Horas
-        'DS': 0,  # Doação de Sangue
-        'TRE': 0,  # TREs restantes (será atualizado abaixo)
-        'FS': 0   # Falta Simples
+        'AB': abonadas_ano_atual,
+        'BH': 0,
+        'DS': 0,
+        'TRE': 0,
+        'FS': 0
     }
-    
-    # Contabiliza as folgas de agendamentos
-    agendamentos = Agendamento.query.filter_by(funcionario_id=current_user.id).all()
-    for agendamento in agendamentos:
-        if agendamento.motivo in folgas_contabilizadas:
-            folgas_contabilizadas[agendamento.motivo] += 1
 
-    # Contabiliza as folgas já deferidas
-    folgas = Folga.query.filter_by(funcionario_id=current_user.id).all()
-    for folga in folgas:
-        if folga.motivo in folgas_contabilizadas:
-            folgas_contabilizadas[folga.motivo] += 1
+    tre_total = current_user.tre_total
+    tre_usufruidas = current_user.tre_usufruidas
 
-    # Obtendo os valores de TREs do banco de dados
-    tre_total = current_user.tre_total  # TREs a Usufruir
-    tre_usufruidas = current_user.tre_usufruidas  # TREs já usadas
-
-    # Passa os dados para o template
     return render_template(
         'historico.html',
         folgas_contabilizadas=folgas_contabilizadas,
         tre_total=tre_total,
-        tre_usufruidas=tre_usufruidas
+        tre_usufruidas=tre_usufruidas,
+        limite_abonadas_ano=limite_abonadas_ano,
+        saldo_abonadas=saldo_abonadas
     )
 
 # Rota de Cadastro de Banco de Horas
