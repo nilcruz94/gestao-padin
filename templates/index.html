@@ -1,17 +1,148 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Índice</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <!-- FontAwesome para ícones -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-</head>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      box-sizing: border-box;
+    }
+    *, *:before, *:after {
+      box-sizing: inherit;
+    }
 
-<style>
-  /* Estilo para o link de logout */
-  a.logout-btn {
+    /* Container das abas */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 10;
+      background: transparent;
+      margin: 0;
+      padding: 0;
+      padding-top: 5px;
+      user-select: none;
+    }
+
+    /* Cada aba */
+    .tab {
+      background-color: #f0f0f0;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-weight: bold;
+      border: 2px solid #28a745; /* borda verde */
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      color: #333;
+      position: relative;
+      z-index: 20;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      margin: 0;
+      box-sizing: border-box;
+    }
+
+    /* Aba ativa */
+    .tab.active {
+      background-color: #28a745;
+      color: white;
+      border-color: #28a745;
+      border-bottom: none;
+    }
+
+    /* Texto "Acesso aos Serviços" centralizado e destacado */
+    .access-services {
+      font-weight: 700;
+      font-size: 18px;
+      color: #28a745;
+      margin: 0 0 15px 0;
+      text-align: center;
+    }
+
+    /* Container dos cards */
+    .cards-container {
+      display: none;
+      justify-content: center;
+      padding: 0 10px 10px 10px;
+      margin: 0 auto;
+      max-width: 560px;
+      box-sizing: border-box;
+      width: 100%;
+    }
+
+    .cards-container.active {
+      display: flex;
+    }
+
+    /* Card completo */
+    .cards-wrapper {
+      background-color: #f8f9fa;
+      padding: 20px;
+      border: 2px solid #28a745;
+      border-radius: 16px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      width: 100%;
+      box-sizing: border-box;
+      position: relative;
+      z-index: 1;
+      margin: 0;
+    }
+
+    /* Grid dos cards */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 160px);
+      gap: 15px;
+      justify-content: center;
+    }
+
+    /* Cada card */
+    .card {
+      background-color: #28a745;
+      color: white;
+      border: 2px solid white; /* borda branca padrão */
+      border-radius: 12px;
+      width: 160px;
+      height: 160px;
+      padding: 20px;
+      text-align: center;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* Hover com borda verde e sombra mais forte */
+    .card:hover {
+      transform: scale(1.05);
+      border-color: #1e7e34; /* verde mais escuro */
+      background-color: #218838;
+      box-shadow: 0 6px 15px rgba(33, 136, 56, 0.6);
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: white;
+    }
+
+    .card i {
+      font-size: 26px;
+      margin-bottom: 10px;
+      color: white;
+      pointer-events: none;
+    }
+
+    /* Botão sair */
+    .logout-btn {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -23,199 +154,210 @@
       border-radius: 8px;
       font-size: 16px;
       font-weight: bold;
-      transition: box-shadow 0.3s ease-in-out;
-      margin-top: 20px;
-  }
-  a.logout-btn:hover {
-      box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.2);
-      background-color: #dc3545;
-  }
-  
-  a {
-      text-decoration: none;
-  }
-  a:hover {
-      text-decoration: none;
-  }
-  
-  /* Container principal que envolve todo o conteúdo */
-  .container {
-      width: 90%;
-      max-width: 1200px;
-      margin: 20px auto;
-      box-sizing: border-box;
-      padding: 20px;
-  }
-  
-  .flash-container {
-      margin: 15px;
-      padding: 10px;
-  }
-  
-  .flash {
-      padding: 10px;
-      border-radius: 5px;
-      text-align: center;
-      font-weight: bold;
-      color: white;
-      opacity: 1;
-  }
-  
-  .flash.warning {
-      background-color: #ff9800;
-      padding: 10px;
-      border-radius: 5px;
-      text-align: center;
-      font-weight: bold;
-      color: white;
-  }
-  
-  .flash .link-perfil {
-      color: #fff;
-      font-weight: bold;
-      text-decoration: underline;
-  }
-  
-  .flash .link-perfil:hover {
-      color: #004085;
-      text-decoration: none;
-  }
-  
-  /* Estilização para os títulos de seção */
-  .section-title {
-      margin-bottom: 10px;
-      font-size: 20px;
-      font-weight: bold;
-      color: #333;
-  }
-  
-  /* Form container para organizar o conteúdo interno em coluna */
-  .form-container {
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-  }
-  
-  /* Container para organizar as seções lado a lado */
-  .menu-columns {
-      display: flex;
-      gap: 20px;
-      width: 100%;
-  }
-  
-  .menu-column {
-      flex: 1;
-      min-width: 300px;
-  }
-  
-  /* Media Queries para dispositivos móveis */
-  @media (max-width: 768px) {
-      .menu-columns {
-          flex-direction: column;
-          gap: 10px;
-      }
-      .menu-column {
-          min-width: auto;
-      }
-      .section-title {
-          font-size: 18px;
-          margin-bottom: 8px;
-      }
-      a.logout-btn {
-          font-size: 14px;
-          padding: 12px;
-      }
-  }
-</style>
+      margin: 30px auto 0;
+      max-width: 200px;
+      user-select: none;
+    }
 
+    /* Título do site */
+    .titulo-site {
+      text-align: center;
+      margin: 30px 0 10px;
+    }
+
+    /* Boas-vindas */
+    .welcome-container {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 18px;
+      color: #333;
+      font-weight: 600;
+    }
+
+    /* Rodapé */
+    footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 14px;
+    }
+
+    /* Flash messages */
+    .flash-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .flash {
+      padding: 10px 20px;
+      margin: 5px auto;
+      border-radius: 5px;
+      width: fit-content;
+    }
+
+    .flash.success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .flash.error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .cards-grid {
+        grid-template-columns: repeat(2, 140px);
+        gap: 12px;
+      }
+
+      .card {
+        width: 140px;
+        height: 140px;
+      }
+
+      .card i {
+        font-size: 22px;
+      }
+
+      .access-services {
+        font-size: 16px;
+        margin-bottom: 12px;
+      }
+      
+      .cards-container {
+        max-width: 360px;
+        padding: 0 5px 10px 5px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        width: 100%;
+        max-width: 260px;
+        height: auto;
+      }
+
+      .cards-container {
+        max-width: 280px;
+        padding: 0 5px 10px 5px;
+      }
+    }
+  </style>
+</head>
 <body>
-  <div class="titulo-container">
-      <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+  <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+
+  <!-- Mensagem de boas-vindas no topo, centralizada -->
+  <div class="welcome-container">
+    Bem-vindo, {{ current_user.nome }}!
   </div>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-      <div class="flash-container">
-          {% for category, message in messages %}
-              <div class="flash {{ category }}">
-                  {{ message | safe }}
-              </div>
-          {% endfor %}
-      </div>
-      <script>
-          setTimeout(() => {
-              document.querySelectorAll('.flash').forEach(flash => {
-                  flash.style.transition = 'opacity 1s ease';
-                  flash.style.opacity = '0';
-                  setTimeout(() => flash.remove(), 1000);
-              });
-          }, 8000);
-      </script>
+  <div class="flash-container">
+    {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message|safe }}</div>
+    {% endfor %}
+  </div>
+  <script>
+    setTimeout(() => {
+      document.querySelectorAll('.flash').forEach(flash => {
+        flash.style.transition = 'opacity 1s ease';
+        flash.style.opacity = '0';
+        setTimeout(() => flash.remove(), 1000);
+      });
+    }, 8000);
+  </script>
   {% endif %}
   {% endwith %}
 
-  <div class="container">
-      <h1>Bem-vindo, <span class="nome-usuario">{{ current_user.nome }}</span>!</h1>
-      <div class="form-container">
-          <div class="menu-columns">
-              <!-- Funcionalidades Gerais -->
-              <div class="menu-column">
-                  <h2 class="section-title">Funcionalidades Gerais</h2>
-                  <a href="{{ url_for('perfil') }}" class="menu-item">
-                      <i class="fas fa-user"></i> Meu Perfil
-                  </a>
-                  <a href="{{ url_for('agendar') }}" class="menu-item">
-                      <i class="fas fa-calendar-day"></i> Agendar Folga
-                  </a>
-                  <a href="{{ url_for('minhas_justificativas') }}" class="menu-item">
-                      <i class="fas fa-list-alt"></i> Meus Agendamentos
-                  </a>
-                  <a href="{{ url_for('relatar_esquecimento') }}" class="menu-item">
-                      <i class="fas fa-question-circle"></i> Relatar Esquecimento / Ausencia de Marcação
-                  </a>
-                  <a href="{{ url_for('calendario') }}" class="menu-item">
-                      <i class="fas fa-calendar-alt"></i> Ver Calendário
-                  </a>
-                  <a href="{{ url_for('banco_horas') }}" class="menu-item">
-                      <i class="fas fa-history"></i> Banco de Horas
-                  </a>
-                  <a href="{{ url_for('historico') }}" class="menu-item">
-                      <i class="fas fa-clock"></i> Minhas Folgas
-                  </a>
-              </div>
-
-              <!-- Funcionalidades Administrativas -->
-              {% if current_user.tipo == 'administrador' %}
-              <div class="menu-column">
-                  <h2 class="section-title">Funcionalidades Administrativas</h2>
-                  <a href="{{ url_for('deferir_folgas') }}" class="menu-item">
-                      <i class="fas fa-check-circle"></i> Deferir Folgas
-                  </a>
-                  <a href="{{ url_for('relatorio_ponto') }}" class="menu-item">
-                      <i class="fas fa-chart-bar"></i> Relatório de Ponto
-                  </a>
-                  <a href="{{ url_for('aprovar_usuarios') }}" class="menu-item">
-                      <i class="fas fa-user-check"></i> Aprovar Usuários
-                  </a>
-                  <!-- Novo campo para visualizar agendamentos -->
-                  <a href="{{ url_for('admin_agendamentos') }}" class="menu-item">
-                      <i class="fas fa-calendar-alt"></i> Visualizar Agendamentos
-                  </a>
-                  <!-- Novo campo para visualizar prontuários -->
-                  <a href="{{ url_for('user_info_all') }}" class="menu-item">
-                      <i class="fas fa-folder-open"></i> Prontuários
-                  </a>
-              </div>
-              {% endif %}
-          </div>
-          <a href="{{ url_for('logout') }}" class="logout-btn">
-              <i class="fas fa-sign-out-alt"></i> Sair
-          </a>
-      </div>
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('geral')">Geral</div>
+    {% if current_user.tipo == 'administrador' %}
+    <div class="tab" onclick="showTab('admin')">Administrativo</div>
+    {% endif %}
   </div>
-</body>
 
-<footer>
-  <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-</footer>
+  <!-- Aba Geral -->
+  <div class="cards-container active" id="geral">
+    <div class="cards-wrapper">
+      <div class="access-services">
+        Acesso aos Serviços
+      </div>
+      <div class="cards-grid">
+        <a href="{{ url_for('perfil') }}" class="card">
+          <i class="fas fa-user"></i> Meu Perfil
+        </a>
+        <a href="{{ url_for('historico') }}" class="card">
+          <i class="fas fa-clock"></i> Minhas Folgas
+        </a>
+        <a href="{{ url_for('minhas_justificativas') }}" class="card">
+          <i class="fas fa-list-alt"></i> Meus Agendamentos
+        </a>
+        <a href="{{ url_for('agendar') }}" class="card">
+          <i class="fas fa-calendar-day"></i> Agendar Folga
+        </a>
+        <a href="{{ url_for('relatar_esquecimento') }}" class="card">
+          <i class="fas fa-question-circle"></i> Relatar Esquecimento
+        </a>
+        <a href="{{ url_for('calendario') }}" class="card">
+          <i class="fas fa-calendar-alt"></i> Ver Calendário
+        </a>
+        <a href="{{ url_for('banco_horas') }}" class="card">
+          <i class="fas fa-history"></i> Banco de Horas
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aba Administrativa -->
+  {% if current_user.tipo == 'administrador' %}
+  <div class="cards-container" id="admin">
+    <div class="cards-wrapper">
+      <div class="access-services">
+        Acesso aos Serviços
+      </div>
+      <div class="cards-grid">
+        <a href="{{ url_for('deferir_folgas') }}" class="card">
+          <i class="fas fa-check-circle"></i> Deferir Folgas
+        </a>
+        <a href="{{ url_for('relatorio_ponto') }}" class="card">
+          <i class="fas fa-chart-bar"></i> Relatório de Ponto
+        </a>
+        <a href="{{ url_for('aprovar_usuarios') }}" class="card">
+          <i class="fas fa-user-check"></i> Aprovar Usuários
+        </a>
+        <a href="{{ url_for('admin_agendamentos') }}" class="card">
+          <i class="fas fa-calendar-alt"></i> Visualizar Agendamentos
+        </a>
+        <a href="{{ url_for('user_info_all') }}" class="card">
+          <i class="fas fa-folder-open"></i> Prontuários
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <a href="{{ url_for('logout') }}" class="logout-btn">
+    <i class="fas fa-sign-out-alt"></i> Sair
+  </a>
+
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
+
+  <script>
+    function showTab(id) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.cards-container').forEach(c => c.classList.remove('active'));
+      document.querySelector(`.tab[onclick="showTab('${id}')"]`).classList.add('active');
+      document.getElementById(id).classList.add('active');
+    }
+  </script>
+</body>
 </html>

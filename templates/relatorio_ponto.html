@@ -182,7 +182,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for item in registros|sort(attribute='data') %}
+                        {% for item in registros %}
                         <tr
                             data-id="{{ item.id }}"
                             data-tipo="{{ item.tipo }}"

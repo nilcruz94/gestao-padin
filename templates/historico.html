@@ -67,6 +67,21 @@
             color: #007bff;
         }
 
+        .voltar-link {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .voltar-link a {
+            font-size: 16px;
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .voltar-link a:hover {
+            text-decoration: underline;
+        }
+
         footer {
             background: linear-gradient(to right, #222, #444);
             color: #ddd;
@@ -126,12 +141,22 @@
                 <i class="fas fa-medal"></i> 
                 <p><strong>TREs:</strong> {{ current_user.tre_total }} restante(s)</p>
             </div>
+
+            <div class="historico-item">
+                <i class="fas fa-clock"></i> 
+                <p><strong>Banco de Horas:</strong> 
+                    {% set horas = current_user.banco_horas // 60 %}
+                    {% set minutos = current_user.banco_horas % 60 %}
+                    {{ horas }}h {{ '%02d' % minutos }}min acumulados
+                </p>
+            </div>
         </div>
     </div>
 
     <div class="voltar-link">
         <a href="/index">
-            <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial</a>
+            <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
+        </a>
     </div>
 
     <footer>

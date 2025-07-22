@@ -286,8 +286,8 @@ def minhas_justificativas():
     print(f"Agendamentos: {agendamentos}")  # Adicione isso para verificar os dados
     return render_template('minhas_justificativas.html', agendamentos=agendamentos)
 
-# Rota Agendar
 @app.route('/agendar', methods=['GET', 'POST'])
+@login_required
 def agendar():
     if request.method == 'POST':
         tipo_folga       = request.form['tipo_folga']         # Código do motivo: 'AB', 'BH', 'DS', 'TRE', 'FS'
@@ -304,6 +304,13 @@ def agendar():
         if tipo_folga == 'AB':
             motivo     = 'AB'
             tipo_folga = 'AB'
+
+        # Validação específica para TRE: verifica se tipo_folga ou motivo são "TRE"
+        if tipo_folga == 'TRE' or motivo == 'TRE':
+            usuario = User.query.get(current_user.id)  # Buscar o usuário atualizado
+            if usuario.tre_total <= 0:
+                flash("Você não possui TREs disponíveis para agendar.", "danger")
+                return render_template('agendar.html')
 
         # mapeia o código para descrição legível
         descricao_motivo = {
@@ -359,7 +366,8 @@ def agendar():
 
         total_minutos = (horas * 60) + minutos
         usuario = User.query.get(current_user.id)
-        if usuario.banco_horas < total_minutos:
+
+        if tipo_folga == 'BH' and usuario.banco_horas < total_minutos:
             flash("Você não possui horas suficientes no banco de horas para este agendamento.", "danger")
             return redirect(url_for('index'))
 
@@ -432,6 +440,7 @@ E.M José Padin Mouta
         return redirect(url_for('index'))
 
     return render_template('agendar.html')
+
 
 # Rota de Calendário de Folgas
 @app.route('/calendario', defaults={'year': 2025, 'month': 1}, methods=['GET', 'POST'])
@@ -777,13 +786,16 @@ def relatorio_ponto():
                 'registro':      esc.usuario.registro,
                 'tipo':          'Esquecimento de Ponto',
                 'data':          esc.data_esquecimento,
-                'motivo':        esc.motivo,                  # <<< aqui pegamos o motivo do banco
+                'motivo':        esc.motivo,
                 'horapentrada':  esc.hora_primeira_entrada or '—',
                 'horapsaida':    esc.hora_primeira_saida  or '—',
                 'horasentrada':  esc.hora_segunda_entrada or '—',
                 'horassaida':    esc.hora_segunda_saida   or '—',
                 'conferido':     esc.conferido
             })
+
+        # 🔠 Ordenar os registros em ordem alfabética pelo nome do usuário
+        registros.sort(key=lambda r: r['usuario'].nome.lower())
 
     return render_template(
         'relatorio_ponto.html',
@@ -833,15 +845,13 @@ def criar_admin():
     else:
         return 'A conta administrador já existe.'
     
-
+# Rota de Deferir Folgas
 @app.route('/deferir_folgas', methods=['GET', 'POST'])
 @login_required
 def deferir_folgas():
     if current_user.tipo == 'administrador':
-        # Exibir folgas de todos os funcionários com status pendente ou em espera
         folgas = Agendamento.query.filter(Agendamento.status.in_(['em_espera', 'pendente'])).all()
     else:
-        # Exibir apenas folgas do próprio funcionário com status pendente ou em espera
         folgas = Agendamento.query.filter(
             Agendamento.funcionario_id == current_user.id,
             Agendamento.status.in_(['em_espera', 'pendente'])
@@ -853,15 +863,12 @@ def deferir_folgas():
         folga = Agendamento.query.get(folga_id)
 
         if folga:
-            usuario = User.query.get(folga.funcionario_id)  # Recupera o usuário
+            usuario = User.query.get(folga.funcionario_id)
 
-            # Caso seja do tipo "Banco de Horas" e o status seja deferido
             if folga.motivo == 'BH' and novo_status == 'deferido':
-                total_minutos = (folga.horas * 60) + folga.minutos  # Total em minutos da folga
+                total_minutos = (folga.horas * 60) + folga.minutos
                 if usuario.banco_horas >= total_minutos:
-                    usuario.banco_horas -= total_minutos  # Subtrai do banco de horas
-
-                    # Registra a operação na tabela BancoDeHoras
+                    usuario.banco_horas -= total_minutos
                     novo_banco_horas = BancoDeHoras(
                         funcionario_id=usuario.id,
                         horas=folga.horas,
@@ -877,20 +884,22 @@ def deferir_folgas():
                     flash("O funcionário não tem horas suficientes no banco de horas para este agendamento.", "danger")
                     return redirect(url_for('deferir_folgas'))
 
-            # Caso a folga seja do tipo TRE e esteja sendo deferida, atualiza os campos
             if folga.motivo == 'TRE' and novo_status == 'deferido':
-                usuario.tre_total -= 1
-                usuario.tre_usufruidas += 1
+                # Somente decrementa se tre_total > 0 para evitar números negativos
+                if usuario.tre_total > 0:
+                    usuario.tre_total -= 1
+                    usuario.tre_usufruidas += 1
+                else:
+                    flash("Não é possível deferir esta folga TRE porque o usuário não possui TRE disponível.", "danger")
+                    return redirect(url_for('deferir_folgas'))
 
-            # Atualiza o status do agendamento
             folga.status = novo_status
 
             try:
                 db.session.commit()
                 flash(f"A folga de {folga.funcionario.nome} foi {novo_status} com sucesso!",
                       "success" if novo_status == 'deferido' else "danger")
-                
-                # Monta e envia o e-mail para notificar o usuário com mensagem formal e adicional
+
                 if novo_status == 'deferido':
                     assunto = "E.M José Padin Mouta - Deferimento de Folga"
                     mensagem_html = f"""
@@ -968,7 +977,7 @@ E.M José Padin Mouta
                     """
                     mensagem_texto = f"""Prezado(a) Senhor(a) {usuario.nome},
 
-Cumprimentando-o(a), comunicamos que, após análise criteriosa, a sua solicitação de FOLGA para o dia {folga.data.strftime('%d/%m/%Y')} não pôde ser DEFERIDA pela direção da unidade escolar.
+Cumprimentando-o, comunicamos que, após análise criteriosa, a sua solicitação de FOLGA para o dia {folga.data.strftime('%d/%m/%Y')} não pôde ser DEFERIDA pela direção da unidade escolar.
 
 Lamentamos o inconveniente e estamos à disposição para eventuais esclarecimentos ou para discutir alternativas viáveis. Agradecemos a sua compreensão.
 
@@ -988,7 +997,7 @@ E.M José Padin Mouta
         else:
             flash("Agendamento não encontrado.", "danger")
 
-    # Reconsulta os registros após a operação para atualizá-los na página
+    # Atualiza a lista após qualquer ação
     if current_user.tipo == 'administrador':
         folgas = Agendamento.query.filter(Agendamento.status.in_(['em_espera', 'pendente'])).all()
     else:
@@ -1012,10 +1021,11 @@ def historico():
     # Limite anual de folgas abonadas
     limite_abonadas_ano = 6
 
-    # Contabiliza folgas abonadas (motivo 'AB') no ano atual usando Agendamento
+    # ✅ Contabiliza apenas folgas abonadas deferidas no ano atual
     abonadas_ano_atual = Agendamento.query.filter(
         Agendamento.funcionario_id == current_user.id,
         Agendamento.motivo == 'AB',
+        Agendamento.status == 'deferido',  # Só conta as deferidas
         Agendamento.data >= datetime.date(ano_atual, 1, 1),
         Agendamento.data <= datetime.date(ano_atual, 12, 31)
     ).count()
