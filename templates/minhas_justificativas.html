@@ -1,182 +1,638 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meus Agendamentos</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha384-DyZ88mC6Up2uqSdsKUyI35PpCfwkHB2f2Q4z8s1U3B1ii+ib9dFZeX5Jh8VZzf5k" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meus Agendamentos</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f9;
+      color: #333;
+      font-family: 'Montserrat', sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Cabeçalhos */
+    .header-desktop, .header-mobile {
+      display: none;
+      flex-shrink: 0;
+    }
+
+    /* === Desktop Header === */
+    @media (min-width: 769px) {
+      .header-desktop {
+        display: flex;
+        background-color: #007bff;
+        padding: 15px 30px;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+        min-height: 110px;
+        position: relative;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        color: white;
+        flex-shrink: 0;
+      }
+
+      .left-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+        color: white;
+      }
+
+      .escola-nome {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 1.6rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+
+      .escola-subtitulo {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-top: 4px;
+      }
+
+      .header-center-text-container {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1.9rem;
+        color: white;
+        letter-spacing: 5px;
+        user-select: none;
+        white-space: nowrap;
+        z-index: 1;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      }
+
+      .btn-home {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+      }
+
+      .btn-home:hover {
+        background-color: #0d8a00;
+      }
+    }
+
+    /* === Mobile Header === */
+    @media (max-width: 768px) {
+      .header-mobile {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        background-color: #007bff;
+        flex-shrink: 0;
+      }
+
+      .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        padding: 10px 15px;
+        background-color: #007bff;
+        text-align: center;
+      }
+
+      .logo {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: white;
+        text-align: center;
+      }
+
+      .escola-nome {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 1.3rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+
+      .escola-subtitulo {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 2px;
+      }
+
+      .header-bottom {
+        background-color: #0056b3;
+        text-align: center;
+        padding: 12px 10px;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1.0rem;
+        letter-spacing: 4px;
+        user-select: none;
+        color: white;
+        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        position: relative;
+      }
+
+      .btn-home-mobile {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+      }
+
+      .btn-home-mobile:hover {
+        background-color: #0d8a00;
+      }
+
+      /* Container com margin para dar espaço pro footer fixo */
+      .container {
+        margin-bottom: 70px;
+      }
+    }
+
+    /* Desktop main content wrapper */
+    @media (min-width: 769px) {
+      .main-content {
+        flex: 1; /* ocupa espaço entre header e footer */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+    }
+
+    /* Mobile main content wrapper */
+    @media (max-width: 768px) {
+      .main-content {
+        flex: 1;
+      }
+    }
+
+    /* Container padrão */
+    .container {
+      width: 100%;
+      max-width: 700px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      padding: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.07);
+      backdrop-filter: blur(6px);
+      box-sizing: border-box;
+    }
+
+    /* Modal e botões */
+    .modal {
+      display: none; /* garante que não apareça inicialmente */
+      position: fixed;
+      z-index: 1000;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    .modal-content {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 10% auto;
+      width: 90%;
+      max-width: 320px;
+      box-sizing: border-box;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    .btn {
+      margin: 10px;
+      padding: 10px 20px;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: #45a049 !important;
+    }
+
+    /* Estilos para o botão de exclusão */
+    .delete-btn {
+      font-size: 1.1rem; /* menor */
+      color: #e74c3c;
+      cursor: pointer;
+      text-decoration: none;
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      transition: color 0.2s ease;
+    }
+
+    .delete-btn i {
+      pointer-events: none; /* evita problemas no clique */
+    }
+
+    .delete-btn:hover {
+      color: #c0392b;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Remove quadrado branco ao redor do X */
+    tbody tr td:nth-child(4) {
+      padding: 0 6px;
+      text-align: center;
+      width: 40px; /* espaço só pro ícone */
+      vertical-align: middle;
+    }
+
+    .no-data {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 1.2em;
+      color: #555;
+    }
+
+    /* Rodapé */
+    footer {
+      background: linear-gradient(to right, #222, #444);
+      color: #ddd;
+      text-align: center;
+      padding: 15px 0;
+      font-size: 14px;
+      border-top: 2px solid #555;
+      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+      width: 100%;
+    }
+
+    /* Footer fixo no rodapé mobile */
+    @media (max-width: 768px) {
+      footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
+    }
+
+    /* Link voltar */
+    .voltar-link {
+      display: inline-block;
+      margin-top: 25px;
+      font-size: 16px;
+      color: #007bff;
+      text-decoration: none;
+    }
+    .voltar-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Tabela desktop padrão */
+    @media (min-width: 769px) {
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      thead th {
+        background-color: #007bff;
+        color: white;
+        padding: 10px;
+        font-weight: 700;
+        text-align: center; /* Centralizado */
+      }
+      tbody td {
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+        text-align: center; /* Centralizado */
+        color: white; /* Texto branco para todos os status */
+      }
+      /* Pode ajustar cor para cada status se quiser, aqui branco para todos */
+      tbody tr.status-em-espera td,
+      tbody tr.status-deferido td,
+      tbody tr.status-indeferido td {
+        color: white;
+      }
+    }
+
+/* Tabela mobile em estilo tradicional com cabeçalho visível e layout amigável */
+@media (max-width: 768px) {
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  thead {
+    display: table-header-group;
+    background-color: #007bff; /* fundo azul do cabeçalho */
+  }
+
+  thead th {
+    background-color: #007bff; /* garante cor mesmo se sobrescrever */
+    color: white;
+    font-weight: 700;
+    text-align: center;
+    padding: 10px 5px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    display: table-row;
+    background-color: #007bff;
+    border-radius: 8px;
+    margin-bottom: 6px;
+  }
+
+  tbody tr td {
+    text-align: center;
+    padding: 8px 4px;
+    color: white !important;
+    font-size: 0.85rem;
+    word-break: break-word;
+    vertical-align: middle;
+  }
+
+  tbody tr td:nth-child(4) {
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    padding: 4px 0;
+    display: table-cell; /* Remove o flex que estava distorcendo */
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  /* Botão delete centralizado e compacto */
+  .delete-btn {
+    font-size: 1rem;
+    width: 24px;
+    height: 24px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #e74c3c;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0 auto;
+    border-radius: 50%;
+  }
+  .delete-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #c0392b;
+  }
+
+}
+
+  </style>
 </head>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    let agendamentoIdToDelete = null;
+
+    function confirmDelete(agendamentoId) {
+      agendamentoIdToDelete = agendamentoId;
+      const modal = document.getElementById("confirmModal");
+      modal.style.display = "flex"; // usa flex para centralizar
+      document.getElementById("confirmDeleteForm").action = "/delete_agendamento/" + agendamentoIdToDelete;
+    }
+
+    // TORNA A FUNÇÃO ACESSÍVEL NO HTML
+    window.confirmDelete = confirmDelete;
+
+    document.getElementById("confirmDeleteBtn").addEventListener("click", function (event) {
+      event.preventDefault();
+      if (agendamentoIdToDelete) {
+        document.getElementById("confirmDeleteForm").submit();
+      } else {
+        alert("ID de agendamento inválido!");
+      }
+    });
+
+    document.getElementById("cancelDeleteBtn").addEventListener("click", function () {
+      document.getElementById("confirmModal").style.display = "none";
+    });
+
+    // Garante que o modal não fique visível após recarregar a página
+    window.addEventListener("pageshow", function () {
+      document.getElementById("confirmModal").style.display = "none";
+      agendamentoIdToDelete = null;
+      document.getElementById("confirmDeleteForm").action = "";
+    });
+  });
+</script>
+
 <body>
 
-    <div class="titulo-container">
-        <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
     </div>
 
-    <div class="container">
-        <h2>Agendamentos de {{ current_user.nome }}</h2>
-
-        <!-- Exibição das mensagens flash -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="flash {{ category }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-
-        {% if agendamentos %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Motivo</th>
-                    <th>Status</th>
-                    <th>Opções</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for agendamento in agendamentos %}
-                <tr class="status-{{ agendamento.status|replace('_', '-') }}">
-                    <td>{{ agendamento.data.strftime('%d/%m/%Y') }}</td>
-                    <td>{{ agendamento.motivo | default('Não informado') }}</td>
-                    <td>
-                        {% set status_map = {'em_espera': 'Em Espera', 'deferido': 'Deferido', 'indeferido': 'Indeferido'} %}
-                        {{ status_map.get(agendamento.status, 'Status Desconhecido') }}
-                    </td>
-                    <td>
-                        {% if agendamento.status == 'em_espera' %}
-                            <a href="javascript:void(0);" class="delete-btn" onclick="confirmDelete({{ agendamento.id }})">
-                                <i class="fas fa-times"></i>
-                            </a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="no-data">
-            <p>Você não tem justificativas pendentes.</p>
-        </div>
-        {% endif %}
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
     </div>
 
-    <!-- Janela de Confirmação -->
-    <div id="confirmModal" class="modal">
-        <div class="modal-content">
-            <h2>Você tem certeza?</h2>
-            <p>Deseja excluir este agendamento?</p>
-            <form id="confirmDeleteForm" action="" method="POST">
-                <button id="confirmDeleteBtn" class="btn">Sim, excluir</button>
-                <button id="cancelDeleteBtn" type="button" class="btn">Cancelar</button>
-            </form>
-        </div>
-    </div>
-
-    <a href="{{ url_for('index') }}" class="voltar-link">
-        <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
     </a>
+  </header>
 
-    <!-- Rodapé -->
-    <footer class="footer">
-        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-    </footer>
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom" style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        box-sizing: border-box;
+        white-space: nowrap;
+      ">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
 
-    <script>
-        let agendamentoIdToDelete = null;
+  <!-- Conteúdo principal -->
+  <main class="main-content">
+    <div class="container">
+      <h2>Agendamentos de {{ current_user.nome }}</h2>
 
-        // Função para abrir a janela de confirmação
-        function confirmDelete(agendamentoId) {
-            agendamentoIdToDelete = agendamentoId;
-            document.getElementById("confirmModal").style.display = "block";
-            document.getElementById("confirmDeleteForm").action = "/delete_agendamento/" + agendamentoIdToDelete;
-        }
+      <!-- Exibição das mensagens flash -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+              <div class="flash-messages">
+                  {% for category, message in messages %}
+                      <div class="flash {{ category }}">
+                          {{ message }}
+                      </div>
+                  {% endfor %}
+              </div>
+          {% endif %}
+      {% endwith %}
 
-        // Função para confirmar a exclusão
-        document.getElementById("confirmDeleteBtn").addEventListener("click", function(event) {
-            event.preventDefault();
-            if (agendamentoIdToDelete) {
-                document.getElementById("confirmDeleteForm").submit();
-            } else {
-                alert('ID de agendamento inválido!');
-            }
-        });
+      {% if agendamentos %}
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Motivo</th>
+            <th>Status</th>
+            <th>Opções</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for agendamento in agendamentos %}
+          <tr class="status-{{ agendamento.status|replace('_', '-') }}">
+            <td>{{ agendamento.data.strftime('%d/%m/%Y') }}</td>
+            <td>{{ agendamento.motivo | default('Não informado') }}</td>
+            <td>
+              {% set status_map = {'em_espera': 'Em Espera', 'deferido': 'Deferido', 'indeferido': 'Indeferido'} %}
+              {{ status_map.get(agendamento.status, 'Status Desconhecido') }}
+            </td>
+            <td>
+              {% if agendamento.status == 'em_espera' %}
+                <a href="javascript:void(0);" class="delete-btn" onclick="confirmDelete({{ agendamento.id }})" title="Excluir">
+                  <i class="fas fa-times"></i>
+                </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="no-data">
+        <p>Você não tem justificativas pendentes.</p>
+      </div>
+      {% endif %}
+    </div>
+  </main>
 
-        // Função para cancelar a exclusão
-        document.getElementById("cancelDeleteBtn").addEventListener("click", function() {
-            document.getElementById("confirmModal").style.display = "none";
-        });
-    </script>
+  <!-- Janela de Confirmação -->
+  <div id="confirmModal" class="modal">
+    <div class="modal-content">
+      <h2>Você tem certeza?</h2>
+      <p>Deseja excluir este agendamento?</p>
+      <form id="confirmDeleteForm" action="" method="POST">
+        <button id="confirmDeleteBtn" class="btn">Sim, excluir</button>
+        <button id="cancelDeleteBtn" type="button" class="btn">Cancelar</button>
+      </form>
+    </div>
+  </div>
 
-    <!-- Estilo para a janela de confirmação -->
-    <style>
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
+  <a href="{{ url_for('index') }}" class="voltar-link">
+    <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
+  </a>
 
-        .modal-content {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 5px;
-            margin: 15% auto;
-            width: 300px;
-            text-align: center;
-        }
-
-        .btn {
-            margin: 10px;
-            padding: 10px 20px;
-            border: none;
-            background-color: #4CAF50;
-            color: white;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-
-        .btn:hover {
-            background-color: #45a049;
-        }
-
-        /* Estilos para o botão de exclusão */
-        .delete-btn {
-            font-size: 20px;
-            color: #e74c3c;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        .delete-btn:hover {
-            color: #c0392b;
-        }
-
-        .protocol-link:hover {
-            text-decoration: underline;
-        }
-
-        .no-data {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 1.2em;
-            color: #555;
-        }
-
-        td {
-            text-align: center;
-        }
-    </style>
-
+  <!-- Rodapé -->
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
 </body>
 </html>

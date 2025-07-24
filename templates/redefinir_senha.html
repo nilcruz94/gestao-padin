@@ -1,52 +1,319 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Redefinir Senha</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      body {
+        min-height: 100vh;
+      }
+
+      @media (min-width: 769px) {
+        .container {
+          flex: initial;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          flex: 1 0 auto;
+          margin-bottom: 50px;
+        }
+      }
+
+      footer {
+        flex-shrink: 0;
+      }
+
+      /* === Desktop Header === */
+      .header-desktop {
+        display: none;
+      }
+      .header-mobile {
+        display: none;
+      }
+
+      @media (min-width: 769px) {
+        .header-desktop {
+          display: flex;
+          background-color: #007bff;
+          padding: 15px 30px;
+          width: 100%;
+          align-items: center;
+          justify-content: space-between;
+          box-sizing: border-box;
+          min-height: 110px;
+          position: sticky;
+          top: 0;
+          z-index: 1000;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+          color: white;
+          position: relative;
+        }
+        .header-mobile {
+          display: none;
+        }
+        .left-section {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+        .logo {
+          width: 80px;
+          height: 80px;
+          object-fit: contain;
+          border-radius: 10px;
+          background-color: white;
+          padding: 6px;
+        }
+        .text-container {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          text-align: left;
+          color: white;
+        }
+        .escola-nome {
+          font-family: 'Montserrat', sans-serif;
+          font-weight: 700;
+          font-size: 1.6rem;
+          margin: 0;
+          line-height: 1.1;
+        }
+        .escola-subtitulo {
+          font-family: 'Montserrat', sans-serif;
+          font-weight: 600;
+          font-size: 1.1rem;
+          margin-top: 4px;
+        }
+        .header-center-text-container {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          user-select: none;
+          z-index: 1;
+        }
+        .header-center-text {
+          font-family: 'Montserrat', sans-serif;
+          font-weight: 800;
+          font-size: 1.9rem;
+          color: white;
+          letter-spacing: 5px;
+          white-space: nowrap;
+          text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .btn-home {
+          background-color: #0fb300;
+          color: white;
+          padding: 6px 14px;
+          border-radius: 6px;
+          font-weight: 700;
+          font-size: 1.5rem;
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+          transition: background-color 0.3s ease;
+          position: absolute;
+          right: 30px;
+          top: 50%;
+          transform: translateY(-50%);
+          z-index: 2;
+        }
+        .btn-home:hover {
+          background-color: #0d8a00;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .header-mobile {
+          display: block;
+          width: 100%;
+          box-sizing: border-box;
+          color: white;
+          position: sticky;
+          top: 0;
+          z-index: 1000;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+          background-color: #007bff;
+        }
+        .header-top {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 15px;
+          padding: 10px 15px;
+          background-color: #007bff;
+          text-align: center;
+        }
+        .logo {
+          width: 48px;
+          height: 48px;
+          object-fit: contain;
+          border-radius: 10px;
+          background-color: white;
+          padding: 6px;
+        }
+        .text-container {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          color: white;
+          text-align: center;
+        }
+        .escola-nome {
+          font-family: 'Montserrat', sans-serif;
+          font-weight: 700;
+          font-size: 1.3rem;
+          margin: 0;
+          line-height: 1.1;
+        }
+        .escola-subtitulo {
+          font-family: 'Montserrat', sans-serif;
+          font-weight: 600;
+          font-size: 1rem;
+          margin-top: 2px;
+        }
+        .header-bottom {
+          background-color: #0056b3;
+          text-align: center;
+          padding: 12px 10px;
+          font-family: 'Montserrat', sans-serif;
+          font-weight: 800;
+          font-size: 1.0rem;
+          letter-spacing: 4px;
+          user-select: none;
+          color: white;
+          box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 15px;
+          position: relative;
+        }
+        .btn-home-mobile {
+          background-color: #0fb300;
+          color: white;
+          padding: 6px 10px;
+          border-radius: 6px;
+          font-weight: 600;
+          font-size: 1rem;
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+          transition: background-color 0.3s ease;
+        }
+        .btn-home-mobile:hover {
+          background-color: #0d8a00;
+        }
+        .container {
+          margin-bottom: 50px;
+          flex: 1 0 auto;
+        }
+      }
+    </style>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
 </head>
 <body>
 
-    <div class="titulo-container">
-        <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
     </div>
 
-    <div class="container mt-5">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Fechar">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <h2 class="mb-4">Redefinir Senha</h2>
-        <form method="POST">
-            <div class="form-group">
-                <label for="nova_senha">Nova Senha:</label>
-                <input type="password" name="nova_senha" class="form-control" placeholder="Digite a nova senha" required>
-            </div>
-            <div class="form-group">
-                <label for="confirmar_senha">Confirmar Senha:</label>
-                <input type="password" name="confirmar_senha" class="form-control" placeholder="Confirme a nova senha" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Redefinir Senha</button>
-        </form>
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
     </div>
 
-    <footer>
-        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-    </footer>
-    
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+    <a href="{{ url_for('login') }}" class="btn-home" title="Página de Login">
+      <i class="fas fa-home"></i>
+    </a>
+  </header>
+
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom" style="
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-sizing: border-box;
+      white-space: nowrap;
+    ">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('login') }}" class="btn-home-mobile" title="Página de Login">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- Conteúdo principal -->
+  <div class="container mt-5">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Fechar">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <h2 class="mb-4">Redefinir Senha</h2>
+    <form method="POST">
+      <div class="form-group">
+        <label for="senha">Nova Senha:</label>
+        <input type="password" name="senha" class="form-control" placeholder="Digite a nova senha" required />
+      </div>
+      <div class="form-group">
+        <label for="confirmar_senha">Confirmar Senha:</label>
+        <input type="password" name="confirmar_senha" class="form-control" placeholder="Confirme a nova senha" required />
+      </div>
+      <button type="submit" class="btn btn-primary">Redefinir</button>
+    </form>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
 </body>
 </html>
-

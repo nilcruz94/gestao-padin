@@ -1,293 +1,556 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Perfil</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meu Perfil</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', sans-serif;
+      height: 100%;
+      overflow-y: auto;
+    }
+
+    /* ---------------- DESKTOP ----------------- */
+    @media (min-width: 769px) {
+      body {
+        display: block;
+        min-height: 100vh;
+      }
+
+      .header-desktop {
+        display: flex;
+        background-color: #007bff;
+        padding: 15px 30px;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+        min-height: 110px;
+        position: relative;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        color: white;
+        z-index: 1000;
+      }
+
+      .header-mobile {
+        display: none;
+      }
+
+      main {
+        padding: 15px;
+        margin-top: 130px;
+        margin-bottom: 140px; /* margem maior entre conteúdo e rodapé */
+        box-sizing: border-box;
+        min-height: calc(100vh - 220px);
+      }
+
+      footer {
+        position: relative;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: linear-gradient(to right, #222, #444);
+        color: #ddd;
+        text-align: center;
+        padding: 15px 0;
+        font-size: 14px;
+        border-top: 2px solid #555;
+        font-family: 'Montserrat', sans-serif;
+        z-index: 10000;
+        margin-top: 30px;
+      }
+
+      .left-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+        color: white;
+      }
+
+      .escola-nome {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 1.6rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+
+      .escola-subtitulo {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-top: 4px;
+      }
+
+      .header-center-text-container {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        user-select: none;
+        z-index: 1;
+      }
+
+      .header-center-text {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1.9rem;
+        color: white;
+        letter-spacing: 5px;
+        white-space: nowrap;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      }
+
+      .btn-home {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+      }
+
+      .btn-home:hover {
+        background-color: #0d8a00;
+      }
+    }
+
+    /* ---------------- MOBILE ----------------- */
+    @media (max-width: 768px) {
+      body {
+        overflow-y: auto;
+        min-height: 100vh;
+        
+      }
+
+      .header-desktop {
+        display: none;
+      }
+
+      .header-mobile {
+        width: 100%;
+        box-sizing: border-box;
+        color: white;
+        top: 0;
+        z-index: 10000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        background-color: #007bff;
+        flex-shrink: 0;
+      }
+
+      .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        padding: 10px 15px;
+        background-color: #007bff;
+        text-align: center;
+      }
+
+      .logo {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: white;
+        text-align: center;
+      }
+
+      .escola-nome {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 1.3rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+
+      .escola-subtitulo {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 2px;
+      }
+
+      .header-bottom {
+        background-color: #0056b3;
+        text-align: center;
+        padding: 12px 10px;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1rem;
+        letter-spacing: 4px;
+        user-select: none;
+        color: white;
+        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        position: relative;
+      }
+
+      .btn-home-mobile {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+      }
+
+      .btn-home-mobile:hover {
+        background-color: #0d8a00;
+      }
+
+      main {
+        padding-top: 170px;
+        padding-bottom: 80px;
+        position: relative;
+      }
+
+      footer {
+        position: relative;
+        width: 100%;
+        background: linear-gradient(to right, #222, #444);
+        color: #ddd;
+        text-align: center;
+        padding: 15px 0;
+        font-size: 14px;
+        border-top: 2px solid #555;
+        box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+        font-family: 'Poppins', sans-serif;
+        z-index: 10000;
+        margin-top: 30px;
+      }
+    }
+
+    /* Estilos do formulário */
+    .editable-field {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #007bff;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="date"],
+    select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-family: 'Poppins', sans-serif;
+      box-sizing: border-box;
+      background-color: #f9f9f9;
+      transition: background-color 0.3s ease;
+    }
+
+    input:focus,
+    select:focus {
+      background-color: #fff;
+      border-color: #007bff;
+      outline: none;
+    }
+
+    input[disabled], input[readonly], select[readonly] {
+      background-color: #e9ecef;
+      color: #6c757d;
+      cursor: not-allowed;
+    }
+
+    .input-edit {
+      display: flex;
+      align-items: center;
+    }
+
+    .edit-icon {
+      margin-left: 8px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: #007bff;
+    }
+
+    .locked {
+      cursor: not-allowed;
+    }
+
+    .submit-btn {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      font-size: 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      font-weight: 700;
+    }
+
+    .submit-btn:hover {
+      background-color: #0056b3;
+    }
+
+    ul.flashes {
+      list-style-type: none;
+      padding: 0;
+      margin-bottom: 20px;
+    }
+
+    ul.flashes li {
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      font-weight: 600;
+    }
+
+    ul.flashes li.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    ul.flashes li.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+  </style>
 </head>
 <body>
 
-    <div class="titulo-container">
-        <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
     </div>
-
-    <div class="container">
-        <h1>Meu Perfil</h1>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <ul class="flashes">
-                    {% for category, message in messages %}
-                        <li class="{{ category }}">{{ message }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        {% endwith %}
-
-        <form method="POST" action="{{ url_for('perfil') }}" id="perfil-form">
-            <!-- Campo Nome -->
-            <div class="editable-field">
-                <label for="nome">
-                    <i class="fas fa-user icon-blue"></i> Nome:
-                </label>
-                <input type="text" id="nome" name="nome" value="{{ usuario.nome }}" disabled>
-            </div>
-
-            <!-- Campo Registro -->
-            <div class="editable-field">
-                <label for="registro">
-                    <i class="fas fa-id-badge icon-blue"></i> Registro:
-                </label>
-                <input type="text" id="registro" name="registro" value="{{ usuario.registro }}" disabled>
-            </div>
-
-            <!-- Campo Email -->
-            <div class="editable-field">
-                <label for="email">
-                    <i class="fas fa-envelope icon-blue"></i> Email:
-                </label>
-                <input type="email" id="email" name="email" value="{{ usuario.email }}" disabled>
-            </div>
-
-            <!-- Campo Cargo -->
-            <div class="editable-field">
-                <label for="cargo">
-                    <i class="fas fa-briefcase icon-blue"></i> Cargo:
-                </label>
-                <input type="text" id="cargo" name="cargo" value="{{ usuario.cargo or 'Não informado' }}" disabled>
-            </div>
-
-            <!-- Campo Celular -->
-            <div class="editable-field">
-                <label for="celular"><i class="fas fa-mobile-alt icon-blue"></i> Celular:</label>
-                <div class="input-edit">
-                    <input type="text" id="celular" name="celular" value="{{ usuario.celular or '' }}" readonly class="locked">
-                    <span class="edit-icon" onclick="editField('celular')">✏️</span>
-                </div>
-            </div>
-
-            <!-- Campo Data de Nascimento -->
-            <div class="editable-field">
-                <label for="data_nascimento">
-                    <i class="fas fa-birthday-cake icon-blue"></i> Data de Nascimento:
-                </label>
-                <div class="input-edit">
-                    <input type="date" id="data_nascimento" name="data_nascimento" value="{{ usuario.data_nascimento }}" readonly class="locked">
-                    <span class="edit-icon" onclick="editField('data_nascimento')">✏️</span>
-                </div>
-            </div>
-            
-            <!-- Campo CPF -->
-            <div class="editable-field">
-                <label for="cpf"><i class="fas fa-id-card icon-blue"></i> CPF:</label>
-                <div class="input-edit">
-                    <input type="text" id="cpf" name="cpf" value="{{ usuario.cpf or '' }}" readonly class="locked">
-                    <span class="edit-icon" onclick="editField('cpf')">✏️</span>
-                </div>
-            </div>            
-
-            <!-- Campo RG -->
-            <div class="editable-field">
-                <label for="rg"><i class="fas fa-id-card icon-blue"></i> RG:</label>
-                <div class="input-edit">
-                    <input type="text" id="rg" name="rg" value="{{ usuario.rg or '' }}" readonly class="locked">
-                    <span class="edit-icon" onclick="editField('rg')">✏️</span>
-                </div>
-            </div>
-
-            <!-- Campo Data de Emissão do RG -->
-            <div class="editable-field">
-                <label for="data_emissao_rg">
-                    <i class="fas fa-calendar-alt icon-blue"></i> Data de Emissão do RG:
-                </label>
-                <div class="input-edit">
-                    <input type="date" id="data_emissao_rg" name="data_emissao_rg" value="{{ usuario.data_emissao_rg }}" readonly class="locked">
-                    <span class="edit-icon" onclick="editField('data_emissao_rg')">✏️</span>
-                </div>
-            </div>
-
-            <!-- Campo Órgão Emissor -->
-            <div class="editable-field">
-                <label for="orgao_emissor">
-                    <i class="fas fa-university icon-blue"></i> Órgão Emissor:
-                </label>
-                <div class="input-edit">
-                    <input type="text" id="orgao_emissor" name="orgao_emissor" value="{{ usuario.orgao_emissor }}" readonly class="locked">
-                    <span class="edit-icon" onclick="editField('orgao_emissor')">✏️</span>
-                </div>
-            </div>
-
-            <!-- Campo Graduação -->
-            <div class="editable-field">
-                <label for="graduacao">
-                    <i class="fas fa-graduation-cap icon-blue"></i> Graduação:
-                </label>
-                <div class="input-edit">
-                    <select id="graduacao" name="graduacao" readonly>
-                        <option value="">Selecione sua graduação</option>
-                        <option value="Técnico" {% if usuario.graduacao == 'Técnico' %}selected{% endif %}>Técnico</option>
-                        <option value="Tecnólogo" {% if usuario.graduacao == 'Tecnólogo' %}selected{% endif %}>Tecnólogo</option>
-                        <option value="Licenciatura" {% if usuario.graduacao == 'Licenciatura' %}selected{% endif %}>Licenciatura</option>
-                        <option value="Pós Graduação Latu Sensu" {% if usuario.graduacao == 'Pós Graduação Latu Sensu' %}selected{% endif %}>Pós Graduação Latu Sensu</option>
-                        <option value="Mestrado" {% if usuario.graduacao == 'Mestrado' %}selected{% endif %}>Mestrado</option>
-                        <option value="Doutorado" {% if usuario.graduacao == 'Doutorado' %}selected{% endif %}>Doutorado</option>
-                        <option value="Pós Doutorado" {% if usuario.graduacao == 'Pós Doutorado' %}selected{% endif %}>Pós Doutorado</option>
-                    </select>
-                    <span class="edit-icon" id="editGraduacao" onclick="enableDropdown('graduacao', 'editGraduacao')">✏️</span>
-                </div>                
-            </div>         
-            <button type="submit" class="submit-btn">Salvar Alterações</button>
-        </form>   
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
     </div>
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
+    </a>
+  </header>
 
-    <div class="voltar-link">
-        <a href="/index">
-            <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial</a>
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
     </div>
+    <div class="header-bottom">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
 
-    
-    <footer>
-        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-    </footer>
-    
-    <script>
-        function editField(fieldId, iconId) {
-            const field = document.getElementById(fieldId);
-            const icon = document.getElementById(iconId);
+  <main class="container">
+    <h1>Meu Perfil</h1>
 
-            if (field.hasAttribute("readonly")) {
-                field.removeAttribute("readonly");
-                field.classList.remove("locked");
-                icon.style.display = "none"; // Esconde o ícone ao editar
-            }
-        }
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
 
-        function enableDropdown(fieldId, iconId) {
-            const field = document.getElementById(fieldId);
-            const icon = document.getElementById(iconId);
+    <form method="POST" action="{{ url_for('perfil') }}" id="perfil-form">
+      <!-- Campo Nome -->
+      <div class="editable-field">
+        <label for="nome"><i class="fas fa-user icon-blue"></i> Nome:</label>
+        <input type="text" id="nome" name="nome" value="{{ usuario.nome }}" disabled>
+      </div>
 
-            field.removeAttribute("readonly"); // Alterado de disabled para readonly
-            field.classList.remove("locked");
-            icon.style.display = "none"; // Esconde o ícone ao editar
-        }
+      <!-- Campo Registro -->
+      <div class="editable-field">
+        <label for="registro"><i class="fas fa-id-badge icon-blue"></i> Registro:</label>
+        <input type="text" id="registro" name="registro" value="{{ usuario.registro }}" disabled>
+      </div>
 
-        $(document).ready(function(){
-        $("#cpf").inputmask("999.999.999-99");
-        $("#rg").inputmask("99.999.999-9");
-        });
+      <!-- Campo Email -->
+      <div class="editable-field">
+        <label for="email"><i class="fas fa-envelope icon-blue"></i> Email:</label>
+        <input type="email" id="email" name="email" value="{{ usuario.email }}" disabled>
+      </div>
 
-        $(document).ready(function(){
-        $("#celular").inputmask("(99) 99999-9999");
-        });
+      <!-- Campo Cargo -->
+      <div class="editable-field">
+        <label for="cargo"><i class="fas fa-briefcase icon-blue"></i> Cargo:</label>
+        <input type="text" id="cargo" name="cargo" value="{{ usuario.cargo or 'Não informado' }}" disabled>
+      </div>
 
-    </script>
+      <!-- Campo Celular -->
+      <div class="editable-field">
+        <label for="celular"><i class="fas fa-mobile-alt icon-blue"></i> Celular:</label>
+        <div class="input-edit">
+          <input type="text" id="celular" name="celular" value="{{ usuario.celular or '' }}" readonly class="locked">
+          <span class="edit-icon" onclick="editField('celular', this)">✏️</span>
+        </div>
+      </div>
 
-    <style>
+      <!-- Campo Data de Nascimento -->
+      <div class="editable-field">
+        <label for="data_nascimento"><i class="fas fa-birthday-cake icon-blue"></i> Data de Nascimento:</label>
+        <div class="input-edit">
+          <input type="date" id="data_nascimento" name="data_nascimento" value="{{ usuario.data_nascimento }}" readonly class="locked">
+          <span class="edit-icon" onclick="editField('data_nascimento', this)">✏️</span>
+        </div>
+      </div>
 
-        /* Estilo para os campos editáveis com label acima do input */
-        .editable-field {
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-        }
+      <!-- Campo CPF -->
+      <div class="editable-field">
+        <label for="cpf"><i class="fas fa-id-card icon-blue"></i> CPF:</label>
+        <div class="input-edit">
+          <input type="text" id="cpf" name="cpf" value="{{ usuario.cpf or '' }}" readonly class="locked">
+          <span class="edit-icon" onclick="editField('cpf', this)">✏️</span>
+        </div>
+      </div>
 
-        /* Alinha a label à esquerda, sem o negrito e com espaçamento abaixo */
-        .editable-field label {
-            font-weight: normal;
-            font-size: 14px;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-        }
+      <!-- Campo RG -->
+      <div class="editable-field">
+        <label for="rg"><i class="fas fa-id-card icon-blue"></i> RG:</label>
+        <div class="input-edit">
+          <input type="text" id="rg" name="rg" value="{{ usuario.rg or '' }}" readonly class="locked">
+          <span class="edit-icon" onclick="editField('rg', this)">✏️</span>
+        </div>
+      </div>
 
-        /* Classe para os ícones azuis */
-        .icon-blue {
-            color: #007BFF; /* Cor azul para os ícones */
-            margin-right: 10px; /* Espaço entre o ícone e o texto */
-        }
+      <!-- Campo Data de Emissão do RG -->
+      <div class="editable-field">
+        <label for="data_emissao_rg"><i class="fas fa-calendar-alt icon-blue"></i> Data de Emissão do RG:</label>
+        <div class="input-edit">
+          <input type="date" id="data_emissao_rg" name="data_emissao_rg" value="{{ usuario.data_emissao_rg }}" readonly class="locked">
+          <span class="edit-icon" onclick="editField('data_emissao_rg', this)">✏️</span>
+        </div>
+      </div>
 
-        /* Contêiner para agrupar o input e o ícone; posição relativa para posicionar o ícone */
-        .input-edit {
-            position: relative;
-        }
+      <!-- Campo Órgão Emissor -->
+      <div class="editable-field">
+        <label for="orgao_emissor"><i class="fas fa-university icon-blue"></i> Órgão Emissor:</label>
+        <div class="input-edit">
+          <input type="text" id="orgao_emissor" name="orgao_emissor" value="{{ usuario.orgao_emissor }}" readonly class="locked">
+          <span class="edit-icon" onclick="editField('orgao_emissor', this)">✏️</span>
+        </div>
+      </div>
 
-        /* Input que cobre toda a largura do contêiner */
-        .input-edit input {
-            width: 100%;
-            height: 40px;              /* Altura definida para igualar aos demais campos */
-            padding: 6px 40px 6px 10px;  /* Padding à direita maior para dar espaço ao ícone */
-            font-size: 14px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-        }
+      <!-- Campo Graduação -->
+      <div class="editable-field">
+        <label for="graduacao"><i class="fas fa-graduation-cap icon-blue"></i> Graduação:</label>
+        <div class="input-edit">
+          <select id="graduacao" name="graduacao">
+            <option value="">Selecione sua graduação</option>
+            <option value="Técnico" {% if usuario.graduacao == 'Técnico' %}selected{% endif %}>Técnico</option>
+            <option value="Tecnólogo" {% if usuario.graduacao == 'Tecnólogo' %}selected{% endif %}>Tecnólogo</option>
+            <option value="Licenciatura" {% if usuario.graduacao == 'Licenciatura' %}selected{% endif %}>Licenciatura</option>
+            <option value="Pós Graduação Latu Sensu" {% if usuario.graduacao == 'Pós Graduação Latu Sensu' %}selected{% endif %}>Pós Graduação Latu Sensu</option>
+            <option value="Mestrado" {% if usuario.graduacao == 'Mestrado' %}selected{% endif %}>Mestrado</option>
+            <option value="Doutorado" {% if usuario.graduacao == 'Doutorado' %}selected{% endif %}>Doutorado</option>
+            <option value="Pós Doutorado" {% if usuario.graduacao == 'Pós Doutorado' %}selected{% endif %}>Pós Doutorado</option>
+          </select>
+          <span class="edit-icon" id="editGraduacao" onclick="enableDropdown('graduacao', 'editGraduacao')">✏️</span>
+        </div>
+      </div>
 
-        /* Estilo para inputs bloqueados (readonly + classe locked) */
-        .input-edit input.locked {
-            background-color: #f0f0f0; /* Cor de fundo mais clara para indicar bloqueio */
-            color: #6c757d;          /* Cor do texto em tom mais discreto */
-            cursor: not-allowed;
-        }
+      <button type="submit" class="submit-btn">Salvar Alterações</button>
+    </form>
+  </main>
 
-        /* Ícone de edição posicionado dentro do input, à direita */
-        .edit-icon {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            font-size: 18px;
-            color: #007BFF;
-        }
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
 
-        /* Muda a cor do ícone ao passar o mouse */
-        .edit-icon:hover {
-            color: #0056b3;
-        }
+  <script>
+    function editField(fieldId, icon) {
+      const input = document.getElementById(fieldId);
+      if (input.hasAttribute('readonly') || input.disabled) {
+        input.removeAttribute('readonly');
+        input.disabled = false;
+        input.classList.remove('locked');
+        icon.textContent = '✅';
+        input.focus();
+      } else {
+        input.setAttribute('readonly', 'readonly');
+        input.disabled = false;
+        input.classList.add('locked');
+        icon.textContent = '✏️';
+      }
+    }
 
-        /* Controle de visibilidade do ícone conforme o estado do input */
-        .input-edit input:not([readonly]) + .edit-icon {
-            visibility: hidden;
-        }
-
-        .submit-btn {
-            margin-top: 20px;
-            padding: 10px 15px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.2s ease; /* Transição apenas na cor */
-        }
-
-        .submit-btn:hover {
-            background-color: #0fb300;
-            /* Garante que nenhuma transformação ou alteração de padding ocorra */
-            transform: none;
-            padding: 10px 15px;
-        }
-
-        select:disabled {
-            background-color: #f0f0f0; /* Cor de fundo cinza */
-            color: #6c757d; /* Texto em tom mais discreto */
-            cursor: not-allowed;
-        }
-
-        /* Estiliza o select quando estiver "bloqueado" */
-        select[readonly] {
-            background-color: #f0f0f0; /* Fundo cinza */
-            color: #6c757d; /* Texto acinzentado */
-            pointer-events: none; /* Impede interação */
-            cursor: not-allowed; /* Cursor de bloqueio */
-        }
-
-    </style>
-
+    $(document).ready(function(){
+      $('#cpf').inputmask('999.999.999-99');
+      $('#celular').inputmask('(99) 99999-9999');
+    });
+  </script>
 </body>
-
 </html>

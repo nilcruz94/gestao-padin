@@ -1,238 +1,487 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="/static/css/style.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deferir Banco de Horas</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f6f9;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            margin: 0;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Deferir Banco de Horas</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* Reset básico */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      font-family: 'Montserrat', sans-serif;
+      background-color: #f4f6f9;
+    }
+    *, *::before, *::after {
+      box-sizing: inherit;
+    }
 
-        h1 {
-            color: #333;
-            margin-bottom: 20px;
-        }
+    /* Cabeçalho desktop */
+    .header-desktop {
+      display: none;
+      width: 100vw;
+      background-color: #007bff;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      padding: 12px 30px; /* menor padding vertical para diminuir altura */
+      align-items: center;
+      justify-content: space-between;
+      box-sizing: border-box;
+    }
 
-        /* Efeito ao passar o mouse */
-        .container:hover {
-            transform: translateY(-3px); /* Pequeno levantamento */
-            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2); /* Sombra mais intensa */
-        }
+    .header-desktop .left-section {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
 
-        .registro {
-            border-bottom: 1px solid #eee;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-        }
+    .header-desktop .logo {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      border-radius: 10px;
+      background-color: white;
+      padding: 6px;
+    }
 
-        .registro p {
-            margin: 5px 0;
-            color: #555;
-        }
+    .header-desktop .text-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: left;
+      color: white;
+      user-select: none;
+    }
 
-        .buttons {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            justify-content: center;
-        }
+    .header-desktop .escola-nome {
+      font-weight: 700;
+      font-size: 1.6rem;
+      margin: 0;
+      line-height: 1.1;
+    }
 
-        .button {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-        }
+    .header-desktop .escola-subtitulo {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-top: 4px;
+    }
 
-        .deferir {
-            background-color: #28a745;
-            color: white;
-        }
+    .header-desktop .header-center-text-container {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      user-select: none;
+      z-index: 1;
+      font-weight: 800;
+      font-size: 1.9rem;
+      letter-spacing: 5px;
+      white-space: nowrap;
+      color: white;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
 
-        .deferir:hover {
-            background-color: #218838;
-        }
+    .header-desktop .btn-home {
+      background-color: #0fb300;
+      color: white;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 1.5rem;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+      transition: background-color 0.3s ease;
+      position: absolute;
+      right: 30px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 2;
+      user-select: none;
+    }
 
-        .indeferir {
-            background-color: #dc3545;
-            color: white;
-        }
+    .header-desktop .btn-home:hover {
+      background-color: #0d8a00;
+    }
 
-        .indeferir:hover {
-            background-color: #c82333;
-        }
+    /* Cabeçalho mobile */
+    .header-mobile {
+      display: none;
+      width: 100vw;
+      box-sizing: border-box;
+      user-select: none;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background-color: #007bff;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
 
-        .no-records {
-            text-align: center;
-            color: #888;
-            font-size: 16px;
-        }
+    .header-mobile .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      padding: 12px 15px 10px 15px; /* aumentei de 10px para 12px vertical, +2px */
+      margin: 0;
+    }
 
-        .back-link {
-            margin-top: 20px;
-            text-align: center;
-        }
+    .header-mobile .logo {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      border-radius: 10px;
+      background-color: white;
+      padding: 6px;
+    }
 
-        .back-link a {
-            color: #007bff;
-            text-decoration: none;
-        }
+    .header-mobile .text-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      color: white;
+      text-align: center;
+      user-select: none;
+    }
 
-        .back-link a:hover {
-            text-decoration: underline;
-        }
+    .header-mobile .escola-nome {
+      font-weight: 700;
+      font-size: 1.3rem;
+      margin: 0;
+      line-height: 1.1;
+    }
 
-        footer {
-            background: linear-gradient(to right, #222, #444); /* Gradiente sutil */
-            color: #ddd;
-            text-align: center;
-            padding: 15px 0;
-            width: 100%;
-            font-size: 14px;
-            border-top: 2px solid #555;
-            position: fixed; /* Padrão: fixo no desktop */
-            bottom: 0;
-            left: 0;
-            font-family: 'Poppins', sans-serif;
-            box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3); /* Sombra leve no topo */
-        }
+    .header-mobile .escola-subtitulo {
+      font-weight: 600;
+      font-size: 1rem;
+      margin-top: 2px;
+    }
 
-        footer p {
-            margin: 5px 0;
-            font-size: 15px;
-            font-weight: 300;
-        }
+    .header-mobile .header-bottom {
+      background-color: #0056b3;
+      text-align: center;
+      padding: 12px 10px; /* aumentei de 10px para 12px vertical, +2px */
+      font-weight: 800;
+      font-size: 1rem;
+      letter-spacing: 4px;
+      color: white;
+      box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      box-sizing: border-box;
+      white-space: nowrap;
+      margin: 0;
+      width: 100vw;
+      user-select: none;
+    }
 
-        footer a {
-            color: #fff;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s ease-in-out;
-        }
+    .header-mobile .btn-home-mobile {
+      background-color: #0fb300;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 1rem;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+      transition: background-color 0.3s ease;
+      user-select: none;
+    }
 
-        footer a:hover {
-            color: #00aaff;
-        }
+    .header-mobile .btn-home-mobile:hover {
+      background-color: #0d8a00;
+    }
 
-        /* Flash message styles */
-        .flash-message {
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            font-size: 16px;
-            width: 100%;
-        }
+    /* Mostrar só desktop no >= 769px */
+    @media (min-width: 769px) {
+      .header-desktop {
+        display: flex;
+        position: sticky;
+        top: 0;
+      }
+      .header-mobile {
+        display: none;
+      }
+      /* Título menor para desktop */
+      .titulo-site {
+        font-weight: 600;
+        font-size: 1.4rem !important;
+        color: #007bff;
+        margin: 0 auto 30px auto;
+        padding: 0;
+        border-bottom: none;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        text-align: center;
+        user-select: none;
+        text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+        max-width: 700px;
+      }
+    }
 
-        .flash-success {
-            background-color: #28a745;
-            color: white;
-        }
+    /* Mostrar só mobile no < 769px */
+    @media (max-width: 768px) {
+      .header-desktop {
+        display: none;
+      }
+      .header-mobile {
+        display: block;
+        position: sticky;
+        top: 0;
+      }
+      /* Título menor para mobile */
+      .titulo-site {
+        font-weight: 600 !important;
+        font-size: 1.2rem !important;
+        color: #007bff !important;
+        margin: 0 auto 20px auto !important;
+        padding: 0 15px !important;
+        border-bottom: none !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.2px !important;
+        text-align: center !important;
+        user-select: none !important;
+        text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1) !important;
+        max-width: 100% !important;
+      }
+    }
 
-        .flash-danger {
-            background-color: #dc3545;
-            color: white;
-        }
+    /* Conteúdo principal */
+    .container {
+      width: 100%;
+      max-width: 700px;
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-sizing: border-box;
+      margin: 0 auto 100px auto;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
+      user-select: none;
+    }
 
-        .flash-info {
-            background-color: #17a2b8;
-            color: white;
-        }
+    .container:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+    }
 
-        /* Titulo Container */
-        .titulo-container {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                text-align: center;
-                width: 100%;
-                margin: 20px 0;
-            }
+    .registro {
+      border-bottom: 1px solid #eee;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+    }
 
-            /* Estilo para o título no topo do site */
-            .titulo-site {
-                font-family: 'Montserrat', sans-serif; /* Fonte moderna */
-                font-size: 32px; /* Ajuste o tamanho conforme necessário */
-                font-weight: 600; /* Peso de fonte mais leve */
-                color: #007bff; /* Cor azul profissional */
-                text-transform: uppercase; /* Maiúsculas para o título */
-                letter-spacing: 2px; /* Espaçamento entre as letras */
-                margin: 0s;
-                padding-bottom: 10px;
-                border-bottom: 2px solid #007bff; /* Linha embaixo para dar ênfase */
-                text-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Leve sombra para dar profundidade */
-                text-align: center;
-                align-items: center;
-                justify-content: center;
-            }
+    .registro p {
+      margin: 5px 0;
+      color: #555;
+    }
 
-        h1, h2 {
-            font-size: 24px;
-            color: #007bff;
-            text-align: center;
-            margin-bottom: 20px;
-        }
+    .buttons {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+    }
 
-    </style>
+    .button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      user-select: none;
+    }
+
+    .deferir {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .deferir:hover {
+      background-color: #218838;
+    }
+
+    .indeferir {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .indeferir:hover {
+      background-color: #c82333;
+    }
+
+    .no-records {
+      text-align: center;
+      color: #888;
+      font-size: 16px;
+    }
+
+    /* Rodapé fixo */
+    footer {
+      background: linear-gradient(to right, #222, #444);
+      color: #ddd;
+      text-align: center;
+      padding: 15px 0;
+      width: 100vw;
+      font-size: 14px;
+      border-top: 2px solid #555;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      font-family: 'Montserrat', sans-serif;
+      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+      z-index: 100;
+      user-select: none;
+    }
+
+    footer p {
+      margin: 5px 0;
+      font-size: 15px;
+      font-weight: 300;
+    }
+
+    footer a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease-in-out;
+    }
+
+    footer a:hover {
+      color: #00aaff;
+    }
+
+    /* Flash message styles */
+    .flash-message {
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+      font-size: 16px;
+      width: 100%;
+      max-width: 700px;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    .flash-success {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .flash-danger {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .flash-info {
+      background-color: #17a2b8;
+      color: white;
+    }
+  </style>
 </head>
 <body>
 
-    <div class="titulo-container">
-        <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop" role="banner">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
     </div>
 
-    <h1>Deferir Banco de Horas</h1>
-
-    <!-- Bloco de Mensagem de Flash -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="flash-message flash-{{ category }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
-    <div class="container">
-        <!-- Verifica se há registros para deferir -->
-        {% if registros %}
-            {% for registro in registros %}
-                <form action="/banco_horas/deferir" method="POST">
-                    <div class="registro">
-                        <p><strong>{{ registro.funcionario.nome }} - {{ registro.horas }} horas e {{ registro.minutos }} minutos</strong></p>
-                        <p>Data: {{ registro.data_realizacao }}</p>
-                        <input type="hidden" name="registro_id" value="{{ registro.id }}">
-                        <div class="buttons">
-                            <button type="submit" name="action" value="deferir" class="button deferir">Deferir</button>
-                            <button type="submit" name="action" value="indeferir" class="button indeferir">Indeferir</button>
-                        </div>
-                    </div>
-                </form>
-                <hr>
-            {% endfor %}
-        {% else %}
-            <p class="no-records">Não há registros de horas a serem deferidas.</p>
-        {% endif %}
+    <div class="header-center-text-container" aria-label="Portal do Servidor">
+      PORTAL DO SERVIDOR
     </div>
 
-    <div class="back-link">
-        <a href="/banco_horas">
-        <i class="fas fa-arrow-left"></i>Voltar ao Menu Banco de Horas</a>
-    </div>
+  <!-- ✅ Botão Home adicionado no desktop -->
+  <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+    <i class="fas fa-home"></i>
+  </a>
+  
+  </header>
 
-    <footer>
-        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-    </footer>
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile" role="banner">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- Título da página -->
+  <div class="titulo-container">
+    <h1 class="titulo-site">Deferir Banco de Horas</h1>
+  </div>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash-message flash-{{ category }}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Conteúdo -->
+  <div class="container" role="main">
+    {% if registros %}
+      {% for registro in registros %}
+        <form action="/banco_horas/deferir" method="POST" novalidate>
+          <div class="registro">
+            <p><strong>{{ registro.funcionario.nome }} - {{ registro.horas }} horas e {{ registro.minutos }} minutos</strong></p>
+            <p>Data: {{ registro.data_realizacao }}</p>
+            <input type="hidden" name="registro_id" value="{{ registro.id }}" />
+            <div class="buttons">
+              <button type="submit" name="action" value="deferir" class="button deferir">Deferir</button>
+              <button type="submit" name="action" value="indeferir" class="button indeferir">Indeferir</button>
+            </div>
+          </div>
+        </form>
+        <hr />
+      {% endfor %}
+    {% else %}
+      <p class="no-records">Não há registros de horas a serem deferidas.</p>
+    {% endif %}
+  </div>
+
+  <!-- Rodapé fixo -->
+  <footer role="contentinfo">
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
 
 </body>
 </html>

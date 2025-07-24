@@ -1,167 +1,424 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Folgas</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f6f9;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Folgas</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f9;
+      color: #333;
+      font-family: 'Montserrat', sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
 
-        .titulo-container {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+    /* Por padrão, ambos escondidos */
+    .header-desktop, .header-mobile {
+      display: none;
+    }
 
-        .titulo-site {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 42px;
-            font-weight: 600;
-            color: #007bff;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #007bff;
-            text-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        
-        h2 {
-            font-size: 24px;
-            color: #007bff;
-            margin-bottom: 20px;
-            text-align: center;
-        }
+    /* === Desktop Header === */
+    @media (min-width: 769px) {
+      .header-desktop {
+        display: flex;
+        background-color: #007bff;
+        padding: 15px 30px;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+        min-height: 110px;
+        position: relative;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        color: white;
+        flex-shrink: 0;
+      }
 
-        .historico-container {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
+      .left-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
 
-        @media (max-width: 768px) {
-            .historico-container {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            }
-        }
+      .logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
 
-        .historico-item {
-            background-color: #f4f6f9;
-            padding: 15px;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            display: flex;
-            align-items: center;
-            font-size: 16px;
-        }
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+        color: white;
+      }
 
-        .historico-item i {
-            font-size: 24px;
-            margin-right: 10px;
-            color: #007bff;
-        }
+      .escola-nome {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 1.6rem;
+        margin: 0;
+        line-height: 1.1;
+      }
 
-        .voltar-link {
-            text-align: center;
-            margin-top: 30px;
-        }
+      .escola-subtitulo {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-top: 4px;
+      }
 
-        .voltar-link a {
-            font-size: 16px;
-            color: #007bff;
-            text-decoration: none;
-        }
+      .header-center-text-container {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1.9rem;
+        color: white;
+        letter-spacing: 5px;
+        user-select: none;
+        white-space: nowrap;
+        z-index: 1;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      }
 
-        .voltar-link a:hover {
-            text-decoration: underline;
-        }
+      /* Botão Home no desktop */
+      .btn-home {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+      }
 
-        footer {
-            background: linear-gradient(to right, #222, #444);
-            color: #ddd;
-            text-align: center;
-            padding: 15px 0;
-            width: 100%;
-            font-size: 14px;
-            border-top: 2px solid #555;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            font-family: 'Poppins', sans-serif;
-            box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
-        }
+      .btn-home:hover {
+        background-color: #0d8a00;
+      }
+    }
 
-        footer p {
-            margin: 5px 0;
-            font-size: 15px;
-            font-weight: 300;
-        }
+    /* === Mobile Header === */
+    @media (max-width: 768px) {
+      .header-mobile {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        background-color: #007bff;
+      }
 
-        footer a {
-            color: #fff;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s ease-in-out;
-        }
+      .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        padding: 10px 15px;
+        background-color: #007bff;
+        text-align: center;
+      }
 
-        footer a:hover {
-            color: #00aaff;
-        }
+      .logo {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
 
-        @media (max-width: 768px) {
-            footer {
-                position: relative;
-                padding: 20px 0;
-            }
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: white;
+        text-align: center;
+      }
+
+      .escola-nome {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 1.3rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+
+      .escola-subtitulo {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 2px;
+      }
+
+      .header-bottom {
+        background-color: #0056b3;
+        text-align: center;
+        padding: 12px 10px;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1.0rem;
+        letter-spacing: 4px;
+        user-select: none;
+        color: white;
+        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+
+        /* Container flex para texto + botão no mobile */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        position: relative;
+      }
+
+      /* Botão Home no mobile */
+      .btn-home-mobile {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+      }
+
+      .btn-home-mobile:hover {
+        background-color: #0d8a00;
+      }
+
+      /* Margem menor para o container no mobile */
+      .container {
+        margin-bottom: 50px;
+      }
+    }
+
+    /* Conteúdo principal */
+    .main-content {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 30px 15px;
+      box-sizing: border-box;
+      margin-top: 10px;
+      transform: none;
+    }
+
+    /* Desktop: subir conteúdo e centralizar verticalmente */
+    @media (min-width: 769px) {
+      .main-content {
+        align-items: center;
+        margin-top: 0;
+        transform: translateY(-30px);
+      }
+      @media (min-height: 700px) {
+        .main-content {
+          transform: translateY(-50px);
         }
-    </style>
+      }
+    }
+
+    /* Container da área principal */
+    .container {
+      width: 100%;
+      max-width: 500px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      padding: 20px;
+      border: 1px solid rgba(0, 0, 0, 0.07);
+      backdrop-filter: blur(6px);
+    }
+
+    h2 {
+      font-size: 24px;
+      color: #007bff;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .historico-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    @media (max-width: 768px) {
+      .historico-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      }
+    }
+
+    .historico-item {
+      background-color: #f4f6f9;
+      padding: 15px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      font-size: 16px;
+    }
+
+    .historico-item i {
+      font-size: 24px;
+      margin-right: 10px;
+      color: #007bff;
+    }
+
+    .voltar-link {
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    .voltar-link a {
+      font-size: 16px;
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    .voltar-link a:hover {
+      text-decoration: underline;
+    }
+
+    footer {
+      background: linear-gradient(to right, #222, #444);
+      color: #ddd;
+      text-align: center;
+      padding: 15px 0;
+      font-size: 14px;
+      border-top: 2px solid #555;
+      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+      width: 100%;
+    }
+
+    footer p {
+      margin: 5px 0;
+      font-size: 15px;
+      font-weight: 300;
+    }
+
+    footer a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease-in-out;
+    }
+
+    footer a:hover {
+      color: #00aaff;
+    }
+  </style>
 </head>
-<body class="page-historico">
+<body>
 
-    <div class="titulo-container">
-        <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
     </div>
 
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
+    </div>
+
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
+    </a>
+  </header>
+
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom" style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        box-sizing: border-box;
+        white-space: nowrap;
+      ">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- Conteúdo Principal -->
+  <div class="main-content">
     <div class="container">
-        <h2><i class="fas fa-history"></i> Suas folgas restantes:</h2>
+      <h2><i class="fas fa-history"></i> Suas folgas restantes:</h2>
 
-        <div class="historico-container">
-            <div class="historico-item">
-                <i class="fas fa-calendar-check"></i> 
-                <p><strong>Abonadas:</strong> {{ saldo_abonadas }} restantes de {{ limite_abonadas_ano }} permitidas no ano</p>
-            </div>            
-
-            <div class="historico-item">
-                <i class="fas fa-medal"></i> 
-                <p><strong>TREs:</strong> {{ current_user.tre_total }} restante(s)</p>
-            </div>
-
-            <div class="historico-item">
-                <i class="fas fa-clock"></i> 
-                <p><strong>Banco de Horas:</strong> 
-                    {% set horas = current_user.banco_horas // 60 %}
-                    {% set minutos = current_user.banco_horas % 60 %}
-                    {{ horas }}h {{ '%02d' % minutos }}min acumulados
-                </p>
-            </div>
+      <div class="historico-container">
+        <div class="historico-item">
+          <i class="fas fa-calendar-check"></i>
+          <p><strong>Abonadas:</strong> {{ saldo_abonadas }} restantes de {{ limite_abonadas_ano }} permitidas no ano</p>
         </div>
-    </div>
 
-    <div class="voltar-link">
-        <a href="/index">
-            <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
-        </a>
-    </div>
+        <div class="historico-item">
+          <i class="fas fa-medal"></i>
+          <p><strong>TREs:</strong> {{ current_user.tre_total }} restante(s)</p>
+        </div>
 
-    <footer>
-        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-    </footer>
+        <div class="historico-item">
+          <i class="fas fa-clock"></i>
+          <p><strong>Banco de Horas:</strong>
+            {% set horas = current_user.banco_horas // 60 %}
+            {% set minutos = current_user.banco_horas % 60 %}
+            {{ horas }}h {{ '%02d' % minutos }}min acumulados
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rodapé -->
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
 
 </body>
 </html>

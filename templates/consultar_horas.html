@@ -1,127 +1,444 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banco de Horas - E.M José Padin Mouta</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha384-DyZ88mC6Up2uqSdsKUyI35PpCfwkHB2f2Q4z8s1U3B1ii+ib9dFZeX5Jh8VZzf5k" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Banco de Horas - E.M José Padin Mouta</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* Cabeçalhos */
+    .header-desktop, .header-mobile {
+      display: none;
+    }
+
+    @media (min-width: 769px) {
+      .header-desktop {
+        display: flex;
+        background-color: #007bff;
+        padding: 15px 30px;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+        min-height: 110px;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        color: white;
+        position: relative;
+        flex-shrink: 0;
+      }
+      .left-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+        color: white;
+      }
+      .escola-nome {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 1.6rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+      .escola-subtitulo {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-top: 4px;
+      }
+      .header-center-text-container {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        user-select: none;
+        z-index: 1;
+      }
+      .header-center-text {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1.9rem;
+        color: white;
+        letter-spacing: 5px;
+        white-space: nowrap;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      }
+      .btn-home {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+      }
+      .btn-home:hover {
+        background-color: #0d8a00;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header-mobile {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        background-color: #007bff;
+        flex-shrink: 0;
+      }
+      .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        padding: 10px 15px;
+        background-color: #007bff;
+        text-align: center;
+      }
+      .logo {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: white;
+        text-align: center;
+      }
+      .escola-nome {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 1.3rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+      .escola-subtitulo {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 2px;
+      }
+      .header-bottom {
+        background-color: #0056b3;
+        text-align: center;
+        padding: 12px 10px;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1.0rem;
+        letter-spacing: 4px;
+        user-select: none;
+        color: white;
+        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        box-sizing: border-box;
+        white-space: nowrap;
+        position: relative;
+      }
+      .btn-home-mobile {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+      }
+      .btn-home-mobile:hover {
+        background-color: #0d8a00;
+      }
+    }
+
+    /* Container e estilo da tabela */
+    .container {
+      width: 100%;
+      max-width: 900px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      padding: 20px;
+      border: 1px solid rgba(0, 0, 0, 0.07);
+      backdrop-filter: blur(6px);
+      margin: 20px auto 30px;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 16px;
+      color: #007bff;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: 400px;
+      border: 1px solid #ddd;
+      margin-bottom: 25px;
+      border-radius: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 8px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f4f4f4;
+      position: sticky;
+      top: 0;
+    }
+
+    /* Flash messages */
+    .flash-messages {
+      margin-bottom: 20px;
+    }
+
+    .flash {
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      font-weight: 700;
+    }
+
+    .flash.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .flash.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    /* Status styles */
+    .status-deferido {
+      color: white;
+      font-weight: 700;
+    }
+    .status-em-espera {
+      color: white;
+      font-weight: 700;
+    }
+    .status-indeferido {
+      color: white;
+      font-weight: 700;
+    }
+
+    /* Botão voltar estilizado */
+    .voltar-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #007bff;
+      font-size: 18px;
+      margin: 0 auto 30px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: 2px solid #007bff;
+      max-width: 260px;
+      box-sizing: border-box;
+      text-decoration: none;
+      transition: background-color 0.3s, color 0.3s;
+      user-select: none;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .voltar-link i {
+      margin-right: 8px;
+    }
+    .voltar-link:hover {
+      background-color: #007bff;
+      color: white;
+      text-decoration: none;
+    }
+
+    /* Rodapé */
+    footer {
+      background: linear-gradient(to right, #222, #444);
+      color: #ddd;
+      text-align: center;
+      padding: 15px 0;
+      font-size: 14px;
+      border-top: 2px solid #555;
+      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+      width: 100%;
+    }
+  </style>
 </head>
-<style>
-
-
-.table-container {
-    overflow-x: auto; /* Rolagem horizontal */
-    overflow-y: auto; /* Rolagem vertical */
-    max-height: 400px; /* Ajuste conforme necessário */
-    border: 1px solid #ddd; /* Opcional: borda para destacar a tabela */
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-th, td {
-    padding: 8px;
-    border: 1px solid #ddd;
-    text-align: left;
-}
-
-th {
-    background-color: #f4f4f4;
-    position: sticky;
-    top: 0;
-}
-
-</style>
 <body>
 
-    <div class="titulo-container">
-        <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
     </div>
 
-    <div class="container">
-        <h2>Banco de Horas de {{ current_user.nome }}</h2>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="flash {{ category }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-        
-        {% if registros %}
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Data</th>
-                        <th>Horas Trabalhadas</th>
-                        <th>Status</th>
-                        <th>Motivo</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for registro in registros %}
-                        {% if registro.status in ['Deferido', 'Horas a Serem Deferidas', 'Indeferido'] %}
-                            <tr class="status-{{ registro.status|replace('_', '-') }}">
-                                <td>{{ registro.data_realizacao.strftime('%d/%m/%Y') }}</td>
-                                <td>{{ registro.horas }} horas e {{ registro.minutos }} minutos</td>
-                                <td>
-                                    {% if registro.status == 'Horas a Serem Deferidas' %}
-                                        <span class="status-em-espera">Em Espera</span>
-                                    {% elif registro.status == 'Indeferido' %}
-                                        <span class="status-indeferido">Indeferido</span>
-                                    {% else %}
-                                        <span class="status-deferido">Deferido</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ registro.motivo }}</td>
-                            </tr>
-                        {% endif %}
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Horas Deferidas</th>
-                        <th>Horas em Espera</th>
-                        <th>Horas a Usufruir</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>{{ horas_deferidas }} horas e {{ minutos_deferidos }} minutos</td>
-                        <td>{{ horas_em_espera }} horas e {{ minutos_em_espera }} minutos</td>
-                        <td>{{ horas_a_usufruir }} horas e {{ minutos_a_usufruir }} minutos</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <div class="no-data">
-            <p>Você não possui registros no banco de horas.</p>
-        </div>
-        {% endif %}
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
     </div>
 
-    <a href="{{ url_for('banco_horas') }}" class="voltar-link">
-        <i class="fas fa-arrow-left"></i> Voltar ao Menu Banco de Horas
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
     </a>
-    
-    <footer> 
-        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-    </footer>
+  </header>
+
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <div class="container">
+    <h2>Banco de Horas de {{ current_user.nome }}</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% if registros %}
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Horas Trabalhadas</th>
+              <th>Status</th>
+              <th>Motivo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for registro in registros %}
+              {% if registro.status in ['Deferido', 'Horas a Serem Deferidas', 'Indeferido'] %}
+                <tr class="status-{{ registro.status|replace('_', '-') }}">
+                  <td>{{ registro.data_realizacao.strftime('%d/%m/%Y') }}</td>
+                  <td>{{ registro.horas }} horas e {{ registro.minutos }} minutos</td>
+                  <td>
+                    {% if registro.status == 'Horas a Serem Deferidas' %}
+                      <span class="status-em-espera">Em Espera</span>
+                    {% elif registro.status == 'Indeferido' %}
+                      <span class="status-indeferido">Indeferido</span>
+                    {% else %}
+                      <span class="status-deferido">Deferido</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ registro.motivo }}</td>
+                </tr>
+              {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Horas Deferidas</th>
+              <th>Horas em Espera</th>
+              <th>Horas a Usufruir</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ horas_deferidas }} horas e {{ minutos_deferidos }} minutos</td>
+              <td>{{ horas_em_espera }} horas e {{ minutos_em_espera }} minutos</td>
+              <td>{{ horas_a_usufruir }} horas e {{ minutos_a_usufruir }} minutos</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="no-data">
+        <p>Você não possui registros no banco de horas.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
+
 </body>
 </html>

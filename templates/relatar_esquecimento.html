@@ -1,183 +1,427 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relatar Esquecimento / Ausência de Marcação</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <!-- FontAwesome para ícones -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script>
-        // Validação do formulário
-        function validateForm(event) {
-            var horaEntrada  = document.getElementById("hora_primeira_entrada").value;
-            var horaSaida    = document.getElementById("hora_primeira_saida").value;
-            var horaEntrada2 = document.getElementById("hora_segunda_entrada").value;
-            var horaSaida2   = document.getElementById("hora_segunda_saida").value;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Relatar Esquecimento / Ausência de Marcação</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
 
-            if (!horaEntrada && !horaSaida && !horaEntrada2 && !horaSaida2) {
-                alert("Você deve preencher ao menos um campo de horário.");
-                event.preventDefault();
-                return false;
-            }
-            return true;
-        }
-    </script>
-    <style>
-        /* Estilo para o formulário e inputs */
-        .input-group {
-            margin-bottom: 15px;
-        }
-        .input-group input,
-        .input-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .input-group textarea {
-            resize: vertical;
-        }
-        .submit-btn {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 100%;
-        }
-        .submit-btn:hover {
-            background-color: #0056b3;
-        }
-        .danger {
-            color: red;
-            background-color: #f8d7da;
-            padding: 10px;
-            border: 1px solid red;
-            border-radius: 5px;
-            margin-bottom: 15px;
-        }
-        .success {
-            color: green;
-            background-color: #d4edda;
-            padding: 10px;
-            border: 1px solid green;
-            border-radius: 5px;
-            margin-bottom: 15px;
-        }
-        footer {
-            text-align: center;
-            margin-top: 20px;
-            position: relative;
-        }
-        .back-link {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #007bff;
-            font-size: 18px;
-            margin-top: 20px;
-            width: 100%;
-            box-sizing: border-box;
-            text-align: center;
-            padding-bottom: 30px;
-        }
-        .back-link i {
-            margin-right: 8px;
-        }
-        .back-link:hover {
-            text-decoration: underline;
-        }
-        @media (max-width: 768px) {
-            .submit-btn { width: auto; padding: 12px 20px; }
-            .input-group input,
-            .input-group textarea { padding: 12px; }
-            .back-link a { font-size: 16px; }
-            footer { font-size: 14px; }
-        }
-        @media (max-width: 480px) {
-            .submit-btn { padding: 15px 20px; font-size: 16px; }
-            .input-group input,
-            .input-group textarea { padding: 15px; }
-            .back-link a { font-size: 14px; }
-            footer { font-size: 12px; }
-            .container { padding-left: 15px; padding-right: 15px; }
-        }
-    </style>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: #f9fbfc;
+      color: #333;
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Por padrão, ambos escondidos */
+    .header-desktop, .header-mobile {
+      display: none;
+    }
+
+    /* === Desktop Header === */
+    @media (min-width: 769px) {
+      .header-desktop {
+        display: flex;
+        background-color: #007bff;
+        padding: 15px 30px;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+        min-height: 110px;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        color: white;
+        position: relative;
+        flex-shrink: 0;
+      }
+      .left-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+        color: white;
+      }
+      .escola-nome {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 1.6rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+      .escola-subtitulo {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-top: 4px;
+      }
+      
+      .header-center-text-container {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        user-select: none;
+        z-index: 1;
+      }
+      .header-center-text {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1.9rem;
+        color: white;
+        letter-spacing: 5px;
+        white-space: nowrap;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      }
+      .btn-home {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+      }
+      .btn-home:hover {
+        background-color: #0d8a00;
+      }
+    }
+
+    /* === Mobile Header === */
+    @media (max-width: 768px) {
+      .header-mobile {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        background-color: #007bff;
+        flex-shrink: 0;
+      }
+      .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        padding: 10px 15px;
+        background-color: #007bff;
+        text-align: center;
+      }
+      .logo {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: white;
+        text-align: center;
+      }
+      .escola-nome {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 1.3rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+      .escola-subtitulo {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 2px;
+      }
+      .header-bottom {
+        background-color: #0056b3;
+        text-align: center;
+        padding: 12px 10px;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1.0rem;
+        letter-spacing: 4px;
+        user-select: none;
+        color: white;
+        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        position: relative;
+        white-space: nowrap;
+      }
+      .btn-home-mobile {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+      }
+      .btn-home-mobile:hover {
+        background-color: #0d8a00;
+      }
+
+      /* Menor margem no container para mobile */
+      .container {
+        margin-bottom: 50px;
+      }
+    }
+
+    /* Conteúdo da página */
+    .container {
+      width: 100%;
+      max-width: 600px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      padding: 20px 25px;
+      border: 1px solid rgba(0, 0, 0, 0.07);
+      backdrop-filter: blur(6px);
+      margin: 20px auto 40px auto;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #007bff;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+    label {
+      font-size: 14px;
+      margin-bottom: 6px;
+      display: block;
+      color: #333;
+      font-weight: 600;
+    }
+    input[type="text"],
+    input[type="date"],
+    input[type="time"],
+    textarea {
+      width: 100%;
+      padding: 10px;
+      font-size: 15px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+      resize: vertical;
+    }
+    textarea {
+      min-height: 50px;
+      max-height: 100px;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 6px;
+      margin-top: 10px;
+      font-weight: 700;
+      transition: background-color 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .submit-btn:hover {
+      background-color: #0d6efd;
+    }
+    .danger {
+      color: #842029;
+      background-color: #f8d7da;
+      padding: 10px;
+      border: 1px solid #f5c2c7;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+    .success {
+      color: #0f5132;
+      background-color: #d1e7dd;
+      padding: 10px;
+      border: 1px solid #badbcc;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+    footer {
+      background: linear-gradient(to right, #222, #444);
+      color: #ddd;
+      text-align: center;
+      padding: 15px 0;
+      font-size: 14px;
+      border-top: 2px solid #555;
+      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+      width: 100%;
+      font-family: 'Arial', sans-serif;
+      position: relative;
+    }
+  </style>
+
+  <script>
+    function validateForm(event) {
+      var horaEntrada  = document.getElementById("hora_primeira_entrada").value;
+      var horaSaida    = document.getElementById("hora_primeira_saida").value;
+      var horaEntrada2 = document.getElementById("hora_segunda_entrada").value;
+      var horaSaida2   = document.getElementById("hora_segunda_saida").value;
+      if (!horaEntrada && !horaSaida && !horaEntrada2 && !horaSaida2) {
+        alert("Você deve preencher ao menos um campo de horário.");
+        event.preventDefault();
+        return false;
+      }
+      return true;
+    }
+  </script>
 </head>
 <body>
-    <div class="titulo-container">
-        <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
     </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="alert {{ 'danger' if messages[0][0] == 'danger' else 'success' }} mt-3">
-                {{ messages[0][1] }}
-            </div>
-        {% endif %}
-    {% endwith %}
-
-    <div class="container">
-        <h1><i class="fas fa-clock"></i> Relatar Esquecimento / Ausência de Marcação</h1>
-
-        <form method="POST" onsubmit="return validateForm(event)">
-            <div class="input-group">
-                <label for="nome"><i class="fas fa-user"></i> Nome do Funcionário</label>
-                <input type="text" id="nome" name="nome" value="{{ current_user.nome }}" readonly>
-            </div>
-
-            <div class="input-group">
-                <label for="registro"><i class="fas fa-id-card"></i> Registro Funcional</label>
-                <input type="text" id="registro" name="registro" value="{{ current_user.registro }}" readonly>
-            </div>
-
-            <div class="input-group">
-                <label for="data_esquecimento"><i class="fas fa-calendar-alt"></i> Data do Esquecimento</label>
-                <input type="date" id="data_esquecimento" name="data_esquecimento">
-            </div>
-
-            <div class="input-group">
-                <label for="hora_primeira_entrada"><i class="fas fa-clock"></i> Hora da Primeira Entrada (opcional):</label>
-                <input type="time" id="hora_primeira_entrada" name="hora_primeira_entrada">
-            </div>
-
-            <div class="input-group">
-                <label for="hora_primeira_saida"><i class="fas fa-clock"></i> Hora da Primeira Saída (opcional):</label>
-                <input type="time" id="hora_primeira_saida" name="hora_primeira_saida">
-            </div>
-
-            <div class="input-group">
-                <label for="hora_segunda_entrada"><i class="fas fa-clock"></i> Hora da Segunda Entrada (opcional):</label>
-                <input type="time" id="hora_segunda_entrada" name="hora_segunda_entrada">
-            </div>
-
-            <div class="input-group">
-                <label for="hora_segunda_saida"><i class="fas fa-clock"></i> Hora da Segunda Saída (opcional):</label>
-                <input type="time" id="hora_segunda_saida" name="hora_segunda_saida">
-            </div>
-
-            <!-- Novo campo de motivo (opcional) -->
-            <div class="input-group">
-                <label for="motivo"><i class="fas fa-comment-alt"></i> Motivo do Esquecimento / Ausência de Marcação (em poucas palavras, máximo 20 caracteres):</label>
-                <textarea id="motivo" name="motivo" rows="2" maxlength="20" placeholder="Ex: Trânsito atrasou..." title="Máximo 20 caracteres"></textarea>
-            </div>
-
-            <button type="submit" class="submit-btn">
-                <i class="fas fa-save"></i> Enviar Registro
-            </button>
-        </form>
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
     </div>
 
-    <div class="back-link">
-        <a href="{{ url_for('index') }}">
-           <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
-        </a>
-    </div>
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
+    </a>
+  </header>
 
-    <footer>
-        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-    </footer>
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- Mensagens Flash -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="{{ 'danger' if messages[0][0] == 'danger' else 'success' }}">
+        {{ messages[0][1] }}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Conteúdo principal -->
+  <div class="container">
+    <h1><i class="fas fa-clock"></i> Relatar Esquecimento / Ausência de Marcação</h1>
+    <form method="POST" onsubmit="return validateForm(event)">
+      <div class="input-group">
+        <label for="nome"><i class="fas fa-user"></i> Nome do Funcionário</label>
+        <input type="text" id="nome" name="nome" value="{{ current_user.nome }}" readonly>
+      </div>
+      <div class="input-group">
+        <label for="registro"><i class="fas fa-id-card"></i> Registro Funcional</label>
+        <input type="text" id="registro" name="registro" value="{{ current_user.registro }}" readonly>
+      </div>
+      <div class="input-group">
+        <label for="data_esquecimento"><i class="fas fa-calendar-alt"></i> Data do Esquecimento</label>
+        <input type="date" id="data_esquecimento" name="data_esquecimento">
+      </div>
+      <div class="input-group">
+        <label for="hora_primeira_entrada"><i class="fas fa-clock"></i> Hora da Primeira Entrada (opcional):</label>
+        <input type="time" id="hora_primeira_entrada" name="hora_primeira_entrada">
+      </div>
+      <div class="input-group">
+        <label for="hora_primeira_saida"><i class="fas fa-clock"></i> Hora da Primeira Saída (opcional):</label>
+        <input type="time" id="hora_primeira_saida" name="hora_primeira_saida">
+      </div>
+      <div class="input-group">
+        <label for="hora_segunda_entrada"><i class="fas fa-clock"></i> Hora da Segunda Entrada (opcional):</label>
+        <input type="time" id="hora_segunda_entrada" name="hora_segunda_entrada">
+      </div>
+      <div class="input-group">
+        <label for="hora_segunda_saida"><i class="fas fa-clock"></i> Hora da Segunda Saída (opcional):</label>
+        <input type="time" id="hora_segunda_saida" name="hora_segunda_saida">
+      </div>
+      <div class="input-group">
+        <label for="motivo"><i class="fas fa-comment-alt"></i> Motivo do Esquecimento / Ausência de Marcação (opcional, até 20 caracteres):</label>
+        <textarea id="motivo" name="motivo" rows="2" maxlength="20" placeholder="Ex: Trânsito, médico..."></textarea>
+      </div>
+      <button type="submit" class="submit-btn"><i class="fas fa-save"></i> Enviar Registro</button>
+    </form>
+  </div>
+
+  <!-- Rodapé -->
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
 </body>
 </html>

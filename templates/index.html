@@ -6,17 +6,28 @@
   <title>Índice</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
+      font-family: 'Montserrat', sans-serif;
       box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background: #f9fbfc;
+      color: #333;
     }
     *, *:before, *:after {
       box-sizing: inherit;
     }
 
-    /* Container das abas */
+    main {
+      flex: 1 0 auto;
+      padding: 0 15px 120px;
+    }
+
     .tabs {
       display: flex;
       justify-content: center;
@@ -26,37 +37,45 @@
       z-index: 10;
       background: transparent;
       margin: 0;
-      padding: 0;
-      padding-top: 5px;
+      padding: 5px 0 0 0;
       user-select: none;
     }
 
-    /* Cada aba */
     .tab {
-      background-color: #f0f0f0;
+      background-color: #e6f4ea;
       padding: 10px 20px;
       cursor: pointer;
-      font-weight: bold;
-      border: 2px solid #28a745; /* borda verde */
+      font-weight: 700;
+      border: 2px solid #28a745;
       border-bottom: none;
-      border-radius: 8px 8px 0 0;
-      color: #333;
+      border-radius: 10px 10px 0 0;
+      color: #2f4f4f;
       position: relative;
       z-index: 20;
-      transition: background-color 0.3s ease, color 0.3s ease;
+      transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                  color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                  box-shadow 0.4s ease;
       margin: 0;
       box-sizing: border-box;
+      box-shadow: inset 0 4px 10px rgba(40, 167, 69, 0.15);
     }
 
-    /* Aba ativa */
+    .tab:hover:not(.active) {
+      background-color: #d0e8ce;
+      color: #19692c;
+      box-shadow: inset 0 6px 15px rgba(40, 167, 69, 0.25);
+    }
+
     .tab.active {
       background-color: #28a745;
-      color: white;
+      color: #fff;
       border-color: #28a745;
       border-bottom: none;
+      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.5);
+      font-weight: 800;
+      letter-spacing: 0.05em;
     }
 
-    /* Texto "Acesso aos Serviços" centralizado e destacado */
     .access-services {
       font-weight: 700;
       font-size: 18px;
@@ -65,7 +84,6 @@
       text-align: center;
     }
 
-    /* Container dos cards */
     .cards-container {
       display: none;
       justify-content: center;
@@ -80,108 +98,173 @@
       display: flex;
     }
 
-    /* Card completo */
     .cards-wrapper {
-      background-color: #f8f9fa;
-      padding: 20px;
-      border: 2px solid #28a745;
-      border-radius: 16px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      background: #ffffff;
+      padding: 25px 25px 30px;
+      border: 1.8px solid #28a745;
+      border-radius: 18px;
+      box-shadow: 0 8px 25px rgba(40, 167, 69, 0.15);
       width: 100%;
       box-sizing: border-box;
       position: relative;
       z-index: 1;
       margin: 0;
+      transition: box-shadow 0.4s ease;
     }
 
-    /* Grid dos cards */
+    .cards-wrapper:hover {
+      box-shadow: 0 12px 40px rgba(40, 167, 69, 0.3);
+    }
+
     .cards-grid {
       display: grid;
       grid-template-columns: repeat(3, 160px);
-      gap: 15px;
+      gap: 18px;
       justify-content: center;
     }
 
-    /* Cada card */
     .card {
-      background-color: #28a745;
+      background: linear-gradient(145deg, #2ebd4f, #238f3a);
       color: white;
-      border: 2px solid white; /* borda branca padrão */
-      border-radius: 12px;
+      border-radius: 16px;
       width: 160px;
       height: 160px;
       padding: 20px;
       text-align: center;
-      transition: all 0.3s ease;
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), 
+                  box-shadow 0.35s ease, 
+                  background 0.35s ease;
       text-decoration: none;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 6px 12px rgba(18, 88, 22, 0.35);
       cursor: pointer;
       user-select: none;
+      margin: 0;
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.03em;
+      font-family: 'Montserrat', sans-serif;
+      position: relative;
+      overflow: hidden;
     }
 
-    /* Hover com borda verde e sombra mais forte */
+    .card::before {
+      content: "";
+      position: absolute;
+      top: -40%;
+      left: -40%;
+      width: 160%;
+      height: 160%;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.18) 0%, transparent 70%);
+      transform: rotate(25deg);
+      opacity: 0.3;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+      border-radius: 16px;
+      z-index: 0;
+    }
+
     .card:hover {
-      transform: scale(1.05);
-      border-color: #1e7e34; /* verde mais escuro */
-      background-color: #218838;
-      box-shadow: 0 6px 15px rgba(33, 136, 56, 0.6);
-      transition: all 0.3s ease;
+      transform: scale(1.08);
+      box-shadow: 0 12px 24px rgba(33, 136, 56, 0.75);
+      background: linear-gradient(145deg, #2af94a, #1f7e30);
       text-decoration: none;
-      color: white;
+    }
+
+    .card:hover::before {
+      opacity: 0.5;
     }
 
     .card i {
-      font-size: 26px;
-      margin-bottom: 10px;
+      font-size: 28px;
+      margin-bottom: 14px;
       color: white;
       pointer-events: none;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+      flex-shrink: 0;
     }
 
-    /* Botão sair */
+    /* Ajuste no botão logout para igualar aos cards */
     .logout-btn {
+      background: linear-gradient(135deg, #e03e4f, #b02937);
+      border-radius: 16px;
+      border: none !important;
+      height: 160px;
+      padding: 20px;
+      margin: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      padding: 15px;
-      background-color: #dc3545;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: bold;
-      margin: 30px auto 0;
-      max-width: 200px;
+      gap: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
       user-select: none;
+      color: white !important;
+      text-decoration: none !important;
+      box-shadow: 0 6px 16px rgba(176, 41, 55, 0.8);
+      transition: background 0.4s ease, box-shadow 0.4s ease;
+      position: relative;
+      overflow: hidden;
     }
 
-    /* Título do site */
-    .titulo-site {
-      text-align: center;
-      margin: 30px 0 10px;
+    .logout-btn::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 180%;
+      height: 180%;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.15) 0%, transparent 70%);
+      transform: rotate(30deg);
+      opacity: 0.4;
+      pointer-events: none;
+      border-radius: 16px;
+      z-index: 0;
+      transition: opacity 0.4s ease;
     }
 
-    /* Boas-vindas */
+    .logout-btn:hover {
+      background: linear-gradient(135deg, #c12630, #8f1c24);
+      box-shadow: 0 14px 28px rgba(176, 41, 55, 0.9);
+      color: white !important;
+      text-decoration: none !important;
+    }
+
+    .logout-btn:hover::before {
+      opacity: 0.6;
+    }
+
     .welcome-container {
       text-align: center;
-      margin-bottom: 20px;
-      font-size: 18px;
-      color: #333;
-      font-weight: 600;
-    }
-
-    /* Rodapé */
-    footer {
-      text-align: center;
       margin-top: 30px;
-      font-size: 14px;
+      margin-bottom: 20px;
     }
 
-    /* Flash messages */
+    .welcome-container span {
+      font-size: 18px;
+      font-weight: 700;
+      color: #234d20;
+      border-bottom: 2px solid #28a745;
+      padding-bottom: 4px;
+      letter-spacing: 0.04em;
+    }
+
+    footer {
+      background: linear-gradient(to right, #222, #444);
+      color: #ddd;
+      text-align: center;
+      padding: 15px 0;
+      font-size: 14px;
+      border-top: 2px solid #555;
+      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+      width: 100%;
+    }
+
     .flash-container {
       text-align: center;
       margin-bottom: 20px;
@@ -190,44 +273,57 @@
     .flash {
       padding: 10px 20px;
       margin: 5px auto;
-      border-radius: 5px;
+      border-radius: 6px;
       width: fit-content;
+      font-weight: 600;
+      font-family: 'Montserrat', sans-serif;
     }
 
     .flash.success {
       background-color: #d4edda;
       color: #155724;
+      box-shadow: 0 0 8px rgba(21, 87, 36, 0.5);
     }
 
     .flash.error {
       background-color: #f8d7da;
       color: #721c24;
+      box-shadow: 0 0 8px rgba(114, 28, 36, 0.5);
     }
 
-    /* Responsividade */
     @media (max-width: 768px) {
+      main {
+        padding: 0 10px 60px;
+        min-height: auto;
+      }
       .cards-grid {
         grid-template-columns: repeat(2, 140px);
         gap: 12px;
       }
-
       .card {
         width: 140px;
         height: 140px;
+        font-size: 0.95rem;
       }
-
       .card i {
-        font-size: 22px;
+        font-size: 24px;
+        margin-bottom: 12px;
       }
-
       .access-services {
         font-size: 16px;
         margin-bottom: 12px;
       }
-      
       .cards-container {
         max-width: 360px;
         padding: 0 5px 10px 5px;
+      }
+      .logout-btn {
+        height: auto;
+        padding: 15px;
+        width: 100%;
+        max-width: 200px;
+        margin: 30px auto 0;
+        font-size: 1rem;
       }
     }
 
@@ -235,129 +331,382 @@
       .cards-grid {
         grid-template-columns: 1fr;
       }
-
       .card {
         width: 100%;
         max-width: 260px;
         height: auto;
       }
-
       .cards-container {
         max-width: 280px;
         padding: 0 5px 10px 5px;
       }
     }
+
+    /* Cabeçalhos */
+
+    .header-desktop {
+      display: none;
+    }
+    .header-mobile {
+      display: none;
+    }
+
+    @media (min-width: 769px) {
+      .header-desktop {
+        display: flex;
+        background-color: #007bff;
+        padding: 15px 30px;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+        min-height: 110px;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        color: white;
+        position: relative;
+      }
+      main {
+        min-height: calc(100vh - 110px - 60px);
+      }
+      .left-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+        color: white;
+      }
+      .escola-nome {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 1.6rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+      .escola-subtitulo {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-top: 4px;
+      }
+      .header-center-text-container {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        user-select: none;
+        z-index: 1;
+      }
+      .header-center-text {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1.9rem;
+        color: white;
+        letter-spacing: 5px;
+        white-space: nowrap;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      }
+      .btn-home {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+      }
+      .btn-home:hover {
+        background-color: #0d8a00;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header-mobile {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        background-color: #007bff;
+      }
+      .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        padding: 10px 15px;
+        background-color: #007bff;
+        text-align: center;
+      }
+      .logo {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: white;
+        text-align: center;
+      }
+      .escola-nome {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 1.3rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+      .escola-subtitulo {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 2px;
+      }
+      .header-bottom {
+        background-color: #0056b3;
+        text-align: center;
+        padding: 12px 10px;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1.0rem;
+        letter-spacing: 4px;
+        user-select: none;
+        color: white;
+        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        position: relative;
+      }
+      .btn-home-mobile {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+      }
+      .btn-home-mobile:hover {
+        background-color: #0d8a00;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
 
-  <!-- Mensagem de boas-vindas no topo, centralizada -->
-  <div class="welcome-container">
-    Bem-vindo, {{ current_user.nome }}!
-  </div>
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-  <div class="flash-container">
-    {% for category, message in messages %}
-      <div class="flash {{ category }}">{{ message|safe }}</div>
-    {% endfor %}
-  </div>
-  <script>
-    setTimeout(() => {
-      document.querySelectorAll('.flash').forEach(flash => {
-        flash.style.transition = 'opacity 1s ease';
-        flash.style.opacity = '0';
-        setTimeout(() => flash.remove(), 1000);
-      });
-    }, 8000);
-  </script>
-  {% endif %}
-  {% endwith %}
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
+    </div>
 
-  <div class="tabs">
-    <div class="tab active" onclick="showTab('geral')">Geral</div>
-    {% if current_user.tipo == 'administrador' %}
-    <div class="tab" onclick="showTab('admin')">Administrativo</div>
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
+    </a>
+
+  </header>
+
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom" style="
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-sizing: border-box;
+      white-space: nowrap;
+    ">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <div class="welcome-container">
+      <span>Bem-vindo, {{ current_user.nome }}!</span>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-container">
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message|safe }}</div>
+      {% endfor %}
+    </div>
+    <script>
+      setTimeout(() => {
+        document.querySelectorAll('.flash').forEach(flash => {
+          flash.style.transition = 'opacity 1s ease';
+          flash.style.opacity = '0';
+          setTimeout(() => flash.remove(), 1000);
+        });
+      }, 8000);
+    </script>
     {% endif %}
-  </div>
+    {% endwith %}
 
-  <!-- Aba Geral -->
-  <div class="cards-container active" id="geral">
-    <div class="cards-wrapper">
-      <div class="access-services">
-        Acesso aos Serviços
-      </div>
-      <div class="cards-grid">
-        <a href="{{ url_for('perfil') }}" class="card">
-          <i class="fas fa-user"></i> Meu Perfil
-        </a>
-        <a href="{{ url_for('historico') }}" class="card">
-          <i class="fas fa-clock"></i> Minhas Folgas
-        </a>
-        <a href="{{ url_for('minhas_justificativas') }}" class="card">
-          <i class="fas fa-list-alt"></i> Meus Agendamentos
-        </a>
-        <a href="{{ url_for('agendar') }}" class="card">
-          <i class="fas fa-calendar-day"></i> Agendar Folga
-        </a>
-        <a href="{{ url_for('relatar_esquecimento') }}" class="card">
-          <i class="fas fa-question-circle"></i> Relatar Esquecimento
-        </a>
-        <a href="{{ url_for('calendario') }}" class="card">
-          <i class="fas fa-calendar-alt"></i> Ver Calendário
-        </a>
-        <a href="{{ url_for('banco_horas') }}" class="card">
-          <i class="fas fa-history"></i> Banco de Horas
-        </a>
+    <div class="tabs">
+      <div class="tab active" data-tab="geral">Geral</div>
+      {% if current_user.tipo == 'administrador' %}
+      <div class="tab" data-tab="administrativo">Administrativo</div>
+      {% endif %}
+    </div>
+
+    <div id="geral" class="cards-container active">
+      <div class="cards-wrapper">
+        <div class="cards-grid">
+          <a href="{{ url_for('perfil') }}" class="card">
+            <i class="fas fa-user"></i>
+            Meu Perfil
+          </a>
+
+          <a href="{{ url_for('historico') }}" class="card">
+            <i class="fas fa-history"></i>
+            Minhas Folgas
+          </a>
+
+          <a href="{{ url_for('minhas_justificativas') }}" class="card">
+              <i class="fas fa-list-alt"></i> Meus Agendamentos
+          </a>
+
+          <a href="{{ url_for('agendar') }}" class="card">
+            <i class="fas fa-calendar-plus"></i>
+            Agendar Folga
+          </a>
+          <a href="{{ url_for('calendario') }}" class="card">
+            <i class="fas fa-calendar-alt"></i>
+            Calendário
+          </a>
+          <a href="{{ url_for('relatar_esquecimento') }}" class="card">
+            <i class="fas fa-clock"></i>
+            Relatar Esquecimento
+          </a>
+          <a href="{{ url_for('banco_horas') }}" class="card">
+            <i class="fas fa-hourglass-half"></i>
+            Banco de Horas
+          </a>
+          <a href="{{ url_for('logout') }}" class="card logout-btn" title="Sair do sistema">
+            <i class="fas fa-sign-out-alt"></i>
+            Sair
+          </a>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Aba Administrativa -->
-  {% if current_user.tipo == 'administrador' %}
-  <div class="cards-container" id="admin">
-    <div class="cards-wrapper">
-      <div class="access-services">
-        Acesso aos Serviços
-      </div>
-      <div class="cards-grid">
-        <a href="{{ url_for('deferir_folgas') }}" class="card">
-          <i class="fas fa-check-circle"></i> Deferir Folgas
-        </a>
-        <a href="{{ url_for('relatorio_ponto') }}" class="card">
-          <i class="fas fa-chart-bar"></i> Relatório de Ponto
-        </a>
-        <a href="{{ url_for('aprovar_usuarios') }}" class="card">
-          <i class="fas fa-user-check"></i> Aprovar Usuários
-        </a>
-        <a href="{{ url_for('admin_agendamentos') }}" class="card">
-          <i class="fas fa-calendar-alt"></i> Visualizar Agendamentos
-        </a>
-        <a href="{{ url_for('user_info_all') }}" class="card">
-          <i class="fas fa-folder-open"></i> Prontuários
-        </a>
+    {% if current_user.tipo == 'administrador' %}
+    <div id="administrativo" class="cards-container">
+      <div class="cards-wrapper">
+        <div class="cards-grid">
+          <a href="{{ url_for('deferir_folgas') }}" class="card">
+              <i class="fas fa-check-circle"></i> Deferir Folgas
+          </a>
+          <a href="{{ url_for('aprovar_usuarios') }}" class="card">
+            <i class="fas fa-user-check"></i>
+            Aprovar Usuários
+          </a>
+          <a href="{{ url_for('admin_agendamentos') }}" class="card">
+            <i class="fas fa-tasks"></i>
+            Gerenciar Agendamentos
+          </a>
+          <a href="{{ url_for('user_info_all') }}" class="card">
+            <i class="fas fa-users"></i>
+            Prontuarios
+          </a>
+          <a href="{{ url_for('relatorio_ponto') }}" class="card">
+            <i class="fas fa-file-alt"></i>
+            Relatório de Ponto
+          </a>
+          <a href="{{ url_for('relatorio_horas_extras') }}" class="card">
+            <i class="fas fa-file-invoice"></i>
+            Relatório de Horas Extras
+          </a>
+          <a href="{{ url_for('logout') }}" class="card logout-btn" title="Sair do sistema">
+            <i class="fas fa-sign-out-alt"></i>
+            Sair
+          </a>
+        </div>
       </div>
     </div>
-  </div>
-  {% endif %}
-
-  <a href="{{ url_for('logout') }}" class="logout-btn">
-    <i class="fas fa-sign-out-alt"></i> Sair
-  </a>
+    {% endif %}
+  </main>
 
   <footer>
     <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
   </footer>
 
   <script>
-    function showTab(id) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.cards-container').forEach(c => c.classList.remove('active'));
-      document.querySelector(`.tab[onclick="showTab('${id}')"]`).classList.add('active');
-      document.getElementById(id).classList.add('active');
-    }
+    // Script para alternar abas
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Remove active de todas as abas e containers
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.cards-container').forEach(c => c.classList.remove('active'));
+
+        // Ativa a aba clicada
+        tab.classList.add('active');
+        const target = tab.getAttribute('data-tab');
+        document.getElementById(target).classList.add('active');
+      });
+    });
   </script>
 </body>
 </html>

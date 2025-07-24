@@ -845,92 +845,163 @@ def criar_admin():
     else:
         return 'A conta administrador já existe.'
     
-# Rota de Deferir Folgas
+
+from sqlalchemy import asc
+from collections import defaultdict
+from flask import flash, redirect, url_for, render_template, request, abort
+import datetime
+
+from collections import defaultdict
+from flask import render_template, request, redirect, url_for, flash
+from flask_login import login_required, current_user
+from sqlalchemy import asc
+import datetime
+
 @app.route('/deferir_folgas', methods=['GET', 'POST'])
 @login_required
 def deferir_folgas():
-    if current_user.tipo == 'administrador':
-        folgas = Agendamento.query.filter(Agendamento.status.in_(['em_espera', 'pendente'])).all()
-    else:
-        folgas = Agendamento.query.filter(
-            Agendamento.funcionario_id == current_user.id,
-            Agendamento.status.in_(['em_espera', 'pendente'])
-        ).all()
+    # Função para buscar folgas pendentes/espera, com filtro para administrador e funcionário comum
+    def buscar_folgas():
+        if current_user.tipo == 'administrador':
+            folgas_query = (
+                db.session.query(Agendamento)
+                .join(User, Agendamento.funcionario_id == User.id)
+                .filter(Agendamento.status.in_(['em_espera', 'pendente']))
+                .order_by(asc(User.cargo))
+            )
+        else:
+            folgas_query = (
+                db.session.query(Agendamento)
+                .join(User, Agendamento.funcionario_id == User.id)
+                .filter(
+                    Agendamento.funcionario_id == current_user.id,
+                    Agendamento.status.in_(['em_espera', 'pendente'])
+                )
+                .order_by(asc(User.cargo))
+            )
+        return folgas_query.all()
 
+    # Função que gera avisos de conflito para agendamentos em_espera
+    def gerar_avisos(folgas_em_espera):
+        avisos = []
+        if current_user.tipo == 'administrador':
+            # Buscar todos os agendamentos (exceto excluir, se quiser, o atual em espera)
+            agendamentos_todos = Agendamento.query.all()
+
+            # Organiza os agendamentos por (cargo, data), agrupando nomes
+            agendamentos_por_cargo_data = defaultdict(list)
+            for ag in agendamentos_todos:
+                cargo = ag.funcionario.cargo or 'Sem Cargo Definido'
+                agendamentos_por_cargo_data[(cargo, ag.data)].append(ag)
+
+            # Para cada agendamento em espera, verificar conflito
+            for folga_espera in folgas_em_espera:
+                cargo = folga_espera.funcionario.cargo or 'Sem Cargo Definido'
+                data = folga_espera.data
+                ags_mesmo_cargo_data = agendamentos_por_cargo_data.get((cargo, data), [])
+
+                # Filtra para outros agendamentos diferentes do próprio, qualquer status
+                outros_agendamentos = [ag for ag in ags_mesmo_cargo_data if ag.id != folga_espera.id]
+
+                if outros_agendamentos:
+                    nomes_outros = {ag.funcionario.nome for ag in outros_agendamentos}
+                    nomes_outros_str = ", ".join(sorted(nomes_outros))
+                    mensagem = (
+                        f"Alerta: O funcionário <strong>{folga_espera.funcionario.nome}</strong>, cargo <strong>{cargo}</strong>, "
+                        f"tem agendamento em <strong>espera</strong> para o dia <strong>{data.strftime('%d/%m/%Y')}</strong>, "
+                        f"mas já existem outros agendamentos para o mesmo cargo e data: {nomes_outros_str}."
+                    )
+                    avisos.append(mensagem)
+
+        return avisos
+
+    # Busca as folgas em espera para mostrar na página
+    folgas = buscar_folgas()
+    avisos = gerar_avisos(folgas)
+
+    # Processa submissão de formulário POST para deferir ou indeferir folgas
     if request.method == 'POST':
-        folga_id = request.form['folga_id']
-        novo_status = request.form['status']
+        folga_id = request.form.get('folga_id')
+        novo_status = request.form.get('status')
         folga = Agendamento.query.get(folga_id)
 
-        if folga:
-            usuario = User.query.get(folga.funcionario_id)
+        if not folga:
+            flash("Agendamento não encontrado.", "danger")
+            return redirect(url_for('deferir_folgas'))
 
-            if folga.motivo == 'BH' and novo_status == 'deferido':
-                total_minutos = (folga.horas * 60) + folga.minutos
-                if usuario.banco_horas >= total_minutos:
-                    usuario.banco_horas -= total_minutos
-                    novo_banco_horas = BancoDeHoras(
-                        funcionario_id=usuario.id,
-                        horas=folga.horas,
-                        minutos=folga.minutos,
-                        total_minutos=total_minutos,
-                        data_realizacao=folga.data,
-                        motivo=folga.motivo,
-                        status="Deferida",
-                        data_criacao=datetime.datetime.utcnow(),
-                    )
-                    db.session.add(novo_banco_horas)
-                else:
-                    flash("O funcionário não tem horas suficientes no banco de horas para este agendamento.", "danger")
-                    return redirect(url_for('deferir_folgas'))
+        usuario = User.query.get(folga.funcionario_id)
 
-            if folga.motivo == 'TRE' and novo_status == 'deferido':
-                # Somente decrementa se tre_total > 0 para evitar números negativos
-                if usuario.tre_total > 0:
-                    usuario.tre_total -= 1
-                    usuario.tre_usufruidas += 1
-                else:
-                    flash("Não é possível deferir esta folga TRE porque o usuário não possui TRE disponível.", "danger")
-                    return redirect(url_for('deferir_folgas'))
+        # Validação banco de horas para folgas do tipo BH
+        if folga.motivo == 'BH' and novo_status == 'deferido':
+            total_minutos = (folga.horas or 0) * 60 + (folga.minutos or 0)
+            if usuario.banco_horas >= total_minutos:
+                usuario.banco_horas -= total_minutos
+                novo_banco_horas = BancoDeHoras(
+                    funcionario_id=usuario.id,
+                    horas=folga.horas or 0,
+                    minutos=folga.minutos or 0,
+                    total_minutos=total_minutos,
+                    data_realizacao=folga.data,
+                    motivo=folga.motivo,
+                    status="Deferida",
+                    data_criacao=datetime.datetime.utcnow(),
+                )
+                db.session.add(novo_banco_horas)
+            else:
+                flash("O funcionário não tem horas suficientes no banco de horas para este agendamento.", "danger")
+                return redirect(url_for('deferir_folgas'))
 
-            folga.status = novo_status
+        # Validação para TRE, decrementa se deferido e se usuário tiver TRE disponível
+        if folga.motivo == 'TRE' and novo_status == 'deferido':
+            if usuario.tre_total > 0:
+                usuario.tre_total -= 1
+                usuario.tre_usufruidas += 1
+            else:
+                flash("Não é possível deferir esta folga TRE porque o usuário não possui TRE disponível.", "danger")
+                return redirect(url_for('deferir_folgas'))
 
-            try:
-                db.session.commit()
-                flash(f"A folga de {folga.funcionario.nome} foi {novo_status} com sucesso!",
-                      "success" if novo_status == 'deferido' else "danger")
+        # Atualiza o status da folga
+        folga.status = novo_status
 
-                if novo_status == 'deferido':
-                    assunto = "E.M José Padin Mouta - Deferimento de Folga"
-                    mensagem_html = f"""
-                    <html>
-                      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
-                        <p>Prezado(a) Senhor(a) <strong>{usuario.nome}</strong>,</p>
-                        <p>
-                          Cumprimentando-o(a), informamos que a sua solicitação de 
-                          <strong style="color: #007bff;">FOLGA</strong> para o dia 
-                          <strong style="color: #007bff;">{folga.data.strftime('%d/%m/%Y')}</strong> foi 
-                          <strong style="color: #5cb85c;">DEFERIDA</strong> pela direção da unidade escolar.
-                          Assim, seu afastamento para a referida data está devidamente registrado.
-                        </p>
-                        <p>
-                          Agradecemos a colaboração e estamos à disposição para quaisquer esclarecimentos adicionais.
-                        </p>
-                        <p>
-                          Caso necessite, você pode acessar o protocolo do agendamento através do nosso sistema.
-                        </p>
-                        <br>
-                        <p>Atenciosamente,</p>
-                        <p>
-                          Nilson Cruz<br>
-                          Secretário da Unidade Escolar<br>
-                          3496-5321<br>
-                          E.M José Padin Mouta
-                        </p>
-                      </body>
-                    </html>
-                    """
-                    mensagem_texto = f"""Prezado(a) Senhor(a) {usuario.nome},
+        try:
+            db.session.commit()
+            flash(
+                f"A folga de {folga.funcionario.nome} foi {novo_status} com sucesso!",
+                "success" if novo_status == 'deferido' else "danger"
+            )
+
+            # Preparação do email personalizado
+            if novo_status == 'deferido':
+                assunto = "E.M José Padin Mouta - Deferimento de Folga"
+                mensagem_html = f"""
+                <html>
+                  <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
+                    <p>Prezado(a) Senhor(a) <strong>{usuario.nome}</strong>,</p>
+                    <p>
+                      Cumprimentando-o(a), informamos que a sua solicitação de 
+                      <strong style="color: #007bff;">FOLGA</strong> para o dia 
+                      <strong style="color: #007bff;">{folga.data.strftime('%d/%m/%Y')}</strong> foi 
+                      <strong style="color: #5cb85c;">DEFERIDA</strong> pela direção da unidade escolar.
+                      Assim, seu afastamento para a referida data está devidamente registrado.
+                    </p>
+                    <p>
+                      Agradecemos a colaboração e estamos à disposição para quaisquer esclarecimentos adicionais.
+                    </p>
+                    <p>
+                      Caso necessite, você pode acessar o protocolo do agendamento através do nosso sistema.
+                    </p>
+                    <br>
+                    <p>Atenciosamente,</p>
+                    <p>
+                      Nilson Cruz<br>
+                      Secretário da Unidade Escolar<br>
+                      3496-5321<br>
+                      E.M José Padin Mouta
+                    </p>
+                  </body>
+                </html>
+                """
+                mensagem_texto = f"""Prezado(a) Senhor(a) {usuario.nome},
 
 Cumprimentando-o(a), informamos que a sua solicitação de FOLGA para o dia {folga.data.strftime('%d/%m/%Y')} foi DEFERIDA pela direção da unidade escolar.
 Assim, seu afastamento para a referida data está devidamente registrado.
@@ -946,36 +1017,36 @@ Secretário da Unidade Escolar
 3496-5321
 E.M José Padin Mouta
 """
-                else:
-                    assunto = "E.M José Padin Mouta - Indeferimento de Folga"
-                    mensagem_html = f"""
-                    <html>
-                      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
-                        <p>Prezado(a) Senhor(a) <strong>{usuario.nome}</strong>,</p>
-                        <p>
-                          Cumprimentando-o(a), comunicamos que, após análise criteriosa, a sua solicitação de 
-                          <strong style="color: #007bff;">FOLGA</strong> para o dia 
-                          <strong style="color: #007bff;">{folga.data.strftime('%d/%m/%Y')}</strong> não pôde ser 
-                          <strong style="color: #d9534f;">INDEFERIDA</strong> pela direção da unidade escolar.
-                        </p>
-                        <p>
-                          Lamentamos o inconveniente e estamos à disposição para eventuais esclarecimentos ou para discutir alternativas viáveis. Agradecemos a sua compreensão.
-                        </p>
-                        <p>
-                          Caso necessite, você pode acessar o protocolo do agendamento através do nosso sistema.
-                        </p>
-                        <br>
-                        <p>Atenciosamente,</p>
-                        <p>
-                          Nilson Cruz<br>
-                          Secretário da Unidade Escolar<br>
-                          3496-5321<br>
-                          E.M José Padin Mouta
-                        </p>
-                      </body>
-                    </html>
-                    """
-                    mensagem_texto = f"""Prezado(a) Senhor(a) {usuario.nome},
+            else:
+                assunto = "E.M José Padin Mouta - Indeferimento de Folga"
+                mensagem_html = f"""
+                <html>
+                  <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
+                    <p>Prezado(a) Senhor(a) <strong>{usuario.nome}</strong>,</p>
+                    <p>
+                      Cumprimentando-o(a), comunicamos que, após análise criteriosa, a sua solicitação de 
+                      <strong style="color: #007bff;">FOLGA</strong> para o dia 
+                      <strong style="color: #007bff;">{folga.data.strftime('%d/%m/%Y')}</strong> não pôde ser 
+                      <strong style="color: #d9534f;">DEFERIDA</strong> pela direção da unidade escolar.
+                    </p>
+                    <p>
+                      Lamentamos o inconveniente e estamos à disposição para eventuais esclarecimentos ou para discutir alternativas viáveis. Agradecemos a sua compreensão.
+                    </p>
+                    <p>
+                      Caso necessite, você pode acessar o protocolo do agendamento através do nosso sistema.
+                    </p>
+                    <br>
+                    <p>Atenciosamente,</p>
+                    <p>
+                      Nilson Cruz<br>
+                      Secretário da Unidade Escolar<br>
+                      3496-5321<br>
+                      E.M José Padin Mouta
+                    </p>
+                  </body>
+                </html>
+                """
+                mensagem_texto = f"""Prezado(a) Senhor(a) {usuario.nome},
 
 Cumprimentando-o, comunicamos que, após análise criteriosa, a sua solicitação de FOLGA para o dia {folga.data.strftime('%d/%m/%Y')} não pôde ser DEFERIDA pela direção da unidade escolar.
 
@@ -990,23 +1061,29 @@ Secretário da Unidade Escolar
 3496-5321
 E.M José Padin Mouta
 """
-                enviar_email(usuario.email, assunto, mensagem_html, mensagem_texto)
-            except Exception as e:
-                db.session.rollback()
-                flash(f"Erro ao atualizar folga: {str(e)}", "danger")
-        else:
-            flash("Agendamento não encontrado.", "danger")
+            # Envia o email para o usuário
+            enviar_email(usuario.email, assunto, mensagem_html, mensagem_texto)
 
-    # Atualiza a lista após qualquer ação
-    if current_user.tipo == 'administrador':
-        folgas = Agendamento.query.filter(Agendamento.status.in_(['em_espera', 'pendente'])).all()
-    else:
-        folgas = Agendamento.query.filter(
-            Agendamento.funcionario_id == current_user.id,
-            Agendamento.status.in_(['em_espera', 'pendente'])
-        ).all()
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Erro ao atualizar folga: {str(e)}", "danger")
 
-    return render_template('deferir_folgas.html', folgas=folgas)
+        # Atualiza lista e avisos para exibir as mudanças sem recarregar a página
+        folgas = buscar_folgas()
+        avisos = gerar_avisos(folgas)
+
+    # Agrupa folgas por cargo para facilitar exibição agrupada no template
+    folgas_por_cargo = defaultdict(list)
+    for f in folgas:
+        cargo = f.funcionario.cargo or "Sem Cargo Definido"
+        folgas_por_cargo[cargo].append(f)
+
+    return render_template(
+        'deferir_folgas.html',
+        folgas_por_cargo=folgas_por_cargo,
+        avisos=avisos
+    )
+
 
 import datetime
 
@@ -1291,6 +1368,22 @@ def user_info_all():
     # Recupera todos os usuários ordenados pelo nome
     users = User.query.order_by(User.nome.asc()).all()
     return render_template('user_info_all.html', users=users)
+
+@app.route('/check_unique')
+def check_unique():
+    campo = request.args.get('campo')
+    valor = request.args.get('valor', '').strip()
+    exists = False
+    if campo == 'registro':
+        exists = User.query.filter_by(registro=valor).first() is not None
+    elif campo == 'email':
+        exists = User.query.filter_by(email=valor).first() is not None
+    elif campo == 'cpf':
+        exists = User.query.filter_by(cpf=valor).first() is not None
+    elif campo == 'rg':
+        exists = User.query.filter_by(rg=valor).first() is not None
+    return jsonify({'exists': exists})
+
 
 @app.route('/criar_banco')
 def criar_banco():

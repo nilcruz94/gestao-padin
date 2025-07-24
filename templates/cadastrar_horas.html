@@ -1,179 +1,433 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <title>Cadastro de Banco de Horas</title>
-    <style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cadastro de Banco de Horas</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
 
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f6f9;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            height: 100vh;
-            margin: 0;
-        }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: #f4f6f9;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      min-height: 100vh;
+      margin: 0;
+    }
 
-        .titulo-container {
-            text-align: center;
-            padding: 15px 0;
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-            width: 100%;
-        }
+    /* Cabeçalhos */
+    .header-desktop, .header-mobile {
+      display: none;
+    }
 
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 24px;
-            color: #007bff;
-        }
+    @media (min-width: 769px) {
+      .header-desktop {
+        display: flex;
+        background-color: #007bff;
+        padding: 15px 30px;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+        min-height: 110px;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        color: white;
+        position: relative;
+        flex-shrink: 0;
+      }
+      .left-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+        color: white;
+      }
+      .escola-nome {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 1.6rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+      .escola-subtitulo {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-top: 4px;
+      }
+      .header-center-text-container {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        user-select: none;
+        z-index: 1;
+      }
+      .header-center-text {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1.9rem;
+        color: white;
+        letter-spacing: 5px;
+        white-space: nowrap;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      }
+      .btn-home {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+      }
+      .btn-home:hover {
+        background-color: #0d8a00;
+      }
+    }
 
-        label {
-            font-size: 14px;
-            color: #555;
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-        }
+    @media (max-width: 768px) {
+      .header-mobile {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        background-color: #007bff;
+        flex-shrink: 0;
+      }
+      .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        padding: 10px 15px;
+        background-color: #007bff;
+        text-align: center;
+      }
+      .logo {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: white;
+        text-align: center;
+      }
+      .escola-nome {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 1.3rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+      .escola-subtitulo {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 2px;
+      }
+      .header-bottom {
+        background-color: #0056b3;
+        text-align: center;
+        padding: 12px 10px;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1.0rem;
+        letter-spacing: 4px;
+        user-select: none;
+        color: white;
+        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
 
-        label i {
-            margin-right: 8px; /* Espaçamento entre o ícone e o texto */
-        }
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        box-sizing: border-box;
+        white-space: nowrap;
+        position: relative;
+      }
+      .btn-home-mobile {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+      }
+      .btn-home-mobile:hover {
+        background-color: #0d8a00;
+      }
+    }
 
-        input[type="text"],
-        input[type="number"],
-        input[type="date"] {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-            box-sizing: border-box;
-            background-color: #f9f9f9;
-        }
+    /* Container do formulário e conteúdo */
+    .container {
+      width: 100%;
+      max-width: 500px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      padding: 20px;
+      border: 1px solid rgba(0, 0, 0, 0.07);
+      backdrop-filter: blur(6px);
+      margin: 20px auto 30px;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
 
-        input[type="text"]:focus,
-        input[type="number"]:focus,
-        input[type="date"]:focus {
-            border-color: #007bff;
-            outline: none;
-            background-color: #fff;
-        }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 24px;
+      color: #007bff;
+    }
 
-        .horas-minutos {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
+    label {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+    }
 
-        .horas-minutos input {
-            flex: 1;
-            width: 50%;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-            background-color: #f9f9f9;
-        }
+    label i {
+      margin-right: 8px;
+    }
 
-        .horas-minutos input:focus {
-            border-color: #007bff;
-            background-color: #fff;
-        }
+    input[type="text"],
+    input[type="number"],
+    input[type="date"] {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+      box-sizing: border-box;
+      background-color: #f9f9f9;
+    }
 
-        .submit-btn {
-            background-color: #007bff;
-            color: white;
-            padding: 15px;
-            border: none;
-            cursor: pointer;
-            width: 100%;
-            font-size: 18px;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="date"]:focus {
+      border-color: #007bff;
+      outline: none;
+      background-color: #fff;
+    }
 
-        .submit-btn:hover {
-            background-color: #0fb300;
-        }
+    .horas-minutos {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
 
-        .submit-btn:active {
-            background-color: #004080;
-        }
+    .horas-minutos input {
+      flex: 1;
+      width: 50%;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      background-color: #f9f9f9;
+    }
 
-        /* Ajusta o botão de voltar */
-        .back-link {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #007bff;
-            font-size: 18px;
-            margin-top: 20px;
-            width: 100%;
-            box-sizing: border-box;
-            text-align: center;
-            padding-bottom: 30px; /* Evita que o footer cubra o botão */
-        }
+    .horas-minutos input:focus {
+      border-color: #007bff;
+      background-color: #fff;
+    }
 
-        .back-link i {
-            margin-right: 8px;
-        }
+    .submit-btn {
+      background-color: #007bff;
+      color: white;
+      padding: 15px;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      font-size: 18px;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
 
-        .back-link a {
-            display: inline-block;
-        }
+    .submit-btn:hover {
+      background-color: #0fb300;
+    }
 
-        .back-link:hover {
-            text-decoration: underline;
-        }
+    .submit-btn:active {
+      background-color: #004080;
+    }
 
-    </style>
+    /* Ajusta o botão de voltar */
+    .back-link {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #007bff;
+      font-size: 18px;
+      margin-top: 20px;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: center;
+      padding-bottom: 30px; /* Evita que o footer cubra o botão */
+      flex-shrink: 0;
+    }
+
+    .back-link i {
+      margin-right: 8px;
+    }
+
+    .back-link a {
+      display: inline-block;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Rodapé */
+    footer {
+      background: linear-gradient(to right, #222, #444);
+      color: #ddd;
+      text-align: center;
+      padding: 15px 0;
+      font-size: 14px;
+      border-top: 2px solid #555;
+      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+      width: 100%;
+    }
+
+    a {
+      color: #007bff;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
-    <div class="titulo-container">
-        <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
     </div>
 
-    <div class="container">
-        <h2>Cadastro de Banco de Horas</h2>
-        <form action="/banco_horas/cadastrar" method="POST">
-            <label for="nome"><i class="fas fa-user"></i> Nome Completo:</label>
-            <input type="text" id="nome" name="nome" value="{{ nome }}" readonly>
-
-            <label for="registro"><i class="fas fa-id-card"></i> Registro:</label>
-            <input type="text" id="registro" name="registro" value="{{ registro }}" readonly>
-
-            <label for="quantidade_horas"><i class="fas fa-clock"></i> Quantidade de Horas:</label>
-            <div class="horas-minutos">
-                <input type="number" id="quantidade_horas" name="quantidade_horas" min="0" max="24" required placeholder="Horas">
-                <input type="number" id="quantidade_minutos" name="quantidade_minutos" min="0" max="59" required placeholder="Minutos">
-            </div>
-
-            <label for="data_realizacao"><i class="fas fa-calendar-alt"></i> Data da Realização:</label>
-            <input type="date" id="data_realizacao" name="data_realizacao" required>
-
-            <label for="motivo"><i class="fas fa-list-alt"></i> Motivo (máximo 40 caracteres):</label>
-            <input type="text" id="motivo" name="motivo" maxlength="40" required placeholder="Digite o motivo (opcional)">
-
-            <button type="submit" class="submit-btn">Cadastrar Horas</button>
-        </form>
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
     </div>
 
-    <div class="back-link">
-        <a href="/banco_horas">
-            <i class="fas fa-arrow-left"></i>Voltar ao Menu Banco de Horas</a>
-    </div>
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
+    </a>
+  </header>
 
-    <!-- Rodapé -->
-    <footer class="footer">
-        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-    </footer>
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom" style="
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-sizing: border-box;
+      white-space: nowrap;
+    ">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <div class="container">
+    <h2>Cadastro de Banco de Horas</h2>
+    <form action="/banco_horas/cadastrar" method="POST">
+      <label for="nome"><i class="fas fa-user"></i> Nome Completo:</label>
+      <input type="text" id="nome" name="nome" value="{{ nome }}" readonly />
+
+      <label for="registro"><i class="fas fa-id-card"></i> Registro:</label>
+      <input type="text" id="registro" name="registro" value="{{ registro }}" readonly />
+
+      <label for="quantidade_horas"><i class="fas fa-clock"></i> Quantidade de Horas:</label>
+      <div class="horas-minutos">
+        <input type="number" id="quantidade_horas" name="quantidade_horas" min="0" max="24" required placeholder="Horas" />
+        <input type="number" id="quantidade_minutos" name="quantidade_minutos" min="0" max="59" required placeholder="Minutos" />
+      </div>
+
+      <label for="data_realizacao"><i class="fas fa-calendar-alt"></i> Data da Realização:</label>
+      <input type="date" id="data_realizacao" name="data_realizacao" required />
+
+      <label for="motivo"><i class="fas fa-list-alt"></i> Motivo (máximo 40 caracteres):</label>
+      <input type="text" id="motivo" name="motivo" maxlength="40" required placeholder="Digite o motivo (opcional)" />
+
+      <button type="submit" class="submit-btn">Cadastrar Horas</button>
+    </form>
+  </div>
+  <!-- Rodapé -->
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
+
 </body>
 </html>
