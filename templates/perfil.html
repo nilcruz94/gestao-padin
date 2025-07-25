@@ -444,10 +444,15 @@
         <input type="email" id="email" name="email" value="{{ usuario.email }}" disabled>
       </div>
 
-      <!-- Campo Cargo -->
+      <!-- Campo Cargo (alterado para select) -->
       <div class="editable-field">
         <label for="cargo"><i class="fas fa-briefcase icon-blue"></i> Cargo:</label>
-        <input type="text" id="cargo" name="cargo" value="{{ usuario.cargo or 'Não informado' }}" disabled>
+        <select id="cargo" name="cargo" required>
+          <option value="">Selecione o cargo</option>
+          {% for c in cargos %}
+            <option value="{{ c }}" {% if usuario.cargo == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
       </div>
 
       <!-- Campo Celular -->
@@ -514,11 +519,10 @@
             <option value="Tecnólogo" {% if usuario.graduacao == 'Tecnólogo' %}selected{% endif %}>Tecnólogo</option>
             <option value="Licenciatura" {% if usuario.graduacao == 'Licenciatura' %}selected{% endif %}>Licenciatura</option>
             <option value="Pós Graduação Latu Sensu" {% if usuario.graduacao == 'Pós Graduação Latu Sensu' %}selected{% endif %}>Pós Graduação Latu Sensu</option>
+            <option value="Pós Graduação Stricto Sensu" {% if usuario.graduacao == 'Pós Graduação Stricto Sensu' %}selected{% endif %}>Pós Graduação Stricto Sensu</option>
             <option value="Mestrado" {% if usuario.graduacao == 'Mestrado' %}selected{% endif %}>Mestrado</option>
             <option value="Doutorado" {% if usuario.graduacao == 'Doutorado' %}selected{% endif %}>Doutorado</option>
-            <option value="Pós Doutorado" {% if usuario.graduacao == 'Pós Doutorado' %}selected{% endif %}>Pós Doutorado</option>
           </select>
-          <span class="edit-icon" id="editGraduacao" onclick="enableDropdown('graduacao', 'editGraduacao')">✏️</span>
         </div>
       </div>
 
@@ -527,27 +531,29 @@
   </main>
 
   <footer>
-    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+    &copy; 2025 Escola Municipal José Padin Mouta - Todos os direitos reservados.
   </footer>
 
   <script>
-    function editField(fieldId, icon) {
-      const input = document.getElementById(fieldId);
-      if (input.hasAttribute('readonly') || input.disabled) {
-        input.removeAttribute('readonly');
-        input.disabled = false;
-        input.classList.remove('locked');
-        icon.textContent = '✅';
-        input.focus();
+    // Função para alternar entre readonly e editável
+    function editField(fieldId, iconElement) {
+      const field = document.getElementById(fieldId);
+      if (field.hasAttribute('readonly') || field.hasAttribute('disabled')) {
+        field.removeAttribute('readonly');
+        field.removeAttribute('disabled');
+        field.classList.remove('locked');
+        iconElement.textContent = '💾'; // Mudar para ícone de salvar
       } else {
-        input.setAttribute('readonly', 'readonly');
-        input.disabled = false;
-        input.classList.add('locked');
-        icon.textContent = '✏️';
+        // Se for select, não usar readonly, usar disabled (caso queira bloquear)
+        field.setAttribute('readonly', 'readonly');
+        field.setAttribute('disabled', 'disabled');
+        field.classList.add('locked');
+        iconElement.textContent = '✏️'; // Mudar para ícone de editar
       }
     }
 
-    $(document).ready(function(){
+    // Aplicar máscaras nos campos ao carregar
+    $(document).ready(function () {
       $('#cpf').inputmask('999.999.999-99');
       $('#celular').inputmask('(99) 99999-9999');
     });

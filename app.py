@@ -58,6 +58,9 @@ class User(UserMixin, db.Model):
 
     # Graduação diretamente como String
     graduacao = db.Column(db.String(50), nullable=True)  # Ex: 'Técnico', 'Mestrado', 'Doutorado'
+    # Termos
+    aceitou_termo = db.Column(db.Boolean, default=False)
+    versao_termo = db.Column(db.String(20), default=None)  # Ex: '2025-07-25'
 
     # Relacionamento com Agendamento
     agendamentos = db.relationship('Agendamento', backref='user_funcionario', lazy=True)
@@ -158,30 +161,74 @@ def enviar_email(destinatario, assunto, mensagem_html, mensagem_texto=None):
     except Exception as e:
         print("Erro ao enviar e-mail:", e)
 
-# Rota de Login
+VERSAO_ATUAL_TERMO = '2025-07-25'  # Atualize aqui quando mudar o termo
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         email = request.form['email']
         senha = request.form['password']
         user = User.query.filter_by(email=email).first()
-        
-        # Verifica se o usuário existe e a senha está correta
+
         if user and check_password_hash(user.senha, senha):
-            # Verifica o status do usuário
             if user.status == 'pendente':
                 flash('Seu registro está pendente de aprovação. Por favor, aguarde a confirmação do administrador.', 'warning')
                 return render_template('login.html')
-            elif user.status == 'rejeitado':  # Bloqueia acesso caso o status seja "rejeitado"
+            elif user.status == 'rejeitado':
                 flash('Seu acesso foi recusado. Contate um administrador.', 'danger')
                 return render_template('login.html')
-            
+
             login_user(user)
+
+            # Verifica se o usuário já aceitou a versão atual do termo
+            if not user.aceitou_termo or user.versao_termo != VERSAO_ATUAL_TERMO:
+                return redirect(url_for('termo_uso'))
+
             return redirect(url_for('index'))
         else:
             flash('Email ou senha incorretos', 'danger')
-    
+
     return render_template('login.html')
+
+CURRENT_TERMO = "2025-07-25"
+
+@app.route('/termo_uso', methods=['GET', 'POST'])
+@login_required
+def termo_uso():
+    if request.method == 'POST':
+        acao = request.form.get('acao')
+
+        if acao == 'aceito':
+            current_user.aceitou_termo = True
+            current_user.versao_termo = CURRENT_TERMO
+            db.session.commit()
+            flash("Termo aceito com sucesso.", "success")
+            return redirect(url_for('index'))
+
+        elif acao == 'nao_aceito':
+            flash("Você precisa aceitar o termo para usar o sistema.", "danger")
+            logout_user()
+            return redirect(url_for('login'))
+
+    # Se já aceitou a versão atual, redireciona para index
+    if current_user.aceitou_termo and current_user.versao_termo == CURRENT_TERMO:
+        return redirect(url_for('index'))
+
+    return render_template('termo_uso.html', termo_versao=CURRENT_TERMO)
+
+
+CURRENT_TERMO = "2025-07-25"
+
+@app.route('/aceitar_termo', methods=['POST'])
+@login_required
+def aceitar_termo():
+    current_user.aceitou_termo = True
+    current_user.versao_termo = CURRENT_TERMO
+    # Se quiser salvar a data do aceite, pode criar e usar outro campo no modelo, ex: termo_aceite_data
+    db.session.commit()
+    flash('Termo de uso aceito com sucesso.', 'success')
+    return redirect(url_for('index'))
+
 
 # Rota de Recuperar Senha
 @app.route('/recuperar_senha', methods=['GET', 'POST'])
@@ -532,9 +579,9 @@ def informar_dados():
                 "Servente I", "Servente II", "Servente", 
                 "Diretor de Unidade Escolar", "Assistente de Direção", 
                 "Pedagoga Comunitaria", "Assistente Tecnico Pedagogico", 
-                "Secretario de Unidade Escolar", "Educador de Desenvolvimento Infantil", 
+                "Secretario de Unidade Escolar", "Educador de Desenvolvimento Infanto Juvenil", 
                 "Atendente de Educação I", "Atendente de Educação II", 
-                "Trabalhador"
+                "Trabalhador", "Inspetor de Aluno"
             ]
             cargo = campos_atualizar['cargo']
             if cargo not in cargos_validos:
@@ -907,8 +954,8 @@ def deferir_folgas():
                     nomes_outros = {ag.funcionario.nome for ag in outros_agendamentos}
                     nomes_outros_str = ", ".join(sorted(nomes_outros))
                     mensagem = (
-                        f"Alerta: O funcionário <strong>{folga_espera.funcionario.nome}</strong>, cargo <strong>{cargo}</strong>, "
-                        f"tem agendamento em <strong>espera</strong> para o dia <strong>{data.strftime('%d/%m/%Y')}</strong>, "
+                        f"Alerta: O funcionário <strong>{folga_espera.funcionario.nome}</strong>, cargo <strong>{cargo}</strong>,"
+                        f"tem agendamento em <strong>espera</strong> para o dia <strong>{data.strftime('%d/%m/%Y')}</strong>,"
                         f"mas já existem outros agendamentos para o mesmo cargo e data: {nomes_outros_str}."
                     )
                     avisos.append(mensagem)
@@ -1278,11 +1325,23 @@ def deferir_horas():
 
     return render_template('deferir_horas.html', registros=registros)
 
-@app.route('/perfil', methods=['GET', 'POST']) 
+@app.route('/perfil', methods=['GET', 'POST'])
 @login_required
 def perfil():
-    usuario = current_user  # Obtém o usuário logado
-    
+    usuario = current_user  # Usuário logado
+
+    # Lista de cargos para popular o select no template, em ordem alfabética
+    cargos = sorted([
+        "Agente Administrativo", "Professor I", "Professor Adjunto", 
+        "Professor II", "Professor III", "Professor IV", 
+        "Servente I", "Servente II", "Servente", 
+        "Diretor de Unidade Escolar", "Assistente de Direção", 
+        "Pedagoga Comunitaria", "Assistente Tecnico Pedagogico", 
+        "Secretario de Unidade Escolar", "Educador de Desenvolvimento Infanto Juvenil", 
+        "Atendente de Educação I", "Atendente de Educação II", 
+        "Trabalhador", "Inspetor de Aluno"
+    ])
+
     if request.method == 'POST':
         try:
             # Recupera os dados do formulário
@@ -1293,17 +1352,19 @@ def perfil():
             usuario.data_emissao_rg = request.form.get('data_emissao_rg') or None
             usuario.orgao_emissor = request.form.get('orgao_emissor') or None
             usuario.graduacao = request.form.get('graduacao') or None
+            usuario.cargo = request.form.get('cargo') or None  # Atualiza o cargo
             
-            # Salva as alterações no banco de dados
             db.session.commit()
             flash('Perfil atualizado com sucesso!', 'success')
         except Exception as e:
             db.session.rollback()
             flash(f'Erro ao atualizar o perfil: {str(e)}', 'danger')
-        
+
         return redirect(url_for('perfil'))
-    
-    return render_template('perfil.html', usuario=usuario)
+
+    return render_template('perfil.html', usuario=usuario, cargos=cargos)
+
+
 
 @app.route('/relatorio_horas_extras')
 @login_required
