@@ -325,7 +325,7 @@ def index():
 
     return render_template('index.html', usuario=usuario)
 
-# Rota Minahs Justificativas (Index)
+# Rota Minhas Justificativas (Index)
 @app.route('/minhas_justificativas')
 @login_required
 def minhas_justificativas():
@@ -375,6 +375,7 @@ def agendar():
             return redirect(url_for('agendar'))
 
         if motivo == 'AB':
+            # Verifica se já existe AB no mesmo mês
             agendamento_existente = Agendamento.query.filter(
                 Agendamento.funcionario_id == current_user.id,
                 Agendamento.motivo == 'AB',
@@ -385,15 +386,17 @@ def agendar():
                 flash("Você já possui um agendamento 'AB' aprovado ou em análise neste mês.", "danger")
                 return render_template('agendar.html')
 
-        agendamentos_ab_deferidos = Agendamento.query.filter(
-            Agendamento.funcionario_id == current_user.id,
-            Agendamento.motivo == 'AB',
-            db.extract('year', Agendamento.data) == data_folga.year,
-            Agendamento.status == 'deferido'
-        ).count()
-        if agendamentos_ab_deferidos >= 6:
-            flash("Você já atingiu o limite de 6 folgas 'AB' deferidas neste ano.", "danger")
-            return render_template('agendar.html')
+            # Verifica o limite anual de AB deferidas
+            agendamentos_ab_deferidos = Agendamento.query.filter(
+                Agendamento.funcionario_id == current_user.id,
+                Agendamento.motivo == 'AB',
+                db.extract('year', Agendamento.data) == data_folga.year,
+                Agendamento.status == 'deferido'
+            ).count()
+
+            if agendamentos_ab_deferidos >= 6:
+                flash("Você já atingiu o limite de 6 folgas 'AB' deferidas neste ano.", "danger")
+                return render_template('agendar.html')
 
         if tipo_folga == 'BH' and data_referencia:
             try:
@@ -595,8 +598,6 @@ def informar_dados():
         return redirect(url_for('index'))  # Redireciona de volta para a página principal
 
     return render_template('informar_dados.html', usuario=usuario)
-
-
 
 from email_validator import validate_email, EmailNotValidError
 

@@ -1,0 +1,29 @@
+@echo off
+REM === Configurações ===
+set PGPASSWORD=BLS6AMWRXX0vuFBM6q7oHKKwJChaK8dk
+set PGUSER=folgas_user
+set PGHOST=dpg-cuece7hopnds738g0usg-a.virginia-postgres.render.com
+set PGDATABASE=folgas_3tqr
+set PGPORT=5432
+set BACKUP_DIR="C:\Users\Neto\Desktop\Projetos\Em uso\folga_system"
+
+REM === Data atual (AAAA-MM-DD) ===
+for /f "tokens=1-3 delims=/- " %%a in ('date /t') do (
+    set yyyy=%%c
+    set mm=%%b
+    set dd=%%a
+)
+
+REM === Gera o backup ===
+set BACKUP_FILE=%BACKUP_DIR%\backup-%yyyy%-%mm%-%dd%.sql
+
+echo Criando backup em %BACKUP_FILE% ...
+pg_dump -h %PGHOST% -p %PGPORT% -U %PGUSER% %PGDATABASE% > %BACKUP_FILE%
+
+if %ERRORLEVEL%==0 (
+    echo Backup concluído com sucesso!
+) else (
+    echo Erro ao gerar backup.
+)
+
+pause
