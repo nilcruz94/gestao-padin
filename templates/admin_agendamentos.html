@@ -5,158 +5,93 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Visualizar Agendamentos - Administração</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <!-- FontAwesome para ícones -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    /* Ajustes gerais para a página de agendamentos */
     .container {
       width: 95%;
-      max-width: 900px;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 10px;
+      max-width: 1100px;
+      background: #fff;
+      border-radius: 12px;
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-      padding: 20px;
+      padding: 25px;
       margin: 40px auto;
       border: 1px solid rgba(0, 0, 0, 0.07);
-      backdrop-filter: blur(6px);
     }
-    /* Cabeçalho padrão do site */
-    .titulo-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      width: 100%;
-      margin: 20px 0;
-    }
+    .titulo-container { display: flex; justify-content: center; margin: 20px 0; }
     .titulo-site {
-      font-family: 'Montserrat', sans-serif;
-      font-size: 42px;
-      font-weight: 600;
-      color: #007bff;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #007bff;
-      text-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+      font-family: 'Montserrat', sans-serif; font-size: 38px; font-weight: 600; color: #007bff;
+      text-transform: uppercase; letter-spacing: 1px; border-bottom: 3px solid #007bff; padding-bottom: 8px;
     }
-    /* Título da área de agendamentos */
-    .area-titulo {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #007bff;
-      font-size: 28px;
-      font-weight: bold;
+    .area-titulo { text-align: center; margin-bottom: 20px; color: #007bff; font-size: 26px; font-weight: bold; }
+
+    /* Filtros */
+    .filters { margin-bottom: 20px; text-align: center; }
+    .filter-form input, .filter-form select {
+      padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; margin-right: 6px; font-size: 14px;
     }
-    /* Barra de busca */
-    .search-container {
-      margin-bottom: 20px;
-      text-align: center;
+    .btn-clear {
+      padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+      background: #6c757d; color: white; text-decoration: none;
     }
-    .search-container input[type="text"] {
-      width: 80%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 16px;
-    }
-    /* Agrupamento por funcionário */
-    .employee-group {
-      margin-bottom: 20px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      overflow: hidden;
-      background-color: #f9f9f9;
-    }
+    .btn-clear:hover { background: #5a6268; }
+
+    /* Grupos de funcionário */
+    .employee-group { margin-bottom: 20px; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; background: #fdfdfd; }
     .employee-header {
-      background-color: #f4f4f4;
-      padding: 10px;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background: #f4f6f9; padding: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+      font-weight: 600; color: #333;
     }
-    .employee-header .emp-info {
-      font-size: 18px;
-      font-weight: bold;
-      color: #333;
-    }
-    .employee-header i {
-      transition: transform 0.3s ease;
-    }
-    /* Conteúdo escondido por padrão */
-    .toggle-content {
-      display: none;
-      padding: 10px;
-    }
-    /* Tabela interna de agendamentos */
-    .toggle-content table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    .toggle-content th, .toggle-content td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
-    }
-    .toggle-content th {
-      background-color: #e9e9e9;
-    }
-    /* Estilos dos status */
+    .employee-header i { transition: transform 0.3s ease; }
+    .toggle-content { display: none; padding: 12px; }
+
+    /* Tabela */
+    .toggle-content table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .toggle-content th, .toggle-content td { border: 1px solid #e1e1e1; padding: 8px; text-align: left; font-size: 14px; }
+    .toggle-content th { background-color: #f0f0f0; }
+
+    /* Status */
     .status-deferido, .status-em-espera, .status-indeferido {
-      white-space: nowrap;
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-weight: bold;
+      white-space: nowrap; display: inline-block; padding: 4px 10px; border-radius: 12px; font-weight: 600; font-size: 13px;
     }
-    .status-deferido {
-      background-color: #4CAF50;
-      color: white;
-    }
-    .status-em-espera {
-      background-color: #FF9800;
-      color: white;
-    }
-    .status-indeferido {
-      background-color: #F44336;
-      color: white;
-    }
-    /* Botão de exclusão */
+    .status-deferido { background-color: #28a745; color: #fff; }
+    .status-em-espera { background-color: #ffc107; color: #000; }
+    .status-indeferido { background-color: #dc3545; color: #fff; }
+
+    /* Botão excluir */
     .submit-btn {
-      padding: 6px 12px;
-      background-color: #007bff;
-      color: #fff;
-      border: none;
+      padding: 6px 12px; background-color: #007bff; color: #fff; border: none; font-size: 13px; cursor: pointer; border-radius: 6px;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .submit-btn:hover { background-color: #0fb300; transform: scale(1.05); }
+
+    /* Paginação */
+    .pagination { text-align: center; margin-top: 20px; }
+    .pagination a {
+      padding: 6px 12px; border: 1px solid #007bff; border-radius: 4px; margin: 0 4px; color: #007bff; text-decoration: none; font-size: 14px; cursor: pointer;
+    }
+    .pagination a:hover { background: #007bff; color: white; }
+    .pagination span { margin: 0 8px; font-size: 14px; font-weight: 500; }
+
+    .voltar-link { display: block; text-align: center; margin-top: 25px; font-size: 16px; color: #007bff; text-decoration: none; font-weight: 500; }
+    .voltar-link:hover { text-decoration: underline; }
+
+    /* Loader simples */
+    .loading { text-align: center; color: #666; padding: 20px 0; }
+
+    /* Alertas */
+    .alert {
+      margin: 15px auto;
+      padding: 12px 20px;
+      border-radius: 6px;
       font-size: 14px;
-      cursor: pointer;
-      border-radius: 4px;
-      transition: background-color 0.3s ease, transform 0.2s ease;
-    }
-    .submit-btn:hover {
-      background-color: #0fb300;
-      transform: scale(1.05);
-    }
-    /* Link de voltar */
-    .voltar-link {
-      display: block;
+      max-width: 600px;
       text-align: center;
-      margin-top: 20px;
-      font-size: 18px;
-      color: #007bff;
-      text-decoration: none;
     }
-    .voltar-link i {
-      margin-right: 8px;
-    }
-    .voltar-link:hover {
-      text-decoration: underline;
-    }
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
   </style>
 </head>
 <body>
-  <!-- Cabeçalho padrão do site -->
   <div class="titulo-container">
     <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
   </div>
@@ -164,71 +99,40 @@
   <div class="container">
     <div class="area-titulo">Agendamentos - Administração</div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="flash-container">
-          {% for category, message in messages %}
-            <div class="flash {{ category }}">{{ message | safe }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
+    <!-- Alertas dinâmicos -->
+    <div id="alertContainer"></div>
 
-    <div class="search-container">
-      <input type="text" id="searchInput" placeholder="Localizar funcionário por nome..." onkeyup="filtrarTabela()">
+    <!-- Filtros -->
+    <div class="filters">
+      <form id="filterForm" class="filter-form" onsubmit="return false;">
+        <input type="text" name="nome" id="filtroNome" placeholder="Buscar por funcionário...">
+        <select name="status" id="filtroStatus">
+          <option value="">Todos os Status</option>
+          <option value="deferido">Deferido</option>
+          <option value="em_espera">Em Espera</option>
+          <option value="indeferido">Indeferido</option>
+        </select>
+        <select name="cargo" id="filtroCargo">
+          <option value="">Todos os Cargos</option>
+          {% set cargos = [
+            "Agente Administrativo", "Assistente de Direção", "Assistente Tecnico Pedagogico",
+            "Atendente de Educação I", "Atendente de Educação II", "Diretor de Unidade Escolar",
+            "Educador de Desenvolvimento Infanto Juvenil", "Inspetor de Aluno", "Pedagoga Comunitaria",
+            "Professor I", "Professor II", "Professor III", "Professor IV", "Professor Adjunto",
+            "Secretario de Unidade Escolar", "Servente", "Servente I", "Servente II", "Trabalhador"
+          ] %}
+          {% for c in cargos|sort %}
+            <option value="{{ c }}">{{ c }}</option>
+          {% endfor %}
+        </select>
+        <a href="#" id="btnLimpar" class="btn-clear">Limpar</a>
+      </form>
     </div>
 
-    <!-- Agrupando agendamentos por funcionário -->
-    {% for group in agendamentos|groupby('funcionario.nome') %}
-      <div class="employee-group">
-        <div class="employee-header" onclick="toggleDetails('details-{{ loop.index }}', this)">
-          <div class="emp-info">
-            {{ group.grouper|title }}
-          </div>
-          <i class="fas fa-chevron-down" id="arrow-{{ loop.index }}"></i>
-        </div>
-        <div id="details-{{ loop.index }}" class="toggle-content">
-          <!-- Tabela dos agendamentos do funcionário -->
-          <table>
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Motivo</th>
-                <th>Status</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for app in group.list %}
-              <tr>
-                <td>{{ app.data.strftime('%d/%m/%Y') }}</td>
-                <td>{{ app.motivo }}</td>
-                <td>
-                  {% set status = app.status.lower() %}
-                  {% if status == 'deferido' %}
-                    <span class="status-deferido">Deferido</span>
-                  {% elif status == 'em_espera' or status == 'pendente' %}
-                    <span class="status-em-espera">Em Espera</span>
-                  {% elif status == 'indeferido' %}
-                    <span class="status-indeferido">Indeferido</span>
-                  {% else %}
-                    {{ app.status }}
-                  {% endif %}
-                </td>
-                <td>
-                  <form action="{{ url_for('admin_delete_agendamento', id=app.id) }}" method="post" onsubmit="return confirm('Deseja realmente excluir este agendamento?');">
-                    <button type="submit" class="submit-btn">Excluir</button>
-                  </form>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    {% else %}
-      <p style="text-align: center;">Nenhum agendamento encontrado.</p>
-    {% endfor %}
+    <!-- Resultados AJAX -->
+    <div id="resultadoAgendamentos" class="loading">
+      Carregando agendamentos...
+    </div>
 
     <a href="{{ url_for('index') }}" class="voltar-link">
       <i class="fas fa-arrow-left"></i> Voltar ao Início
@@ -240,30 +144,160 @@
   </footer>
 
   <script>
-    function toggleDetails(id, header) {
-      var content = document.getElementById(id);
-      var arrow = header.querySelector("i");
-      if (content.style.display === "none" || content.style.display === "") {
-        content.style.display = "block";
-        arrow.style.transform = "rotate(180deg)";
-      } else {
-        content.style.display = "none";
-        arrow.style.transform = "rotate(0deg)";
-      }
+    let currentController = null;
+    let debounceTimer = null;
+    let lastSignature = "";
+    const DEBOUNCE_MS = 300;
+
+    function showAlert(message, type="success") {
+      const alertContainer = document.getElementById("alertContainer");
+      alertContainer.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+      setTimeout(() => { alertContainer.innerHTML = ""; }, 4000);
     }
-    function filtrarTabela() {
-      var input = document.getElementById("searchInput");
-      var filter = input.value.toUpperCase();
-      // Seleciona todos os grupos de funcionários
-      var groups = document.getElementsByClassName("employee-group");
-      for (var i = 0; i < groups.length; i++) {
-        var header = groups[i].getElementsByClassName("emp-info")[0];
-        if (header) {
-          var txtValue = header.textContent || header.innerText;
-          groups[i].style.display = txtValue.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+
+    function getFilters() {
+      const nome = document.getElementById("filtroNome").value || "";
+      const status = document.getElementById("filtroStatus").value || "";
+      const cargo = document.getElementById("filtroCargo").value || "";
+      return { nome, status, cargo };
+    }
+
+    function buildSignature({nome, status, cargo}, page) {
+      return `${nome}||${status}||${cargo}||${page}`;
+    }
+
+    async function carregarAgendamentos(page = 1) {
+      const { nome, status, cargo } = getFilters();
+      const signature = buildSignature({nome, status, cargo}, page);
+      lastSignature = signature;
+
+      if (currentController) currentController.abort();
+      currentController = new AbortController();
+
+      const container = document.getElementById("resultadoAgendamentos");
+      container.innerHTML = `<div class="loading">Carregando...</div>`;
+
+      try {
+        const params = new URLSearchParams({ page, nome, status, cargo });
+        const res = await fetch(`/admin/agendamentos/ajax?${params.toString()}`, {
+          signal: currentController.signal
+        });
+        if (!res.ok) {
+          container.innerHTML = `<p style="text-align:center;color:#c00;">Erro ao carregar dados (${res.status}).</p>`;
+          return;
         }
+        const data = await res.json();
+
+        const nowSignature = buildSignature(data.filters || {nome:"",status:"",cargo:""}, data.page || 1);
+        if (nowSignature !== lastSignature) return;
+
+        let html = "";
+        if (data.dados && data.dados.length > 0) {
+          data.dados.forEach((f) => {
+            const detailsId = `details-${f.id}`;
+            html += `
+              <div class="employee-group">
+                <div class="employee-header" onclick="toggleDetails('${detailsId}', this)">
+                  <div class="emp-info">${f.funcionario}</div>
+                  <i class="fas fa-chevron-down"></i>
+                </div>
+                <div id="${detailsId}" class="toggle-content">
+                  <table>
+                    <thead>
+                      <tr><th>Data</th><th>Motivo</th><th>Status</th><th>Ações</th></tr>
+                    </thead>
+                    <tbody>
+            `;
+            (f.agendamentos || []).forEach(ag => {
+              const st = (ag.status || "").toLowerCase();
+              let cls = "", icon = "", label = ag.status || "";
+              if (st.startsWith("deferido")) { cls = "status-deferido"; icon = '<i class="fas fa-check-circle"></i>'; label = "Deferido"; }
+              else if (st.startsWith("indeferido")) { cls = "status-indeferido"; icon = '<i class="fas fa-times-circle"></i>'; label = "Indeferido"; }
+              else if (["em_espera","pendente","em espera"].includes(st)) { cls = "status-em-espera"; icon = '<i class="fas fa-hourglass-half"></i>'; label = "Em Espera"; }
+
+              html += `
+                <tr>
+                  <td>${ag.data}</td>
+                  <td>${ag.motivo || ""}</td>
+                  <td><span class="${cls}">${icon} ${label}</span></td>
+                  <td>
+                    <button type="button" class="submit-btn" onclick="excluirAgendamento(${ag.id})">
+                      <i class="fas fa-trash-alt"></i> Excluir
+                    </button>
+                  </td>
+                </tr>
+              `;
+            });
+            html += `</tbody></table></div></div>`;
+          });
+
+          if (data.pages && data.pages > 1) {
+            html += `<div class="pagination">`;
+            if (data.has_prev) html += `<a onclick="carregarAgendamentos(${data.prev_num})">&laquo; Anterior</a>`;
+            html += `<span>Página ${data.page} de ${data.pages}</span>`;
+            if (data.has_next) html += `<a onclick="carregarAgendamentos(${data.next_num})">Próxima &raquo;</a>`;
+            html += `</div>`;
+          }
+        } else {
+          const f = getFilters();
+          let motivo = "Nenhum agendamento encontrado.";
+          if (f.status || f.cargo || f.nome) {
+            motivo = "Nenhum agendamento encontrado para os filtros aplicados.";
+          }
+          html = `<p style="text-align:center;">${motivo}</p>`;
+        }
+
+        container.innerHTML = html;
+      } catch (err) {
+        if (err.name === "AbortError") return;
+        container.innerHTML = `<p style="text-align:center;color:#c00;">Falha na conexão.</p>`;
       }
     }
+
+    async function excluirAgendamento(id) {
+      if (!confirm("Deseja realmente excluir este agendamento?")) return;
+
+      try {
+        const res = await fetch(`/admin/delete_agendamento/${id}`, { method: "POST" });
+        const data = await res.json();
+
+        if (data.success) {
+          showAlert(data.message, "success");
+          scheduleLoad(1);
+        } else {
+          showAlert(data.error || "Não foi possível excluir.", "error");
+        }
+      } catch (err) {
+        showAlert("Falha na conexão ao excluir.", "error");
+      }
+    }
+
+    function toggleDetails(id, headerEl) {
+      const content = document.getElementById(id);
+      if (!content) return;
+      const arrow = headerEl ? headerEl.querySelector("i") : null;
+      const show = (content.style.display === "" || content.style.display === "none");
+      content.style.display = show ? "block" : "none";
+      if (arrow) arrow.style.transform = show ? "rotate(180deg)" : "rotate(0deg)";
+    }
+
+    function scheduleLoad(page = 1) {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => carregarAgendamentos(page), DEBOUNCE_MS);
+    }
+
+    document.getElementById("filtroNome").addEventListener("input", () => scheduleLoad(1));
+    document.getElementById("filtroStatus").addEventListener("change", () => scheduleLoad(1));
+    document.getElementById("filtroCargo").addEventListener("change", () => scheduleLoad(1));
+    document.getElementById("btnLimpar").addEventListener("click", (e) => {
+      e.preventDefault();
+      document.getElementById("filtroNome").value = "";
+      document.getElementById("filtroStatus").value = "";
+      document.getElementById("filtroCargo").value = "";
+      scheduleLoad(1);
+    });
+
+    carregarAgendamentos(1);
   </script>
 </body>
 </html>

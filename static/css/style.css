@@ -595,5 +595,42 @@ a.menu-item:hover {
     text-decoration: none;
 }
 
+.premium-alert {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.premium-alert table {
+  font-size: 0.9rem;
+}
+
+.premium-alert .text-warning {
+  font-size: 1rem;
+}
+
+.premium-alert .text-success {
+  font-size: 1rem;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.bg-warning {
+  background-color: #f1c40f !important; /* Amarelo elegante */
+}
+
+.bg-success {
+  background-color: #27ae60 !important; /* Verde premium */
+}
+
+
+
 
 

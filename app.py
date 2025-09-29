@@ -493,15 +493,21 @@ E.M José Padin Mouta
 
 
 # Rota de Calendário de Folgas
-@app.route('/calendario', defaults={'year': 2025, 'month': 1}, methods=['GET', 'POST'])
+@app.route('/calendario', methods=['GET', 'POST'])
 @app.route('/calendario/<int:year>/<int:month>', methods=['GET', 'POST'])
 @login_required
-def calendario(year, month):
+def calendario(year=None, month=None):
     # Intervalo de 10 anos a partir de 2025
     inicio_ano = 2025
     fim_ano = inicio_ano + 9  # 10 anos
 
-    # Ajuste para garantir que o mês está entre 1 e 12
+    # Se não passar ano/mês, cai no mês atual
+    if not year or not month:
+        hoje = datetime.date.today()
+        year = hoje.year
+        month = hoje.month
+
+    # Ajuste para manter mês entre 1 e 12
     while month < 1:
         month += 12
         year -= 1
@@ -509,33 +515,29 @@ def calendario(year, month):
         month -= 12
         year += 1
 
-    # Calcular o mês e ano anteriores
+    # Calcular anterior e próximo
     prev_month = 12 if month == 1 else month - 1
     prev_year = year if month > 1 else year - 1
-
-    # Calcular o próximo mês e ano
     next_month = 1 if month == 12 else month + 1
     next_year = year if month < 12 else year + 1
 
-    # Obter o primeiro e o último dia do mês
+    # Dias do mês
     try:
         first_day_of_month = datetime.date(year, month, 1)
         last_day_of_month = datetime.date(year, month, calendar.monthrange(year, month)[1])
     except ValueError as e:
         return f"Erro ao calcular datas: {e}", 400
 
-    # Consulta dos agendamentos
+    # Consulta agendamentos
     agendamentos = Agendamento.query.filter(
         Agendamento.data >= first_day_of_month,
         Agendamento.data <= last_day_of_month
     ).all()
 
-    # Organizar os agendamentos por data
+    # Agrupar por data
     folgas_por_data = {}
     for agendamento in agendamentos:
-        if agendamento.data not in folgas_por_data:
-            folgas_por_data[agendamento.data] = []
-        folgas_por_data[agendamento.data].append(agendamento)
+        folgas_por_data.setdefault(agendamento.data, []).append(agendamento)
 
     return render_template(
         'calendario.html',
@@ -552,7 +554,6 @@ def calendario(year, month):
         inicio_ano=inicio_ano,
         fim_ano=fim_ano
     )
-
 
 @app.route('/informar_dados', methods=['GET', 'POST'])
 @login_required
@@ -896,13 +897,8 @@ def criar_admin():
 
 from sqlalchemy import asc
 from collections import defaultdict
-from flask import flash, redirect, url_for, render_template, request, abort
-import datetime
-
-from collections import defaultdict
-from flask import render_template, request, redirect, url_for, flash
+from flask import flash, redirect, url_for, render_template, request
 from flask_login import login_required, current_user
-from sqlalchemy import asc
 import datetime
 
 @app.route('/deferir_folgas', methods=['GET', 'POST'])
@@ -929,36 +925,73 @@ def deferir_folgas():
             )
         return folgas_query.all()
 
-    # Função que gera avisos de conflito para agendamentos em_espera
     def gerar_avisos(folgas_em_espera):
         avisos = []
         if current_user.tipo == 'administrador':
-            # Buscar todos os agendamentos (exceto excluir, se quiser, o atual em espera)
-            agendamentos_todos = Agendamento.query.all()
-
-            # Organiza os agendamentos por (cargo, data), agrupando nomes
-            agendamentos_por_cargo_data = defaultdict(list)
-            for ag in agendamentos_todos:
-                cargo = ag.funcionario.cargo or 'Sem Cargo Definido'
-                agendamentos_por_cargo_data[(cargo, ag.data)].append(ag)
-
-            # Para cada agendamento em espera, verificar conflito
             for folga_espera in folgas_em_espera:
                 cargo = folga_espera.funcionario.cargo or 'Sem Cargo Definido'
                 data = folga_espera.data
-                ags_mesmo_cargo_data = agendamentos_por_cargo_data.get((cargo, data), [])
 
-                # Filtra para outros agendamentos diferentes do próprio, qualquer status
-                outros_agendamentos = [ag for ag in ags_mesmo_cargo_data if ag.id != folga_espera.id]
-
-                if outros_agendamentos:
-                    nomes_outros = {ag.funcionario.nome for ag in outros_agendamentos}
-                    nomes_outros_str = ", ".join(sorted(nomes_outros))
-                    mensagem = (
-                        f"Alerta: O funcionário <strong>{folga_espera.funcionario.nome}</strong>, cargo <strong>{cargo}</strong>,"
-                        f"tem agendamento em <strong>espera</strong> para o dia <strong>{data.strftime('%d/%m/%Y')}</strong>,"
-                        f"mas já existem outros agendamentos para o mesmo cargo e data: {nomes_outros_str}."
+                # Buscar apenas os outros agendamentos do mesmo cargo e mesma data
+                conflitos = (
+                    db.session.query(User.nome)
+                    .join(Agendamento, Agendamento.funcionario_id == User.id)
+                    .filter(
+                        User.cargo == cargo,
+                        Agendamento.data == data,
+                        Agendamento.id != folga_espera.id,
+                        Agendamento.status.in_(["deferido", "em_espera", "pendente"])
                     )
+                    .all()
+                )
+
+                if conflitos:
+                    linhas = ""
+                    # Funcionário em espera
+                    linhas += f"""
+                    <tr>
+                        <td>
+                            <span class="status-dot dot-warning"></span> {folga_espera.funcionario.nome}
+                        </td>
+                        <td>{cargo}</td>
+                        <td>{data.strftime('%d/%m/%Y')}</td>
+                        <td><span class="badge bg-warning text-dark">Em espera</span></td>
+                    </tr>
+                    """
+                    # Funcionários já agendados
+                    for (nome,) in conflitos:
+                        linhas += f"""
+                        <tr>
+                            <td>
+                                <span class="status-dot dot-success"></span> {nome}
+                            </td>
+                            <td>{cargo}</td>
+                            <td>{data.strftime('%d/%m/%Y')}</td>
+                            <td><span class="badge bg-success">Agendado</span></td>
+                        </tr>
+                        """
+
+                    mensagem = f"""
+                    <div class="card shadow-sm border-0 mb-3 premium-alert">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped mb-0 align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Funcionário</th>
+                                            <th>Cargo</th>
+                                            <th>Data</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {linhas}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    """
                     avisos.append(mensagem)
 
         return avisos
@@ -1132,52 +1165,70 @@ E.M José Padin Mouta
         avisos=avisos
     )
 
-
 import datetime
+from flask import render_template, request
+from flask_login import login_required, current_user
 
 @app.route('/historico', methods=['GET'])
 @login_required
 def historico():
     usuario = User.query.get(current_user.id)
 
-    # Ano atual
-    ano_atual = datetime.datetime.now().year
+    # --- Ano selecionado (se não passar, assume ano atual)
+    ano = request.args.get("ano", type=int) or datetime.datetime.now().year
 
     # Limite anual de folgas abonadas
     limite_abonadas_ano = 6
 
-    # ✅ Contabiliza apenas folgas abonadas deferidas no ano atual
-    abonadas_ano_atual = Agendamento.query.filter(
+    # ✅ Conta apenas folgas AB deferidas no ano escolhido
+    abonadas_ano = Agendamento.query.filter(
         Agendamento.funcionario_id == current_user.id,
         Agendamento.motivo == 'AB',
-        Agendamento.status == 'deferido',  # Só conta as deferidas
-        Agendamento.data >= datetime.date(ano_atual, 1, 1),
-        Agendamento.data <= datetime.date(ano_atual, 12, 31)
+        Agendamento.status == 'deferido',
+        Agendamento.data >= datetime.date(ano, 1, 1),
+        Agendamento.data <= datetime.date(ano, 12, 31)
     ).count()
 
-    # Calcula quantas ainda podem ser usadas
-    saldo_abonadas = limite_abonadas_ano - abonadas_ano_atual
-    if saldo_abonadas < 0:
-        saldo_abonadas = 0
+    saldo_abonadas = max(limite_abonadas_ano - abonadas_ano, 0)
 
-    folgas_contabilizadas = {
-        'AB': abonadas_ano_atual,
-        'BH': 0,
-        'DS': 0,
-        'TRE': 0,
-        'FS': 0
-    }
+    # --- TREs
+    tre_total = usuario.tre_total or 0
+    tre_usufruidas = usuario.tre_usufruidas or 0
+    tre_restantes = max(tre_total - tre_usufruidas, 0)
 
-    tre_total = current_user.tre_total
-    tre_usufruidas = current_user.tre_usufruidas
+    # --- Banco de Horas (minutos → horas:minutos)
+    total_minutos = usuario.banco_horas or 0
+    horas = total_minutos // 60
+    minutos = total_minutos % 60
+    banco_horas_formatado = f"{horas}h {minutos}min" if total_minutos > 0 else "0h 0min"
 
+    # --- Últimas folgas (extrato)
+    ultimas_folgas = Agendamento.query.filter_by(funcionario_id=current_user.id)\
+        .order_by(Agendamento.data.desc())\
+        .limit(10).all()
+
+    # --- Alertas / avisos
+    avisos = []
+    if saldo_abonadas == 0:
+        avisos.append("⚠️ Você atingiu o limite anual de folgas abonadas.")
+    if tre_restantes > 0:
+        avisos.append(f"🔔 Você ainda pode usufruir {tre_restantes} TRE(s).")
+    if total_minutos > 300:  # exemplo: mais de 5h acumuladas
+        avisos.append("ℹ️ Você possui muitas horas acumuladas no Banco de Horas.")
+
+    # Envio para template
     return render_template(
         'historico.html',
-        folgas_contabilizadas=folgas_contabilizadas,
+        ano=ano,
+        limite_abonadas_ano=limite_abonadas_ano,
+        abonadas_ano=abonadas_ano,
+        saldo_abonadas=saldo_abonadas,
         tre_total=tre_total,
         tre_usufruidas=tre_usufruidas,
-        limite_abonadas_ano=limite_abonadas_ano,
-        saldo_abonadas=saldo_abonadas
+        tre_restantes=tre_restantes,
+        banco_horas_formatado=banco_horas_formatado,
+        ultimas_folgas=ultimas_folgas,
+        avisos=avisos
     )
 
 # Rota de Cadastro de Banco de Horas
@@ -1393,32 +1444,105 @@ def relatorio_horas_extras():
 
     return render_template('relatorio_horas_extras.html', usuarios=usuarios_relatorio)
 
-# Rota para visualização de todos os agendamentos (só para administradores)
+from flask import render_template, request, redirect, url_for, flash, jsonify
+from flask_login import login_required, current_user
+from sqlalchemy.orm import joinedload
+
+# Página principal
 @app.route('/admin/agendamentos', methods=['GET'])
 @login_required
 def admin_agendamentos():
     if current_user.tipo != 'administrador':
         flash("Acesso negado.", "danger")
         return redirect(url_for('index'))
-    
-    # Recupera todos os agendamentos ordenados pela data (mais recentes primeiro)
-    agendamentos = Agendamento.query.order_by(Agendamento.data.desc()).all()
-    return render_template('admin_agendamentos.html', agendamentos=agendamentos)
+
+    return render_template("admin_agendamentos.html")
+
+
+@app.route('/admin/agendamentos/ajax', methods=['GET'])
+@login_required
+def admin_agendamentos_ajax():
+    if current_user.tipo != 'administrador':
+        return jsonify({"error": "Acesso negado"}), 403
+
+    nome = (request.args.get("nome") or "").strip()
+    status = (request.args.get("status") or "").strip().lower()
+    cargo = (request.args.get("cargo") or "").strip()
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
+
+    # Base query
+    query = (
+        User.query
+        .join(Agendamento)
+        .options(joinedload(User.agendamentos))
+    )
+
+    # Filtros por nome e cargo
+    if nome:
+        query = query.filter(User.nome.ilike(f"%{nome}%"))
+    if cargo:
+        query = query.filter(User.cargo == cargo)
+
+    # Ordena e pagina
+    query = query.order_by(User.nome.asc()).distinct()
+    funcionarios = query.paginate(page=page, per_page=per_page)
+
+    dados = []
+    for func in funcionarios.items:
+        ags = []
+        for ag in func.agendamentos:
+            ag_status = (ag.status or "").strip().lower()
+
+            # Aplica os filtros de status só aqui
+            if not status:
+                pass
+            elif status == "deferido" and not ag_status.startswith("deferido"):
+                continue
+            elif status == "indeferido" and not ag_status.startswith("indeferido"):
+                continue
+            elif status == "em_espera" and ag_status not in ["em_espera", "em espera", "pendente"]:
+                continue
+
+            ags.append({
+                "id": ag.id,
+                "data": ag.data.strftime("%d/%m/%Y"),
+                "motivo": ag.motivo,
+                "status": ag.status.strip().title() if ag.status else "",
+                "delete_url": url_for('admin_delete_agendamento', id=ag.id)
+            })
+
+        # Só adiciona o funcionário se tiver agendamentos visíveis
+        if ags:
+            dados.append({
+                "id": func.id,
+                "funcionario": (func.nome or "").title(),
+                "cargo": func.cargo,
+                "agendamentos": ags
+            })
+
+    return jsonify({
+        "page": funcionarios.page,
+        "pages": funcionarios.pages,
+        "has_next": funcionarios.has_next,
+        "has_prev": funcionarios.has_prev,
+        "next_num": funcionarios.next_num,
+        "prev_num": funcionarios.prev_num,
+        "filters": {"nome": nome, "status": status, "cargo": cargo},
+        "dados": dados
+    })
 
 # Rota para exclusão de um agendamento pelo administrador
 @app.route('/admin/delete_agendamento/<int:id>', methods=['POST'])
 @login_required
 def admin_delete_agendamento(id):
     if current_user.tipo != 'administrador':
-        flash("Acesso negado.", "danger")
-        return redirect(url_for('index'))
+        return jsonify({"error": "Acesso negado"}), 403
     
     agendamento = Agendamento.query.get_or_404(id)
     db.session.delete(agendamento)
     db.session.commit()
-    flash("Agendamento excluído com sucesso.", "success")
-    return redirect(url_for('admin_agendamentos'))
-
+    return jsonify({"success": True, "message": "Agendamento excluído com sucesso."})
 
 @app.route('/user_info_all', methods=['GET'])
 @login_required

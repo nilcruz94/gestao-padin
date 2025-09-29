@@ -124,14 +124,17 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 5px;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .navigation .button-container {
             display: flex;
             align-items: center;
+            gap: 8px;
         }
 
-        .navigation a {
+        .navigation a, .navigation button {
             padding: 6px 12px;
             background-color: #007bff;
             color: white;
@@ -141,17 +144,27 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            height: 20px;
+            height: 32px;
             line-height: 1.2;
+            border: none;
+            cursor: pointer;
         }
 
-        .navigation a i {
+        .navigation a i, .navigation button i {
             margin: 0 5px;
             font-size: 16px;
         }
 
-        .navigation a:hover {
+        .navigation a:hover, .navigation button:hover {
             background-color: #0056b3;
+        }
+
+        /* Dropdowns */
+        .navigation select {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 14px;
         }
 
         .home-button {
@@ -209,6 +222,7 @@
             display: flex;
             align-items: center;
             margin-bottom: 10px;
+            gap: 10px;
         }
 
         .legenda div span {
@@ -220,6 +234,14 @@
             width: 30px;
             height: 30px;
             border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        /* Destaque do dia atual */
+        .calendar .day.today {
+            border: 2px solid #007bff;
+            background-color: #e9f2ff;
+            font-weight: bold;
         }
 
         /* Rodapé */
@@ -291,21 +313,21 @@
             margin-bottom: 50px;
 
             /* Novos ajustes para scroll horizontal */
-            max-width: none;       /* Remove max-width para não limitar largura */
-            overflow-x: auto;      /* Habilita scroll horizontal */
-            padding: 10px;         /* Ajusta padding para mobile */
+            max-width: none;
+            overflow-x: auto;
+            padding: 10px;
           }
 
           .calendar {
-            min-width: 700px;      /* Mantém largura mínima para calendário */
+            min-width: 700px;
             display: grid;
-            grid-template-columns: repeat(7, minmax(80px, 1fr)); /* Colunas com largura mínima */
+            grid-template-columns: repeat(7, minmax(80px, 1fr));
             gap: 5px;
           }
 
           .calendar .day,
           .calendar .weekdays {
-            font-size: 14px;       /* Reduz fonte para melhor visualização */
+            font-size: 14px;
             padding: 8px 5px;
             height: auto;
             min-height: 50px;
@@ -559,19 +581,43 @@
   </header>
 
   <div class="container">
-        <div class="navigation">
+
+      <!-- Navegação com setas + selects + botão Hoje -->
+      <div class="navigation">
         <div class="button-container">
             <a href="{{ url_for('calendario', year=prev_year, month=prev_month) }}" style="white-space: nowrap;">
-            <i class="fas fa-arrow-left"></i> Mês Anterior
+              <i class="fas fa-arrow-left"></i> Mês Anterior
             </a>
         </div>
-        <h2>{{ datetime.date(year, month, 1).strftime('%B %Y') }}</h2>
+
+        <div class="button-container">
+            <select id="selectMes" aria-label="Selecionar mês">
+              {% for m in range(1, 13) %}
+                <option value="{{ m }}" {% if m == month %}selected{% endif %}>
+                  {{ datetime.date(2000, m, 1).strftime('%B') }}
+                </option>
+              {% endfor %}
+            </select>
+
+            <select id="selectAno" aria-label="Selecionar ano">
+              {% for y in range(inicio_ano, fim_ano + 1) %}
+                <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+              {% endfor %}
+            </select>
+
+            <button type="button" id="btnHoje" title="Ir para o mês atual">
+              <i class="fas fa-calendar-day"></i> Hoje
+            </button>
+        </div>
+
         <div class="button-container">
             <a href="{{ url_for('calendario', year=next_year, month=next_month) }}" style="white-space: nowrap;">
-            Próximo Mês <i class="fas fa-arrow-right"></i>
+              Próximo Mês <i class="fas fa-arrow-right"></i>
             </a>
         </div>
       </div>
+
+      <h2>{{ datetime.date(year, month, 1).strftime('%B %Y') }}</h2>
 
       <div class="calendar">
           <div class="day weekdays">Seg</div>
@@ -581,20 +627,21 @@
           <div class="day weekdays">Sex</div>
           <div class="day weekdays">Sáb</div>
           <div class="day weekdays">Dom</div>
-      
+
           {% set start_day = datetime.date(year, month, 1).weekday() %}
-          {% set next_month = (month + 1) if month < 12 else 1 %}
-          {% set next_year = year if month < 12 else year + 1 %}
-          {% set days_in_month = (datetime.date(next_year, next_month, 1) - datetime.timedelta(days=1)).day %}
-      
+          {% set next_month_tmp = (month + 1) if month < 12 else 1 %}
+          {% set next_year_tmp = year if month < 12 else year + 1 %}
+          {% set days_in_month = (datetime.date(next_year_tmp, next_month_tmp, 1) - datetime.timedelta(days=1)).day %}
+          {% set hoje = datetime.date.today() %}
+
           {% for _ in range(start_day) %}
               <div></div>
           {% endfor %}
-      
+
           {% for day in range(1, days_in_month + 1) %}
               {% set current_day = datetime.date(year, month, day) %}
               {% set folgas = folgas_por_data.get(current_day, []) %}
-              <div class="day">
+              <div class="day {% if current_day == hoje %}today{% endif %}">
                   {{ day }}
                   {% if folgas %}
                       {% for folga in folgas %}
@@ -606,8 +653,6 @@
                               {% elif folga.status == 'indeferido' %}
                                   agenda-indeferido
                               {% endif %}">
-                              
-                              <!-- Exibição do nome e motivo -->
                               {{ folga.funcionario.nome.split()[0] }} {{ folga.funcionario.nome.split()[1][0] }}. - {{ folga.motivo }}
                               {% if folga.nome_substituto %}
                                   <span class="substituto"> (Substituto: {{ folga.nome_substituto }})</span>
@@ -624,6 +669,7 @@
             <div><span class="cor" style="background-color: orange;"></span><strong>Folga em espera</strong></div>
             <div><span class="cor" style="background-color: green;"></span><strong>Folga deferida</strong></div>
             <div><span class="cor" style="background-color: red;"></span><strong>Folga indeferida</strong></div>
+            <div><span class="cor" style="background-color: #e9f2ff; border: 2px solid #007bff;"></span><strong>Dia atual</strong></div>
       </div>
   </div>
 
@@ -632,5 +678,36 @@
   </footer>
 
   <script src="https://kit.fontawesome.com/2aa43c2bfa.js" crossorigin="anonymous"></script>
+  <script>
+    // Navega quando mudar mês/ano
+    const selMes = document.getElementById('selectMes');
+    const selAno = document.getElementById('selectAno');
+    const btnHoje = document.getElementById('btnHoje');
+
+    function irPara(ano, mes) {
+      // Garante inteiros válidos
+      ano = parseInt(ano, 10);
+      mes = parseInt(mes, 10);
+      if (!ano || !mes) return;
+      window.location.href = `/calendario/${ano}/${mes}`;
+    }
+
+    if (selMes) {
+      selMes.addEventListener('change', () => irPara(selAno.value, selMes.value));
+    }
+    if (selAno) {
+      selAno.addEventListener('change', () => irPara(selAno.value, selMes.value));
+    }
+
+    if (btnHoje) {
+      btnHoje.addEventListener('click', () => {
+        const hoje = new Date();
+        // Em JS: meses 0-11, então soma 1
+        const mesAtual = hoje.getMonth() + 1;
+        const anoAtual = hoje.getFullYear();
+        irPara(anoAtual, mesAtual);
+      });
+    }
+  </script>
 </body>
 </html>
