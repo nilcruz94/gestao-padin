@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Adicionar TRE</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ===== Reset / estrutura ===== */
+    html, body { height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; }
+    body { min-height: 100vh; background: #f4f6f9; }
+    footer { flex-shrink: 0; }
+    @media (min-width: 769px){ .container { flex: initial; } }
+    @media (max-width: 768px){ .container { flex: 1 0 auto; margin-bottom: 50px; } }
+
+    /* ===== Header padrão ===== */
+    .header-desktop, .header-mobile { display: none; }
+    @media (min-width: 769px) {
+      .header-desktop {
+        display: flex; background-color: #007bff; padding: 15px 30px; width: 100%;
+        align-items: center; justify-content: space-between; box-sizing: border-box;
+        min-height: 110px; position: sticky; top: 0; z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0,0,0,.15); color: #fff; position: relative;
+      }
+      .left-section { display: flex; align-items: center; gap: 20px; }
+      .logo { width: 80px; height: 80px; object-fit: contain; border-radius: 10px; background: #fff; padding: 6px; }
+      .text-container { display: flex; flex-direction: column; color: #fff; }
+      .escola-nome { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.6rem; margin: 0; line-height: 1.1; }
+      .escola-subtitulo { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 1.1rem; margin-top: 4px; }
+      .header-center-text-container {
+        position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+        display: flex; align-items: center; gap: 20px; user-select: none; z-index: 1;
+      }
+      .header-center-text {
+        font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 1.9rem;
+        color: #fff; letter-spacing: 5px; white-space: nowrap; text-shadow: 0 2px 5px rgba(0,0,0,.3);
+      }
+      .btn-home {
+        background: #0fb300; color: #fff; padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 1.5rem;
+        text-decoration: none; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(15,179,0,.8);
+        transition: .3s; position: absolute; right: 30px; top: 50%; transform: translateY(-50%); z-index: 2;
+      }
+      .btn-home:hover { background: #0d8a00; }
+    }
+    @media (max-width: 768px) {
+      .header-mobile {
+        display: block; width: 100%; color: #fff; position: sticky; top: 0; z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0,0,0,.15); background: #007bff;
+      }
+      .header-top { display: flex; align-items: center; justify-content: center; gap: 15px; padding: 10px 15px; background: #007bff; text-align: center; }
+      .logo { width: 48px; height: 48px; object-fit: contain; border-radius: 10px; background: #fff; padding: 6px; }
+      .text-container { display: flex; flex-direction: column; color: #fff; text-align: center; }
+      .escola-nome { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.3rem; margin: 0; line-height: 1.1; }
+      .escola-subtitulo { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 1rem; margin-top: 2px; }
+      .header-bottom {
+        background: #0056b3; text-align: center; padding: 12px 10px; font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 1rem;
+        letter-spacing: 4px; user-select: none; color: #fff; box-shadow: inset 0 -2px 5px rgba(0,0,0,.2);
+        display: flex; justify-content: center; align-items: center; gap: 15px; position: relative;
+      }
+      .btn-home-mobile {
+        background: #0fb300; color: #fff; padding: 6px 10px; border-radius: 6px; font-weight: 600; font-size: 1rem; text-decoration: none;
+        display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(15,179,0,.8); transition: .3s;
+      }
+      .btn-home-mobile:hover { background: #0d8a00; }
+    }
+
+    /* ===== Shell / cards premium ===== */
+    .shell { max-width: 1120px; }
+    .card-premium {
+      border: 0; border-radius: 18px; overflow: hidden;
+      box-shadow: 0 14px 34px rgba(2,6,23,.09), 0 1px 2px rgba(2,6,23,.06);
+      background: #fff;
+    }
+    .hero {
+      background: linear-gradient(135deg,#0d6efd 0%,#0b5ed7 55%,#0a58ca 100%);
+      padding: 22px; color: #fff;
+    }
+    .hero h1 {
+      margin: 0; font-size: 1.35rem; font-weight: 800; display: flex; align-items: center; gap: 10px;
+      color:#fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.25);
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px;
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); color: #fff; font-weight: 600;
+      backdrop-filter: blur(6px);
+    }
+
+    .body { padding: 22px; }
+    .section-title { font-weight: 800; font-size: 1.05rem; color: #0f172a; margin-bottom: 12px; }
+    .divider { height: 1px; background: #eef2f7; margin: 18px 0; }
+
+    /* “inputs” somente leitura que nunca cortam texto */
+    .readonly-input{
+      background:#f3f5f8; border:1px solid #e5e7eb; border-radius:12px;
+      padding:.55rem .75rem; color:#374151; min-height:38px; line-height:1.3;
+      white-space: normal; word-break: break-word; width:100%;
+    }
+
+    .form-control { border-radius: 12px; border-color: #e5e7eb; }
+    .input-group-text { background: #f8fafc; border-color: #e5e7eb; border-radius: 12px 0 0 12px; }
+
+    /* Upload zone */
+    .upload-zone {
+      position: relative; border: 2px dashed #d1d5db; border-radius: 14px; padding: 18px;
+      display: flex; align-items: center; gap: 14px; transition: .25s ease; background: #fafbfc;
+    }
+    .upload-zone:hover { border-color: #93c5fd; background: #f8fbff; }
+    .upload-zone.dragover { border-color: #0d6efd; background: #eef6ff; }
+    .upload-ico {
+      width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+      background: #e9f3ff; color: #0b5ed7; box-shadow: inset 0 0 0 1px #cfe5ff; flex-shrink: 0;
+    }
+    .upload-text strong { color: #0f172a; }
+    .upload-text small { color: #6b7280; display: block; }
+    .upload-text .link { color: #0b5ed7; text-decoration: underline; cursor: pointer; }
+
+    .btn-primary-premium{
+      background: linear-gradient(135deg,#0d6efd,#0b5ed7);
+      border: none; color:#fff; font-weight:800; border-radius:12px; padding:.8rem 1.1rem;
+      box-shadow: 0 10px 22px rgba(13,110,253,.24);
+    }
+    .btn-ghost{
+      border:2px solid #e5e7eb; background:#fff; color:#111827; font-weight:700; border-radius:12px; padding:.7rem 1rem;
+    }
+
+    /* ===== Ações: mobile lado a lado ===== */
+    .actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .btn-action { flex:1 1 48%; }
+    @media (min-width: 768px){
+      .actions { gap:12px; }
+      .btn-action { flex:0 0 auto; }
+    }
+
+    /* Histórico (uma coluna) */
+    .history-card { border:0; border-radius:18px; overflow:hidden; box-shadow:0 14px 34px rgba(2,6,23,.09),0 1px 2px rgba(2,6,23,.06); background:#fff; }
+    .history-head { background:#fff; padding:18px 22px; border-bottom:1px solid #eef2f7; display:flex; align-items:center; gap:10px; }
+    .history-title { margin:0; font-weight:800; color:#0f172a; }
+    .history-list { list-style:none; margin:0; padding:0; }
+    .history-item { display:flex; align-items:center; gap:14px; padding:14px 18px; border-bottom:1px solid #f1f5f9; }
+    .history-item:last-child { border-bottom:0; }
+    .h-id { width:34px; height:34px; display:flex; align-items:center; justify-content:center; border-radius:10px; background:#f3f4f6; color:#111827; font-weight:800; }
+    .h-main { flex:1; }
+    .h-top { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .h-days { font-weight:700; color:#0b5ed7; }
+    .h-meta { font-size:.85rem; color:#6b7280; }
+    .badge-status { font-weight:700; padding:.45rem .6rem; border-radius:999px; }
+    .status-pendente  { background:#fff3cd; color:#856404; }
+    .status-deferida   { background:#d1fae5; color:#065f46; }
+    .status-indeferida { background:#fee2e2; color:#991b1b; }
+  </style>
+
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página de Inicial">
+      <i class="fas fa-home"></i>
+    </a>
+  </header>
+
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom" style="display:flex; align-items:center; justify-content:center; gap:12px; box-sizing:border-box; white-space:nowrap;">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('login') }}" class="btn-home-mobile" title="Página de Login">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- Conteúdo -->
+  <div class="container shell my-4">
+
+    <!-- Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" aria-label="Fechar" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="row">
+      <!-- Formulário -->
+      <div class="col-lg-7 mb-4">
+        <div class="card-premium">
+          <div class="hero">
+            <h1><i class="fas fa-file-upload"></i> Adicionar TRE</h1>
+          </div>
+
+          <div class="body">
+            <div class="section-title">Dados do Servidor</div>
+            <div class="form-row">
+              <div class="form-group col-lg-4 col-md-6">
+                <label>Nome</label>
+                <div class="readonly-input" title="{{ user.nome }}">{{ user.nome }}</div>
+              </div>
+              <div class="form-group col-lg-3 col-md-6">
+                <label>Registro</label>
+                <div class="readonly-input" title="{{ user.registro }}">{{ user.registro }}</div>
+              </div>
+              <div class="form-group col-lg-5 col-md-12">
+                <label>Cargo</label>
+                <div class="readonly-input" title="{{ user.cargo or '' }}">{{ user.cargo or '' }}</div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <form method="POST" enctype="multipart/form-data" id="form-tre" novalidate>
+              <div class="section-title">Informações da TRE</div>
+
+              <div class="form-row">
+                <div class="form-group col-md-4">
+                  <label for="dias_folga">Dias de Folga Concedidos</label>
+                  <div class="input-group">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text"><i class="far fa-calendar-plus"></i></span>
+                    </div>
+                    <input type="number" id="dias_folga" name="dias_folga" class="form-control" min="1" step="1" required>
+                  </div>
+                  <small class="text-muted d-block mt-2">Quantidade de dias que esta TRE concede.</small>
+                </div>
+
+                <div class="form-group col-md-8">
+                  <label class="d-block">Anexar TRE (PDF)</label>
+                  <div class="upload-zone" id="uploadZone">
+                    <div class="upload-ico"><i class="fas fa-file-pdf"></i></div>
+                    <div class="upload-text">
+                      <strong>Arraste o PDF aqui</strong> ou
+                      <label for="arquivo_pdf" class="link mb-0">clique para selecionar</label>
+                      <small class="mt-1">Apenas PDF. Tamanho máximo recomendado: 10 MB.</small>
+                      <div id="fileName" class="text-muted small mt-1">Nenhum arquivo selecionado</div>
+                    </div>
+                    <input type="file" id="arquivo_pdf" name="arquivo_pdf" accept="application/pdf" required hidden>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Ações responsivas -->
+              <div class="actions mt-3">
+                <button type="submit" class="btn btn-primary-premium btn-action">
+                  <i class="fas fa-save mr-1"></i> Salvar TRE
+                </button>
+                <a href="{{ url_for('minhas_tres') }}" class="btn btn-ghost btn-action">
+                  <i class="fas fa-list mr-1"></i> Minhas TREs
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Histórico (uma coluna) -->
+      <div class="col-lg-5 mb-4">
+        <div class="history-card">
+          <div class="history-head">
+            <i class="fas fa-rotate-left text-secondary"></i>
+            <h5 class="history-title mb-0">Minhas últimas TREs</h5>
+          </div>
+          <div class="p-2">
+            {% if tres %}
+              <ul class="history-list">
+                {% for tre in tres[:3] %}
+                <li class="history-item">
+                  <div class="h-id">{{ tre.id }}</div>
+                  <div class="h-main">
+                    <div class="h-top">
+                      <span class="badge-status
+                        {% if tre.status=='pendente' %}status-pendente{% elif tre.status=='deferida' %}status-deferida{% else %}status-indeferida{% endif %}">
+                        {{ tre.status|title }}
+                      </span>
+                      <span class="h-days"><i class="far fa-sun"></i> {{ tre.dias_folga }} dia(s)</span>
+                    </div>
+                    <div class="h-meta">
+                      Enviado em {{ tre.data_envio.strftime("%d/%m/%Y %H:%M") if tre.data_envio else "-" }}
+                    </div>
+                  </div>
+                  <a href="{{ url_for('download_tre', tre_id=tre.id) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-download"></i> Baixar
+                  </a>
+                </li>
+                {% endfor %}
+              </ul>
+              <div class="px-3 pb-3">
+                <a href="{{ url_for('minhas_tres') }}" class="btn btn-link p-0">Ver todas</a>
+              </div>
+            {% else %}
+              <div class="p-3">
+                <p class="text-muted mb-0">Nenhuma TRE enviada recentemente.</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Rodapé -->
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+
+  <script>
+    // Registro do usuário vindo do template (sanitizado para números)
+    const REGISTRO_RAW = "{{ user.registro }}";
+    const REGISTRO = (REGISTRO_RAW || '').toString().replace(/\D+/g, '');
+
+    (function () {
+      var zone = document.getElementById('uploadZone');
+      var input = document.getElementById('arquivo_pdf');
+      var fileName = document.getElementById('fileName');
+      var diasInput = document.getElementById('dias_folga');
+      var maxBytes = 10 * 1024 * 1024; // 10 MB
+
+      // Helper: renomeia o arquivo selecionado para <dias>dias<registro>.pdf
+      function tryRenameSelectedFile() {
+        if (!input.files || !input.files.length) return;
+        var f = input.files[0];
+        var dias = parseInt(diasInput.value, 10);
+        if (!Number.isInteger(dias) || dias <= 0) return; // precisa dos dias
+
+        // Gera nome seguro sempre com .pdf
+        var novoNome = (dias + 'dias' + REGISTRO + '.pdf').replace(/[^a-z0-9_.-]/gi, '');
+        // Substitui o File no input usando DataTransfer
+        var dt = new DataTransfer();
+        var renamed = new File([f], novoNome, { type: f.type, lastModified: f.lastModified });
+        dt.items.add(renamed);
+        input.files = dt.files;
+        fileName.textContent = renamed.name;
+      }
+
+      // Exibe/valida o arquivo e tenta renomear
+      function handleFile(file){
+        if (file.type !== 'application/pdf') {
+          alert('Apenas arquivos PDF são permitidos.');
+          input.value = ''; fileName.textContent = 'Nenhum arquivo selecionado'; return;
+        }
+        if (file.size > maxBytes) {
+          alert('O arquivo excede 10 MB. Por favor, escolha um PDF menor.');
+          input.value = ''; fileName.textContent = 'Nenhum arquivo selecionado'; return;
+        }
+        fileName.textContent = file.name;
+        tryRenameSelectedFile(); // renomeia se já tiver os dias
+      }
+
+      // Clique para abrir seletor (fora do label)
+      zone.addEventListener('click', function(e){
+        if (e.target.tagName.toLowerCase() !== 'label') input.click();
+      });
+
+      // Drag & drop
+      ['dragenter','dragover'].forEach(function(evt){
+        zone.addEventListener(evt, function(e){ e.preventDefault(); e.stopPropagation(); zone.classList.add('dragover'); });
+      });
+      ['dragleave','drop'].forEach(function(evt){
+        zone.addEventListener(evt, function(e){ e.preventDefault(); e.stopPropagation(); zone.classList.remove('dragover'); });
+      });
+      zone.addEventListener('drop', function(e){
+        var files = e.dataTransfer.files;
+        if (files && files.length) { input.files = files; handleFile(files[0]); }
+      });
+
+      // Ao selecionar via input
+      input.addEventListener('change', function(e){
+        var f = e.target.files[0]; if (f) handleFile(f);
+      });
+
+      // Se o usuário preencher/alterar os dias depois de escolher o arquivo, renomeia também
+      diasInput.addEventListener('input', tryRenameSelectedFile);
+
+      // Garante renomeação no submit
+      document.getElementById('form-tre').addEventListener('submit', function(e){
+        tryRenameSelectedFile();
+        // Se não houver arquivo após renomear/validar, bloqueia
+        if (!input.files || !input.files.length) {
+          e.preventDefault();
+          alert('Selecione um PDF válido para enviar.');
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

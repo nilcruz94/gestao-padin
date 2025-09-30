@@ -615,37 +615,47 @@
       <div class="cards-wrapper">
         <div class="cards-grid">
           <a href="{{ url_for('perfil') }}" class="card">
-            <i class="fas fa-user"></i>
+            <i class="fas fa-id-badge"></i>
             Meu Perfil
           </a>
 
           <a href="{{ url_for('historico') }}" class="card">
-            <i class="fas fa-history"></i>
+            <i class="fas fa-calendar-check"></i>
             Minhas Folgas
           </a>
 
           <a href="{{ url_for('minhas_justificativas') }}" class="card">
-              <i class="fas fa-list-alt"></i> Meus Agendamentos
+            <i class="fas fa-clipboard-list"></i>
+            Meus Agendamentos
           </a>
 
           <a href="{{ url_for('agendar') }}" class="card">
             <i class="fas fa-calendar-plus"></i>
             Agendar Folga
           </a>
+
+          <a href="{{ url_for('adicionar_tre') }}" class="card">
+            <i class="fas fa-file-upload"></i>
+            Adicionar T.R.E
+          </a>
+
           <a href="{{ url_for('calendario') }}" class="card">
-            <i class="fas fa-calendar-alt"></i>
+            <i class="fas fa-calendar-days"></i>
             Calendário
           </a>
+
           <a href="{{ url_for('relatar_esquecimento') }}" class="card">
-            <i class="fas fa-clock"></i>
+            <i class="fas fa-stopwatch"></i>
             Relatar Esquecimento
           </a>
+
           <a href="{{ url_for('banco_horas') }}" class="card">
             <i class="fas fa-hourglass-half"></i>
             Banco de Horas
           </a>
+
           <a href="{{ url_for('logout') }}" class="card logout-btn" title="Sair do sistema">
-            <i class="fas fa-sign-out-alt"></i>
+            <i class="fas fa-right-from-bracket"></i>
             Sair
           </a>
         </div>
@@ -656,37 +666,52 @@
     <div id="administrativo" class="cards-container">
       <div class="cards-wrapper">
         <div class="cards-grid">
+
           <a href="{{ url_for('deferir_folgas') }}" class="card">
-              <i class="fas fa-check-circle"></i> Deferir Folgas
+            <i class="fas fa-calendar-check"></i>
+            Deferir Folgas
           </a>
+
+          <a href="{{ url_for('admin_tres_list') }}" class="card">
+            <i class="fas fa-file-signature"></i>
+            Deferir TREs
+          </a>
+
           <a href="{{ url_for('aprovar_usuarios') }}" class="card">
             <i class="fas fa-user-check"></i>
             Aprovar Usuários
           </a>
+
           <a href="{{ url_for('admin_agendamentos') }}" class="card">
-            <i class="fas fa-tasks"></i>
+            <i class="fas fa-calendar-days"></i>
             Gerenciar Agendamentos
           </a>
+
           <a href="{{ url_for('user_info_all') }}" class="card">
-            <i class="fas fa-users"></i>
+            <i class="fas fa-folder-open"></i>
             Prontuarios
           </a>
+
           <a href="{{ url_for('relatorio_ponto') }}" class="card">
-            <i class="fas fa-file-alt"></i>
+            <i class="fas fa-file-lines"></i>
             Relatório de Ponto
           </a>
+
           <a href="{{ url_for('relatorio_horas_extras') }}" class="card">
-            <i class="fas fa-file-invoice"></i>
+            <i class="fas fa-clock-rotate-left"></i>
             Relatório de Horas Extras
           </a>
+
           <a href="{{ url_for('logout') }}" class="card logout-btn" title="Sair do sistema">
-            <i class="fas fa-sign-out-alt"></i>
+            <i class="fas fa-right-from-bracket"></i>
             Sair
           </a>
+
         </div>
       </div>
     </div>
     {% endif %}
+
   </main>
 
   <footer>

@@ -1,33 +1,51 @@
-from flask import Flask, session, render_template, redirect, url_for, request, flash, make_response, abort
-from flask import jsonify
+from flask import Flask, session, render_template, redirect, url_for, request, flash, make_response, abort, jsonify, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager
+from werkzeug.utils import secure_filename
 import calendar
-import datetime  # Mantém o módulo inteiro
+import datetime   # Mantém o módulo inteiro
 from datetime import timedelta  # Importa só o timedelta
+import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+# ===========================================
+# Configuração principal do app
+# ===========================================
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://folgas_user:BLS6AMWRXX0vuFBM6q7oHKKwJChaK8dk@dpg-cuece7hopnds738g0usg-a.virginia-postgres.render.com/folgas_3tqr'
+
+# Config Banco PostgreSQL
+app.config['SQLALCHEMY_DATABASE_URI'] = (
+    'postgresql://folgas_user:BLS6AMWRXX0vuFBM6q7oHKKwJChaK8dk@'
+    'dpg-cuece7hopnds738g0usg-a.virginia-postgres.render.com/folgas_3tqr'
+)
 app.config['SQLALCHEMY_POOL_RECYCLE'] = 299
 app.config['SQLALCHEMY_POOL_TIMEOUT'] = 30
 app.config['SECRET_KEY'] = 'supersecretkey'
+
+# Config Uploads
+UPLOAD_FOLDER = "uploads/tre"
+ALLOWED_EXTENSIONS = {"pdf"}
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+
+# ===========================================
+# Extensões
+# ===========================================
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 login_manager = LoginManager(app)
-login_manager.login_view = 'login'
+login_manager.login_view = "login"
 
-# Configurações do SMTP (suas configurações)
+# ===========================================
+# Configurações de Email (SMTP)
+# ===========================================
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SMTP_USER = "nilcr94@gmail.com"           
-SMTP_PASS = "jbbfjudjzxzqrxiv"     
-
+SMTP_USER = "nilcr94@gmail.com"
+SMTP_PASS = "jbbfjudjzxzqrxiv"   # 🔒 Melhor usar variável de ambiente depois!
 
 # Modelo User (Funcionario e Administrador)
 class User(UserMixin, db.Model):
@@ -130,6 +148,42 @@ class EsquecimentoPonto(db.Model):
     motivo = db.Column(db.Text, nullable=True)
 
     usuario = db.relationship('User', backref=db.backref('esquecimentos_ponto', lazy=True))
+
+# =========================
+# TRE (com workflow de aprovação)
+# =========================
+class TRE(db.Model):
+    __tablename__ = 'tre'
+
+    id = db.Column(db.Integer, primary_key=True)
+    funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    # enviado pelo usuário
+    dias_folga = db.Column(db.Integer, nullable=False)
+    arquivo_pdf = db.Column(db.String(255), nullable=False)
+    data_envio = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+    # workflow de aprovação
+    status = db.Column(db.String(20), default='pendente')  # 'pendente' | 'deferida' | 'indeferida'
+    dias_validados = db.Column(db.Integer, nullable=True)  # admin pode corrigir os dias
+    parecer_admin = db.Column(db.Text, nullable=True)
+    validado_em = db.Column(db.DateTime, nullable=True)
+    validado_por_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # admin
+
+    # >>> RELACIONAMENTOS <<<
+    funcionario = db.relationship(
+        'User',
+        backref=db.backref('tres', lazy=True),
+        foreign_keys=[funcionario_id],
+        lazy=True
+    )
+    # Quem validou (admin)
+    validador = db.relationship(
+        'User',
+        backref=db.backref('tres_validadas', lazy=True),
+        foreign_keys=[validado_por_id],
+        lazy=True
+    )
 
 def enviar_email(destinatario, assunto, mensagem_html, mensagem_texto=None):
     """
@@ -1169,66 +1223,109 @@ import datetime
 from flask import render_template, request
 from flask_login import login_required, current_user
 
+# ajuste os imports conforme o seu projeto
+# from app import app, db
+# from models import User, TRE, Agendamento
+
 @app.route('/historico', methods=['GET'])
 @login_required
 def historico():
-    usuario = User.query.get(current_user.id)
+    usuario = User.query.get_or_404(current_user.id)
 
-    # --- Ano selecionado (se não passar, assume ano atual)
+    # --- Ano selecionado (default = ano atual)
     ano = request.args.get("ano", type=int) or datetime.datetime.now().year
 
-    # Limite anual de folgas abonadas
+    # ===== Folgas abonadas (conta apenas AB deferido no ano) =====
     limite_abonadas_ano = 6
-
-    # ✅ Conta apenas folgas AB deferidas no ano escolhido
-    abonadas_ano = Agendamento.query.filter(
-        Agendamento.funcionario_id == current_user.id,
-        Agendamento.motivo == 'AB',
-        Agendamento.status == 'deferido',
-        Agendamento.data >= datetime.date(ano, 1, 1),
-        Agendamento.data <= datetime.date(ano, 12, 31)
-    ).count()
-
+    abonadas_ano = (
+        Agendamento.query
+        .filter(
+            Agendamento.funcionario_id == current_user.id,
+            Agendamento.motivo == 'AB',
+            Agendamento.status == 'deferido',
+            Agendamento.data >= datetime.date(ano, 1, 1),
+            Agendamento.data <= datetime.date(ano, 12, 31),
+        )
+        .count()
+    )
     saldo_abonadas = max(limite_abonadas_ano - abonadas_ano, 0)
 
-    # --- TREs
-    tre_total = usuario.tre_total or 0
-    tre_usufruidas = usuario.tre_usufruidas or 0
+    # ===== TREs (USA EXATAMENTE OS CAMPOS DO USER) =====
+    tre_total = int(usuario.tre_total or 0)            # créditos totais de TRE do usuário
+    tre_usufruidas = int(usuario.tre_usufruidas or 0)  # dias já utilizados pelo usuário
     tre_restantes = max(tre_total - tre_usufruidas, 0)
 
-    # --- Banco de Horas (minutos → horas:minutos)
-    total_minutos = usuario.banco_horas or 0
+    # ===== Banco de horas =====
+    total_minutos = int(usuario.banco_horas or 0)
     horas = total_minutos // 60
     minutos = total_minutos % 60
     banco_horas_formatado = f"{horas}h {minutos}min" if total_minutos > 0 else "0h 0min"
 
-    # --- Últimas folgas (extrato)
-    ultimas_folgas = Agendamento.query.filter_by(funcionario_id=current_user.id)\
-        .order_by(Agendamento.data.desc())\
-        .limit(10).all()
+    # ===== Últimas folgas (extrato) =====
+    ultimas_folgas = (
+        Agendamento.query
+        .filter_by(funcionario_id=current_user.id)
+        .order_by(Agendamento.data.desc())
+        .limit(10)
+        .all()
+    )
 
-    # --- Alertas / avisos
+    # ===== Minhas TREs (lista para a tabela) =====
+    minhas_tres = (
+        TRE.query
+        .filter(TRE.funcionario_id == current_user.id)
+        .order_by(TRE.data_envio.desc(), TRE.id.desc())
+        .all()
+    )
+
+    # Estatísticas para os chips (apenas informativo)
+    pend = def_ = ind = dias_pend = dias_def = 0
+    for t in minhas_tres:
+        st = (t.status or '').strip().lower()
+        if st == 'pendente':
+            pend += 1
+            dias_pend += int(t.dias_folga or 0)
+        elif st == 'deferida':
+            def_ += 1
+            dias_def += int((t.dias_validados if t.dias_validados is not None else t.dias_folga) or 0)
+        elif st == 'indeferida':
+            ind += 1
+
+    tre_stats = {
+        "total": len(minhas_tres),
+        "pend": pend,
+        "def_": def_,
+        "ind": ind,
+        "dias_pend": dias_pend,
+        "dias_def": dias_def,
+    }
+
+    # ===== Avisos =====
     avisos = []
     if saldo_abonadas == 0:
         avisos.append("⚠️ Você atingiu o limite anual de folgas abonadas.")
     if tre_restantes > 0:
         avisos.append(f"🔔 Você ainda pode usufruir {tre_restantes} TRE(s).")
-    if total_minutos > 300:  # exemplo: mais de 5h acumuladas
+    if total_minutos > 300:
         avisos.append("ℹ️ Você possui muitas horas acumuladas no Banco de Horas.")
 
-    # Envio para template
+    # Render
     return render_template(
         'historico.html',
         ano=ano,
         limite_abonadas_ano=limite_abonadas_ano,
         abonadas_ano=abonadas_ano,
         saldo_abonadas=saldo_abonadas,
+        # >>> estes dois campos vêm do USER <<<
         tre_total=tre_total,
         tre_usufruidas=tre_usufruidas,
         tre_restantes=tre_restantes,
+        # -------------------------------------
         banco_horas_formatado=banco_horas_formatado,
         ultimas_folgas=ultimas_folgas,
-        avisos=avisos
+        minhas_tres=minhas_tres,
+        tre_stats=tre_stats,
+        avisos=avisos,
     )
 
 # Rota de Cadastro de Banco de Horas
@@ -1570,6 +1667,213 @@ def check_unique():
         exists = User.query.filter_by(rg=valor).first() is not None
     return jsonify({'exists': exists})
 
+# =============================
+# IMPORTS EXTRAS (se ainda não tiver)
+# =============================
+from sqlalchemy import or_
+# (presumo que você já tenha: os, datetime, send_from_directory, secure_filename,
+#  db, app, login_required, current_user, flash, jsonify, request, redirect, url_for)
+
+# =============================
+# Funções auxiliares
+# =============================
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+# =============================
+# Rota: Adicionar TRE (usuário)
+# =============================
+@app.route("/adicionar_tre", methods=["GET", "POST"])
+@login_required
+def adicionar_tre():
+    if request.method == "POST":
+        dias_folga = request.form.get("dias_folga", type=int)
+        arquivo = request.files.get("arquivo_pdf")
+
+        if not dias_folga or dias_folga < 1 or not arquivo:
+            flash("Preencha corretamente os campos e anexe o PDF.", "danger")
+            return redirect(url_for("adicionar_tre"))
+
+        if not allowed_file(arquivo.filename):
+            flash("Somente PDF é permitido.", "danger")
+            return redirect(url_for("adicionar_tre"))
+
+        # Salva arquivo com nome seguro + timestamp
+        filename = secure_filename(f"{current_user.id}_{datetime.datetime.now():%Y%m%d%H%M%S}_{arquivo.filename}")
+        save_path = os.path.join(app.root_path, UPLOAD_FOLDER)
+        os.makedirs(save_path, exist_ok=True)
+        arquivo.save(os.path.join(save_path, filename))
+
+        # Cria registro pendente (NÃO altera user.tre_total aqui)
+        nova = TRE(
+            funcionario_id=current_user.id,
+            dias_folga=dias_folga,
+            arquivo_pdf=filename,
+            status="pendente"
+        )
+        db.session.add(nova)
+        db.session.commit()
+
+        flash("TRE enviada para análise do administrador.", "success")
+        return redirect(url_for("historico"))
+
+    # Opcional: mostrar últimas 3
+    tres_ultimas = (TRE.query.filter_by(funcionario_id=current_user.id)
+                    .order_by(TRE.data_envio.desc()).limit(3).all())
+    return render_template("adicionar_tre.html", user=current_user, tres=tres_ultimas)
+
+
+# =============================
+# Rota: Listar TREs do usuário
+# =============================
+@app.route("/minhas_tres", methods=["GET"])
+@login_required
+def minhas_tres():
+    minhas_tres = (TRE.query
+                   .filter_by(funcionario_id=current_user.id)
+                   .order_by(TRE.data_envio.desc())
+                   .all())
+    return render_template("minhas_tres.html", tres=minhas_tres, user=current_user)
+
+
+# =============================
+# Rota: Download do PDF da TRE
+# =============================
+@app.route("/download_tre/<int:tre_id>", methods=["GET"])
+@login_required
+def download_tre(tre_id):
+    tre = TRE.query.get_or_404(tre_id)
+
+    # Só o dono ou administrador pode baixar
+    if tre.funcionario_id != current_user.id and current_user.tipo != "administrador":
+        flash("Você não tem permissão para acessar este arquivo.", "danger")
+        return redirect(url_for("minhas_tres"))
+
+    directory = os.path.join(app.root_path, UPLOAD_FOLDER)
+    return send_from_directory(directory, tre.arquivo_pdf, as_attachment=True)
+
+
+# =============================
+# ADMIN: Listagem/Análise de TREs
+# =============================
+@app.route("/admin/tres", methods=["GET"])
+@login_required
+def admin_tres_list():
+    if current_user.tipo != "administrador":
+        flash("Acesso negado.", "danger")
+        return redirect(url_for("index"))
+
+    status = request.args.get("status", "pendente")
+    busca = request.args.get("q", "").strip()
+
+    q = TRE.query.join(User, User.id == TRE.funcionario_id)
+    if status in ("pendente", "deferida", "indeferida"):
+        q = q.filter(TRE.status == status)
+
+    if busca:
+        like = f"%{busca}%"
+        q = q.filter(or_(User.nome.ilike(like), User.registro.ilike(like)))
+
+    tres = q.order_by(TRE.data_envio.desc()).all()
+    return render_template("admin_tres.html", tres=tres, status=status)
+
+
+# =============================
+# ADMIN: Decidir (deferir/indeferir) TRE
+#   Idempotente: só permite decisão se ainda estiver "pendente".
+#   - Aprovar: define status, dias_validados e soma no tre_total do usuário.
+#   - Indeferir: define status/parecer e não soma.
+# =============================
+@app.route("/admin/tre/<int:tre_id>/decidir", methods=["POST"])
+@login_required
+def admin_tre_decidir(tre_id):
+    if current_user.tipo != "administrador":
+        return jsonify({"error": "Acesso negado"}), 403
+
+    tre = TRE.query.get_or_404(tre_id)
+    user = User.query.get_or_404(tre.funcionario_id)
+
+    acao = request.form.get("acao")  # "aprovar" | "indeferir"
+    dias_validados = request.form.get("dias_validados", type=int)
+    parecer = (request.form.get("parecer_admin") or "").strip()
+
+    if acao not in ("aprovar", "indeferir"):
+        return jsonify({"error": "Ação inválida."}), 400
+
+    # Evita decisões duplicadas
+    if tre.status in ("deferida", "indeferida"):
+        return jsonify({"error": "Esta TRE já foi analisada."}), 400
+
+    if acao == "aprovar":
+        dias_aprovados = dias_validados if (dias_validados and dias_validados > 0) else tre.dias_folga
+        # Guarda decisão
+        tre.status = "deferida"
+        tre.dias_validados = dias_aprovados
+        tre.parecer_admin = parecer or None
+        tre.validado_em = datetime.datetime.utcnow()
+        tre.validado_por_id = current_user.id
+
+        # Ajusta saldo do usuário somente agora
+        user.tre_total = int(user.tre_total or 0) + int(dias_aprovados)
+
+        db.session.commit()
+        return jsonify({"success": True, "message": f"TRE deferida (+{dias_aprovados} dia(s))."})
+
+    else:
+        tre.status = "indeferida"
+        tre.dias_validados = dias_validados if (dias_validados and dias_validados > 0) else None
+        tre.parecer_admin = parecer or None
+        tre.validado_em = datetime.datetime.utcnow()
+        tre.validado_por_id = current_user.id
+
+        db.session.commit()
+        return jsonify({"success": True, "message": "TRE indeferida."})
+
+
+# =============================
+# ADMIN: Excluir TRE (qualquer status)
+#   - Permite excluir mesmo que esteja deferida.
+#   - Se estiver 'deferida', estorna do tre_total do usuário
+#     a quantidade validada (ou dias_folga como fallback).
+#   - Remove o PDF do disco se existir.
+#   - Retorna JSON {success: True} para a UI.
+# =============================
+@app.route("/admin/tre/<int:tre_id>/excluir", methods=["POST"])
+@login_required
+def admin_tre_excluir(tre_id):
+    if current_user.tipo != "administrador":
+        return jsonify({"error": "Acesso negado"}), 403
+
+    tre = TRE.query.get_or_404(tre_id)
+    user = User.query.get_or_404(tre.funcionario_id)
+
+    try:
+        # Se estava deferida, estorna do saldo
+        if tre.status == "deferida":
+            dias_creditados = tre.dias_validados if tre.dias_validados is not None else tre.dias_folga
+            try:
+                user.tre_total = max(0, int(user.tre_total or 0) - int(dias_creditados or 0))
+            except Exception:
+                # Se algo vier estranho, garante que não quebra
+                user.tre_total = max(0, int(user.tre_total or 0))
+
+        # Remove o arquivo físico (se existir)
+        if tre.arquivo_pdf:
+            file_path = os.path.join(app.root_path, UPLOAD_FOLDER, tre.arquivo_pdf)
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            except Exception:
+                # falha ao apagar arquivo não impede a exclusão do registro
+                pass
+
+        db.session.delete(tre)
+        db.session.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Falha ao excluir a TRE."}), 500
 
 @app.route('/criar_banco')
 def criar_banco():
