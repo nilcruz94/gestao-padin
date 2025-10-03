@@ -45,7 +45,7 @@ login_manager.login_view = "login"
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 SMTP_USER = "nilcr94@gmail.com"
-SMTP_PASS = "jbbfjudjzxzqrxiv"   # 🔒 Melhor usar variável de ambiente depois!
+SMTP_PASS = "xboztvmzwskygzzh"   # 🔒 Melhor usar variável de ambiente depois!
 
 # Modelo User (Funcionario e Administrador)
 class User(UserMixin, db.Model):
@@ -186,34 +186,34 @@ class TRE(db.Model):
     )
 
 def enviar_email(destinatario, assunto, mensagem_html, mensagem_texto=None):
-    """
-    Envia um e-mail com mensagem HTML. Opcionalmente, pode incluir uma alternativa em texto puro.
-    """
-    msg = MIMEMultipart("alternative")
-    msg['From'] = SMTP_USER
-    msg['To'] = destinatario
-    msg['Subject'] = assunto
+        """
+        Envia um e-mail com mensagem HTML. Opcionalmente, pode incluir uma alternativa em texto puro.
+        """
+        msg = MIMEMultipart("alternative")
+        msg['From'] = SMTP_USER
+        msg['To'] = destinatario
+        msg['Subject'] = assunto
 
-    # Se não fornecer a versão em texto, cria uma simples a partir do HTML
-    if not mensagem_texto:
-        mensagem_texto = "Por favor, visualize este e-mail em um cliente que suporte HTML."
+        # Se não fornecer a versão em texto, cria uma simples a partir do HTML
+        if not mensagem_texto:
+            mensagem_texto = "Por favor, visualize este e-mail em um cliente que suporte HTML."
 
-    # Cria as partes do e-mail
-    parte_texto = MIMEText(mensagem_texto, 'plain')
-    parte_html = MIMEText(mensagem_html, 'html')
+        # Cria as partes do e-mail
+        parte_texto = MIMEText(mensagem_texto, 'plain')
+        parte_html = MIMEText(mensagem_html, 'html')
 
-    msg.attach(parte_texto)
-    msg.attach(parte_html)
-    
-    try:
-        servidor = smtplib.SMTP( SMTP_SERVER, SMTP_PORT)
-        servidor.starttls()
-        servidor.login(SMTP_USER, SMTP_PASS)  
-        servidor.send_message(msg)
-        servidor.quit()
-        print("E-mail enviado com sucesso!")
-    except Exception as e:
-        print("Erro ao enviar e-mail:", e)
+        msg.attach(parte_texto)
+        msg.attach(parte_html)
+        
+        try:
+            servidor = smtplib.SMTP( SMTP_SERVER, SMTP_PORT)
+            servidor.starttls()
+            servidor.login(SMTP_USER, SMTP_PASS)  
+            servidor.send_message(msg)
+            servidor.quit()
+            print("E-mail enviado com sucesso!")
+        except Exception as e:
+            print("Erro ao enviar e-mail:", e)
 
 VERSAO_ATUAL_TERMO = '2025-07-25'  # Atualize aqui quando mudar o termo
 
@@ -391,6 +391,9 @@ def minhas_justificativas():
 @login_required
 def agendar():
     if request.method == 'POST':
+        # 🔹 Mantém o saldo de TRE sempre correto antes de validar
+        sync_tre_user(current_user.id)
+
         tipo_folga       = request.form['tipo_folga']         # Código do motivo: 'AB', 'BH', 'DS', 'TRE', 'FS'
         data_folga       = request.form['data']               # Data da folga
         motivo           = request.form['motivo']             # Mesmo código acima
@@ -408,9 +411,27 @@ def agendar():
 
         # Validação específica para TRE: verifica se tipo_folga ou motivo são "TRE"
         if tipo_folga == 'TRE' or motivo == 'TRE':
-            usuario = User.query.get(current_user.id)  # Buscar o usuário atualizado
-            if usuario.tre_total <= 0:
-                flash("Você não possui TREs disponíveis para agendar.", "danger")
+            usuario = User.query.get(current_user.id)  # Buscar o usuário atualizado (já sincronizado)
+            # Saldo real
+            tre_total = int(usuario.tre_total or 0)
+            tre_usuf = int(usuario.tre_usufruidas or 0)
+            tre_restantes = max(tre_total - tre_usuf, 0)
+
+            # (Opcional, mas recomendado) Evitar "overbooking":
+            # Se já existem solicitações TRE em análise, desconta do saldo disponível para nova solicitação
+            pedidos_abertos = (
+                Agendamento.query
+                .filter(
+                    Agendamento.funcionario_id == current_user.id,
+                    Agendamento.motivo == 'TRE',
+                    Agendamento.status.in_( ['em_espera', 'pendente'] )
+                )
+                .count()
+            )
+            saldo_disponivel_para_solicitar = tre_restantes - pedidos_abertos
+
+            if saldo_disponivel_para_solicitar <= 0:
+                flash("Você não possui TREs disponíveis para agendar no momento.", "danger")
                 return render_template('agendar.html')
 
         # mapeia o código para descrição legível
@@ -544,7 +565,6 @@ E.M José Padin Mouta
         return redirect(url_for('index'))
 
     return render_template('agendar.html')
-
 
 # Rota de Calendário de Folgas
 @app.route('/calendario', methods=['GET', 'POST'])
@@ -1086,14 +1106,9 @@ def deferir_folgas():
                 flash("O funcionário não tem horas suficientes no banco de horas para este agendamento.", "danger")
                 return redirect(url_for('deferir_folgas'))
 
-        # Validação para TRE, decrementa se deferido e se usuário tiver TRE disponível
+        # Validação para TRE: agora apenas chama sync ao deferir
         if folga.motivo == 'TRE' and novo_status == 'deferido':
-            if usuario.tre_total > 0:
-                usuario.tre_total -= 1
-                usuario.tre_usufruidas += 1
-            else:
-                flash("Não é possível deferir esta folga TRE porque o usuário não possui TRE disponível.", "danger")
-                return redirect(url_for('deferir_folgas'))
+            sync_tre_user(usuario.id)
 
         # Atualiza o status da folga
         folga.status = novo_status
@@ -1230,6 +1245,9 @@ from flask_login import login_required, current_user
 @app.route('/historico', methods=['GET'])
 @login_required
 def historico():
+    # 🔹 Garante que os campos tre_total e tre_usufruidas do User estejam sincronizados
+    sync_tre_user(current_user.id)
+
     usuario = User.query.get_or_404(current_user.id)
 
     # --- Ano selecionado (default = ano atual)
@@ -1250,7 +1268,7 @@ def historico():
     )
     saldo_abonadas = max(limite_abonadas_ano - abonadas_ano, 0)
 
-    # ===== TREs (USA EXATAMENTE OS CAMPOS DO USER) =====
+    # ===== TREs (agora já estão sincronizadas no User) =====
     tre_total = int(usuario.tre_total or 0)            # créditos totais de TRE do usuário
     tre_usufruidas = int(usuario.tre_usufruidas or 0)  # dias já utilizados pelo usuário
     tre_restantes = max(tre_total - tre_usufruidas, 0)
@@ -1316,11 +1334,9 @@ def historico():
         limite_abonadas_ano=limite_abonadas_ano,
         abonadas_ano=abonadas_ano,
         saldo_abonadas=saldo_abonadas,
-        # >>> estes dois campos vêm do USER <<<
         tre_total=tre_total,
         tre_usufruidas=tre_usufruidas,
         tre_restantes=tre_restantes,
-        # -------------------------------------
         banco_horas_formatado=banco_horas_formatado,
         ultimas_folgas=ultimas_folgas,
         minhas_tres=minhas_tres,
@@ -1671,8 +1687,7 @@ def check_unique():
 # IMPORTS EXTRAS (se ainda não tiver)
 # =============================
 from sqlalchemy import or_
-# (presumo que você já tenha: os, datetime, send_from_directory, secure_filename,
-#  db, app, login_required, current_user, flash, jsonify, request, redirect, url_for)
+from sqlalchemy import func, case
 
 # =============================
 # Funções auxiliares
@@ -1680,6 +1695,47 @@ from sqlalchemy import or_
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
+# =============================
+# Função de sincronização TRE
+# =============================
+def sync_tre_user(usuario_id):
+    usuario = User.query.get(usuario_id)
+    if not usuario:
+        return 0, 0, 0
+
+    # 1) Total deferido (dias de TRE deferidos na tabela TRE)
+    tre_total = db.session.query(
+        func.coalesce(func.sum(
+            case(
+                (TRE.status == "deferida",
+                 case(
+                     (TRE.dias_validados != None, TRE.dias_validados),
+                     else_=TRE.dias_folga
+                 )),
+                else_=0
+            )
+        ), 0)
+    ).filter(TRE.funcionario_id == usuario_id).scalar()
+
+    # 2) Usufruídas (quantos agendamentos de TRE foram deferidos)
+    tre_usufruidas = db.session.query(
+        func.count(Agendamento.id)
+    ).filter(
+        Agendamento.funcionario_id == usuario_id,
+        Agendamento.motivo == "TRE",
+        Agendamento.status == "deferido"
+    ).scalar()
+
+    # 3) Restantes (saldo = deferidos - usados)
+    tre_restantes = max((tre_total or 0) - (tre_usufruidas or 0), 0)
+
+    # Atualiza o usuário
+    usuario.tre_total = tre_total or 0
+    usuario.tre_usufruidas = tre_usufruidas or 0
+    db.session.commit()
+
+    return usuario.tre_total, usuario.tre_usufruidas, tre_restantes
 
 # =============================
 # Rota: Adicionar TRE (usuário)
@@ -1705,7 +1761,7 @@ def adicionar_tre():
         os.makedirs(save_path, exist_ok=True)
         arquivo.save(os.path.join(save_path, filename))
 
-        # Cria registro pendente (NÃO altera user.tre_total aqui)
+        # Cria registro pendente
         nova = TRE(
             funcionario_id=current_user.id,
             dias_folga=dias_folga,
@@ -1715,10 +1771,12 @@ def adicionar_tre():
         db.session.add(nova)
         db.session.commit()
 
+        # Sincroniza usuário
+        sync_tre_user(current_user.id)
+
         flash("TRE enviada para análise do administrador.", "success")
         return redirect(url_for("historico"))
 
-    # Opcional: mostrar últimas 3
     tres_ultimas = (TRE.query.filter_by(funcionario_id=current_user.id)
                     .order_by(TRE.data_envio.desc()).limit(3).all())
     return render_template("adicionar_tre.html", user=current_user, tres=tres_ultimas)
@@ -1734,6 +1792,10 @@ def minhas_tres():
                    .filter_by(funcionario_id=current_user.id)
                    .order_by(TRE.data_envio.desc())
                    .all())
+
+    # Sincroniza antes de exibir
+    sync_tre_user(current_user.id)
+
     return render_template("minhas_tres.html", tres=minhas_tres, user=current_user)
 
 
@@ -1745,7 +1807,6 @@ def minhas_tres():
 def download_tre(tre_id):
     tre = TRE.query.get_or_404(tre_id)
 
-    # Só o dono ou administrador pode baixar
     if tre.funcionario_id != current_user.id and current_user.tipo != "administrador":
         flash("Você não tem permissão para acessar este arquivo.", "danger")
         return redirect(url_for("minhas_tres"))
@@ -1781,9 +1842,6 @@ def admin_tres_list():
 
 # =============================
 # ADMIN: Decidir (deferir/indeferir) TRE
-#   Idempotente: só permite decisão se ainda estiver "pendente".
-#   - Aprovar: define status, dias_validados e soma no tre_total do usuário.
-#   - Indeferir: define status/parecer e não soma.
 # =============================
 @app.route("/admin/tre/<int:tre_id>/decidir", methods=["POST"])
 @login_required
@@ -1801,23 +1859,19 @@ def admin_tre_decidir(tre_id):
     if acao not in ("aprovar", "indeferir"):
         return jsonify({"error": "Ação inválida."}), 400
 
-    # Evita decisões duplicadas
     if tre.status in ("deferida", "indeferida"):
         return jsonify({"error": "Esta TRE já foi analisada."}), 400
 
     if acao == "aprovar":
         dias_aprovados = dias_validados if (dias_validados and dias_validados > 0) else tre.dias_folga
-        # Guarda decisão
         tre.status = "deferida"
         tre.dias_validados = dias_aprovados
         tre.parecer_admin = parecer or None
         tre.validado_em = datetime.datetime.utcnow()
         tre.validado_por_id = current_user.id
 
-        # Ajusta saldo do usuário somente agora
-        user.tre_total = int(user.tre_total or 0) + int(dias_aprovados)
-
         db.session.commit()
+        sync_tre_user(user.id)
         return jsonify({"success": True, "message": f"TRE deferida (+{dias_aprovados} dia(s))."})
 
     else:
@@ -1828,16 +1882,12 @@ def admin_tre_decidir(tre_id):
         tre.validado_por_id = current_user.id
 
         db.session.commit()
+        sync_tre_user(user.id)
         return jsonify({"success": True, "message": "TRE indeferida."})
 
 
 # =============================
-# ADMIN: Excluir TRE (qualquer status)
-#   - Permite excluir mesmo que esteja deferida.
-#   - Se estiver 'deferida', estorna do tre_total do usuário
-#     a quantidade validada (ou dias_folga como fallback).
-#   - Remove o PDF do disco se existir.
-#   - Retorna JSON {success: True} para a UI.
+# ADMIN: Excluir TRE
 # =============================
 @app.route("/admin/tre/<int:tre_id>/excluir", methods=["POST"])
 @login_required
@@ -1849,29 +1899,14 @@ def admin_tre_excluir(tre_id):
     user = User.query.get_or_404(tre.funcionario_id)
 
     try:
-        # Se estava deferida, estorna do saldo
-        if tre.status == "deferida":
-            dias_creditados = tre.dias_validados if tre.dias_validados is not None else tre.dias_folga
-            try:
-                user.tre_total = max(0, int(user.tre_total or 0) - int(dias_creditados or 0))
-            except Exception:
-                # Se algo vier estranho, garante que não quebra
-                user.tre_total = max(0, int(user.tre_total or 0))
-
-        # Remove o arquivo físico (se existir)
-        if tre.arquivo_pdf:
-            file_path = os.path.join(app.root_path, UPLOAD_FOLDER, tre.arquivo_pdf)
-            try:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-            except Exception:
-                # falha ao apagar arquivo não impede a exclusão do registro
-                pass
-
         db.session.delete(tre)
         db.session.commit()
+
+        # Sincroniza saldo do usuário após exclusão
+        sync_tre_user(user.id)
+
         return jsonify({"success": True})
-    except Exception as e:
+    except Exception:
         db.session.rollback()
         return jsonify({"error": "Falha ao excluir a TRE."}), 500
 
