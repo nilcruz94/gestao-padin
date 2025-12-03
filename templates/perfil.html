@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meu Perfil</title>
+
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
@@ -11,368 +12,591 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
 
   <style>
+    :root{
+      --bg:#f3f4f6;
+      --ink:#0f172a;
+      --muted:#6b7280;
+      --brand:#0d6efd;
+      --brand-soft:#e0edff;
+      --border-soft:#e5e7eb;
+      --card-shadow:0 14px 34px rgba(15,23,42,.08), 0 2px 4px rgba(15,23,42,.05);
+      --radius:18px;
+    }
+
+    *, *::before, *::after{
+      box-sizing:border-box;
+    }
+
     html, body {
       margin: 0;
       padding: 0;
-      font-family: 'Montserrat', sans-serif;
       height: 100%;
-      overflow-y: auto;
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--bg);
     }
 
-    /* ---------------- DESKTOP ----------------- */
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      overflow-y: auto;
+      color: var(--ink);
+    }
+
+    main {
+      flex: 1 0 auto;
+      padding: 24px 12px 70px;
+      box-sizing: border-box;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
     @media (min-width: 769px) {
-      body {
-        display: block;
-        min-height: 100vh;
-      }
-
-      .header-desktop {
-        display: flex;
-        background-color: #007bff;
-        padding: 15px 30px;
-        width: 100%;
-        align-items: center;
-        justify-content: space-between;
-        box-sizing: border-box;
-        min-height: 110px;
-        position: relative;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        color: white;
-        z-index: 1000;
-      }
-
-      .header-mobile {
-        display: none;
-      }
-
       main {
-        padding: 15px;
-        margin-top: 130px;
-        margin-bottom: 140px; /* margem maior entre conteúdo e rodapé */
-        box-sizing: border-box;
-        min-height: calc(100vh - 220px);
+        padding: 30px 24px 90px;
+      }
+    }
+
+    /* ===== HEADER PADRÃO ===== */
+    .header-desktop, .header-mobile { display:none; }
+
+    /* Desktop */
+    @media (min-width: 769px) {
+      .header-desktop {
+        display:flex;
+        background-color:#007bff;
+        padding:15px 30px;
+        width:100%;
+        align-items:center;
+        justify-content:space-between;
+        box-sizing:border-box;
+        min-height:110px;
+        position:relative;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);
+        color:#fff;
       }
 
-      footer {
-        position: relative;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: linear-gradient(to right, #222, #444);
-        color: #ddd;
-        text-align: center;
-        padding: 15px 0;
-        font-size: 14px;
-        border-top: 2px solid #555;
-        font-family: 'Montserrat', sans-serif;
-        z-index: 10000;
-        margin-top: 30px;
-      }
+      .header-mobile { display:none; }
 
       .left-section {
-        display: flex;
-        align-items: center;
-        gap: 20px;
+        display:flex;
+        align-items:center;
+        gap:20px;
       }
 
       .logo {
-        width: 80px;
-        height: 80px;
-        object-fit: contain;
-        border-radius: 10px;
-        background-color: white;
-        padding: 6px;
+        width:80px;
+        height:80px;
+        object-fit:contain;
+        border-radius:10px;
+        background-color:#fff;
+        padding:6px;
       }
 
       .text-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        text-align: left;
-        color: white;
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        text-align:left;
+        color:#fff;
       }
 
       .escola-nome {
-        font-family: 'Montserrat', sans-serif;
-        font-weight: 700;
-        font-size: 1.6rem;
-        margin: 0;
-        line-height: 1.1;
+        font-weight:700;
+        font-size:1.6rem;
+        margin:0;
+        line-height:1.1;
       }
 
       .escola-subtitulo {
-        font-family: 'Montserrat', sans-serif;
-        font-weight: 600;
-        font-size: 1.1rem;
-        margin-top: 4px;
+        font-weight:600;
+        font-size:1.1rem;
+        margin-top:4px;
       }
 
       .header-center-text-container {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        user-select: none;
-        z-index: 1;
+        position:absolute;
+        left:50%;
+        top:50%;
+        transform:translate(-50%,-50%);
+        display:flex;
+        align-items:center;
+        gap:20px;
+        user-select:none;
+        z-index:1;
       }
 
       .header-center-text {
-        font-family: 'Montserrat', sans-serif;
-        font-weight: 800;
-        font-size: 1.9rem;
-        color: white;
-        letter-spacing: 5px;
-        white-space: nowrap;
-        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        font-weight:800;
+        font-size:1.9rem;
+        color:#fff;
+        letter-spacing:5px;
+        white-space:nowrap;
+        text-shadow:0 2px 5px rgba(0,0,0,0.3);
       }
 
       .btn-home {
-        background-color: #0fb300;
-        color: white;
-        padding: 6px 14px;
-        border-radius: 6px;
-        font-weight: 700;
-        font-size: 1.5rem;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-        transition: background-color 0.3s ease;
-        position: absolute;
-        right: 30px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 2;
+        background-color:#0fb300;
+        color:#fff;
+        padding:6px 14px;
+        border-radius:6px;
+        font-weight:700;
+        font-size:1.5rem;
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        gap:8px;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);
+        transition:background-color 0.3s ease;
+        position:absolute;
+        right:30px;
+        top:50%;
+        transform:translateY(-50%);
+        z-index:2;
       }
 
-      .btn-home:hover {
-        background-color: #0d8a00;
-      }
+      .btn-home:hover { background-color:#0d8a00; }
     }
 
-    /* ---------------- MOBILE ----------------- */
+    /* Mobile */
     @media (max-width: 768px) {
-      body {
-        overflow-y: auto;
-        min-height: 100vh;
-        
-      }
-
-      .header-desktop {
-        display: none;
-      }
+      .header-desktop { display:none; }
 
       .header-mobile {
-        width: 100%;
-        box-sizing: border-box;
-        color: white;
-        top: 0;
-        z-index: 10000;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        background-color: #007bff;
-        flex-shrink: 0;
+        display:block;
+        width:100%;
+        box-sizing:border-box;
+        color:#fff;
+        top:0;
+        z-index:1000;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);
+        background-color:#007bff;
       }
 
       .header-top {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 15px;
-        padding: 10px 15px;
-        background-color: #007bff;
-        text-align: center;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:15px;
+        padding:10px 15px;
+        background-color:#007bff;
+        text-align:center;
       }
 
       .logo {
-        width: 48px;
-        height: 48px;
-        object-fit: contain;
-        border-radius: 10px;
-        background-color: white;
-        padding: 6px;
+        width:48px;
+        height:48px;
+        object-fit:contain;
+        border-radius:10px;
+        background-color:#fff;
+        padding:6px;
       }
 
       .text-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        color: white;
-        text-align: center;
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        color:#fff;
+        text-align:center;
       }
 
       .escola-nome {
-        font-family: 'Montserrat', sans-serif;
-        font-weight: 700;
-        font-size: 1.3rem;
-        margin: 0;
-        line-height: 1.1;
+        font-weight:700;
+        font-size:1.3rem;
+        margin:0;
+        line-height:1.1;
       }
 
       .escola-subtitulo {
-        font-family: 'Montserrat', sans-serif;
-        font-weight: 600;
-        font-size: 1rem;
-        margin-top: 2px;
+        font-weight:600;
+        font-size:1rem;
+        margin-top:2px;
       }
 
       .header-bottom {
-        background-color: #0056b3;
-        text-align: center;
-        padding: 12px 10px;
-        font-family: 'Montserrat', sans-serif;
-        font-weight: 800;
-        font-size: 1rem;
-        letter-spacing: 4px;
-        user-select: none;
-        color: white;
-        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 15px;
-        position: relative;
+        background-color:#0056b3;
+        text-align:center;
+        padding:12px 10px;
+        font-weight:800;
+        font-size:1rem;
+        letter-spacing:4px;
+        user-select:none;
+        color:#fff;
+        box-shadow:inset 0 -2px 5px rgba(0,0,0,0.2);
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        gap:15px;
+        position:relative;
+        white-space:nowrap;
       }
 
       .btn-home-mobile {
-        background-color: #0fb300;
-        color: white;
-        padding: 6px 10px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 1rem;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-        transition: background-color 0.3s ease;
+        background-color:#0fb300;
+        color:#fff;
+        padding:6px 10px;
+        border-radius:6px;
+        font-weight:600;
+        font-size:1rem;
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);
+        transition:background-color 0.3s ease;
       }
 
-      .btn-home-mobile:hover {
-        background-color: #0d8a00;
+      .btn-home-mobile:hover { background-color:#0d8a00; }
+    }
+
+    /* ===== HEADER DA PÁGINA ===== */
+    .page-header-card{
+      background:#ffffff;
+      border-radius:var(--radius);
+      padding:16px 18px;
+      margin-bottom:18px;
+      display:flex;
+      align-items:center;
+      gap:16px;
+      box-shadow:var(--card-shadow);
+      border-left:5px solid var(--brand);
+    }
+
+    .page-header-icon{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:42px;
+      height:42px;
+      border-radius:999px;
+      background:radial-gradient(circle at 30% 30%,#ffffff 0%,var(--brand-soft) 60%,#c7d9ff 100%);
+      box-shadow:0 4px 12px rgba(37,99,235,.45);
+      color:#2563eb;
+      flex-shrink:0;
+    }
+
+    .page-header-icon i{
+      font-size:22px;
+    }
+
+    .page-header-content{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .page-header-title{
+      font-size:1.2rem;
+      font-weight:800;
+      margin:0;
+      color:var(--ink);
+    }
+
+    .page-header-subtitle{
+      font-size:0.9rem;
+      margin:0;
+      color:var(--muted);
+    }
+
+    @media (max-width:600px){
+      .page-header-card{
+        padding:12px 14px;
+        margin-bottom:14px;
       }
-
-      main {
-        padding-top: 170px;
-        padding-bottom: 80px;
-        position: relative;
+      .page-header-title{
+        font-size:1.05rem;
       }
-
-      footer {
-        position: relative;
-        width: 100%;
-        background: linear-gradient(to right, #222, #444);
-        color: #ddd;
-        text-align: center;
-        padding: 15px 0;
-        font-size: 14px;
-        border-top: 2px solid #555;
-        box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
-        font-family: 'Poppins', sans-serif;
-        z-index: 10000;
-        margin-top: 30px;
+      .page-header-subtitle{
+        font-size:0.82rem;
       }
     }
 
-    /* Estilos do formulário */
-    .editable-field {
-      margin-bottom: 15px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: 600;
-      color: #007bff;
-    }
-
-    input[type="text"],
-    input[type="email"],
-    input[type="date"],
-    select {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 1rem;
-      font-family: 'Poppins', sans-serif;
-      box-sizing: border-box;
-      background-color: #f9f9f9;
-      transition: background-color 0.3s ease;
-    }
-
-    input:focus,
-    select:focus {
-      background-color: #fff;
-      border-color: #007bff;
-      outline: none;
-    }
-
-    input[disabled], input[readonly], select[readonly] {
-      background-color: #e9ecef;
-      color: #6c757d;
-      cursor: not-allowed;
-    }
-
-    .input-edit {
-      display: flex;
-      align-items: center;
-    }
-
-    .edit-icon {
-      margin-left: 8px;
-      cursor: pointer;
-      font-size: 1.2rem;
-      color: #007bff;
-    }
-
-    .locked {
-      cursor: not-allowed;
-    }
-
-    .submit-btn {
-      background-color: #007bff;
-      color: white;
-      border: none;
-      padding: 10px 18px;
-      font-size: 1.2rem;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      font-weight: 700;
-    }
-
-    .submit-btn:hover {
-      background-color: #0056b3;
-    }
-
+    /* ===== FLASHES ===== */
     ul.flashes {
-      list-style-type: none;
-      padding: 0;
-      margin-bottom: 20px;
+      list-style:none;
+      padding:0;
+      margin:0 0 14px 0;
+      max-width:900px;
     }
 
     ul.flashes li {
-      padding: 10px;
-      margin-bottom: 10px;
-      border-radius: 5px;
-      font-weight: 600;
+      padding:10px 14px;
+      margin-bottom:8px;
+      border-radius:12px;
+      font-weight:600;
+      font-size:0.9rem;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      box-shadow:0 3px 10px rgba(15,23,42,.08);
     }
 
     ul.flashes li.success {
-      background-color: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
+      background-color:#e8f7ee;
+      color:#065f46;
+      border:1px solid #b7ebc6;
     }
 
     ul.flashes li.error {
-      background-color: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
+      background-color:#fee2e2;
+      color:#991b1b;
+      border:1px solid #fecaca;
+    }
+
+    /* ===== CARD PERFIL ===== */
+    .perfil-card {
+      width:100%;
+      background:#ffffff;
+      border-radius:var(--radius);
+      box-shadow:var(--card-shadow);
+      padding:20px 18px 22px;
+      border:1px solid rgba(148,163,184,0.25);
+      box-sizing:border-box;
+      margin:0 auto 22px;
+    }
+
+    .perfil-top{
+      display:flex;
+      align-items:flex-start;
+      gap:16px;
+      margin-bottom:18px;
+    }
+
+    .perfil-avatar{
+      width:56px;
+      height:56px;
+      border-radius:999px;
+      background:linear-gradient(135deg,#0d6efd,#2563eb);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#fff;
+      font-size:26px;
+      font-weight:800;
+      box-shadow:0 10px 25px rgba(37,99,235,.6);
+      flex-shrink:0;
+    }
+
+    .perfil-top-text{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .perfil-nome{
+      margin:0;
+      font-size:1.15rem;
+      font-weight:800;
+      color:var(--ink);
+    }
+
+    .perfil-texto{
+      margin:0;
+      font-size:0.9rem;
+      color:var(--muted);
+    }
+
+    .perfil-chips{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:8px;
+    }
+
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:0.35rem 0.7rem;
+      border-radius:999px;
+      font-weight:700;
+      font-size:0.82rem;
+      background:#eef2ff;
+      color:#1d4ed8;
+      border:1px solid #c7d2fe;
+    }
+
+    .chip i{
+      font-size:0.85rem;
+    }
+
+    @media (max-width:600px){
+      .perfil-card{
+        padding:16px 14px 20px;
+      }
+      .perfil-top{
+        gap:12px;
+      }
+      .perfil-nome{
+        font-size:1.05rem;
+      }
+      .perfil-texto{
+        font-size:0.82rem;
+      }
+    }
+
+    /* ===== FORM ===== */
+    .perfil-grid {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px 18px;
+    }
+
+    @media (max-width: 768px) {
+      .perfil-grid{
+        grid-template-columns:1fr;
+      }
+    }
+
+    .editable-field {
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .editable-field label {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-weight:600;
+      font-size:0.9rem;
+      color:#374151;
+    }
+
+    .editable-field label i {
+      color:#007bff;
+    }
+
+    .editable-field input[type="text"],
+    .editable-field input[type="email"],
+    .editable-field input[type="date"],
+    .editable-field select {
+      width:100%;
+      padding:9px 10px;
+      border:1px solid #d1d5db;
+      border-radius:8px;
+      font-size:0.9rem;
+      font-family:'Montserrat',sans-serif;
+      box-sizing:border-box;
+      background-color:#ffffff;
+      transition:border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+    }
+
+    .editable-field input:focus,
+    .editable-field select:focus {
+      border-color:#0d6efd;
+      box-shadow:0 0 0 2px rgba(13,110,253,0.15);
+      outline:none;
+      background-color:#ffffff;
+    }
+
+    /* campos bloqueados */
+    .editable-field input[disabled],
+    .editable-field input[readonly].locked {
+      background-color:#e5e7eb;
+      color:#4b5563;
+      cursor:not-allowed;
+      border-color:#d1d5db;
+      box-shadow:none;
+    }
+
+    .editable-field input[disabled]:focus,
+    .editable-field input[readonly].locked:focus {
+      border-color:#d1d5db;
+      box-shadow:none;
+      outline:none;
+    }
+
+    .input-edit {
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .input-edit input,
+    .input-edit select {
+      flex:1;
+    }
+
+    .edit-icon {
+      cursor:pointer;
+      font-size:1.1rem;
+      color:#007bff;
+      user-select:none;
+    }
+
+    .edit-icon:hover {
+      color:#0b5ed7;
+    }
+
+    /* Botão salvar */
+    .submit-row {
+      grid-column:1 / -1;
+      display:flex;
+      justify-content:flex-end;
+      margin-top:6px;
+    }
+
+    .submit-btn {
+      background:linear-gradient(135deg,#0d6efd,#0b5ed7);
+      border:none;
+      color:#fff;
+      font-weight:700;
+      border-radius:999px;
+      padding:9px 22px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      cursor:pointer;
+      box-shadow:0 8px 18px rgba(13,110,253,0.35);
+      transition:background-color 0.2s ease, box-shadow 0.2s ease;
+      font-size:0.95rem;
+      white-space:nowrap;
+    }
+
+    .submit-btn i {
+      font-size:1rem;
+    }
+
+    .submit-btn:hover {
+      background:#0fb300;
+      box-shadow:0 8px 18px rgba(15,179,0,0.45);
+    }
+
+    .submit-btn:active {
+      box-shadow:0 4px 10px rgba(15,179,0,0.35);
+    }
+
+    @media (max-width: 768px) {
+      .submit-row {
+        justify-content:stretch;
+      }
+      .submit-btn {
+        width:100%;
+      }
+    }
+
+    /* ===== FOOTER ===== */
+    footer {
+      background:linear-gradient(to right,#222,#444);
+      color:#ddd;
+      text-align:center;
+      padding:15px 0;
+      font-size:14px;
+      border-top:2px solid #555;
+      box-shadow:0px -2px 10px rgba(0,0,0,0.3);
+      width:100%;
+      flex-shrink:0;
+    }
+
+    footer p{
+      margin:5px 0;
+      font-size:0.9rem;
     }
   </style>
 </head>
@@ -412,147 +636,199 @@
     </div>
   </header>
 
-  <main class="container">
-    <h1>Meu Perfil</h1>
+  <main>
+    <div class="shell">
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <ul class="flashes">
-          {% for category, message in messages %}
-            <li class="{{ category }}">{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="flashes">
+            {% for category, message in messages %}
+              <li class="{{ category }}">
+                {% if category == 'success' %}
+                  <i class="fas fa-check-circle"></i>
+                {% elif category == 'error' %}
+                  <i class="fas fa-exclamation-circle"></i>
+                {% endif %}
+                {{ message }}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
 
-    <form method="POST" action="{{ url_for('perfil') }}" id="perfil-form">
-      <!-- Campo Nome -->
-      <div class="editable-field">
-        <label for="nome"><i class="fas fa-user icon-blue"></i> Nome:</label>
-        <input type="text" id="nome" name="nome" value="{{ usuario.nome }}" disabled>
-      </div>
-
-      <!-- Campo Registro -->
-      <div class="editable-field">
-        <label for="registro"><i class="fas fa-id-badge icon-blue"></i> Registro:</label>
-        <input type="text" id="registro" name="registro" value="{{ usuario.registro }}" disabled>
-      </div>
-
-      <!-- Campo Email -->
-      <div class="editable-field">
-        <label for="email"><i class="fas fa-envelope icon-blue"></i> Email:</label>
-        <input type="email" id="email" name="email" value="{{ usuario.email }}" disabled>
-      </div>
-
-      <!-- Campo Cargo (alterado para select) -->
-      <div class="editable-field">
-        <label for="cargo"><i class="fas fa-briefcase icon-blue"></i> Cargo:</label>
-        <select id="cargo" name="cargo" required>
-          <option value="">Selecione o cargo</option>
-          {% for c in cargos %}
-            <option value="{{ c }}" {% if usuario.cargo == c %}selected{% endif %}>{{ c }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <!-- Campo Celular -->
-      <div class="editable-field">
-        <label for="celular"><i class="fas fa-mobile-alt icon-blue"></i> Celular:</label>
-        <div class="input-edit">
-          <input type="text" id="celular" name="celular" value="{{ usuario.celular or '' }}" readonly class="locked">
-          <span class="edit-icon" onclick="editField('celular', this)">✏️</span>
+      <!-- Cabeçalho da página -->
+      <div class="page-header-card">
+        <div class="page-header-icon">
+          <i class="fas fa-user-circle"></i>
+        </div>
+        <div class="page-header-content">
+          <p class="page-header-title">Meu Perfil</p>
+          <p class="page-header-subtitle">
+            Consulte e atualize seus dados pessoais e de contato cadastrados no Portal do Servidor.
+          </p>
         </div>
       </div>
 
-      <!-- Campo Data de Nascimento -->
-      <div class="editable-field">
-        <label for="data_nascimento"><i class="fas fa-birthday-cake icon-blue"></i> Data de Nascimento:</label>
-        <div class="input-edit">
-          <input type="date" id="data_nascimento" name="data_nascimento" value="{{ usuario.data_nascimento }}" readonly class="locked">
-          <span class="edit-icon" onclick="editField('data_nascimento', this)">✏️</span>
+      <!-- Card principal -->
+      <div class="perfil-card">
+        <div class="perfil-top">
+          <div class="perfil-avatar">
+            {{ usuario.nome[:1] if usuario.nome else 'U' }}
+          </div>
+          <div class="perfil-top-text">
+            <p class="perfil-nome">{{ usuario.nome }}</p>
+            <p class="perfil-texto">
+              Revise seus dados abaixo. Campos com ícone de lápis podem ser editados e salvos.
+            </p>
+            <div class="perfil-chips">
+              <span class="chip">
+                <i class="fas fa-id-badge"></i>
+                Registro: {{ usuario.registro }}
+              </span>
+              <span class="chip">
+                <i class="fas fa-briefcase"></i>
+                Cargo: {{ usuario.cargo or 'Não informado' }}
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <!-- Campo CPF -->
-      <div class="editable-field">
-        <label for="cpf"><i class="fas fa-id-card icon-blue"></i> CPF:</label>
-        <div class="input-edit">
-          <input type="text" id="cpf" name="cpf" value="{{ usuario.cpf or '' }}" readonly class="locked">
-          <span class="edit-icon" onclick="editField('cpf', this)">✏️</span>
-        </div>
-      </div>
+        <form method="POST" action="{{ url_for('perfil') }}" id="perfil-form">
+          <div class="perfil-grid">
 
-      <!-- Campo RG -->
-      <div class="editable-field">
-        <label for="rg"><i class="fas fa-id-card icon-blue"></i> RG:</label>
-        <div class="input-edit">
-          <input type="text" id="rg" name="rg" value="{{ usuario.rg or '' }}" readonly class="locked">
-          <span class="edit-icon" onclick="editField('rg', this)">✏️</span>
-        </div>
-      </div>
+            <!-- Nome -->
+            <div class="editable-field">
+              <label for="nome"><i class="fas fa-user"></i> Nome</label>
+              <input type="text" id="nome" name="nome" value="{{ usuario.nome }}" disabled>
+            </div>
 
-      <!-- Campo Data de Emissão do RG -->
-      <div class="editable-field">
-        <label for="data_emissao_rg"><i class="fas fa-calendar-alt icon-blue"></i> Data de Emissão do RG:</label>
-        <div class="input-edit">
-          <input type="date" id="data_emissao_rg" name="data_emissao_rg" value="{{ usuario.data_emissao_rg }}" readonly class="locked">
-          <span class="edit-icon" onclick="editField('data_emissao_rg', this)">✏️</span>
-        </div>
-      </div>
+            <!-- Registro -->
+            <div class="editable-field">
+              <label for="registro"><i class="fas fa-id-badge"></i> Registro</label>
+              <input type="text" id="registro" name="registro" value="{{ usuario.registro }}" disabled>
+            </div>
 
-      <!-- Campo Órgão Emissor -->
-      <div class="editable-field">
-        <label for="orgao_emissor"><i class="fas fa-university icon-blue"></i> Órgão Emissor:</label>
-        <div class="input-edit">
-          <input type="text" id="orgao_emissor" name="orgao_emissor" value="{{ usuario.orgao_emissor }}" readonly class="locked">
-          <span class="edit-icon" onclick="editField('orgao_emissor', this)">✏️</span>
-        </div>
-      </div>
+            <!-- Email -->
+            <div class="editable-field">
+              <label for="email"><i class="fas fa-envelope"></i> Email</label>
+              <input type="email" id="email" name="email" value="{{ usuario.email }}" disabled>
+            </div>
 
-      <!-- Campo Graduação -->
-      <div class="editable-field">
-        <label for="graduacao"><i class="fas fa-graduation-cap icon-blue"></i> Graduação:</label>
-        <div class="input-edit">
-          <select id="graduacao" name="graduacao">
-            <option value="">Selecione sua graduação</option>
-            <option value="Técnico" {% if usuario.graduacao == 'Técnico' %}selected{% endif %}>Técnico</option>
-            <option value="Tecnólogo" {% if usuario.graduacao == 'Tecnólogo' %}selected{% endif %}>Tecnólogo</option>
-            <option value="Licenciatura" {% if usuario.graduacao == 'Licenciatura' %}selected{% endif %}>Licenciatura</option>
-            <option value="Pós Graduação Latu Sensu" {% if usuario.graduacao == 'Pós Graduação Latu Sensu' %}selected{% endif %}>Pós Graduação Latu Sensu</option>
-            <option value="Pós Graduação Stricto Sensu" {% if usuario.graduacao == 'Pós Graduação Stricto Sensu' %}selected{% endif %}>Pós Graduação Stricto Sensu</option>
-            <option value="Mestrado" {% if usuario.graduacao == 'Mestrado' %}selected{% endif %}>Mestrado</option>
-            <option value="Doutorado" {% if usuario.graduacao == 'Doutorado' %}selected{% endif %}>Doutorado</option>
-          </select>
-        </div>
-      </div>
+            <!-- Cargo -->
+            <div class="editable-field">
+              <label for="cargo"><i class="fas fa-briefcase"></i> Cargo</label>
+              <select id="cargo" name="cargo" required>
+                <option value="">Selecione o cargo</option>
+                {% for c in cargos %}
+                  <option value="{{ c }}" {% if usuario.cargo == c %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
 
-      <button type="submit" class="submit-btn">Salvar Alterações</button>
-    </form>
+            <!-- Celular -->
+            <div class="editable-field">
+              <label for="celular"><i class="fas fa-mobile-alt"></i> Celular</label>
+              <div class="input-edit">
+                <input type="text" id="celular" name="celular" value="{{ usuario.celular or '' }}" readonly class="locked">
+                <span class="edit-icon" onclick="editField('celular', this)">✏️</span>
+              </div>
+            </div>
+
+            <!-- Data de nascimento -->
+            <div class="editable-field">
+              <label for="data_nascimento"><i class="fas fa-birthday-cake"></i> Data de Nascimento</label>
+              <div class="input-edit">
+                <input type="date" id="data_nascimento" name="data_nascimento" value="{{ usuario.data_nascimento }}" readonly class="locked">
+                <span class="edit-icon" onclick="editField('data_nascimento', this)">✏️</span>
+              </div>
+            </div>
+
+            <!-- CPF -->
+            <div class="editable-field">
+              <label for="cpf"><i class="fas fa-id-card"></i> CPF</label>
+              <div class="input-edit">
+                <input type="text" id="cpf" name="cpf" value="{{ usuario.cpf or '' }}" readonly class="locked">
+                <span class="edit-icon" onclick="editField('cpf', this)">✏️</span>
+              </div>
+            </div>
+
+            <!-- RG -->
+            <div class="editable-field">
+              <label for="rg"><i class="fas fa-id-card-alt"></i> RG</label>
+              <div class="input-edit">
+                <input type="text" id="rg" name="rg" value="{{ usuario.rg or '' }}" readonly class="locked">
+                <span class="edit-icon" onclick="editField('rg', this)">✏️</span>
+              </div>
+            </div>
+
+            <!-- Data emissão RG -->
+            <div class="editable-field">
+              <label for="data_emissao_rg"><i class="fas fa-calendar-alt"></i> Data de Emissão do RG</label>
+              <div class="input-edit">
+                <input type="date" id="data_emissao_rg" name="data_emissao_rg" value="{{ usuario.data_emissao_rg }}" readonly class="locked">
+                <span class="edit-icon" onclick="editField('data_emissao_rg', this)">✏️</span>
+              </div>
+            </div>
+
+            <!-- Órgão emissor -->
+            <div class="editable-field">
+              <label for="orgao_emissor"><i class="fas fa-university"></i> Órgão Emissor</label>
+              <div class="input-edit">
+                <input type="text" id="orgao_emissor" name="orgao_emissor" value="{{ usuario.orgao_emissor }}" readonly class="locked">
+                <span class="edit-icon" onclick="editField('orgao_emissor', this)">✏️</span>
+              </div>
+            </div>
+
+            <!-- Graduação -->
+            <div class="editable-field">
+              <label for="graduacao"><i class="fas fa-graduation-cap"></i> Graduação</label>
+              <div class="input-edit">
+                <select id="graduacao" name="graduacao">
+                  <option value="">Selecione sua graduação</option>
+                  <option value="Técnico" {% if usuario.graduacao == 'Técnico' %}selected{% endif %}>Técnico</option>
+                  <option value="Tecnólogo" {% if usuario.graduacao == 'Tecnólogo' %}selected{% endif %}>Tecnólogo</option>
+                  <option value="Licenciatura" {% if usuario.graduacao == 'Licenciatura' %}selected{% endif %}>Licenciatura</option>
+                  <option value="Pós Graduação Latu Sensu" {% if usuario.graduacao == 'Pós Graduação Latu Sensu' %}selected{% endif %}>Pós Graduação Latu Sensu</option>
+                  <option value="Pós Graduação Stricto Sensu" {% if usuario.graduacao == 'Pós Graduação Stricto Sensu' %}selected{% endif %}>Pós Graduação Stricto Sensu</option>
+                  <option value="Mestrado" {% if usuario.graduacao == 'Mestrado' %}selected{% endif %}>Mestrado</option>
+                  <option value="Doutorado" {% if usuario.graduacao == 'Doutorado' %}selected{% endif %}>Doutorado</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="submit-row">
+              <button type="submit" class="submit-btn">
+                <i class="fas fa-save"></i> Salvar Alterações
+              </button>
+            </div>
+
+          </div>
+        </form>
+      </div>
+    </div>
   </main>
 
   <footer>
-    &copy; 2025 Escola Municipal José Padin Mouta - Todos os direitos reservados.
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
   </footer>
 
   <script>
-    // Função para alternar entre readonly e editável
+    // Alterna readonly <-> editável
     function editField(fieldId, iconElement) {
       const field = document.getElementById(fieldId);
       if (field.hasAttribute('readonly') || field.hasAttribute('disabled')) {
         field.removeAttribute('readonly');
         field.removeAttribute('disabled');
         field.classList.remove('locked');
-        iconElement.textContent = '💾'; // Mudar para ícone de salvar
+        iconElement.textContent = '💾'; // salvar
       } else {
-        // Se for select, não usar readonly, usar disabled (caso queira bloquear)
         field.setAttribute('readonly', 'readonly');
-        field.setAttribute('disabled', 'disabled');
         field.classList.add('locked');
-        iconElement.textContent = '✏️'; // Mudar para ícone de editar
+        iconElement.textContent = '✏️'; // editar
       }
     }
 
-    // Aplicar máscaras nos campos ao carregar
+    // Máscaras
     $(document).ready(function () {
       $('#cpf').inputmask('999.999.999-99');
       $('#celular').inputmask('(99) 99999-9999');

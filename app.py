@@ -1,16 +1,44 @@
-from flask import Flask, session, render_template, redirect, url_for, request, flash, make_response, abort, jsonify, send_from_directory
+from flask import (
+    Flask,
+    session,
+    render_template,
+    redirect,
+    url_for,
+    request,
+    flash,
+    make_response,
+    abort,
+    jsonify,
+    send_from_directory,
+    send_file,
+    current_app,
+)
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_login import (
+    LoginManager,
+    UserMixin,
+    login_user,
+    login_required,
+    logout_user,
+    current_user,
+)
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-import calendar
-import datetime   # Mantém o módulo inteiro
-from datetime import timedelta  # Importa só o timedelta
 import os
+import io
 import smtplib
+import calendar
+import datetime          # datetime.date, datetime.datetime etc.
+from datetime import timedelta, date
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from sqlalchemy import func, or_, case
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import cm, mm   # << agora tem cm e mm
+from reportlab.lib import colors
+
 
 # ===========================================
 # Configuração principal do app
@@ -45,9 +73,15 @@ login_manager.login_view = "login"
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 SMTP_USER = "nilcr94@gmail.com"
-SMTP_PASS = "xboztvmzwskygzzh"   # 🔒 Melhor usar variável de ambiente depois!
+SMTP_PASS = "xboztvmzwskygzzh"   # 🔒 Ideal: usar variável de ambiente!
 
-# Modelo User (Funcionario e Administrador)
+VERSAO_ATUAL_TERMO = '2025-07-25'  # Versão usada no login
+CURRENT_TERMO = "2025-07-25"       # Versão usada nas rotas de termo
+
+
+# ===========================================
+# MODELOS
+# ===========================================
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(150), nullable=False)
@@ -56,54 +90,56 @@ class User(UserMixin, db.Model):
     senha = db.Column(db.String(256), nullable=False)
     tipo = db.Column(db.String(20), nullable=False)  # 'funcionario' ou 'administrador'
     status = db.Column(db.String(20), default='pendente')  # 'pendente', 'aprovado', 'rejeitado'
-    # Adicionando os campos para TRE
-    tre_total = db.Column(db.Integer, default=0)  # TREs a usufruir
-    tre_usufruidas = db.Column(db.Integer, default=0)  # TREs já utilizadas
-    cargo = db.Column(db.String(100), nullable=True)  # Este campo pode ser preenchido depois
-    
+
+    # Controle de ativo na unidade (soft delete)
+    ativo = db.Column(db.Boolean, nullable=False, default=True, index=True)
+
+    # Campos para TRE
+    tre_total = db.Column(db.Integer, default=0)         # Total de dias de TRE deferidos (créditos)
+    tre_usufruidas = db.Column(db.Integer, default=0)    # Dias de TRE já utilizados (agendamentos deferidos)
+    cargo = db.Column(db.String(100), nullable=True)
+
     # Banco de horas em minutos
     banco_horas = db.Column(db.Integer, default=0, nullable=False)
 
-    # Novos campos
-    celular = db.Column(db.String(20), nullable=True)  # Aceita formato internacional +55 11 99999-9999
-    data_nascimento = db.Column(db.Date, nullable=True)  # Armazena a data de nascimento
+    # Contato/pessoais
+    celular = db.Column(db.String(20), nullable=True)
+    data_nascimento = db.Column(db.Date, nullable=True)
 
-    # Novos campos
-    cpf = db.Column(db.String(14), nullable=False, unique=True)  # Exemplo: 123.456.789-00
-    rg = db.Column(db.String(20), nullable=False, unique=True)  # Exemplo: 12.345.678-9 ou MG-12.345.678
+    # Documentos
+    cpf = db.Column(db.String(14), nullable=False, unique=True)
+    rg = db.Column(db.String(20), nullable=False, unique=True)
     data_emissao_rg = db.Column(db.Date, nullable=True)
-    orgao_emissor = db.Column(db.String(20), nullable=True)  # Exemplo: SSP-SP, DETRAN, etc.
+    orgao_emissor = db.Column(db.String(20), nullable=True)
 
-    # Graduação diretamente como String
-    graduacao = db.Column(db.String(50), nullable=True)  # Ex: 'Técnico', 'Mestrado', 'Doutorado'
+    graduacao = db.Column(db.String(50), nullable=True)
+
     # Termos
     aceitou_termo = db.Column(db.Boolean, default=False)
     versao_termo = db.Column(db.String(20), default=None)  # Ex: '2025-07-25'
 
-    # Relacionamento com Agendamento
+    # Relacionamentos
     agendamentos = db.relationship('Agendamento', backref='user_funcionario', lazy=True)
 
 class Agendamento(db.Model):
     __tablename__ = 'agendamento'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     status = db.Column(db.String(50), nullable=False)
     data = db.Column(db.Date, nullable=False)
     motivo = db.Column(db.String(100), nullable=False)
-    tipo_folga = db.Column(db.String(50)) 
-    data_referencia = db.Column(db.Date) 
-    horas = db.Column(db.Integer, nullable=True) 
-    minutos = db.Column(db.Integer, nullable=True) 
-    substituicao = db.Column(db.String(3), nullable=False, default="Não")  
-    nome_substituto = db.Column(db.String(255), nullable=True)  
-    # Novo campo
+    tipo_folga = db.Column(db.String(50))
+    data_referencia = db.Column(db.Date)
+    horas = db.Column(db.Integer, nullable=True)
+    minutos = db.Column(db.Integer, nullable=True)
+    substituicao = db.Column(db.String(3), nullable=False, default="Não")
+    nome_substituto = db.Column(db.String(255), nullable=True)
     conferido = db.Column(db.Boolean, default=False)
 
-    # Relacionamento com o modelo User
     funcionario = db.relationship('User', backref='agendamentos_funcionario', lazy=True)
 
-# Modelo de Folga (relacionamento com User)
+
 class Folga(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -112,23 +148,24 @@ class Folga(db.Model):
     status = db.Column(db.String(50), default="Pendente")  # "Pendente", "Deferida"
     funcionario = db.relationship('User', backref=db.backref('folgas', lazy=True))
 
-# Modelo de Banco de Horas (relacionamento com User)
+
 class BancoDeHoras(db.Model):
     __tablename__ = 'banco_de_horas'
 
     id = db.Column(db.Integer, primary_key=True)
     funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    horas = db.Column(db.Integer, nullable=False)  
-    minutos = db.Column(db.Integer, nullable=False)  
-    total_minutos = db.Column(db.Integer, default=0)  
+    horas = db.Column(db.Integer, nullable=False)
+    minutos = db.Column(db.Integer, nullable=False)
+    total_minutos = db.Column(db.Integer, default=0)
     data_realizacao = db.Column(db.Date, nullable=False)
     status = db.Column(db.String(50), default="Horas a Serem Deferidas")
     data_criacao = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     data_atualizacao = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
     motivo = db.Column(db.String(40), nullable=True)
-    usufruido = db.Column(db.Boolean, default=False) 
+    usufruido = db.Column(db.Boolean, default=False)
 
     funcionario = db.relationship('User', backref='banco_de_horas')
+
 
 class EsquecimentoPonto(db.Model):
     __tablename__ = 'esquecimento_ponto'
@@ -143,15 +180,11 @@ class EsquecimentoPonto(db.Model):
     hora_segunda_saida = db.Column(db.Time, nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     conferido = db.Column(db.Boolean, default=False)
-
-    
     motivo = db.Column(db.Text, nullable=True)
 
     usuario = db.relationship('User', backref=db.backref('esquecimentos_ponto', lazy=True))
 
-# =========================
-# TRE (com workflow de aprovação)
-# =========================
+
 class TRE(db.Model):
     __tablename__ = 'tre'
 
@@ -165,19 +198,19 @@ class TRE(db.Model):
 
     # workflow de aprovação
     status = db.Column(db.String(20), default='pendente')  # 'pendente' | 'deferida' | 'indeferida'
-    dias_validados = db.Column(db.Integer, nullable=True)  # admin pode corrigir os dias
+    dias_validados = db.Column(db.Integer, nullable=True)
     parecer_admin = db.Column(db.Text, nullable=True)
     validado_em = db.Column(db.DateTime, nullable=True)
-    validado_por_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # admin
+    validado_por_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
 
-    # >>> RELACIONAMENTOS <<<
+    # Funcionário dono da TRE
     funcionario = db.relationship(
         'User',
         backref=db.backref('tres', lazy=True),
         foreign_keys=[funcionario_id],
         lazy=True
     )
-    # Quem validou (admin)
+    # Admin que validou
     validador = db.relationship(
         'User',
         backref=db.backref('tres_validadas', lazy=True),
@@ -185,38 +218,42 @@ class TRE(db.Model):
         lazy=True
     )
 
+
+# ===========================================
+# FUNÇÕES GERAIS
+# ===========================================
 def enviar_email(destinatario, assunto, mensagem_html, mensagem_texto=None):
-        """
-        Envia um e-mail com mensagem HTML. Opcionalmente, pode incluir uma alternativa em texto puro.
-        """
-        msg = MIMEMultipart("alternative")
-        msg['From'] = SMTP_USER
-        msg['To'] = destinatario
-        msg['Subject'] = assunto
+    """
+    Envia um e-mail com mensagem HTML. Opcionalmente, pode incluir texto puro.
+    """
+    msg = MIMEMultipart("alternative")
+    msg['From'] = SMTP_USER
+    msg['To'] = destinatario
+    msg['Subject'] = assunto
 
-        # Se não fornecer a versão em texto, cria uma simples a partir do HTML
-        if not mensagem_texto:
-            mensagem_texto = "Por favor, visualize este e-mail em um cliente que suporte HTML."
+    if not mensagem_texto:
+        mensagem_texto = "Por favor, visualize este e-mail em um cliente que suporte HTML."
 
-        # Cria as partes do e-mail
-        parte_texto = MIMEText(mensagem_texto, 'plain')
-        parte_html = MIMEText(mensagem_html, 'html')
+    parte_texto = MIMEText(mensagem_texto, 'plain')
+    parte_html = MIMEText(mensagem_html, 'html')
 
-        msg.attach(parte_texto)
-        msg.attach(parte_html)
-        
-        try:
-            servidor = smtplib.SMTP( SMTP_SERVER, SMTP_PORT)
-            servidor.starttls()
-            servidor.login(SMTP_USER, SMTP_PASS)  
-            servidor.send_message(msg)
-            servidor.quit()
-            print("E-mail enviado com sucesso!")
-        except Exception as e:
-            print("Erro ao enviar e-mail:", e)
+    msg.attach(parte_texto)
+    msg.attach(parte_html)
 
-VERSAO_ATUAL_TERMO = '2025-07-25'  # Atualize aqui quando mudar o termo
+    try:
+        servidor = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        servidor.starttls()
+        servidor.login(SMTP_USER, SMTP_PASS)
+        servidor.send_message(msg)
+        servidor.quit()
+        print("E-mail enviado com sucesso!")
+    except Exception as e:
+        print("Erro ao enviar e-mail:", e)
 
+
+# ===========================================
+# AUTENTICAÇÃO / TERMO
+# ===========================================
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -244,7 +281,6 @@ def login():
 
     return render_template('login.html')
 
-CURRENT_TERMO = "2025-07-25"
 
 @app.route('/termo_uso', methods=['GET', 'POST'])
 @login_required
@@ -264,67 +300,64 @@ def termo_uso():
             logout_user()
             return redirect(url_for('login'))
 
-    # Se já aceitou a versão atual, redireciona para index
     if current_user.aceitou_termo and current_user.versao_termo == CURRENT_TERMO:
         return redirect(url_for('index'))
 
     return render_template('termo_uso.html', termo_versao=CURRENT_TERMO)
 
 
-CURRENT_TERMO = "2025-07-25"
-
 @app.route('/aceitar_termo', methods=['POST'])
 @login_required
 def aceitar_termo():
     current_user.aceitou_termo = True
     current_user.versao_termo = CURRENT_TERMO
-    # Se quiser salvar a data do aceite, pode criar e usar outro campo no modelo, ex: termo_aceite_data
     db.session.commit()
     flash('Termo de uso aceito com sucesso.', 'success')
     return redirect(url_for('index'))
 
 
-# Rota de Recuperar Senha
+# ===========================================
+# RECUPERAÇÃO DE SENHA
+# ===========================================
 @app.route('/recuperar_senha', methods=['GET', 'POST'])
 def recuperar_senha():
     if request.method == 'POST':
         email = request.form['email']
         registro = request.form['registro']
         usuario = User.query.filter_by(email=email, registro=registro).first()
-        
+
         if usuario:
-            session['user_id'] = usuario.id  # Armazena temporariamente o ID do usuário
+            session['user_id'] = usuario.id
             return redirect(url_for('redefinir_senha'))
         else:
             flash('Usuário não encontrado. Verifique os dados e tente novamente.', 'danger')
-    
+
     return render_template('recuperar_senha.html')
 
-# Rota de Redefinir Senha
+
 @app.route('/redefinir_senha', methods=['GET', 'POST'])
 def redefinir_senha():
     if 'user_id' not in session:
         flash('Acesso não autorizado.', 'danger')
         return redirect(url_for('recuperar_senha'))
-    
+
     if request.method == 'POST':
         nova_senha = request.form['nova_senha']
         confirmar_senha = request.form['confirmar_senha']
-        
+
         if nova_senha != confirmar_senha:
             flash('As senhas não coincidem. Tente novamente.', 'danger')
         else:
             usuario = User.query.get(session['user_id'])
-            # Utilizando generate_password_hash para gerar o hash da nova senha
             usuario.senha = generate_password_hash(nova_senha)
             db.session.commit()
-            session.pop('user_id', None)  # Remove o usuário da sessão após redefinir
+            session.pop('user_id', None)
             flash('Senha redefinida com sucesso! Faça login.', 'success')
             return redirect(url_for('login'))
-    
+
     return render_template('redefinir_senha.html')
 
-# Rota de Logout
+
 @app.route('/logout')
 @login_required
 def logout():
@@ -332,61 +365,71 @@ def logout():
     flash("Você saiu do sistema. Para acessá-lo, faça login novamente.", "success")
     return redirect(url_for('login'))
 
+
+# ===========================================
+# PÁGINA INICIAL
+# ===========================================
 @app.route('/index', methods=['GET', 'POST'])
 @login_required
 def index():
-    usuario = current_user  # Obtém o usuário logado
+    usuario = current_user
 
-    # Lista dos campos obrigatórios que precisam ser verificados
+    # Campos obrigatórios
     campos_obrigatorios = {
         "Celular": usuario.celular,
         "Data de Nascimento": usuario.data_nascimento,
         "CPF": usuario.cpf,
         "RG": usuario.rg,
-        "Cargo": usuario.cargo  # Verifica o campo cargo também
+        "Cargo": usuario.cargo
     }
 
-    # Filtra os campos obrigatórios que estão vazios
     campos_pendentes = [campo for campo, valor in campos_obrigatorios.items() if not valor]
 
-    # Se houver campos obrigatórios pendentes, redireciona para a página de preenchimento
     if campos_pendentes:
-        # Gera uma mensagem com os campos obrigatórios faltantes
         mensagem = f"""
             Atenção! Complete seu perfil. Os seguintes campos estão em branco: {', '.join(campos_pendentes)}.
             <a href="{url_for('informar_dados')}" class="link-perfil">Clique aqui para preenchê-los</a>.
         """
-        flash(mensagem, "warning")  # Flash message para mostrar a mensagem de alerta
-        return redirect(url_for('informar_dados'))  # Redireciona para a página de preencher os dados obrigatórios
+        flash(mensagem, "warning")
+        return redirect(url_for('informar_dados'))
 
-    # Lista dos campos opcionais que não são obrigatórios
+    # Campos opcionais
     campos_opcionais = {
         "Data de Emissão do RG": usuario.data_emissao_rg,
         "Órgão Emissor": usuario.orgao_emissor,
         "Graduação": usuario.graduacao,
     }
 
-    # Verifica se os campos opcionais estão vazios e exibe uma mensagem de aviso
     campos_faltantes_opcionais = [campo for campo, valor in campos_opcionais.items() if not valor]
 
-    # Se houver campos opcionais faltando, exibe uma mensagem
     if campos_faltantes_opcionais:
         mensagem_opcional = f"""
             Você pode completar seu perfil com os seguintes dados: {', '.join(campos_faltantes_opcionais)}.
             <a href="{url_for('perfil')}" class="link-perfil">Clique aqui para preenchê-los</a>.
         """
-        flash(mensagem_opcional, "info")  # Flash message para campos opcionais
+        flash(mensagem_opcional, "info")
 
     return render_template('index.html', usuario=usuario)
 
-# Rota Minhas Justificativas (Index)
+
+# ===========================================
+# MINHAS JUSTIFICATIVAS
+# ===========================================
 @app.route('/minhas_justificativas')
 @login_required
 def minhas_justificativas():
-    agendamentos = Agendamento.query.filter_by(funcionario_id=current_user.id).all()
-    print(f"Agendamentos: {agendamentos}")  # Adicione isso para verificar os dados
+    agendamentos = (
+        Agendamento.query
+        .filter_by(funcionario_id=current_user.id)
+        .order_by(Agendamento.data.desc(), Agendamento.id.desc())
+        .all()
+    )
     return render_template('minhas_justificativas.html', agendamentos=agendamentos)
 
+
+# ===========================================
+# AGENDAR FOLGA
+# ===========================================
 @app.route('/agendar', methods=['GET', 'POST'])
 @login_required
 def agendar():
@@ -394,53 +437,50 @@ def agendar():
         # 🔹 Mantém o saldo de TRE sempre correto antes de validar
         sync_tre_user(current_user.id)
 
-        tipo_folga       = request.form['tipo_folga']         # Código do motivo: 'AB', 'BH', 'DS', 'TRE', 'FS'
-        data_folga       = request.form['data']               # Data da folga
-        motivo           = request.form['motivo']             # Mesmo código acima
-        data_referencia  = request.form.get('data_referencia')# Para Banco de Horas
+        tipo_folga = request.form['tipo_folga']         # 'AB', 'BH', 'DS', 'TRE', 'FS'
+        data_folga = request.form['data']
+        motivo = request.form['motivo']
+        data_referencia = request.form.get('data_referencia')
 
-        substituicao     = request.form.get("havera_substituicao")  # "Sim" ou "Não"
-        nome_substituto  = request.form.get("nome_substituto")
+        substituicao = request.form.get("havera_substituicao")
+        nome_substituto = request.form.get("nome_substituto")
 
         if substituicao == "Não":
             nome_substituto = None
 
         if tipo_folga == 'AB':
-            motivo     = 'AB'
+            motivo = 'AB'
             tipo_folga = 'AB'
 
-        # Validação específica para TRE: verifica se tipo_folga ou motivo são "TRE"
+        # ---- Validação específica para TRE ----
         if tipo_folga == 'TRE' or motivo == 'TRE':
-            usuario = User.query.get(current_user.id)  # Buscar o usuário atualizado (já sincronizado)
-            # Saldo real
+            usuario = User.query.get(current_user.id)
             tre_total = int(usuario.tre_total or 0)
             tre_usuf = int(usuario.tre_usufruidas or 0)
             tre_restantes = max(tre_total - tre_usuf, 0)
 
-            # (Opcional, mas recomendado) Evitar "overbooking":
-            # Se já existem solicitações TRE em análise, desconta do saldo disponível para nova solicitação
             pedidos_abertos = (
                 Agendamento.query
                 .filter(
                     Agendamento.funcionario_id == current_user.id,
                     Agendamento.motivo == 'TRE',
-                    Agendamento.status.in_( ['em_espera', 'pendente'] )
+                    Agendamento.status.in_(['em_espera', 'pendente'])
                 )
                 .count()
             )
+
             saldo_disponivel_para_solicitar = tre_restantes - pedidos_abertos
 
             if saldo_disponivel_para_solicitar <= 0:
                 flash("Você não possui TREs disponíveis para agendar no momento.", "danger")
                 return render_template('agendar.html')
 
-        # mapeia o código para descrição legível
         descricao_motivo = {
-            'AB':  'Abonada',
-            'BH':  'Banco de Horas',
-            'DS':  'Doação de Sangue',
+            'AB': 'Abonada',
+            'BH': 'Banco de Horas',
+            'DS': 'Doação de Sangue',
             'TRE': 'TRE',
-            'FS':  'Falta Simples'
+            'FS': 'Falta Simples'
         }.get(motivo, 'Agendamento')
 
         try:
@@ -450,7 +490,6 @@ def agendar():
             return redirect(url_for('agendar'))
 
         if motivo == 'AB':
-            # Verifica se já existe AB no mesmo mês
             agendamento_existente = Agendamento.query.filter(
                 Agendamento.funcionario_id == current_user.id,
                 Agendamento.motivo == 'AB',
@@ -461,7 +500,6 @@ def agendar():
                 flash("Você já possui um agendamento 'AB' aprovado ou em análise neste mês.", "danger")
                 return render_template('agendar.html')
 
-            # Verifica o limite anual de AB deferidas
             agendamentos_ab_deferidos = Agendamento.query.filter(
                 Agendamento.funcionario_id == current_user.id,
                 Agendamento.motivo == 'AB',
@@ -483,7 +521,7 @@ def agendar():
             data_referencia = None
 
         try:
-            horas   = int(request.form['quantidade_horas'])   if request.form['quantidade_horas'].strip()   else 0
+            horas = int(request.form['quantidade_horas']) if request.form['quantidade_horas'].strip() else 0
             minutos = int(request.form['quantidade_minutos']) if request.form['quantidade_minutos'].strip() else 0
         except ValueError:
             flash("Horas ou minutos inválidos.", "danger")
@@ -497,26 +535,24 @@ def agendar():
             return redirect(url_for('index'))
 
         novo_agendamento = Agendamento(
-            funcionario_id   = current_user.id,
-            status           = 'em_espera',
-            data             = data_folga,
-            motivo           = motivo,
-            tipo_folga       = tipo_folga,
-            data_referencia  = data_referencia,
-            horas            = horas,
-            minutos          = minutos,
-            substituicao     = substituicao,
-            nome_substituto  = nome_substituto
+            funcionario_id=current_user.id,
+            status='em_espera',
+            data=data_folga,
+            motivo=motivo,
+            tipo_folga=tipo_folga,
+            data_referencia=data_referencia,
+            horas=horas,
+            minutos=minutos,
+            substituicao=substituicao,
+            nome_substituto=nome_substituto
         )
 
         try:
-            # salva o agendamento
             db.session.add(novo_agendamento)
             db.session.commit()
 
-            # prepara dados para o e-mail
-            assunto  = "E.M José Padin Mouta – Confirmação de Agendamento"
-            nome     = current_user.nome
+            assunto = "E.M José Padin Mouta – Confirmação de Agendamento"
+            nome = current_user.nome
             data_str = novo_agendamento.data.strftime('%d/%m/%Y')
 
             mensagem_html = f"""
@@ -553,9 +589,7 @@ Secretário da Unidade Escolar
 E.M José Padin Mouta
 """
 
-            # envia o e-mail
             enviar_email(current_user.email, assunto, mensagem_html, mensagem_texto)
-
             flash("Agendamento realizado com sucesso. Você receberá um e-mail de confirmação.", "success")
 
         except Exception as e:
@@ -566,22 +600,22 @@ E.M José Padin Mouta
 
     return render_template('agendar.html')
 
-# Rota de Calendário de Folgas
+
+# ===========================================
+# CALENDÁRIO
+# ===========================================
 @app.route('/calendario', methods=['GET', 'POST'])
 @app.route('/calendario/<int:year>/<int:month>', methods=['GET', 'POST'])
 @login_required
 def calendario(year=None, month=None):
-    # Intervalo de 10 anos a partir de 2025
     inicio_ano = 2025
-    fim_ano = inicio_ano + 9  # 10 anos
+    fim_ano = inicio_ano + 9
 
-    # Se não passar ano/mês, cai no mês atual
     if not year or not month:
         hoje = datetime.date.today()
         year = hoje.year
         month = hoje.month
 
-    # Ajuste para manter mês entre 1 e 12
     while month < 1:
         month += 12
         year -= 1
@@ -589,26 +623,22 @@ def calendario(year=None, month=None):
         month -= 12
         year += 1
 
-    # Calcular anterior e próximo
     prev_month = 12 if month == 1 else month - 1
     prev_year = year if month > 1 else year - 1
     next_month = 1 if month == 12 else month + 1
     next_year = year if month < 12 else year + 1
 
-    # Dias do mês
     try:
         first_day_of_month = datetime.date(year, month, 1)
         last_day_of_month = datetime.date(year, month, calendar.monthrange(year, month)[1])
     except ValueError as e:
         return f"Erro ao calcular datas: {e}", 400
 
-    # Consulta agendamentos
     agendamentos = Agendamento.query.filter(
         Agendamento.data >= first_day_of_month,
         Agendamento.data <= last_day_of_month
     ).all()
 
-    # Agrupar por data
     folgas_por_data = {}
     for agendamento in agendamentos:
         folgas_por_data.setdefault(agendamento.data, []).append(agendamento)
@@ -629,13 +659,16 @@ def calendario(year=None, month=None):
         fim_ano=fim_ano
     )
 
+
+# ===========================================
+# COMPLETAR DADOS OBRIGATÓRIOS
+# ===========================================
 @app.route('/informar_dados', methods=['GET', 'POST'])
 @login_required
 def informar_dados():
     usuario = current_user
 
     if request.method == 'POST':
-        # Verifique se os campos obrigatórios estão sendo atualizados
         campos_atualizar = {
             'cpf': request.form.get('cpf'),
             'rg': request.form.get('rg'),
@@ -644,42 +677,41 @@ def informar_dados():
             'cargo': request.form.get('cargo')
         }
 
-        # Atualiza os campos faltantes no banco de dados
         for campo, valor in campos_atualizar.items():
             if valor:
-                setattr(usuario, campo, valor)  # Atualiza o atributo do usuário
+                setattr(usuario, campo, valor)
 
-        # Valida o cargo se ele foi fornecido
         if campos_atualizar['cargo']:
             cargos_validos = [
-                "Agente Administrativo", "Professor I", "Professor Adjunto", 
-                "Professor II", "Professor III", "Professor IV", 
-                "Servente I", "Servente II", "Servente", 
-                "Diretor de Unidade Escolar", "Assistente de Direção", 
-                "Pedagoga Comunitaria", "Assistente Tecnico Pedagogico", 
-                "Secretario de Unidade Escolar", "Educador de Desenvolvimento Infanto Juvenil", 
-                "Atendente de Educação I", "Atendente de Educação II", 
+                "Agente Administrativo", "Professor I", "Professor Adjunto",
+                "Professor II", "Professor III", "Professor IV",
+                "Servente I", "Servente II", "Servente",
+                "Diretor de Unidade Escolar", "Assistente de Direção",
+                "Pedagoga Comunitaria", "Assistente Tecnico Pedagogico",
+                "Secretario de Unidade Escolar", "Educador de Desenvolvimento Infanto Juvenil",
+                "Atendente de Educação I", "Atendente de Educação II",
                 "Trabalhador", "Inspetor de Aluno"
             ]
             cargo = campos_atualizar['cargo']
             if cargo not in cargos_validos:
                 flash('Cargo inválido. Por favor, selecione um cargo válido.', 'danger')
-                return render_template('informar_dados.html', usuario=usuario)  # Se cargo for inválido, retorna ao formulário
+                return render_template('informar_dados.html', usuario=usuario)
 
-        # Salva os dados atualizados no banco
         db.session.commit()
-
         flash("Dados atualizados com sucesso! Você agora pode acessar o sistema.", "success")
-        return redirect(url_for('index'))  # Redireciona de volta para a página principal
+        return redirect(url_for('index'))
 
     return render_template('informar_dados.html', usuario=usuario)
 
+
+# ===========================================
+# REGISTRO
+# ===========================================
 from email_validator import validate_email, EmailNotValidError
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    usuario = current_user  # Obtém o usuário logado
-    
     if request.method == 'POST':
         nome = request.form['nome']
         registro = request.form['registro']
@@ -692,24 +724,20 @@ def register():
         celular = request.form['celular']
         cargo = request.form['cargo']
 
-        # Verifica se as senhas coincidem
         if senha != confirmar_senha:
             flash('As senhas não coincidem', 'danger')
             return render_template('register.html')
 
-        # Verifica se o e-mail é válido
         try:
             validate_email(email)
         except EmailNotValidError as e:
             flash(f'E-mail inválido: {str(e)}', 'danger')
             return render_template('register.html')
 
-        # Verifica se o e-mail já está cadastrado
         if User.query.filter_by(email=email).first():
             flash('Este e-mail já está em uso', 'danger')
             return render_template('register.html')
 
-        # Verifica se todos os campos obrigatórios estão preenchidos
         campos_obrigatorios = {
             "CPF": cpf,
             "RG": rg,
@@ -719,23 +747,21 @@ def register():
         }
 
         campos_pendentes = [campo for campo, valor in campos_obrigatorios.items() if not valor]
-        
+
         if campos_pendentes:
             mensagem = f"Os seguintes campos são obrigatórios: {', '.join(campos_pendentes)}."
             flash(mensagem, 'danger')
-            return redirect(url_for('informar_dados'))  # Redireciona para a página de informar dados
+            return render_template('register.html')
 
-        # Criptografa a senha usando pbkdf2:sha256 (método compatível)
         senha_hash = generate_password_hash(senha, method='pbkdf2:sha256')
 
-        # Criação do novo usuário com o status 'pendente', aguardando aprovação
         new_user = User(
             nome=nome,
             registro=registro,
             email=email,
             senha=senha_hash,
-            tipo='funcionario',  # Por padrão, o tipo é 'funcionario', mas você pode personalizar conforme necessário
-            status='pendente',  # Novo campo para controlar a aprovação
+            tipo='funcionario',
+            status='pendente',
             cpf=cpf,
             rg=rg,
             data_nascimento=data_nascimento,
@@ -751,53 +777,51 @@ def register():
 
     return render_template('register.html')
 
-# Rota Aprovar Usuarios
+
+# ===========================================
+# APROVAR USUÁRIOS
+# ===========================================
 @app.route('/aprovar_usuarios', methods=['GET', 'POST'])
 @login_required
 def aprovar_usuarios():
-    # Verifica se o usuário logado é administrador
     if current_user.tipo != 'administrador':
         flash('Você não tem permissão para acessar essa página.', 'danger')
-        return redirect(url_for('index'))  # Redireciona para a página inicial ou outra página apropriada
+        return redirect(url_for('index'))
 
-    # Exibe todos os usuários com status 'pendente'
     usuarios_pendentes = User.query.filter_by(status='pendente').all()
 
     if request.method == 'POST':
-        usuario_id = request.form.get('usuario_id')  # Recupera o ID do usuário a ser aprovado ou recusado
-        acao = request.form.get('acao')  # Recupera a ação do formulário (aprovar ou recusar)
+        usuario_id = request.form.get('usuario_id')
+        acao = request.form.get('acao')
 
-        # Verifica se a ação foi recebida corretamente
         if acao is None:
             flash('Ação não especificada', 'danger')
             return redirect(url_for('aprovar_usuarios'))
 
-        usuario = User.query.get(usuario_id)  # Busca o usuário pelo ID
+        usuario = User.query.get(usuario_id)
         if usuario:
             if acao == 'aprovar':
-                usuario.status = 'aprovado'  # Altera o status do usuário para 'aprovado'
+                usuario.status = 'aprovado'
                 flash(f'Usuário {usuario.nome} aprovado com sucesso!', 'success')
             elif acao == 'recusar':
-                usuario.status = 'rejeitado'  # Altera o status do usuário para 'rejeitado'
+                usuario.status = 'rejeitado'
                 flash(f'Usuário {usuario.nome} recusado.', 'danger')
 
-            db.session.commit()  # Salva as alterações no banco de dados
+            db.session.commit()
 
-        return redirect(url_for('aprovar_usuarios'))  # Redireciona de volta para a página de aprovação de usuários
+        return redirect(url_for('aprovar_usuarios'))
 
-    # Retorna o template com a lista de usuários pendentes
     return render_template('aprovar_usuarios.html', usuarios=usuarios_pendentes)
 
 
-# Rota Deletar Agendamento
+# ===========================================
+# DELETAR AGENDAMENTO (FUNCIONÁRIO)
+# ===========================================
 @app.route('/delete_agendamento/<int:id>', methods=['POST'])
 @login_required
 def delete_agendamento(id):
-
-    # Busca o agendamento pelo ID
     agendamento = Agendamento.query.get_or_404(id)
 
-    # Verifica se o agendamento pertence ao funcionário logado
     if agendamento.funcionario_id == current_user.id:
         db.session.delete(agendamento)
         db.session.commit()
@@ -808,6 +832,9 @@ def delete_agendamento(id):
     return redirect(url_for('minhas_justificativas'))
 
 
+# ===========================================
+# ESQUECIMENTO DE PONTO
+# ===========================================
 @app.route('/relatar_esquecimento', methods=['GET', 'POST'])
 @login_required
 def relatar_esquecimento():
@@ -824,7 +851,6 @@ def relatar_esquecimento():
 
         motivo = request.form.get('motivo') or None
 
-        # Observe que agora chamamos datetime.datetime.strptime
         nova_data = datetime.datetime.strptime(data_esquecimento, '%Y-%m-%d').date()
 
         novo_esquecimento = EsquecimentoPonto(
@@ -852,73 +878,101 @@ def relatar_esquecimento():
     return render_template('relatar_esquecimento.html')
 
 
-from datetime import date, timedelta
-from flask import request, render_template, redirect, url_for, flash
-from flask_login import login_required, current_user
-
+# ===========================================
+# RELATÓRIO PONTO (10 a 9)
+# ===========================================
 @app.route('/relatorio_ponto')
 @login_required
 def relatorio_ponto():
-    if current_user.tipo != 'administrador':  
+    if current_user.tipo != 'administrador':
         flash("Acesso negado.", "danger")
         return redirect(url_for('index'))
 
     mes_selecionado = request.args.get('mes', type=int)
     registros = []
-    periodo_inicio = periodo_fim = None  
+    periodo_inicio = periodo_fim = None
 
     if mes_selecionado:
         ano_atual = datetime.datetime.now().year
+
         mes_anterior = 12 if mes_selecionado == 1 else mes_selecionado - 1
         ano_mes_anterior = ano_atual - 1 if mes_selecionado == 1 else ano_atual
 
         periodo_inicio = datetime.datetime(ano_mes_anterior, mes_anterior, 10)
-        periodo_fim     = datetime.datetime(ano_atual, mes_selecionado, 9, 23, 59, 59)
+        periodo_fim = datetime.datetime(ano_atual, mes_selecionado, 9, 23, 59, 59)
 
-        # Agendamentos
-        agendamentos = Agendamento.query.filter(
-            Agendamento.data >= periodo_inicio,
-            Agendamento.data <= periodo_fim
-        ).order_by(Agendamento.data.asc()).all()
+        # --- Agendamentos apenas de usuários ativos ---
+        agendamentos = (
+            Agendamento.query
+            .join(Agendamento.funcionario)  # relacionamento com User
+            .options(joinedload(Agendamento.funcionario))
+            .filter(
+                User.ativo.is_(True),
+                Agendamento.data >= periodo_inicio,
+                Agendamento.data <= periodo_fim
+            )
+            .order_by(Agendamento.data.asc())
+            .all()
+        )
 
         for ag in agendamentos:
+            # defesa extra: se por algum motivo não tiver funcionario, pula
+            if not ag.funcionario:
+                continue
+
             registros.append({
-                'id':            ag.id,
-                'usuario':       ag.funcionario,
-                'registro':      ag.funcionario.registro,
-                'tipo':          'Agendamento',
-                'data':          ag.data,
-                'motivo':        ag.motivo,
-                'horapentrada':  '—',
-                'horapsaida':    '—',
-                'horasentrada':  '—',
-                'horassaida':    '—',
-                'conferido':     ag.conferido
+                'id': ag.id,
+                'usuario': ag.funcionario,
+                'registro': ag.funcionario.registro,
+                'tipo': 'Agendamento',
+                'data': ag.data,
+                'motivo': ag.motivo,
+                'horapentrada': '—',
+                'horapsaida': '—',
+                'horasentrada': '—',
+                'horassaida': '—',
+                'conferido': ag.conferido
             })
 
-        # Esquecimentos de Ponto
-        esquecimentos = EsquecimentoPonto.query.filter(
-            EsquecimentoPonto.data_esquecimento >= periodo_inicio,
-            EsquecimentoPonto.data_esquecimento <= periodo_fim
-        ).order_by(EsquecimentoPonto.data_esquecimento.asc()).all()
+        # --- Esquecimentos de ponto apenas de usuários ativos ---
+        esquecimentos = (
+            EsquecimentoPonto.query
+            .join(EsquecimentoPonto.usuario)  # relacionamento com User
+            .options(joinedload(EsquecimentoPonto.usuario))
+            .filter(
+                User.ativo.is_(True),
+                EsquecimentoPonto.data_esquecimento >= periodo_inicio,
+                EsquecimentoPonto.data_esquecimento <= periodo_fim
+            )
+            .order_by(EsquecimentoPonto.data_esquecimento.asc())
+            .all()
+        )
 
         for esc in esquecimentos:
+            if not esc.usuario:
+                continue
+
             registros.append({
-                'id':            esc.id,
-                'usuario':       esc.usuario,
-                'registro':      esc.usuario.registro,
-                'tipo':          'Esquecimento de Ponto',
-                'data':          esc.data_esquecimento,
-                'motivo':        esc.motivo,
-                'horapentrada':  esc.hora_primeira_entrada or '—',
-                'horapsaida':    esc.hora_primeira_saida  or '—',
-                'horasentrada':  esc.hora_segunda_entrada or '—',
-                'horassaida':    esc.hora_segunda_saida   or '—',
-                'conferido':     esc.conferido
+                'id': esc.id,
+                'usuario': esc.usuario,
+                'registro': esc.usuario.registro,
+                'tipo': 'Esquecimento de Ponto',
+                'data': esc.data_esquecimento,
+                'motivo': esc.motivo,
+                'horapentrada': esc.hora_primeira_entrada or '—',
+                'horapsaida': esc.hora_primeira_saida or '—',
+                'horasentrada': esc.hora_segunda_entrada or '—',
+                'horassaida': esc.hora_segunda_saida or '—',
+                'conferido': esc.conferido
             })
 
-        # 🔠 Ordenar os registros em ordem alfabética pelo nome do usuário
-        registros.sort(key=lambda r: r['usuario'].nome.lower())
+        # Ordena por nome do usuário e, em seguida, por data
+        registros.sort(
+            key=lambda r: (
+                (r['usuario'].nome or '').lower().strip(),
+                r['data'] or datetime.datetime.min
+            )
+        )
 
     return render_template(
         'relatorio_ponto.html',
@@ -928,28 +982,37 @@ def relatorio_ponto():
         periodo_fim=periodo_fim
     )
 
+
 @app.route('/atualizar_conferido', methods=['POST'])
 @login_required
 def atualizar_conferido():
-    data = request.get_json()
-    registro_id = data.get("id")
-    tipo = data.get("tipo")
-    status = data.get("conferido")  # Booleano True/False
+    # garante que só admin marque/desmarque conferido
+    if current_user.tipo != 'administrador':
+        return jsonify({"success": False, "error": "Acesso negado."}), 403
+
+    data_json = request.get_json() or {}
+    registro_id = data_json.get("id")
+    tipo = data_json.get("tipo")
+    status = data_json.get("conferido")
+
+    if not registro_id or not tipo:
+        return jsonify({"success": False, "error": "Dados inválidos."}), 400
 
     if tipo == "Agendamento":
         registro = Agendamento.query.get(registro_id)
     else:
         registro = EsquecimentoPonto.query.get(registro_id)
 
-    if registro:
-        registro.conferido = status
-        db.session.commit()
-        return jsonify({"success": True})
+    if not registro:
+        return jsonify({"success": False, "error": "Registro não encontrado."}), 404
 
-    return jsonify({"success": False}), 400
+    registro.conferido = status
+    db.session.commit()
+    return jsonify({"success": True})
 
-
-# Rota de Criação de Admin
+# ===========================================
+# CRIAR ADMIN
+# ===========================================
 @app.route('/criar_admin')
 def criar_admin():
     admin_email = 'nilcr94@gmail.com'
@@ -961,24 +1024,30 @@ def criar_admin():
     admin = User.query.filter_by(email=admin_email).first()
 
     if not admin:
-        novo_admin = User(nome=admin_nome, registro=admin_registro, email=admin_email, senha=admin_senha, tipo=admin_tipo)
+        novo_admin = User(
+            nome=admin_nome,
+            registro=admin_registro,
+            email=admin_email,
+            senha=admin_senha,
+            tipo=admin_tipo
+        )
         db.session.add(novo_admin)
         db.session.commit()
         return 'Conta administrador criada com sucesso!'
     else:
         return 'A conta administrador já existe.'
-    
 
+
+# ===========================================
+# DEFERIR FOLGAS
+# ===========================================
 from sqlalchemy import asc
 from collections import defaultdict
-from flask import flash, redirect, url_for, render_template, request
-from flask_login import login_required, current_user
-import datetime
+
 
 @app.route('/deferir_folgas', methods=['GET', 'POST'])
 @login_required
 def deferir_folgas():
-    # Função para buscar folgas pendentes/espera, com filtro para administrador e funcionário comum
     def buscar_folgas():
         if current_user.tipo == 'administrador':
             folgas_query = (
@@ -1006,7 +1075,6 @@ def deferir_folgas():
                 cargo = folga_espera.funcionario.cargo or 'Sem Cargo Definido'
                 data = folga_espera.data
 
-                # Buscar apenas os outros agendamentos do mesmo cargo e mesma data
                 conflitos = (
                     db.session.query(User.nome)
                     .join(Agendamento, Agendamento.funcionario_id == User.id)
@@ -1021,7 +1089,6 @@ def deferir_folgas():
 
                 if conflitos:
                     linhas = ""
-                    # Funcionário em espera
                     linhas += f"""
                     <tr>
                         <td>
@@ -1032,7 +1099,6 @@ def deferir_folgas():
                         <td><span class="badge bg-warning text-dark">Em espera</span></td>
                     </tr>
                     """
-                    # Funcionários já agendados
                     for (nome,) in conflitos:
                         linhas += f"""
                         <tr>
@@ -1070,11 +1136,9 @@ def deferir_folgas():
 
         return avisos
 
-    # Busca as folgas em espera para mostrar na página
     folgas = buscar_folgas()
     avisos = gerar_avisos(folgas)
 
-    # Processa submissão de formulário POST para deferir ou indeferir folgas
     if request.method == 'POST':
         folga_id = request.form.get('folga_id')
         novo_status = request.form.get('status')
@@ -1086,7 +1150,7 @@ def deferir_folgas():
 
         usuario = User.query.get(folga.funcionario_id)
 
-        # Validação banco de horas para folgas do tipo BH
+        # Banco de horas
         if folga.motivo == 'BH' and novo_status == 'deferido':
             total_minutos = (folga.horas or 0) * 60 + (folga.minutos or 0)
             if usuario.banco_horas >= total_minutos:
@@ -1106,21 +1170,21 @@ def deferir_folgas():
                 flash("O funcionário não tem horas suficientes no banco de horas para este agendamento.", "danger")
                 return redirect(url_for('deferir_folgas'))
 
-        # Validação para TRE: agora apenas chama sync ao deferir
-        if folga.motivo == 'TRE' and novo_status == 'deferido':
-            sync_tre_user(usuario.id)
-
-        # Atualiza o status da folga
+        # Atualiza status da folga
         folga.status = novo_status
 
         try:
             db.session.commit()
+
+            # 🔄 Sincroniza TRE depois de alterar o status, se for motivo TRE
+            if folga.motivo == 'TRE':
+                sync_tre_user(usuario.id)
+
             flash(
                 f"A folga de {folga.funcionario.nome} foi {novo_status} com sucesso!",
                 "success" if novo_status == 'deferido' else "danger"
             )
 
-            # Preparação do email personalizado
             if novo_status == 'deferido':
                 assunto = "E.M José Padin Mouta - Deferimento de Folga"
                 mensagem_html = f"""
@@ -1211,18 +1275,15 @@ Secretário da Unidade Escolar
 3496-5321
 E.M José Padin Mouta
 """
-            # Envia o email para o usuário
             enviar_email(usuario.email, assunto, mensagem_html, mensagem_texto)
 
         except Exception as e:
             db.session.rollback()
             flash(f"Erro ao atualizar folga: {str(e)}", "danger")
 
-        # Atualiza lista e avisos para exibir as mudanças sem recarregar a página
         folgas = buscar_folgas()
         avisos = gerar_avisos(folgas)
 
-    # Agrupa folgas por cargo para facilitar exibição agrupada no template
     folgas_por_cargo = defaultdict(list)
     for f in folgas:
         cargo = f.funcionario.cargo or "Sem Cargo Definido"
@@ -1234,26 +1295,17 @@ E.M José Padin Mouta
         avisos=avisos
     )
 
-import datetime
-from flask import render_template, request
-from flask_login import login_required, current_user
-
-# ajuste os imports conforme o seu projeto
-# from app import app, db
-# from models import User, TRE, Agendamento
-
+# ===========================================
+# HISTÓRICO / SALDOS (USUÁRIO)
+# ===========================================
 @app.route('/historico', methods=['GET'])
 @login_required
 def historico():
-    # 🔹 Garante que os campos tre_total e tre_usufruidas do User estejam sincronizados
     sync_tre_user(current_user.id)
 
     usuario = User.query.get_or_404(current_user.id)
-
-    # --- Ano selecionado (default = ano atual)
     ano = request.args.get("ano", type=int) or datetime.datetime.now().year
 
-    # ===== Folgas abonadas (conta apenas AB deferido no ano) =====
     limite_abonadas_ano = 6
     abonadas_ano = (
         Agendamento.query
@@ -1268,18 +1320,15 @@ def historico():
     )
     saldo_abonadas = max(limite_abonadas_ano - abonadas_ano, 0)
 
-    # ===== TREs (agora já estão sincronizadas no User) =====
-    tre_total = int(usuario.tre_total or 0)            # créditos totais de TRE do usuário
-    tre_usufruidas = int(usuario.tre_usufruidas or 0)  # dias já utilizados pelo usuário
+    tre_total = int(usuario.tre_total or 0)
+    tre_usufruidas = int(usuario.tre_usufruidas or 0)
     tre_restantes = max(tre_total - tre_usufruidas, 0)
 
-    # ===== Banco de horas =====
     total_minutos = int(usuario.banco_horas or 0)
     horas = total_minutos // 60
     minutos = total_minutos % 60
     banco_horas_formatado = f"{horas}h {minutos}min" if total_minutos > 0 else "0h 0min"
 
-    # ===== Últimas folgas (extrato) =====
     ultimas_folgas = (
         Agendamento.query
         .filter_by(funcionario_id=current_user.id)
@@ -1288,7 +1337,6 @@ def historico():
         .all()
     )
 
-    # ===== Minhas TREs (lista para a tabela) =====
     minhas_tres = (
         TRE.query
         .filter(TRE.funcionario_id == current_user.id)
@@ -1296,7 +1344,6 @@ def historico():
         .all()
     )
 
-    # Estatísticas para os chips (apenas informativo)
     pend = def_ = ind = dias_pend = dias_def = 0
     for t in minhas_tres:
         st = (t.status or '').strip().lower()
@@ -1318,7 +1365,6 @@ def historico():
         "dias_def": dias_def,
     }
 
-    # ===== Avisos =====
     avisos = []
     if saldo_abonadas == 0:
         avisos.append("⚠️ Você atingiu o limite anual de folgas abonadas.")
@@ -1327,7 +1373,6 @@ def historico():
     if total_minutos > 300:
         avisos.append("ℹ️ Você possui muitas horas acumuladas no Banco de Horas.")
 
-    # Render
     return render_template(
         'historico.html',
         ano=ano,
@@ -1344,30 +1389,29 @@ def historico():
         avisos=avisos,
     )
 
-# Rota de Cadastro de Banco de Horas
-@app.route('/banco_horas/cadastrar', methods=['GET', 'POST']) 
+
+# ===========================================
+# BANCO DE HORAS - CADASTRAR
+# ===========================================
+@app.route('/banco_horas/cadastrar', methods=['GET', 'POST'])
 @login_required
 def cadastrar_horas():
     if request.method == 'POST':
-        # Recebe os dados do formulário
         nome = request.form['nome']
         registro = request.form['registro']
         quantidade_horas = int(request.form['quantidade_horas'])
         quantidade_minutos = int(request.form['quantidade_minutos'])
         data_realizacao = request.form['data_realizacao']
-        motivo = request.form['motivo']  
+        motivo = request.form['motivo']
 
-        # Converte a data para o formato datetime
         try:
             data_realizacao = datetime.datetime.strptime(data_realizacao, '%Y-%m-%d').date()
         except ValueError:
             flash("Data inválida.", "danger")
             return redirect(url_for('cadastrar_horas'))
 
-        # Calcula o total de minutos
         total_minutos = (quantidade_horas * 60) + quantidade_minutos
 
-        # Criar novo registro no banco de horas (com status 'em espera')
         novo_banco_horas = BancoDeHoras(
             funcionario_id=current_user.id,
             horas=quantidade_horas,
@@ -1375,82 +1419,102 @@ def cadastrar_horas():
             total_minutos=total_minutos,
             data_realizacao=data_realizacao,
             motivo=motivo,
-            status='Horas a Serem Deferidas'  # Garante que as horas começam em espera
+            status='Horas a Serem Deferidas'
         )
 
         try:
             db.session.add(novo_banco_horas)
             db.session.commit()
             flash("Banco de horas cadastrado com sucesso! Aguardando deferimento.", "success")
-            return redirect(url_for('consultar_horas'))  
-        
+            return redirect(url_for('consultar_horas'))
+
         except Exception as e:
             db.session.rollback()
             flash(f"Erro ao cadastrar banco de horas: {str(e)}", "danger")
 
     return render_template('cadastrar_horas.html', nome=current_user.nome, registro=current_user.registro)
 
-# Rota de Principal Banco de Horas    
+
 @app.route('/banco_horas')
 @login_required
 def banco_horas():
-    # Verifique se o usuário é um administrador
     is_admin = current_user.tipo == 'administrador'
     return render_template('menu_banco_horas.html', is_admin=is_admin)
 
-# Rota de Consulta de Horas
+
+# ===========================================
+# CONSULTAR HORAS (USUÁRIO)
+# ===========================================
 @app.route('/consultar_horas')
+@login_required
 def consultar_horas():
-    print(f"Usuário: {current_user}")  # Para verificar se o usuário está autenticado
-    print(f"Banco de Horas: {getattr(current_user, 'banco_horas', 'NÃO DEFINIDO')}")  # Depuração
-    
-    registros = BancoDeHoras.query.filter_by(funcionario_id=current_user.id).all()
-    
+    # Ordena do mais recente para o mais antigo
+    registros = (
+        BancoDeHoras.query
+        .filter_by(funcionario_id=current_user.id)
+        .order_by(BancoDeHoras.data_realizacao.desc())
+        .all()
+    )
+
     horas_deferidas = 0
     minutos_deferidos = 0
     horas_em_espera = 0
     minutos_em_espera = 0
-    
+
+    # Soma das horas por status
     for registro in registros:
+        h = registro.horas or 0
+        m = registro.minutos or 0
+
         if registro.status == 'Deferido':
-            horas_deferidas += registro.horas
-            minutos_deferidos += registro.minutos
+            horas_deferidas += h
+            minutos_deferidos += m
         elif registro.status == 'Horas a Serem Deferidas':
-            horas_em_espera += registro.horas
-            minutos_em_espera += registro.minutos
-    
+            horas_em_espera += h
+            minutos_em_espera += m
+
+    # Normaliza minutos das horas deferidas
     horas_deferidas += minutos_deferidos // 60
     minutos_deferidos = minutos_deferidos % 60
-    
+
+    # Normaliza minutos das horas em espera
     horas_em_espera += minutos_em_espera // 60
     minutos_em_espera = minutos_em_espera % 60
 
-    horas_usufruidas = horas_deferidas + horas_em_espera
-    minutos_usufruidos = minutos_deferidos + minutos_em_espera
+    # Saldo atual em minutos (banco_horas guarda o saldo)
+    saldo_min = int(current_user.banco_horas or 0)
 
-    horas_usufruidas += minutos_usufruidos // 60
-    minutos_usufruidos = minutos_usufruidos % 60
+    # Total de horas deferidas em minutos
+    total_deferidas_min = horas_deferidas * 60 + minutos_deferidos
 
-    # 🟢 Obtendo as horas a usufruir diretamente do usuário
-    horas_a_usufruir = current_user.banco_horas // 60
-    minutos_a_usufruir = current_user.banco_horas % 60
+    # Horas já usufruídas = deferidas - saldo (nunca negativo)
+    usadas_min = max(total_deferidas_min - saldo_min, 0)
+    horas_usufruidas = usadas_min // 60
+    minutos_usufruidos = usadas_min % 60
 
-    return render_template('consultar_horas.html', 
-                           registros=registros,
-                           horas_deferidas=horas_deferidas,
-                           minutos_deferidos=minutos_deferidos,
-                           horas_em_espera=horas_em_espera,
-                           minutos_em_espera=minutos_em_espera,
-                           horas_usufruidas=horas_usufruidas,
-                           minutos_usufruidos=minutos_usufruidos,
-                           horas_a_usufruir=horas_a_usufruir,
-                           minutos_a_usufruir=minutos_a_usufruir)
+    # Horas a usufruir (saldo)
+    horas_a_usufruir = saldo_min // 60
+    minutos_a_usufruir = saldo_min % 60
 
-# Rota de Deferimento de Horas
+    return render_template(
+        'consultar_horas.html',
+        registros=registros,
+        horas_deferidas=horas_deferidas,
+        minutos_deferidos=minutos_deferidos,
+        horas_em_espera=horas_em_espera,
+        minutos_em_espera=minutos_em_espera,
+        horas_usufruidas=horas_usufruidas,
+        minutos_usufruidos=minutos_usufruidos,
+        horas_a_usufruir=horas_a_usufruir,
+        minutos_a_usufruir=minutos_a_usufruir
+    )
+
+# ===========================================
+# DEFERIR BANCO DE HORAS (ADMIN)
+# ===========================================
 @app.route('/banco_horas/deferir', methods=['GET', 'POST'])
 @login_required
 def deferir_horas():
-    # Verifica se há registros com status 'Horas a Serem Deferidas' para deferir
     registros = BancoDeHoras.query.filter_by(status='Horas a Serem Deferidas').all()
 
     if request.method == 'POST':
@@ -1465,12 +1529,9 @@ def deferir_horas():
 
         if action == 'deferir':
             banco_horas.status = 'Deferido'
-
-            # Adiciona as horas ao banco_horas do usuário apenas quando deferido
             funcionario = User.query.get(banco_horas.funcionario_id)
             if funcionario:
-                funcionario.banco_horas += banco_horas.total_minutos  # Adiciona os minutos ao saldo do funcionário
-            
+                funcionario.banco_horas += banco_horas.total_minutos
             flash(f"Banco de horas de {banco_horas.funcionario.nome} deferido com sucesso!", "success")
 
         elif action == 'indeferir':
@@ -1479,10 +1540,9 @@ def deferir_horas():
 
         try:
             db.session.commit()
-            # Atualiza a lista de registros, reconsultando o banco
             registros = BancoDeHoras.query.filter_by(status='Horas a Serem Deferidas').all()
-            return render_template('deferir_horas.html', registros=registros)  # Renderiza a página com os novos registros
-        
+            return render_template('deferir_horas.html', registros=registros)
+
         except Exception as e:
             db.session.rollback()
             flash(f"Erro ao atualizar status: {str(e)}", "danger")
@@ -1490,26 +1550,28 @@ def deferir_horas():
 
     return render_template('deferir_horas.html', registros=registros)
 
+
+# ===========================================
+# PERFIL
+# ===========================================
 @app.route('/perfil', methods=['GET', 'POST'])
 @login_required
 def perfil():
-    usuario = current_user  # Usuário logado
+    usuario = current_user
 
-    # Lista de cargos para popular o select no template, em ordem alfabética
     cargos = sorted([
-        "Agente Administrativo", "Professor I", "Professor Adjunto", 
-        "Professor II", "Professor III", "Professor IV", 
-        "Servente I", "Servente II", "Servente", 
-        "Diretor de Unidade Escolar", "Assistente de Direção", 
-        "Pedagoga Comunitaria", "Assistente Tecnico Pedagogico", 
-        "Secretario de Unidade Escolar", "Educador de Desenvolvimento Infanto Juvenil", 
-        "Atendente de Educação I", "Atendente de Educação II", 
+        "Agente Administrativo", "Professor I", "Professor Adjunto",
+        "Professor II", "Professor III", "Professor IV",
+        "Servente I", "Servente II", "Servente",
+        "Diretor de Unidade Escolar", "Assistente de Direção",
+        "Pedagoga Comunitaria", "Assistente Tecnico Pedagogico",
+        "Secretario de Unidade Escolar", "Educador de Desenvolvimento Infanto Juvenil",
+        "Atendente de Educação I", "Atendente de Educação II",
         "Trabalhador", "Inspetor de Aluno"
     ])
 
     if request.method == 'POST':
         try:
-            # Recupera os dados do formulário
             usuario.celular = request.form.get('celular') or None
             usuario.data_nascimento = request.form.get('data_nascimento') or None
             usuario.cpf = request.form.get('cpf') or None
@@ -1517,8 +1579,8 @@ def perfil():
             usuario.data_emissao_rg = request.form.get('data_emissao_rg') or None
             usuario.orgao_emissor = request.form.get('orgao_emissor') or None
             usuario.graduacao = request.form.get('graduacao') or None
-            usuario.cargo = request.form.get('cargo') or None  # Atualiza o cargo
-            
+            usuario.cargo = request.form.get('cargo') or None
+
             db.session.commit()
             flash('Perfil atualizado com sucesso!', 'success')
         except Exception as e:
@@ -1530,23 +1592,32 @@ def perfil():
     return render_template('perfil.html', usuario=usuario, cargos=cargos)
 
 
-
+# =========================================== 
+# RELATÓRIO HORAS EXTRAS (ADMIN)
+# ===========================================
 @app.route('/relatorio_horas_extras')
 @login_required
 def relatorio_horas_extras():
-    # Verifica se o usuário logado é administrador
     if current_user.tipo != 'administrador':
         flash("Acesso negado. Você não tem permissão para acessar este relatório.", "danger")
         return redirect(url_for('index'))
-    
-    # Consulta todos os usuários
-    usuarios = User.query.all()
+
+    # Apenas usuários ativos, ordenados por nome
+    usuarios = (
+        User.query
+        .filter(User.ativo.is_(True))
+        .order_by(User.nome.asc())
+        .all()
+    )
+
     usuarios_relatorio = []
     for usuario in usuarios:
-        total_minutos = usuario.banco_horas  # Total de minutos armazenados
+        # Garante que None não quebre a conta
+        total_minutos = usuario.banco_horas or 0
+
         horas = total_minutos // 60
         minutos = total_minutos % 60
-        
+
         usuarios_relatorio.append({
             "nome": usuario.nome,
             "registro": usuario.registro,
@@ -1557,11 +1628,12 @@ def relatorio_horas_extras():
 
     return render_template('relatorio_horas_extras.html', usuarios=usuarios_relatorio)
 
-from flask import render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required, current_user
+# ===========================================
+# ADMIN AGENDAMENTOS (AJAX)
+# ===========================================
 from sqlalchemy.orm import joinedload
 
-# Página principal
+
 @app.route('/admin/agendamentos', methods=['GET'])
 @login_required
 def admin_agendamentos():
@@ -1584,22 +1656,25 @@ def admin_agendamentos_ajax():
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 10, type=int)
 
-    # Base query
+    # 🔹 base: SOMENTE usuários ativos
     query = (
         User.query
         .join(Agendamento)
         .options(joinedload(User.agendamentos))
+        .filter(User.ativo.is_(True))       # <<<<<<<<<< AQUI o filtro de ativo
     )
 
-    # Filtros por nome e cargo
+    # filtro por nome
     if nome:
         query = query.filter(User.nome.ilike(f"%{nome}%"))
+
+    # filtro por cargo
     if cargo:
         query = query.filter(User.cargo == cargo)
 
-    # Ordena e pagina
     query = query.order_by(User.nome.asc()).distinct()
-    funcionarios = query.paginate(page=page, per_page=per_page)
+
+    funcionarios = query.paginate(page=page, per_page=per_page, error_out=False)
 
     dados = []
     for func in funcionarios.items:
@@ -1607,7 +1682,7 @@ def admin_agendamentos_ajax():
         for ag in func.agendamentos:
             ag_status = (ag.status or "").strip().lower()
 
-            # Aplica os filtros de status só aqui
+            # filtros de status aplicados sobre cada agendamento
             if not status:
                 pass
             elif status == "deferido" and not ag_status.startswith("deferido"):
@@ -1625,7 +1700,7 @@ def admin_agendamentos_ajax():
                 "delete_url": url_for('admin_delete_agendamento', id=ag.id)
             })
 
-        # Só adiciona o funcionário se tiver agendamentos visíveis
+        # só entra se tiver pelo menos um agendamento visível
         if ags:
             dados.append({
                 "id": func.id,
@@ -1645,29 +1720,285 @@ def admin_agendamentos_ajax():
         "dados": dados
     })
 
-# Rota para exclusão de um agendamento pelo administrador
+
 @app.route('/admin/delete_agendamento/<int:id>', methods=['POST'])
 @login_required
 def admin_delete_agendamento(id):
     if current_user.tipo != 'administrador':
         return jsonify({"error": "Acesso negado"}), 403
-    
+
     agendamento = Agendamento.query.get_or_404(id)
     db.session.delete(agendamento)
     db.session.commit()
     return jsonify({"success": True, "message": "Agendamento excluído com sucesso."})
 
+# ===========================================
+# RESUMO DE USUÁRIOS / SALDOS (ADMIN)
+# ===========================================
 @app.route('/user_info_all', methods=['GET'])
 @login_required
 def user_info_all():
-    if current_user.tipo != 'administrador':
+    if getattr(current_user, 'tipo', None) != 'administrador':
         flash("Acesso negado. Esta página é exclusiva para administradores.", "danger")
         return redirect(url_for('index'))
-    
-    # Recupera todos os usuários ordenados pelo nome
-    users = User.query.order_by(User.nome.asc()).all()
-    return render_template('user_info_all.html', users=users)
 
+    page = request.args.get('page', 1, type=int)
+
+    # 🔹 Agora o padrão é 10, com limites de segurança
+    PER_PAGE_DEFAULT = 10
+    per_page = request.args.get('per_page', PER_PAGE_DEFAULT, type=int)
+    if not per_page:
+        per_page = PER_PAGE_DEFAULT
+    per_page = max(5, min(per_page, 50))  # entre 5 e 50
+
+    q = request.args.get('q', '', type=str).strip()
+    status_filtro = request.args.get('status', 'ativos')
+
+    def col(Model, *names):
+        for n in names:
+            if hasattr(Model, n):
+                return getattr(Model, n)
+        return None
+
+    user_q = User.query
+
+    # filtro de ativos/inativos
+    if hasattr(User, 'ativo'):
+        if status_filtro == 'ativos':
+            user_q = user_q.filter(User.ativo.is_(True))
+        elif status_filtro == 'inativos':
+            user_q = user_q.filter(User.ativo.is_(False))
+        else:
+            # 'todos' → não filtra
+            pass
+
+    # busca por nome
+    if q:
+        user_q = user_q.filter(User.nome.ilike(f'%{q}%'))
+
+    pagination = user_q.order_by(User.nome.asc()).paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+    users = pagination.items
+    user_ids = [u.id for u in users] or [-1]
+
+    # 🔄 Garante que os campos de TRE estejam sincronizados para estes usuários
+    for u in users:
+        try:
+            sync_tre_user(u.id)
+        except Exception:
+            current_app.logger.exception("Erro ao sincronizar TRE do usuário %s", u.id)
+
+    ABONADAS_POR_ANO = 6
+    ano_atual = datetime.date.today().year
+
+    resumos = {}
+    for u in users:
+        total_tre = u.tre_total or 0
+        usadas_tre = u.tre_usufruidas or 0
+        saldo_tre = total_tre - usadas_tre
+        if saldo_tre < 0:
+            saldo_tre = 0
+
+        resumos[u.id] = {
+            "abonadas_total": ABONADAS_POR_ANO,
+            "abonadas_usadas": 0,
+            "abonadas_restantes": ABONADAS_POR_ANO,
+            "abonadas": ABONADAS_POR_ANO,
+
+            "tre_registros": int(total_tre),
+            "tre_saldo_horas": float(saldo_tre),
+
+            "bh_registros": 0,
+            "bh_saldo_horas": 0.0,
+
+            "tre_agendamentos": [],
+            "bh_agendamentos": [],
+        }
+
+    # ========================
+    # ABONADAS
+    # ========================
+    try:
+        Ag = Agendamento
+        ag_uid  = col(Ag, 'funcionario_id', 'user_id', 'usuario_id')
+        ag_stat = col(Ag, 'status')
+        ag_data = getattr(Ag, 'data', None)
+        ag_mot  = getattr(Ag, 'motivo', None)
+        ag_tipoF = getattr(Ag, 'tipo_folga', None)
+
+        if ag_uid and ag_stat and ag_data is not None:
+            status_cond = func.lower(ag_stat) == 'deferido'
+
+            ab_conds = []
+            if ag_tipoF is not None:
+                ab_conds.append(func.upper(ag_tipoF) == 'AB')
+            if ag_mot is not None:
+                ab_conds.append(func.upper(ag_mot) == 'AB')
+
+            ab_filter = True if not ab_conds else or_(*ab_conds)
+
+            rows = (
+                db.session.query(
+                    ag_uid.label('uid'),
+                    func.count(Ag.id)
+                )
+                .filter(ag_uid.in_(user_ids))
+                .filter(status_cond)
+                .filter(ab_filter)
+                .filter(func.extract('year', ag_data) == ano_atual)
+                .group_by(ag_uid)
+                .all()
+            )
+
+            for uid, qtd_usadas in rows:
+                if uid in resumos:
+                    usadas = int(qtd_usadas or 0)
+                    restante = ABONADAS_POR_ANO - usadas
+                    if restante < 0:
+                        restante = 0
+
+                    resumos[uid]['abonadas_usadas'] = usadas
+                    resumos[uid]['abonadas_restantes'] = restante
+                    resumos[uid]['abonadas'] = restante
+    except Exception as e:
+        current_app.logger.exception("Erro ao calcular abonadas: %s", e)
+
+    # ========================
+    # TRE - AGENDAMENTOS
+    # ========================
+    try:
+        Ag = Agendamento
+        ag_uid  = col(Ag, 'funcionario_id', 'user_id', 'usuario_id')
+        ag_stat = col(Ag, 'status')
+        ag_data = getattr(Ag, 'data', None)
+        ag_mot  = getattr(Ag, 'motivo', None)
+        ag_tipoF = getattr(Ag, 'tipo_folga', None)
+
+        if ag_uid and ag_stat:
+            status_cond = func.lower(ag_stat) == 'deferido'
+
+            tre_conds = []
+            if ag_tipoF is not None:
+                tre_conds.append(func.upper(ag_tipoF) == 'TRE')
+            if ag_mot is not None:
+                tre_conds.append(func.upper(ag_mot) == 'TRE')
+
+            tre_filter = True if not tre_conds else or_(*tre_conds)
+
+            query = Ag.query.filter(ag_uid.in_(user_ids)).filter(status_cond).filter(tre_filter)
+            if ag_data is not None:
+                query = query.order_by(ag_data.asc())
+            tre_rows = query.all()
+
+            uid_attr_name = getattr(ag_uid, 'key', 'funcionario_id')
+
+            for ag in tre_rows:
+                uid_val = getattr(ag, uid_attr_name, None)
+                if uid_val in resumos:
+                    resumos[uid_val].setdefault('tre_agendamentos', []).append(ag)
+    except Exception as e:
+        current_app.logger.exception("Erro ao listar TRE: %s", e)
+
+    # ========================
+    # BH - AGENDAMENTOS
+    # ========================
+    try:
+        Ag = Agendamento
+        ag_uid  = col(Ag, 'funcionario_id', 'user_id', 'usuario_id')
+        ag_stat = col(Ag, 'status')
+        ag_data = getattr(Ag, 'data', None)
+        ag_mot  = getattr(Ag, 'motivo', None)
+        ag_tipoF = getattr(Ag, 'tipo_folga', None)
+
+        if ag_uid and ag_stat:
+            status_cond = func.lower(ag_stat) == 'deferido'
+
+            bh_conds = []
+            if ag_tipoF is not None:
+                bh_conds.append(func.upper(ag_tipoF) == 'BH')
+            if ag_mot is not None:
+                bh_conds.append(func.upper(ag_mot) == 'BH')
+
+            bh_filter = True if not bh_conds else or_(*bh_conds)
+
+            query = Ag.query.filter(ag_uid.in_(user_ids)).filter(status_cond).filter(bh_filter)
+            if ag_data is not None:
+                query = query.order_by(ag_data.asc())
+            bh_rows = query.all()
+
+            uid_attr_name = getattr(ag_uid, 'key', 'funcionario_id')
+
+            for ag in bh_rows:
+                uid_val = getattr(ag, uid_attr_name, None)
+                if uid_val in resumos:
+                    resumos[uid_val].setdefault('bh_agendamentos', []).append(ag)
+    except Exception as e:
+        current_app.logger.exception("Erro ao listar Banco de Horas: %s", e)
+
+    return render_template(
+        'user_info_all.html',
+        users=users,
+        resumos=resumos,
+        page=pagination.page,
+        per_page=pagination.per_page,
+        pages=pagination.pages,
+        total=pagination.total,
+        q=q,
+        status=status_filtro
+    )
+
+# ===========================================
+# TOGGLE ATIVO / INATIVO
+# ===========================================
+@app.route('/toggle_user_ativo/<int:user_id>', methods=['POST'])
+@login_required
+def toggle_user_ativo(user_id):
+    if getattr(current_user, 'tipo', None) != 'administrador':
+        return jsonify(success=False, error='Acesso negado.'), 403
+
+    user = User.query.get_or_404(user_id)
+
+    current_app.logger.info(
+        "Alterando status do usuário %s (antes: %s)",
+        user.id, user.ativo
+        )
+
+    payload = request.get_json(silent=True) or {}
+    novo_ativo = payload.get('ativo', None)
+
+    if novo_ativo is not None:
+        try:
+            if isinstance(novo_ativo, (int, str)):
+                user.ativo = bool(int(novo_ativo))
+            else:
+                user.ativo = bool(novo_ativo)
+        except Exception:
+            # fallback: inverte
+            user.ativo = not bool(user.ativo)
+    else:
+        # sem campo 'ativo' explícito → apenas alterna
+        user.ativo = not bool(user.ativo)
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("Erro ao salvar status do usuário %s: %s", user.id, e)
+        return jsonify(success=False, error='Erro ao salvar no banco.'), 500
+
+    current_app.logger.info(
+        "Status do usuário %s alterado para %s",
+        user.id, user.ativo
+    )
+
+    return jsonify(success=True, ativo=bool(user.ativo)), 200
+
+# ===========================================
+# CHECK UNIQUE
+# ===========================================
 @app.route('/check_unique')
 def check_unique():
     campo = request.args.get('campo')
@@ -1683,28 +2014,25 @@ def check_unique():
         exists = User.query.filter_by(rg=valor).first() is not None
     return jsonify({'exists': exists})
 
-# =============================
-# IMPORTS EXTRAS (se ainda não tiver)
-# =============================
-from sqlalchemy import or_
-from sqlalchemy import func, case
 
-# =============================
-# Funções auxiliares
-# =============================
+# ===========================================
+# AUXILIARES TRE / UPLOAD
+# ===========================================
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-# =============================
-# Função de sincronização TRE
-# =============================
 def sync_tre_user(usuario_id):
+    """
+    Sincroniza os campos tre_total / tre_usufruidas do usuário com base em:
+      - TRE deferidas (tabela TRE)
+      - Agendamentos de TRE deferidos (tabela Agendamento)
+    """
     usuario = User.query.get(usuario_id)
     if not usuario:
         return 0, 0, 0
 
-    # 1) Total deferido (dias de TRE deferidos na tabela TRE)
+    # Total de dias deferidos (créditos) a partir da tabela TRE
     tre_total = db.session.query(
         func.coalesce(func.sum(
             case(
@@ -1718,7 +2046,7 @@ def sync_tre_user(usuario_id):
         ), 0)
     ).filter(TRE.funcionario_id == usuario_id).scalar()
 
-    # 2) Usufruídas (quantos agendamentos de TRE foram deferidos)
+    # Quantidade de dias já utilizados (agendamentos TRE deferidos)
     tre_usufruidas = db.session.query(
         func.count(Agendamento.id)
     ).filter(
@@ -1727,19 +2055,18 @@ def sync_tre_user(usuario_id):
         Agendamento.status == "deferido"
     ).scalar()
 
-    # 3) Restantes (saldo = deferidos - usados)
     tre_restantes = max((tre_total or 0) - (tre_usufruidas or 0), 0)
 
-    # Atualiza o usuário
     usuario.tre_total = tre_total or 0
     usuario.tre_usufruidas = tre_usufruidas or 0
     db.session.commit()
 
     return usuario.tre_total, usuario.tre_usufruidas, tre_restantes
 
-# =============================
-# Rota: Adicionar TRE (usuário)
-# =============================
+
+# ===========================================
+# TRE - USUÁRIO
+# ===========================================
 @app.route("/adicionar_tre", methods=["GET", "POST"])
 @login_required
 def adicionar_tre():
@@ -1755,13 +2082,11 @@ def adicionar_tre():
             flash("Somente PDF é permitido.", "danger")
             return redirect(url_for("adicionar_tre"))
 
-        # Salva arquivo com nome seguro + timestamp
         filename = secure_filename(f"{current_user.id}_{datetime.datetime.now():%Y%m%d%H%M%S}_{arquivo.filename}")
         save_path = os.path.join(app.root_path, UPLOAD_FOLDER)
         os.makedirs(save_path, exist_ok=True)
         arquivo.save(os.path.join(save_path, filename))
 
-        # Cria registro pendente
         nova = TRE(
             funcionario_id=current_user.id,
             dias_folga=dias_folga,
@@ -1771,7 +2096,6 @@ def adicionar_tre():
         db.session.add(nova)
         db.session.commit()
 
-        # Sincroniza usuário
         sync_tre_user(current_user.id)
 
         flash("TRE enviada para análise do administrador.", "success")
@@ -1782,9 +2106,6 @@ def adicionar_tre():
     return render_template("adicionar_tre.html", user=current_user, tres=tres_ultimas)
 
 
-# =============================
-# Rota: Listar TREs do usuário
-# =============================
 @app.route("/minhas_tres", methods=["GET"])
 @login_required
 def minhas_tres():
@@ -1793,15 +2114,11 @@ def minhas_tres():
                    .order_by(TRE.data_envio.desc())
                    .all())
 
-    # Sincroniza antes de exibir
     sync_tre_user(current_user.id)
 
     return render_template("minhas_tres.html", tres=minhas_tres, user=current_user)
 
 
-# =============================
-# Rota: Download do PDF da TRE
-# =============================
 @app.route("/download_tre/<int:tre_id>", methods=["GET"])
 @login_required
 def download_tre(tre_id):
@@ -1815,9 +2132,9 @@ def download_tre(tre_id):
     return send_from_directory(directory, tre.arquivo_pdf, as_attachment=True)
 
 
-# =============================
-# ADMIN: Listagem/Análise de TREs
-# =============================
+# ===========================================
+# TRE - ADMIN
+# ===========================================
 @app.route("/admin/tres", methods=["GET"])
 @login_required
 def admin_tres_list():
@@ -1828,7 +2145,13 @@ def admin_tres_list():
     status = request.args.get("status", "pendente")
     busca = request.args.get("q", "").strip()
 
-    q = TRE.query.join(User, User.id == TRE.funcionario_id)
+    # 🔹 Base: TRE apenas de usuários ATIVOS
+    q = (
+        TRE.query
+        .join(User, User.id == TRE.funcionario_id)
+        .filter(User.ativo.is_(True))          # <<--- filtro de ativos
+    )
+
     if status in ("pendente", "deferida", "indeferida"):
         q = q.filter(TRE.status == status)
 
@@ -1840,9 +2163,6 @@ def admin_tres_list():
     return render_template("admin_tres.html", tres=tres, status=status)
 
 
-# =============================
-# ADMIN: Decidir (deferir/indeferir) TRE
-# =============================
 @app.route("/admin/tre/<int:tre_id>/decidir", methods=["POST"])
 @login_required
 def admin_tre_decidir(tre_id):
@@ -1886,9 +2206,6 @@ def admin_tre_decidir(tre_id):
         return jsonify({"success": True, "message": "TRE indeferida."})
 
 
-# =============================
-# ADMIN: Excluir TRE
-# =============================
 @app.route("/admin/tre/<int:tre_id>/excluir", methods=["POST"])
 @login_required
 def admin_tre_excluir(tre_id):
@@ -1901,28 +2218,396 @@ def admin_tre_excluir(tre_id):
     try:
         db.session.delete(tre)
         db.session.commit()
-
-        # Sincroniza saldo do usuário após exclusão
         sync_tre_user(user.id)
-
         return jsonify({"success": True})
     except Exception:
         db.session.rollback()
         return jsonify({"error": "Falha ao excluir a TRE."}), 500
 
+# ===========================================
+# CRIAR BANCO (UTILIDADE)
+# ===========================================
 @app.route('/criar_banco')
 def criar_banco():
     try:
-        db.create_all()  # Tenta criar as tabelas no banco
+        db.create_all()
         return "Banco de dados criado com sucesso!"
     except Exception as e:
         return f"Erro ao criar o banco: {str(e)}"
-    
-# Login Manager
+
+
+# ===========================================
+# HELPERS PDF
+# ===========================================
+def find_logo(filename: str):
+    base = current_app.root_path
+    candidatos = [
+        os.path.join(base, filename),
+        os.path.join(base, "static", filename),
+        os.path.join(base, "static", "img", filename),
+    ]
+    for path in candidatos:
+        if os.path.exists(path):
+            return path
+    return None
+
+
+def format_banco_horas(minutos: int) -> str:
+    minutos = minutos or 0
+    sinal = "-" if minutos < 0 else ""
+    m = abs(minutos)
+    h = m // 60
+    mi = m % 60
+    return f"{sinal}{h}h {mi:02d}min"
+
+
+def get_tre_agendamentos(user_id: int):
+    Ag = Agendamento
+    rows = (
+        Ag.query
+        .filter(Ag.funcionario_id == user_id)
+        .filter(func.lower(Ag.status) == "deferido")
+        .filter(
+            or_(
+                func.upper(Ag.motivo) == "TRE",
+                func.upper(Ag.tipo_folga) == "TRE",
+            )
+        )
+        .order_by(Ag.data.asc())
+        .all()
+    )
+    result = []
+    for ag in rows:
+        data_str = ag.data.strftime("%d/%m/%Y") if ag.data else ""
+        situacao = (ag.status or "").capitalize()
+        result.append((data_str, situacao))
+    return result
+
+
+def get_bh_agendamentos(user_id: int):
+    Ag = Agendamento
+    rows = (
+        Ag.query
+        .filter(Ag.funcionario_id == user_id)
+        .filter(func.lower(Ag.status) == "deferido")
+        .filter(
+            or_(
+                func.upper(Ag.motivo) == "BH",
+                func.upper(Ag.tipo_folga) == "BH",
+            )
+        )
+        .order_by(Ag.data.asc())
+        .all()
+    )
+    result = []
+    for ag in rows:
+        data_str = ag.data.strftime("%d/%m/%Y") if ag.data else ""
+        situacao = (ag.status or "").capitalize()
+        result.append((data_str, situacao))
+    return result
+
+
+def draw_header_footer(c, width, height):
+    margin_x = 20 * mm
+    margin_right = width - margin_x
+
+    header_center_y = height - 20 * mm
+    azul = colors.HexColor("#1a73e8")
+
+    logo_h = 16 * mm
+    escola_logo = find_logo("escola.png")
+    municipio_logo = find_logo("municipio.png")
+
+    logo_y = header_center_y - logo_h / 2
+
+    if escola_logo:
+        c.drawImage(
+            escola_logo,
+            margin_x,
+            logo_y,
+            width=logo_h,
+            height=logo_h,
+            preserveAspectRatio=True,
+            mask="auto",
+        )
+
+    if municipio_logo:
+        c.drawImage(
+            municipio_logo,
+            margin_right - logo_h,
+            logo_y,
+            width=logo_h,
+            height=logo_h,
+            preserveAspectRatio=True,
+            mask="auto",
+        )
+
+    titulo_y = header_center_y + 6 * mm
+    subtitulo_y = header_center_y
+    data_y = header_center_y + 12 * mm
+
+    c.setFont("Helvetica-Bold", 12)
+    c.setFillColor(azul)
+    c.drawCentredString(
+        width / 2,
+        titulo_y,
+        "E.M. José Padin Mouta - Secretaria",
+    )
+
+    c.setFont("Helvetica", 10)
+    c.setFillColor(colors.black)
+    c.drawCentredString(
+        width / 2,
+        subtitulo_y,
+        "Relatório de Servidores - Portal do Servidor",
+    )
+
+    c.setFont("Helvetica", 8)
+    c.drawRightString(
+        margin_right,
+        data_y,
+        datetime.datetime.now().strftime("Emitido em %d/%m/%Y %H:%M"),
+    )
+
+    line_y = header_center_y - 10 * mm
+    c.setStrokeColor(azul)
+    c.setLineWidth(0.8)
+    c.line(margin_x, line_y, margin_right, line_y)
+
+    footer_base_y = 15 * mm
+    footer_line_y = footer_base_y + 4 * mm
+
+    c.setStrokeColor(colors.lightgrey)
+    c.setLineWidth(0.6)
+    c.line(margin_x, footer_line_y, margin_right, footer_line_y)
+
+    c.setFont("Helvetica", 8)
+    c.setFillColor(colors.grey)
+    footer_text = (
+        "E.M. José Padin Mouta • R. Bororós, 150 - Vila Tupi, "
+        "Praia Grande - SP, 11703-390"
+    )
+    c.drawCentredString(width / 2, footer_base_y + 1 * mm, footer_text)
+
+    c.drawRightString(
+        margin_right,
+        footer_base_y - 2 * mm,
+        f"Página {c.getPageNumber()}",
+    )
+
+    content_start_y = line_y - 8 * mm
+    return content_start_y
+
+
+def draw_simple_table(c, x, y, col_widths, headers, rows):
+    row_height = 6 * mm
+    total_width = sum(col_widths)
+    total_rows = 1 + len(rows)
+    table_height = total_rows * row_height
+
+    c.setStrokeColor(colors.lightgrey)
+    c.setLineWidth(0.5)
+    c.rect(x, y - table_height, total_width, table_height, stroke=1, fill=0)
+
+    for i in range(total_rows + 1):
+        c.line(x, y - i * row_height, x + total_width, y - i * row_height)
+
+    running_x = x
+    for w in col_widths[:-1]:
+        running_x += w
+        c.line(running_x, y, running_x, y - table_height)
+
+    c.setFont("Helvetica-Bold", 8)
+    c.setFillColor(colors.black)
+    header_y = y - 0.75 * row_height
+    col_x = x + 2 * mm
+    for idx, h in enumerate(headers):
+        c.drawString(col_x, header_y, h)
+        col_x += col_widths[idx]
+
+    c.setFont("Helvetica", 8)
+    for idx, row in enumerate(rows):
+        row_y = y - (idx + 1.75) * row_height
+        col_x = x + 2 * mm
+        for col_idx, value in enumerate(row):
+            c.drawString(col_x, row_y, str(value))
+            col_x += col_widths[col_idx]
+
+    return y - table_height
+
+
+def draw_user_page(c: canvas.Canvas, user: User, width, height):
+    margin_left = 20 * mm
+    margin_right = width - 20 * mm
+
+    azul = colors.HexColor("#1a73e8")
+    roxo = colors.HexColor("#7b3fe0")
+
+    y = draw_header_footer(c, width, height)
+
+    c.setFont("Helvetica-Bold", 11)
+    c.setFillColor(colors.black)
+    c.drawString(margin_left, y, f"Servidor: {user.nome or '—'}")
+    y -= 6 * mm
+
+    c.setFont("Helvetica", 9)
+    campos = [
+        ("Registro funcional", user.registro or "—"),
+        ("CPF", user.cpf or "—"),
+        ("Cargo", user.cargo or "—"),
+        (
+            "Data de nascimento",
+            user.data_nascimento.strftime("%d/%m/%Y")
+            if user.data_nascimento
+            else "—",
+        ),
+        ("RG", user.rg or "—"),
+        (
+            "Data emissão RG",
+            user.data_emissao_rg.strftime("%d/%m/%Y")
+            if user.data_emissao_rg
+            else "—",
+        ),
+        ("Órgão emissor", user.orgao_emissor or "—"),
+        ("Celular", user.celular or "—"),
+        ("E-mail", user.email or "—"),
+        ("Graduação", user.graduacao or "—"),
+    ]
+
+    for label, valor in campos:
+        c.drawString(margin_left, y, f"{label}: {valor}")
+        y -= 4.5 * mm
+
+    y -= 3 * mm
+    c.setStrokeColor(azul)
+    c.setLineWidth(0.6)
+    c.line(margin_left, y, margin_right, y)
+    y -= 6 * mm
+
+    total_tre = user.tre_total or 0
+    usadas_tre = user.tre_usufruidas or 0
+    saldo_tre = max(total_tre - usadas_tre, 0)
+
+    c.setFont("Helvetica-Bold", 10)
+    c.setFillColor(azul)
+    c.drawString(margin_left, y, "TRE")
+    y -= 5 * mm
+
+    c.setFont("Helvetica", 9)
+    c.setFillColor(colors.black)
+    c.drawString(
+        margin_left,
+        y,
+        f"Total: {total_tre} dias | A usufruir: {saldo_tre} dias | Usadas: {usadas_tre} dias",
+    )
+    y -= 7 * mm
+
+    tre_rows = get_tre_agendamentos(user.id)
+    if tre_rows:
+        y = draw_simple_table(
+            c,
+            margin_left,
+            y,
+            [35 * mm, (margin_right - margin_left) - 35 * mm],
+            ["Data", "Situação"],
+            tre_rows,
+        )
+        y -= 6 * mm
+    else:
+        c.setFont("Helvetica-Oblique", 8)
+        c.drawString(
+            margin_left, y, "Nenhum agendamento TRE deferido cadastrado."
+        )
+        y -= 8 * mm
+
+    y -= 4 * mm
+    c.setStrokeColor(roxo)
+    c.setLineWidth(0.6)
+    c.line(margin_left, y, margin_right, y)
+    y -= 6 * mm
+
+    c.setFont("Helvetica-Bold", 10)
+    c.setFillColor(roxo)
+    c.drawString(margin_left, y, "Banco de Horas")
+    y -= 5 * mm
+
+    c.setFont("Helvetica", 9)
+    c.setFillColor(colors.black)
+    saldo_bh_str = format_banco_horas(user.banco_horas)
+    c.drawString(margin_left, y, f"Saldo atual: {saldo_bh_str}")
+    y -= 7 * mm
+
+    bh_rows = get_bh_agendamentos(user.id)
+    if bh_rows:
+        y = draw_simple_table(
+            c,
+            margin_left,
+            y,
+            [35 * mm, (margin_right - margin_left) - 35 * mm],
+            ["Data", "Situação"],
+            bh_rows,
+        )
+    else:
+        c.setFont("Helvetica-Oblique", 8)
+        c.drawString(
+            margin_left, y, "Nenhum agendamento BH deferido cadastrado."
+        )
+
+
+# ===========================================
+# RELATÓRIO PDF (ADMIN)
+# ===========================================
+@app.route('/user_info_report')
+@login_required
+def user_info_report():
+    if getattr(current_user, 'tipo', None) != 'administrador':
+        flash("Acesso negado. Esta página é exclusiva para administradores.", "danger")
+        return redirect(url_for('index'))
+
+    users = User.query.order_by(User.nome.asc()).all()
+    if not users:
+        flash("Nenhum usuário encontrado para gerar o relatório.", "warning")
+        return redirect(url_for('user_info_all'))
+
+    # 🔄 Antes de gerar o PDF, garante que os saldos de TRE estejam atualizados
+    for u in users:
+        try:
+            sync_tre_user(u.id)
+        except Exception:
+            current_app.logger.exception(
+                "Erro ao sincronizar TRE do usuário %s no relatório.", u.id
+            )
+
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+
+    total = len(users)
+    for idx, user in enumerate(users):
+        draw_user_page(c, user, width, height)
+        if idx < total - 1:
+            c.showPage()
+
+    c.save()
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name="relatorio_servidores.pdf",
+        mimetype="application/pdf"
+    )
+
+# ===========================================
+# LOGIN MANAGER
+# ===========================================
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
 
+# ===========================================
+# MAIN
+# ===========================================
 if __name__ == '__main__':
     app.run(debug=True)

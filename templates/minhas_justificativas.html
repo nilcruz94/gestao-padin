@@ -1,23 +1,60 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Meus Agendamentos</title>
+
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
   <style>
+    :root {
+      --bg:#f3f4f6;
+      --ink:#0f172a;
+      --muted:#6b7280;
+      --brand:#0d6efd;
+      --brand-soft:#e0edff;
+      --border-soft:#e5e7eb;
+      --card-shadow:0 14px 34px rgba(15,23,42,.08), 0 2px 4px rgba(15,23,42,.05);
+      --radius:18px;
+    }
+
+    *, *::before, *::after{
+      box-sizing:border-box;
+    }
+
     html, body {
       height: 100%;
       margin: 0;
       padding: 0;
-      background-color: #f4f6f9;
-      color: #333;
+      background-color: var(--bg);
+      color: var(--ink);
       font-family: 'Montserrat', sans-serif;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+    }
+
+    body {
+      overflow-y:auto;
+    }
+
+    main {
+      flex: 1 0 auto;
+      padding: 24px 12px 70px;
+    }
+
+    .shell{
+      max-width: 1000px;
+      margin:0 auto;
+    }
+
+    @media (min-width:769px){
+      main{
+        padding:30px 24px 90px;
+      }
     }
 
     /* Cabeçalhos */
@@ -40,7 +77,6 @@
         position: relative;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         color: white;
-        flex-shrink: 0;
       }
 
       .left-section {
@@ -67,7 +103,6 @@
       }
 
       .escola-nome {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 700;
         font-size: 1.6rem;
         margin: 0;
@@ -75,7 +110,6 @@
       }
 
       .escola-subtitulo {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 600;
         font-size: 1.1rem;
         margin-top: 4px;
@@ -86,14 +120,12 @@
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
-        font-family: 'Montserrat', sans-serif;
         font-weight: 800;
         font-size: 1.9rem;
         color: white;
         letter-spacing: 5px;
         user-select: none;
         white-space: nowrap;
-        z-index: 1;
         text-shadow: 0 2px 5px rgba(0,0,0,0.3);
       }
 
@@ -134,7 +166,6 @@
         z-index: 1000;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         background-color: #007bff;
-        flex-shrink: 0;
       }
 
       .header-top {
@@ -165,7 +196,6 @@
       }
 
       .escola-nome {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 700;
         font-size: 1.3rem;
         margin: 0;
@@ -173,7 +203,6 @@
       }
 
       .escola-subtitulo {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 600;
         font-size: 1rem;
         margin-top: 2px;
@@ -183,19 +212,18 @@
         background-color: #0056b3;
         text-align: center;
         padding: 12px 10px;
-        font-family: 'Montserrat', sans-serif;
         font-weight: 800;
         font-size: 1.0rem;
         letter-spacing: 4px;
         user-select: none;
         color: white;
         box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
-
         display: flex;
         justify-content: center;
         align-items: center;
         gap: 12px;
         position: relative;
+        white-space: nowrap;
       }
 
       .btn-home-mobile {
@@ -216,46 +244,267 @@
       .btn-home-mobile:hover {
         background-color: #0d8a00;
       }
+    }
 
-      /* Container com margin para dar espaço pro footer fixo */
-      .container {
-        margin-bottom: 70px;
+    /* ===== Cabeçalho da página ===== */
+    .page-header-card{
+      background:#ffffff;
+      border-radius:var(--radius);
+      padding:16px 18px;
+      margin-bottom:18px;
+      display:flex;
+      align-items:center;
+      gap:16px;
+      box-shadow:var(--card-shadow);
+      border-left:5px solid var(--brand);
+    }
+
+    .page-header-icon{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:42px;
+      height:42px;
+      border-radius:999px;
+      background:radial-gradient(circle at 30% 30%,#ffffff 0%,var(--brand-soft) 60%,#c7d9ff 100%);
+      box-shadow:0 4px 12px rgba(37,99,235,.45);
+      color:#2563eb;
+      flex-shrink:0;
+    }
+
+    .page-header-icon i{ font-size:22px; }
+
+    .page-header-content{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .page-header-title{
+      font-size:1.2rem;
+      font-weight:800;
+      margin:0;
+      color:var(--ink);
+    }
+
+    .page-header-subtitle{
+      font-size:0.9rem;
+      margin:0;
+      color:var(--muted);
+    }
+
+    @media (max-width:600px){
+      .page-header-card{
+        padding:12px 14px;
+        margin-bottom:14px;
+      }
+      .page-header-title{
+        font-size:1.05rem;
+      }
+      .page-header-subtitle{
+        font-size:0.82rem;
       }
     }
 
-    /* Desktop main content wrapper */
-    @media (min-width: 769px) {
-      .main-content {
-        flex: 1; /* ocupa espaço entre header e footer */
-        display: flex;
-        justify-content: center;
-        align-items: center;
+    /* Flash messages */
+    .flash-messages {
+      margin-bottom: 14px;
+    }
+
+    .flash {
+      padding: 9px 12px;
+      border-radius: 12px;
+      margin-bottom: 6px;
+      font-size: 0.86rem;
+      font-weight:600;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      box-shadow:0 3px 10px rgba(15,23,42,.08);
+    }
+
+    .flash.success { background: #e8f7ee; color: #065f46; border:1px solid #b7ebc6; }
+    .flash.danger  { background: #fee2e2; color: #991b1b; border:1px solid #fecaca; }
+    .flash.warning { background: #fef3c7; color: #92400e; border:1px solid #fde68a; }
+    .flash.info    { background: #e0edff; color: #1d4ed8; border:1px solid #bfdbfe; }
+
+    /* Card principal da lista */
+    .agenda-card{
+      width:100%;
+      background:#ffffff;
+      border-radius:var(--radius);
+      box-shadow:var(--card-shadow);
+      padding:18px 16px 20px;
+      border:1px solid rgba(148,163,184,0.25);
+      box-sizing:border-box;
+      margin-bottom:18px;
+    }
+
+    .agenda-headline{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      margin-bottom:12px;
+    }
+
+    .agenda-title{
+      font-size:1.05rem;
+      font-weight:800;
+      color:var(--ink);
+    }
+
+    .agenda-subtitle{
+      font-size:0.86rem;
+      color:var(--muted);
+    }
+
+    @media (min-width:640px){
+      .agenda-headline{
+        flex-direction:row;
+        justify-content:space-between;
+        align-items:center;
+      }
+      .agenda-title{
+        font-size:1.1rem;
       }
     }
 
-    /* Mobile main content wrapper */
-    @media (max-width: 768px) {
-      .main-content {
-        flex: 1;
-      }
+    .no-data {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 0.95rem;
+      color: var(--muted);
     }
 
-    /* Container padrão */
-    .container {
+    /* Tabela */
+    table {
       width: 100%;
-      max-width: 700px;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-      padding: 10px;
-      border: 1px solid rgba(0, 0, 0, 0.07);
-      backdrop-filter: blur(6px);
-      box-sizing: border-box;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-top:6px;
+    }
+    thead th {
+      background-color: #f8fafc;
+      color: #0f172a;
+      padding: 8px 6px;
+      font-weight: 800;
+      text-align: center;
+      border-bottom:1px solid #e5e7eb;
+      white-space:nowrap;
+    }
+    tbody td {
+      padding: 8px 6px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: center;
+      color: #111827;
+      vertical-align: middle;
+    }
+    tbody tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+    tbody tr:hover{
+      background:#f7fbff;
     }
 
-    /* Modal e botões */
+    /* Status pill */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .status-pill.espera {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+    .status-pill.deferido {
+      background-color: #d1fae5;
+      color: #065f46;
+    }
+    .status-pill.indeferido {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+
+    /* Botão excluir */
+    .delete-btn {
+      font-size: 1.1rem;
+      color: #e74c3c;
+      cursor: pointer;
+      text-decoration: none;
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .delete-btn i {
+      pointer-events: none;
+    }
+
+    .delete-btn:hover {
+      color: #c0392b;
+      background: rgba(231, 76, 60, 0.12);
+    }
+
+    /* Paginação */
+    .pagination {
+      margin-top: 14px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .pagination button {
+      border: 1px solid #007bff;
+      background-color: #fff;
+      color: #007bff;
+      padding: 4px 9px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .pagination button:hover:not(.active):not(:disabled) {
+      background-color: #007bff;
+      color: #fff;
+    }
+    .pagination button.active {
+      background-color: #007bff;
+      color: #fff;
+      font-weight: 700;
+    }
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    .pagination span {
+      font-size: 0.85rem;
+      color: #555;
+    }
+
+    @media (max-width: 768px) {
+      thead th, tbody td {
+        font-size: 0.8rem;
+        padding: 6px 4px;
+      }
+    }
+
+    /* Modal */
     .modal {
-      display: none; /* garante que não apareça inicialmente */
+      display: none;
       position: fixed;
       z-index: 1000;
       top: 0;
@@ -272,72 +521,74 @@
     .modal-content {
       background-color: #fff;
       padding: 20px;
-      border-radius: 10px;
-      margin: 10% auto;
+      border-radius: 14px;
       width: 90%;
       max-width: 320px;
       box-sizing: border-box;
       text-align: center;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-content h2{
+      margin-top:0;
+      margin-bottom:8px;
+      font-size:1.1rem;
+      font-weight:800;
+      color:#111827;
+    }
+
+    .modal-content p{
+      margin:0 0 14px 0;
+      font-size:0.9rem;
+      color:#4b5563;
     }
 
     .btn {
-      margin: 10px;
-      padding: 10px 20px;
+      margin: 4px 6px;
+      padding: 9px 18px;
       border: none;
-      background-color: #4CAF50;
-      color: white;
       cursor: pointer;
-      border-radius: 5px;
-      transition: background-color 0.3s ease;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight:700;
+      transition: background-color 0.25s ease, box-shadow 0.25s ease;
     }
 
-    .btn:hover {
-      background-color: #45a049 !important;
+    .btn-danger{
+      background:#ef4444;
+      color:#fff;
+      box-shadow:0 6px 14px rgba(239,68,68,.55);
+    }
+    .btn-danger:hover{
+      background:#dc2626;
+      box-shadow:0 4px 10px rgba(220,38,38,.6);
     }
 
-    /* Estilos para o botão de exclusão */
-    .delete-btn {
-      font-size: 1.1rem; /* menor */
-      color: #e74c3c;
-      cursor: pointer;
-      text-decoration: none;
-      background: none;
-      border: none;
-      padding: 0;
-      margin: 0;
-      line-height: 1;
+    .btn-secondary{
+      background:#e5e7eb;
+      color:#111827;
+    }
+    .btn-secondary:hover{
+      background:#d1d5db;
+    }
+
+    /* Link voltar */
+    .voltar-wrapper {
+      text-align: center;
+      margin-top: 4px;
+    }
+    .voltar-link {
       display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      transition: color 0.2s ease;
+      align-items:center;
+      gap:6px;
+      margin: 0 auto;
+      font-size: 0.9rem;
+      color: #2563eb;
+      text-decoration: none;
+      font-weight:700;
     }
-
-    .delete-btn i {
-      pointer-events: none; /* evita problemas no clique */
-    }
-
-    .delete-btn:hover {
-      color: #c0392b;
-      background: rgba(255, 255, 255, 0.2);
-    }
-
-    /* Remove quadrado branco ao redor do X */
-    tbody tr td:nth-child(4) {
-      padding: 0 6px;
-      text-align: center;
-      width: 40px; /* espaço só pro ícone */
-      vertical-align: middle;
-    }
-
-    .no-data {
-      text-align: center;
-      margin-top: 20px;
-      font-size: 1.2em;
-      color: #555;
+    .voltar-link:hover {
+      text-decoration: underline;
     }
 
     /* Rodapé */
@@ -352,128 +603,6 @@
       flex-shrink: 0;
       width: 100%;
     }
-
-    /* Footer fixo no rodapé mobile */
-    @media (max-width: 768px) {
-      footer {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-      }
-    }
-
-    /* Link voltar */
-    .voltar-link {
-      display: inline-block;
-      margin-top: 25px;
-      font-size: 16px;
-      color: #007bff;
-      text-decoration: none;
-    }
-    .voltar-link:hover {
-      text-decoration: underline;
-    }
-
-    /* Tabela desktop padrão */
-    @media (min-width: 769px) {
-      table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-      thead th {
-        background-color: #007bff;
-        color: white;
-        padding: 10px;
-        font-weight: 700;
-        text-align: center; /* Centralizado */
-      }
-      tbody td {
-        padding: 10px;
-        border-bottom: 1px solid #ccc;
-        text-align: center; /* Centralizado */
-        color: white; /* Texto branco para todos os status */
-      }
-      /* Pode ajustar cor para cada status se quiser, aqui branco para todos */
-      tbody tr.status-em-espera td,
-      tbody tr.status-deferido td,
-      tbody tr.status-indeferido td {
-        color: white;
-      }
-    }
-
-/* Tabela mobile em estilo tradicional com cabeçalho visível e layout amigável */
-@media (max-width: 768px) {
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
-  }
-
-  thead {
-    display: table-header-group;
-    background-color: #007bff; /* fundo azul do cabeçalho */
-  }
-
-  thead th {
-    background-color: #007bff; /* garante cor mesmo se sobrescrever */
-    color: white;
-    font-weight: 700;
-    text-align: center;
-    padding: 10px 5px;
-    font-size: 0.85rem;
-    white-space: nowrap;
-  }
-
-  tbody tr {
-    display: table-row;
-    background-color: #007bff;
-    border-radius: 8px;
-    margin-bottom: 6px;
-  }
-
-  tbody tr td {
-    text-align: center;
-    padding: 8px 4px;
-    color: white !important;
-    font-size: 0.85rem;
-    word-break: break-word;
-    vertical-align: middle;
-  }
-
-  tbody tr td:nth-child(4) {
-    width: 40px;
-    min-width: 40px;
-    max-width: 40px;
-    padding: 4px 0;
-    display: table-cell; /* Remove o flex que estava distorcendo */
-    text-align: center;
-    vertical-align: middle;
-  }
-
-  /* Botão delete centralizado e compacto */
-  .delete-btn {
-    font-size: 1rem;
-    width: 24px;
-    height: 24px;
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: #e74c3c;
-    background: transparent;
-    border: none;
-    padding: 0;
-    margin: 0 auto;
-    border-radius: 50%;
-  }
-  .delete-btn:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-    color: #c0392b;
-  }
-
-}
-
   </style>
 </head>
 
@@ -484,32 +613,100 @@
     function confirmDelete(agendamentoId) {
       agendamentoIdToDelete = agendamentoId;
       const modal = document.getElementById("confirmModal");
-      modal.style.display = "flex"; // usa flex para centralizar
+      modal.style.display = "flex";
       document.getElementById("confirmDeleteForm").action = "/delete_agendamento/" + agendamentoIdToDelete;
     }
 
-    // TORNA A FUNÇÃO ACESSÍVEL NO HTML
     window.confirmDelete = confirmDelete;
 
-    document.getElementById("confirmDeleteBtn").addEventListener("click", function (event) {
-      event.preventDefault();
-      if (agendamentoIdToDelete) {
-        document.getElementById("confirmDeleteForm").submit();
-      } else {
-        alert("ID de agendamento inválido!");
-      }
-    });
+    const confirmBtn = document.getElementById("confirmDeleteBtn");
+    const cancelBtn = document.getElementById("cancelDeleteBtn");
+    const modal = document.getElementById("confirmModal");
 
-    document.getElementById("cancelDeleteBtn").addEventListener("click", function () {
-      document.getElementById("confirmModal").style.display = "none";
-    });
+    if (confirmBtn) {
+      confirmBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        if (agendamentoIdToDelete) {
+          document.getElementById("confirmDeleteForm").submit();
+        } else {
+          alert("ID de agendamento inválido!");
+        }
+      });
+    }
 
-    // Garante que o modal não fique visível após recarregar a página
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", function () {
+        modal.style.display = "none";
+      });
+    }
+
     window.addEventListener("pageshow", function () {
-      document.getElementById("confirmModal").style.display = "none";
+      modal.style.display = "none";
       agendamentoIdToDelete = null;
       document.getElementById("confirmDeleteForm").action = "";
     });
+
+    // Paginação front-end
+    const table = document.getElementById("agendamentosTable");
+    if (table) {
+      const tbody = table.querySelector("tbody");
+      const allRows = Array.from(tbody.querySelectorAll("tr"));
+      const rowsPerPage = 10;
+      let currentPage = 1;
+      const totalPages = Math.max(1, Math.ceil(allRows.length / rowsPerPage));
+      const paginationContainer = document.getElementById("pagination");
+
+      function renderTablePage(page) {
+        currentPage = page;
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+
+        allRows.forEach((row, idx) => {
+          row.style.display = (idx >= start && idx < end) ? "" : "none";
+        });
+
+        renderPaginationControls();
+      }
+
+      function renderPaginationControls() {
+        if (!paginationContainer) return;
+        paginationContainer.innerHTML = "";
+
+        if (totalPages <= 1) return;
+
+        const prevBtn = document.createElement("button");
+        prevBtn.textContent = "«";
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.addEventListener("click", () => {
+          if (currentPage > 1) renderTablePage(currentPage - 1);
+        });
+        paginationContainer.appendChild(prevBtn);
+
+        for (let p = 1; p <= totalPages; p++) {
+          if (p === 1 || p === totalPages || (p >= currentPage - 2 && p <= currentPage + 2)) {
+            const btn = document.createElement("button");
+            btn.textContent = p;
+            if (p === currentPage) btn.classList.add("active");
+            btn.addEventListener("click", () => renderTablePage(p));
+            paginationContainer.appendChild(btn);
+          } else if (p === currentPage - 3 || p === currentPage + 3) {
+            const span = document.createElement("span");
+            span.textContent = "...";
+            paginationContainer.appendChild(span);
+          }
+        }
+
+        const nextBtn = document.createElement("button");
+        nextBtn.textContent = "»";
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.addEventListener("click", () => {
+          if (currentPage < totalPages) renderTablePage(currentPage + 1);
+        });
+        paginationContainer.appendChild(nextBtn);
+      }
+
+      renderTablePage(1);
+    }
   });
 </script>
 
@@ -526,7 +723,7 @@
     </div>
 
     <div class="header-center-text-container">
-      <div class="header-center-text">PORTAL DO SERVIDOR</div>
+      PORTAL DO SERVIDOR
     </div>
 
     <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
@@ -543,14 +740,7 @@
         <div class="escola-subtitulo">José Padin Mouta</div>
       </div>
     </div>
-    <div class="header-bottom" style="
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        box-sizing: border-box;
-        white-space: nowrap;
-      ">
+    <div class="header-bottom">
       <span>PORTAL DO SERVIDOR</span>
       <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
         <i class="fas fa-home"></i>
@@ -559,76 +749,123 @@
   </header>
 
   <!-- Conteúdo principal -->
-  <main class="main-content">
-    <div class="container">
-      <h2>Agendamentos de {{ current_user.nome }}</h2>
+  <main>
+    <div class="shell">
 
-      <!-- Exibição das mensagens flash -->
       {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-              <div class="flash-messages">
-                  {% for category, message in messages %}
-                      <div class="flash {{ category }}">
-                          {{ message }}
-                      </div>
-                  {% endfor %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">
+                {% if category == 'success' %}
+                  <i class="fas fa-check-circle"></i>
+                {% elif category in ['danger', 'error'] %}
+                  <i class="fas fa-exclamation-circle"></i>
+                {% elif category == 'warning' %}
+                  <i class="fas fa-exclamation-triangle"></i>
+                {% else %}
+                  <i class="fas fa-info-circle"></i>
+                {% endif %}
+                {{ message }}
               </div>
-          {% endif %}
+            {% endfor %}
+          </div>
+        {% endif %}
       {% endwith %}
 
-      {% if agendamentos %}
-      <table>
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Motivo</th>
-            <th>Status</th>
-            <th>Opções</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for agendamento in agendamentos %}
-          <tr class="status-{{ agendamento.status|replace('_', '-') }}">
-            <td>{{ agendamento.data.strftime('%d/%m/%Y') }}</td>
-            <td>{{ agendamento.motivo | default('Não informado') }}</td>
-            <td>
-              {% set status_map = {'em_espera': 'Em Espera', 'deferido': 'Deferido', 'indeferido': 'Indeferido'} %}
-              {{ status_map.get(agendamento.status, 'Status Desconhecido') }}
-            </td>
-            <td>
-              {% if agendamento.status == 'em_espera' %}
-                <a href="javascript:void(0);" class="delete-btn" onclick="confirmDelete({{ agendamento.id }})" title="Excluir">
-                  <i class="fas fa-times"></i>
-                </a>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <div class="no-data">
-        <p>Você não tem justificativas pendentes.</p>
+      <!-- Cabeçalho da página -->
+      <div class="page-header-card">
+        <div class="page-header-icon">
+          <i class="fas fa-calendar-check"></i>
+        </div>
+        <div class="page-header-content">
+          <p class="page-header-title">Meus Agendamentos</p>
+          <p class="page-header-subtitle">
+            Visualize suas folgas agendadas, verifique o status e cancele agendamentos ainda em espera.
+          </p>
+        </div>
       </div>
-      {% endif %}
+
+      <!-- Card principal -->
+      <div class="agenda-card">
+        <div class="agenda-headline">
+          <div class="agenda-title">
+            Agendamentos de {{ current_user.nome }}
+          </div>
+          <div class="agenda-subtitle">
+            Listados do mais recente para o mais antigo.
+          </div>
+        </div>
+
+        {% if agendamentos %}
+          <table id="agendamentosTable">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Motivo</th>
+                <th>Status</th>
+                <th>Opções</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% set status_map = {'em_espera': 'Em Espera', 'deferido': 'Deferido', 'indeferido': 'Indeferido'} %}
+              {% for agendamento in agendamentos|sort(attribute='data', reverse=True) %}
+              <tr>
+                <td>{{ agendamento.data.strftime('%d/%m/%Y') }}</td>
+                <td>{{ agendamento.motivo | default('Não informado') }}</td>
+                <td>
+                  {% set rotulo = status_map.get(agendamento.status, 'Status Desconhecido') %}
+                  {% set s = (agendamento.status or '')|lower() %}
+                  <span class="status-pill
+                    {% if s == 'em_espera' %}espera
+                    {% elif s == 'deferido' %}deferido
+                    {% elif s == 'indeferido' %}indeferido
+                    {% endif %}">
+                    {{ rotulo }}
+                  </span>
+                </td>
+                <td>
+                  {% if agendamento.status == 'em_espera' %}
+                    <a href="javascript:void(0);" class="delete-btn" onclick="confirmDelete({{ agendamento.id }})" title="Excluir agendamento">
+                      <i class="fas fa-times"></i>
+                    </a>
+                  {% else %}
+                    <span style="font-size:0.8rem; color:#6b7280;">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <!-- Paginação (front-end) -->
+          <div id="pagination" class="pagination"></div>
+        {% else %}
+          <div class="no-data">
+            Você não tem agendamentos cadastrados.
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="voltar-wrapper">
+        <a href="{{ url_for('index') }}" class="voltar-link">
+          <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
+        </a>
+      </div>
     </div>
   </main>
 
   <!-- Janela de Confirmação -->
   <div id="confirmModal" class="modal">
     <div class="modal-content">
-      <h2>Você tem certeza?</h2>
-      <p>Deseja excluir este agendamento?</p>
+      <h2>Excluir agendamento</h2>
+      <p>Você tem certeza de que deseja excluir este agendamento?</p>
       <form id="confirmDeleteForm" action="" method="POST">
-        <button id="confirmDeleteBtn" class="btn">Sim, excluir</button>
-        <button id="cancelDeleteBtn" type="button" class="btn">Cancelar</button>
+        <button id="confirmDeleteBtn" class="btn btn-danger">Sim, excluir</button>
+        <button id="cancelDeleteBtn" type="button" class="btn btn-secondary">Cancelar</button>
       </form>
     </div>
   </div>
-
-  <a href="{{ url_for('index') }}" class="voltar-link">
-    <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
-  </a>
 
   <!-- Rodapé -->
   <footer>

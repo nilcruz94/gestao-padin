@@ -1,16 +1,82 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Relatório de Horas Extras</title>
+  <title>Relatório de Horas Extras - E.M José Padin Mouta</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, maximum-scale=3, minimum-scale=1" />
+
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
-  <style>
-    /* Cabeçalhos */
-    .header-desktop, .header-mobile { display: none; }
 
+  <style>
+    :root {
+      --primary: #0077ff;
+      --primary-dark: #0051ff;
+      --primary-soft: #dbe9ff;
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --border-soft: #e5e7eb;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --warning: #f97316;
+      --warning-soft: #ffedd5;
+      --danger: #dc2626;
+      --danger-soft: #fee2e2;
+
+      --card-shadow: 0 14px 34px rgba(15,23,42,.1), 0 2px 4px rgba(15,23,42,.06);
+      --radius: 18px;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Montserrat', sans-serif;
+      background: radial-gradient(circle at top, #e0f2ff 0, #f9fafb 45%, #eef2ff 100%);
+      background-attachment: fixed;
+      color: var(--text-main);
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    main {
+      flex: 1 0 auto;
+      padding: 24px 12px 60px;
+      box-sizing: border-box;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 769px) {
+      main {
+        padding: 30px 24px 80px;
+      }
+    }
+
+    /* ===== CABEÇALHOS ===== */
+    .header-desktop,
+    .header-mobile {
+      display: none;
+      flex-shrink: 0;
+    }
+
+    /* Desktop */
     @media (min-width: 769px) {
       .header-desktop {
         display: flex;
@@ -21,19 +87,17 @@
         justify-content: space-between;
         box-sizing: border-box;
         min-height: 110px;
-        position: sticky;
-        top: 0;
-        z-index: 1000;
+        position: relative;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         color: white;
-        position: relative;
-        flex-shrink: 0;
       }
+
       .left-section {
         display: flex;
         align-items: center;
         gap: 20px;
       }
+
       .logo {
         width: 80px;
         height: 80px;
@@ -42,6 +106,7 @@
         background-color: white;
         padding: 6px;
       }
+
       .text-container {
         display: flex;
         flex-direction: column;
@@ -49,39 +114,39 @@
         text-align: left;
         color: white;
       }
+
       .escola-nome {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 700;
         font-size: 1.6rem;
         margin: 0;
         line-height: 1.1;
       }
+
       .escola-subtitulo {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 600;
         font-size: 1.1rem;
         margin-top: 4px;
       }
+
       .header-center-text-container {
         position: absolute;
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        user-select: none;
-        z-index: 1;
-      }
-      .header-center-text {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 800;
         font-size: 1.9rem;
         color: white;
         letter-spacing: 5px;
+        user-select: none;
         white-space: nowrap;
+        z-index: 1;
         text-shadow: 0 2px 5px rgba(0,0,0,0.3);
       }
+
+      .header-center-text {
+        font-family: 'Montserrat', sans-serif;
+      }
+
       .btn-home {
         background-color: #0fb300;
         color: white;
@@ -101,9 +166,13 @@
         transform: translateY(-50%);
         z-index: 2;
       }
-      .btn-home:hover { background-color: #0d8a00; }
+
+      .btn-home:hover {
+        background-color: #0d8a00;
+      }
     }
 
+    /* Mobile */
     @media (max-width: 768px) {
       .header-mobile {
         display: block;
@@ -115,15 +184,18 @@
         z-index: 1000;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         background-color: #007bff;
-        flex-shrink: 0;
       }
+
       .header-top {
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 15px;
         padding: 10px 15px;
+        background-color: #007bff;
+        text-align: center;
       }
+
       .logo {
         width: 48px;
         height: 48px;
@@ -132,6 +204,7 @@
         background-color: white;
         padding: 6px;
       }
+
       .text-container {
         display: flex;
         flex-direction: column;
@@ -139,34 +212,38 @@
         color: white;
         text-align: center;
       }
+
       .escola-nome {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 700;
         font-size: 1.3rem;
         margin: 0;
+        line-height: 1.1;
       }
+
       .escola-subtitulo {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 600;
         font-size: 1rem;
         margin-top: 2px;
       }
+
       .header-bottom {
         background-color: #0056b3;
         text-align: center;
         padding: 12px 10px;
-        font-family: 'Montserrat', sans-serif;
         font-weight: 800;
-        font-size: 1rem;
+        font-size: 1.0rem;
         letter-spacing: 4px;
         user-select: none;
         color: white;
+        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
         display: flex;
         justify-content: center;
         align-items: center;
         gap: 12px;
+        box-sizing: border-box;
         white-space: nowrap;
       }
+
       .btn-home-mobile {
         background-color: #0fb300;
         color: white;
@@ -181,87 +258,251 @@
         box-shadow: 0 2px 6px rgba(15,179,0,0.8);
         transition: background-color 0.3s ease;
       }
+
       .btn-home-mobile:hover {
         background-color: #0d8a00;
       }
     }
 
-    /* Container */
-    .container {
-      max-width: 900px;
-      margin: 20px auto;
-      padding: 20px;
-      background-color: #fff;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      border-radius: 8px;
+    /* ===== HEADER CARD DA PÁGINA ===== */
+    .page-header-card {
+      background: #ffffff;
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin: 0 auto 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--card-shadow);
+      border-left: 5px solid var(--primary);
+    }
+
+    .page-header-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, .45);
+      color: #2563eb;
+      flex-shrink: 0;
+    }
+
+    .page-header-icon i {
+      font-size: 22px;
+    }
+
+    .page-header-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .page-header-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin: 0;
+      color: var(--text-main);
+    }
+
+    .page-header-subtitle {
+      font-size: 0.9rem;
+      margin: 0;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 600px) {
+      .page-header-card {
+        padding: 12px 14px;
+      }
+
+      .page-header-title {
+        font-size: 1.05rem;
+      }
+
+      .page-header-subtitle {
+        font-size: 0.82rem;
+      }
+    }
+
+    /* ===== CARD PRINCIPAL ===== */
+    .content-card {
+      width: 100%;
+      margin: 0 auto 30px;
+      background: var(--surface);
+      border-radius: 16px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+      padding: 18px 18px 22px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      backdrop-filter: blur(8px);
       box-sizing: border-box;
     }
 
-    h1 {
-      color: #007bff;
-      font-size: 1.5rem;
-      text-align: center;
-      margin-bottom: 20px;
-      font-family: 'Montserrat', sans-serif;
+    .content-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin: 0 0 6px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
+    .content-title i {
+      color: var(--primary);
+    }
+
+    .content-subtitle {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin: 0 0 16px;
+    }
+
+    /* ===== BUSCA ===== */
     .search-container {
-      margin-bottom: 20px;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input-wrapper i {
+      position: absolute;
+      left: 12px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
     }
 
     .search-container input {
       width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      box-sizing: border-box;
+      padding: 9px 10px 9px 32px;
+      font-size: 0.9rem;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background-color: #f9fafb;
+      outline: none;
+      transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out, background-color 0.15s ease-out;
+      font-family: 'Montserrat', sans-serif;
     }
 
-    /* Tabela responsiva */
-    .table-responsive {
+    .search-container input:focus {
+      background-color: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.18);
+    }
+
+    /* ===== TABELA ===== */
+    .table-card {
+      margin-top: 4px;
+    }
+
+    .table-container {
       overflow-x: auto;
-      border-radius: 6px;
-      box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      border: 1px solid var(--border-soft);
+      box-shadow: 0 10px 24px rgba(15,23,42,0.08);
+      background-color: #ffffff;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 20px;
+      font-size: 0.9rem;
     }
 
-    table, th, td {
-      border: 1px solid #ddd;
+    thead {
+      background: linear-gradient(to right, #eff6ff, #e0ecff);
+    }
+
+    th, td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      vertical-align: middle;
     }
 
     th {
-      background-color: #007bff;
-      color: #fff;
-      padding: 10px;
-      text-align: left;
+      font-weight: 700;
+      color: #1f2933;
+      font-size: 0.86rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
-    td {
-      padding: 10px;
-      text-align: left;
+    tbody tr:nth-child(even) {
+      background-color: #f9fafb;
     }
 
-    .voltar-link {
-      display: inline-block;
-      margin-top: 20px;
-      padding: 10px 20px;
-      background-color: #007bff;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 5px;
-      font-weight: bold;
+    tbody tr:hover {
+      background-color: #eef2ff;
     }
 
-    .voltar-link:hover {
-      background-color: #0056b3;
+    /* Coluna de horas extras em destaque */
+    td:last-child {
+      font-weight: 600;
+      color: var(--primary-dark);
     }
 
+    /* ===== PAGINAÇÃO ===== */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .pagination button {
+      border: 1px solid var(--primary);
+      background-color: #ffffff;
+      color: var(--primary);
+      padding: 5px 11px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      transition: background-color 0.15s ease-out,
+                  color 0.15s ease-out,
+                  box-shadow 0.15s ease-out,
+                  transform 0.1s ease-out;
+    }
+
+    .pagination button:hover:not(.active):not(:disabled) {
+      background-color: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 4px 10px rgba(37,99,235,0.4);
+      transform: translateY(-1px);
+    }
+
+    .pagination button.active {
+      background-color: var(--primary);
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 4px 10px rgba(37,99,235,0.4);
+    }
+
+    .pagination button:disabled {
+      opacity: 0.45;
+      cursor: default;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .pagination span {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      user-select: none;
+    }
+
+    /* ===== FOOTER ===== */
     footer {
       background: linear-gradient(to right, #222, #444);
       color: #ddd;
@@ -272,8 +513,23 @@
       box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
       flex-shrink: 0;
       width: 100%;
-      margin-top: 30px;
-      position: relative;
+    }
+
+    footer p {
+      margin: 5px 0;
+      font-size: 15px;
+      font-weight: 300;
+    }
+
+    footer a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease-in-out;
+    }
+
+    footer a:hover {
+      color: #00aaff;
     }
   </style>
 </head>
@@ -313,38 +569,72 @@
     </div>
   </header>
 
-  <!-- Conteúdo -->
-  <div class="container">
-    <h1>Relatório de Horas Extras</h1>
+  <!-- Conteúdo principal -->
+  <main>
+    <div class="shell">
 
-    <div class="search-container">
-      <input type="text" id="searchInput" placeholder="Localizar pessoa pelo nome...">
-    </div>
+      <!-- Header card da página -->
+      <div class="page-header-card">
+        <div class="page-header-icon">
+          <i class="fas fa-file-alt"></i>
+        </div>
+        <div class="page-header-content">
+          <p class="page-header-title">Relatório de Horas Extras</p>
+          <p class="page-header-subtitle">
+            Consulte as horas extras disponíveis por servidor, com busca por nome e paginação dos resultados.
+          </p>
+        </div>
+      </div>
 
-    <div class="table-responsive">
-      <table id="usuariosTable">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Registro</th>
-            <th>Email</th>
-            <th>Horas Extras Disponíveis</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% set usuarios_sorted = usuarios|sort(attribute='horas', reverse=True) %}
-          {% for usuario in usuarios_sorted %}
-          <tr>
-            <td>{{ usuario.nome }}</td>
-            <td>{{ usuario.registro }}</td>
-            <td>{{ usuario.email }}</td>
-            <td>{{ usuario.horas }}h {{ usuario.minutos }}m</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <!-- Card principal -->
+      <div class="content-card">
+        <h2 class="content-title">
+          <i class="fas fa-user-clock"></i>
+          Servidores com banco de horas disponível
+        </h2>
+        <p class="content-subtitle">
+          Use o campo abaixo para localizar rapidamente um servidor pelo nome. Os resultados são exibidos em páginas de até 10 registros.
+        </p>
+
+        <div class="search-container">
+          <div class="search-input-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Digite um nome para filtrar..." />
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-container">
+            <table id="usuariosTable">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Registro</th>
+                  <th>Email</th>
+                  <th>Horas Extras Disponíveis</th>
+                </tr>
+              </thead>
+              <tbody>
+                {# A lista 'usuarios' já vem da rota ordenada por nome e apenas com ativos #}
+                {% for usuario in usuarios %}
+                <tr>
+                  <td>{{ usuario.nome }}</td>
+                  <td>{{ usuario.registro }}</td>
+                  <td>{{ usuario.email }}</td>
+                  <td>{{ usuario.horas }}h {{ usuario.minutos }}m</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Paginação -->
+        <div id="pagination" class="pagination"></div>
+      </div>
+
     </div>
-  </div>
+  </main>
 
   <!-- Rodapé -->
   <footer>
@@ -353,17 +643,98 @@
 
   <script>
     const searchInput = document.getElementById('searchInput');
-    searchInput.addEventListener('keyup', function () {
-      const filter = searchInput.value.toLowerCase();
-      const table = document.getElementById('usuariosTable');
-      const tr = table.getElementsByTagName('tr');
-      for (let i = 1; i < tr.length; i++) {
-        const td = tr[i].getElementsByTagName('td')[0];
-        if (td) {
-          const textValue = td.textContent || td.innerText;
-          tr[i].style.display = textValue.toLowerCase().includes(filter) ? "" : "none";
+    const table = document.getElementById('usuariosTable');
+    const tbody = table.querySelector('tbody');
+    const allRows = Array.from(tbody.querySelectorAll('tr'));
+    const rowsPerPage = 10;
+    let filteredRows = [...allRows];
+    let currentPage = 1;
+
+    function renderPagination() {
+      const pagination = document.getElementById('pagination');
+      pagination.innerHTML = '';
+
+      const totalRows = filteredRows.length;
+      const totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
+
+      // Botão anterior
+      const prevBtn = document.createElement('button');
+      prevBtn.textContent = '«';
+      prevBtn.disabled = currentPage === 1;
+      prevBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderTable();
+        }
+      });
+      pagination.appendChild(prevBtn);
+
+      // Páginas
+      for (let p = 1; p <= totalPages; p++) {
+        if (p === 1 || p === totalPages || (p >= currentPage - 2 && p <= currentPage + 2)) {
+          const btn = document.createElement('button');
+          btn.textContent = p;
+          if (p === currentPage) btn.classList.add('active');
+          btn.addEventListener('click', () => {
+            currentPage = p;
+            renderTable();
+          });
+          pagination.appendChild(btn);
+        } else if (p === currentPage - 3 || p === currentPage + 3) {
+          const span = document.createElement('span');
+          span.textContent = '...';
+          pagination.appendChild(span);
         }
       }
+
+      // Botão próximo
+      const nextBtn = document.createElement('button');
+      nextBtn.textContent = '»';
+      nextBtn.disabled = currentPage === totalPages;
+      nextBtn.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderTable();
+        }
+      });
+      pagination.appendChild(nextBtn);
+    }
+
+    function renderTable() {
+      // Esconde todas as linhas
+      allRows.forEach(row => row.style.display = 'none');
+
+      const start = (currentPage - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
+      const pageRows = filteredRows.slice(start, end);
+
+      pageRows.forEach(row => row.style.display = '');
+      renderPagination();
+    }
+
+    function applyFilter() {
+      const filter = searchInput.value.trim().toLowerCase();
+
+      if (filter === '') {
+        filteredRows = [...allRows];
+      } else {
+        filteredRows = allRows.filter(row => {
+          const cell = row.querySelector('td');
+          if (!cell) return false;
+          const textValue = (cell.textContent || cell.innerText).toLowerCase();
+          return textValue.includes(filter);
+        });
+      }
+
+      currentPage = 1;
+      renderTable();
+    }
+
+    searchInput.addEventListener('keyup', applyFilter);
+
+    // Inicializa tabela
+    document.addEventListener('DOMContentLoaded', () => {
+      applyFilter();
     });
   </script>
 </body>

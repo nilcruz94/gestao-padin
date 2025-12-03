@@ -2,30 +2,80 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Relatar Esquecimento / Ausência de Marcação</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, maximum-scale=3, minimum-scale=1" />
+
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
 
   <style>
+    :root {
+      --primary: #0077ff;
+      --primary-dark: #0051ff;
+      --primary-soft: #dbe9ff;
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --border-soft: #e5e7eb;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --warning: #fb923c;
+      --warning-soft: #fff4e5;
+      --success: #22c55e;
+      --success-soft: #e1fbe8;
+      --danger: #ef4444;
+      --danger-soft: #ffe4e6;
+
+      --card-shadow: 0 14px 34px rgba(15,23,42,.1), 0 2px 4px rgba(15,23,42,.06);
+      --radius: 18px;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
     html, body {
-      height: 100%;
       margin: 0;
       padding: 0;
-      background-color: #f9fbfc;
-      color: #333;
-      font-family: 'Arial', sans-serif;
+      height: 100%;
+      font-family: 'Montserrat', sans-serif;
+      background: radial-gradient(circle at top, #e0f2ff 0, #f9fafb 45%, #eef2ff 100%);
+      color: var(--text-main);
+    }
+
+    body {
       display: flex;
       flex-direction: column;
+      min-height: 100vh;
     }
 
-    /* Por padrão, ambos escondidos */
-    .header-desktop, .header-mobile {
+    main {
+      flex: 1 0 auto;
+      padding: 24px 12px 60px;
+      box-sizing: border-box;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 769px) {
+      main {
+        padding: 30px 24px 80px;
+      }
+    }
+
+    /* ===== CABEÇALHO ===== */
+    .header-desktop,
+    .header-mobile {
       display: none;
+      flex-shrink: 0;
     }
 
-    /* === Desktop Header === */
+    /* Desktop */
     @media (min-width: 769px) {
       .header-desktop {
         display: flex;
@@ -36,19 +86,17 @@
         justify-content: space-between;
         box-sizing: border-box;
         min-height: 110px;
-        position: sticky;
-        top: 0;
-        z-index: 1000;
+        position: relative;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         color: white;
-        position: relative;
-        flex-shrink: 0;
       }
+
       .left-section {
         display: flex;
         align-items: center;
         gap: 20px;
       }
+
       .logo {
         width: 80px;
         height: 80px;
@@ -57,6 +105,7 @@
         background-color: white;
         padding: 6px;
       }
+
       .text-container {
         display: flex;
         flex-direction: column;
@@ -64,40 +113,39 @@
         text-align: left;
         color: white;
       }
+
       .escola-nome {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 700;
         font-size: 1.6rem;
         margin: 0;
         line-height: 1.1;
       }
+
       .escola-subtitulo {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 600;
         font-size: 1.1rem;
         margin-top: 4px;
       }
-      
+
       .header-center-text-container {
         position: absolute;
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        user-select: none;
-        z-index: 1;
-      }
-      .header-center-text {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 800;
         font-size: 1.9rem;
         color: white;
         letter-spacing: 5px;
+        user-select: none;
         white-space: nowrap;
+        z-index: 1;
         text-shadow: 0 2px 5px rgba(0,0,0,0.3);
       }
+
+      .header-center-text {
+        font-family: 'Montserrat', sans-serif;
+      }
+
       .btn-home {
         background-color: #0fb300;
         color: white;
@@ -117,12 +165,13 @@
         transform: translateY(-50%);
         z-index: 2;
       }
+
       .btn-home:hover {
         background-color: #0d8a00;
       }
     }
 
-    /* === Mobile Header === */
+    /* Mobile */
     @media (max-width: 768px) {
       .header-mobile {
         display: block;
@@ -134,8 +183,8 @@
         z-index: 1000;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         background-color: #007bff;
-        flex-shrink: 0;
       }
+
       .header-top {
         display: flex;
         align-items: center;
@@ -145,6 +194,7 @@
         background-color: #007bff;
         text-align: center;
       }
+
       .logo {
         width: 48px;
         height: 48px;
@@ -153,6 +203,7 @@
         background-color: white;
         padding: 6px;
       }
+
       .text-container {
         display: flex;
         flex-direction: column;
@@ -160,38 +211,37 @@
         color: white;
         text-align: center;
       }
+
       .escola-nome {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 700;
         font-size: 1.3rem;
         margin: 0;
         line-height: 1.1;
       }
+
       .escola-subtitulo {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 600;
         font-size: 1rem;
         margin-top: 2px;
       }
+
       .header-bottom {
         background-color: #0056b3;
         text-align: center;
         padding: 12px 10px;
-        font-family: 'Montserrat', sans-serif;
         font-weight: 800;
-        font-size: 1.0rem;
+        font-size: 1rem;
         letter-spacing: 4px;
         user-select: none;
         color: white;
         box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
-
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 15px;
-        position: relative;
+        gap: 12px;
         white-space: nowrap;
       }
+
       .btn-home-mobile {
         background-color: #0fb300;
         color: white;
@@ -206,102 +256,241 @@
         box-shadow: 0 2px 6px rgba(15,179,0,0.8);
         transition: background-color 0.3s ease;
       }
+
       .btn-home-mobile:hover {
         background-color: #0d8a00;
       }
+    }
 
-      /* Menor margem no container para mobile */
-      .container {
-        margin-bottom: 50px;
+    /* ===== HEADER CARD DA PÁGINA ===== */
+    .page-header-card {
+      background: #ffffff;
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin: 0 auto 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--card-shadow);
+      border-left: 5px solid var(--primary);
+    }
+
+    .page-header-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, .45);
+      color: #2563eb;
+      flex-shrink: 0;
+    }
+
+    .page-header-icon i {
+      font-size: 22px;
+    }
+
+    .page-header-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .page-header-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin: 0;
+      color: var(--text-main);
+    }
+
+    .page-header-subtitle {
+      font-size: 0.9rem;
+      margin: 0;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 600px) {
+      .page-header-card {
+        padding: 12px 14px;
+      }
+
+      .page-header-title {
+        font-size: 1.05rem;
+      }
+
+      .page-header-subtitle {
+        font-size: 0.82rem;
       }
     }
 
-    /* Conteúdo da página */
-    .container {
+    /* ===== FLASH MESSAGES ===== */
+    .danger,
+    .success {
       width: 100%;
-      max-width: 600px;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-      padding: 20px 25px;
-      border: 1px solid rgba(0, 0, 0, 0.07);
-      backdrop-filter: blur(6px);
-      margin: 20px auto 40px auto;
+      margin: 16px auto;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(15,23,42,0.12);
+      border-width: 1px;
+      border-style: solid;
+    }
+
+    .danger {
+      color: #7f1d1d;
+      background-color: #fee2e2;
+      border-color: #fecaca;
+    }
+
+    .success {
+      color: #065f46;
+      background-color: #d1fae5;
+      border-color: #a7f3d0;
+    }
+
+    /* ===== CARD DO FORMULÁRIO ===== */
+    .form-card {
+      width: 100%;
+      margin: 0 auto 30px;
+      background: var(--surface);
+      border-radius: 16px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+      padding: 20px 22px 24px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      backdrop-filter: blur(8px);
       box-sizing: border-box;
     }
 
-    h1 {
-      text-align: center;
-      margin-bottom: 25px;
-      color: #007bff;
-      font-family: 'Montserrat', sans-serif;
+    .form-card h1 {
+      font-size: 1.3rem;
+      margin: 0 0 16px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .form-card h1 i {
+      color: var(--primary);
+      font-size: 1.4rem;
+    }
+
+    .form-description {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 18px;
     }
 
     .input-group {
-      margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.9rem;
     }
+
+    .input-group.full-width {
+      grid-column: 1 / -1;
+    }
+
     label {
-      font-size: 14px;
-      margin-bottom: 6px;
-      display: block;
-      color: #333;
+      font-size: 0.86rem;
+      color: var(--text-main);
       font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
+
+    label i {
+      color: var(--primary);
+      font-size: 0.9rem;
+    }
+
     input[type="text"],
     input[type="date"],
     input[type="time"],
     textarea {
       width: 100%;
-      padding: 10px;
-      font-size: 15px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
+      padding: 9px 10px;
+      font-size: 0.93rem;
+      border-radius: 10px;
+      border: 1px solid var(--border-soft);
       box-sizing: border-box;
-      font-family: Arial, sans-serif;
+      font-family: 'Montserrat', sans-serif;
       resize: vertical;
+      outline: none;
+      transition: border-color 0.12s ease-out, box-shadow 0.12s ease-out, background-color 0.12s ease-out;
+      background-color: #f9fafb;
     }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+      background-color: #ffffff;
+    }
+
     textarea {
       min-height: 50px;
-      max-height: 100px;
+      max-height: 120px;
     }
+
     .submit-btn {
+      margin-top: 18px;
       width: 100%;
-      padding: 12px;
-      background-color: #007bff;
+      padding: 11px 14px;
+      background-color: #0fb300;
       color: white;
       border: none;
-      font-size: 16px;
+      font-size: 0.98rem;
       cursor: pointer;
-      border-radius: 6px;
-      margin-top: 10px;
+      border-radius: 999px;
       font-weight: 700;
-      transition: background-color 0.3s ease;
-      display: flex;
+      transition: background-color 0.18s ease-out, box-shadow 0.18s ease-out, transform 0.12s ease-out;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
+      box-shadow: 0 6px 14px rgba(15,179,0,0.7);
     }
+
+    .submit-btn i {
+      font-size: 1rem;
+    }
+
     .submit-btn:hover {
-      background-color: #0d6efd;
+      background-color: #0d8a00;
+      box-shadow: 0 10px 22px rgba(15,179,0,0.85);
+      transform: translateY(-1px);
     }
-    .danger {
-      color: #842029;
-      background-color: #f8d7da;
-      padding: 10px;
-      border: 1px solid #f5c2c7;
-      border-radius: 5px;
-      margin-bottom: 15px;
-      font-weight: 600;
+
+    .submit-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 10px rgba(15,179,0,0.6);
     }
-    .success {
-      color: #0f5132;
-      background-color: #d1e7dd;
-      padding: 10px;
-      border: 1px solid #badbcc;
-      border-radius: 5px;
-      margin-bottom: 15px;
-      font-weight: 600;
+
+    @media (max-width: 640px) {
+      .form-card {
+        padding: 16px 14px 20px;
+        margin-bottom: 24px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
     }
+
+    /* ===== FOOTER ===== */
     footer {
       background: linear-gradient(to right, #222, #444);
       color: #ddd;
@@ -310,10 +499,25 @@
       font-size: 14px;
       border-top: 2px solid #555;
       box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
-      flex-shrink: 0;
       width: 100%;
-      font-family: 'Arial', sans-serif;
-      position: relative;
+      flex-shrink: 0;
+    }
+
+    footer p {
+      margin: 5px 0;
+      font-size: 15px;
+      font-weight: 300;
+    }
+
+    footer a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease-in-out;
+    }
+
+    footer a:hover {
+      color: #00aaff;
     }
   </style>
 
@@ -323,6 +527,7 @@
       var horaSaida    = document.getElementById("hora_primeira_saida").value;
       var horaEntrada2 = document.getElementById("hora_segunda_entrada").value;
       var horaSaida2   = document.getElementById("hora_segunda_saida").value;
+
       if (!horaEntrada && !horaSaida && !horaEntrada2 && !horaSaida2) {
         alert("Você deve preencher ao menos um campo de horário.");
         event.preventDefault();
@@ -370,56 +575,92 @@
     </div>
   </header>
 
-  <!-- Mensagens Flash -->
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="{{ 'danger' if messages[0][0] == 'danger' else 'success' }}">
-        {{ messages[0][1] }}
-      </div>
-    {% endif %}
-  {% endwith %}
+  <main>
+    <div class="shell">
 
-  <!-- Conteúdo principal -->
-  <div class="container">
-    <h1><i class="fas fa-clock"></i> Relatar Esquecimento / Ausência de Marcação</h1>
-    <form method="POST" onsubmit="return validateForm(event)">
-      <div class="input-group">
-        <label for="nome"><i class="fas fa-user"></i> Nome do Funcionário</label>
-        <input type="text" id="nome" name="nome" value="{{ current_user.nome }}" readonly>
-      </div>
-      <div class="input-group">
-        <label for="registro"><i class="fas fa-id-card"></i> Registro Funcional</label>
-        <input type="text" id="registro" name="registro" value="{{ current_user.registro }}" readonly>
-      </div>
-      <div class="input-group">
-        <label for="data_esquecimento"><i class="fas fa-calendar-alt"></i> Data do Esquecimento</label>
-        <input type="date" id="data_esquecimento" name="data_esquecimento">
-      </div>
-      <div class="input-group">
-        <label for="hora_primeira_entrada"><i class="fas fa-clock"></i> Hora da Primeira Entrada (opcional):</label>
-        <input type="time" id="hora_primeira_entrada" name="hora_primeira_entrada">
-      </div>
-      <div class="input-group">
-        <label for="hora_primeira_saida"><i class="fas fa-clock"></i> Hora da Primeira Saída (opcional):</label>
-        <input type="time" id="hora_primeira_saida" name="hora_primeira_saida">
-      </div>
-      <div class="input-group">
-        <label for="hora_segunda_entrada"><i class="fas fa-clock"></i> Hora da Segunda Entrada (opcional):</label>
-        <input type="time" id="hora_segunda_entrada" name="hora_segunda_entrada">
-      </div>
-      <div class="input-group">
-        <label for="hora_segunda_saida"><i class="fas fa-clock"></i> Hora da Segunda Saída (opcional):</label>
-        <input type="time" id="hora_segunda_saida" name="hora_segunda_saida">
-      </div>
-      <div class="input-group">
-        <label for="motivo"><i class="fas fa-comment-alt"></i> Motivo do Esquecimento / Ausência de Marcação (opcional, até 20 caracteres):</label>
-        <textarea id="motivo" name="motivo" rows="2" maxlength="20" placeholder="Ex: Trânsito, médico..."></textarea>
-      </div>
-      <button type="submit" class="submit-btn"><i class="fas fa-save"></i> Enviar Registro</button>
-    </form>
-  </div>
+      <!-- Mensagens Flash -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="{{ 'danger' if messages[0][0] == 'danger' else 'success' }}">
+            {{ messages[0][1] }}
+          </div>
+        {% endif %}
+      {% endwith %}
 
-  <!-- Rodapé -->
+      <!-- Header card da página -->
+      <div class="page-header-card">
+        <div class="page-header-icon">
+          <i class="fas fa-clock"></i>
+        </div>
+        <div class="page-header-content">
+          <p class="page-header-title">Relatar Esquecimento / Ausência de Marcação</p>
+          <p class="page-header-subtitle">
+            Informe o dia e os horários em que esqueceu de registrar o ponto.
+          </p>
+        </div>
+      </div>
+
+      <!-- Card do formulário -->
+      <div class="form-card">
+        <h1><i class="fas fa-edit"></i> Novo registro</h1>
+        <p class="form-description">
+          Preencha os campos abaixo com atenção. Pelo menos um horário precisa ser informado
+          para que o registro seja enviado à secretaria.
+        </p>
+
+        <form method="POST" onsubmit="return validateForm(event)">
+          <div class="form-grid">
+            <div class="input-group full-width">
+              <label for="nome"><i class="fas fa-user"></i> Nome do Funcionário</label>
+              <input type="text" id="nome" name="nome" value="{{ current_user.nome }}" readonly>
+            </div>
+
+            <div class="input-group">
+              <label for="registro"><i class="fas fa-id-card"></i> Registro Funcional</label>
+              <input type="text" id="registro" name="registro" value="{{ current_user.registro }}" readonly>
+            </div>
+
+            <div class="input-group">
+              <label for="data_esquecimento"><i class="fas fa-calendar-alt"></i> Data do Esquecimento</label>
+              <input type="date" id="data_esquecimento" name="data_esquecimento">
+            </div>
+
+            <div class="input-group">
+              <label for="hora_primeira_entrada"><i class="fas fa-clock"></i> 1ª Entrada (opcional)</label>
+              <input type="time" id="hora_primeira_entrada" name="hora_primeira_entrada">
+            </div>
+
+            <div class="input-group">
+              <label for="hora_primeira_saida"><i class="fas fa-clock"></i> 1ª Saída (opcional)</label>
+              <input type="time" id="hora_primeira_saida" name="hora_primeira_saida">
+            </div>
+
+            <div class="input-group">
+              <label for="hora_segunda_entrada"><i class="fas fa-clock"></i> 2ª Entrada (opcional)</label>
+              <input type="time" id="hora_segunda_entrada" name="hora_segunda_entrada">
+            </div>
+
+            <div class="input-group">
+              <label for="hora_segunda_saida"><i class="fas fa-clock"></i> 2ª Saída (opcional)</label>
+              <input type="time" id="hora_segunda_saida" name="hora_segunda_saida">
+            </div>
+
+            <div class="input-group full-width">
+              <label for="motivo"><i class="fas fa-comment-alt"></i> Motivo (opcional, até 20 caracteres)</label>
+              <textarea id="motivo" name="motivo" rows="2" maxlength="20" placeholder="Ex: Trânsito, consulta médica..."></textarea>
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn">
+            <i class="fas fa-save"></i>
+            Enviar registro
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </main>
+
   <footer>
     <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
   </footer>

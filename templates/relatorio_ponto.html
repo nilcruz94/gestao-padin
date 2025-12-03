@@ -1,263 +1,835 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <title>Relatório de Ponto</title>
-    <style>
-        body {
-            font-family: 'Montserrat', sans-serif;
-            background-color: #f4f6f9;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            height: 100vh;
-            margin: 0;
-        }
-        .titulo-container {
-            text-align: center;
-            padding: 15px 0;
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-            width: 100%;
-        }
-        .mes-titulo {
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
-            margin-top: 15px;
-        }
-        .filtrar-btn {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        .filtrar-btn:hover {
-            background-color: #39b300e1;
-        }
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            margin: auto;
-            background-color: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            margin-top: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: visible !important;
-        }
-        .form-select {
-            width: 100%;
-            max-width: 300px;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        .form-container {
-            text-align: center;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: white;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
-        }
-        th {
-            background-color: #007bff;
-            color: white;
-        }
-        /* Evita quebra de linha na coluna Tipo */
-        .col-tipo {
-            white-space: nowrap;
-            text-align: center;
-        }
-        .voltar-link {
-            text-align: center;
-            display: block;
-            margin-top: 20px;
-            font-size: 18px;
-        }
-        .voltar-link a {
-            color: #007bff;
-            text-decoration: none;
-        }
-        .voltar-link a:hover {
-            text-decoration: underline;
-        }
-        .footer {
-            text-align: center;
-            padding: 15px;
-            background-color: #343a40;
-            color: white;
-            margin-top: 20px;
-        }
-        .conferido {
-            background-color: #d4edda !important;
-        }
-        .contador {
-            margin-top: 20px;
-            margin-bottom: 20px;
-            font-size: 16px;
-            color: #333;
-            background-color: #e9ecef;
-            border: 1px solid #ced4da;
-            border-radius: 8px;
-            padding: 15px;
-            max-width: 400px;
-            width: 100%;
-            text-align: center;
-        }
-        .contador p {
-            margin: 5px 0;
-            font-weight: 500;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatório de Ponto</title>
+
+  <!-- Assets globais -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root{
+      --primary:#0d6efd;
+      --primary-dark:#0b5ed7;
+      --primary-soft:#dbe9ff;
+      --bg:#f4f6f9;
+      --surface:#ffffff;
+      --border-soft:rgba(148,163,184,.35);
+      --text-main:#111827;
+      --text-muted:#6b7280;
+      --success:#16a34a;
+      --success-soft:#dcfce7;
+
+      --card-shadow:0 14px 34px rgba(15,23,42,.1),0 2px 4px rgba(15,23,42,.06);
+      --radius:18px;
+    }
+
+    *,
+    *::before,
+    *::after{
+      box-sizing:border-box;
+    }
+
+    html, body{
+      margin:0;
+      padding:0;
+      height:100%;
+      font-family:'Montserrat',sans-serif;
+      background:radial-gradient(circle at top,#e0f2ff 0,#f9fafb 45%,#eef2ff 100%);
+      background-attachment:fixed;
+      color:var(--text-main);
+    }
+
+    body{
+      display:flex;
+      flex-direction:column;
+      min-height:100vh;
+    }
+
+    main{
+      flex:1 0 auto;
+      padding:24px 12px 60px;
+      box-sizing:border-box;
+    }
+
+    @media (min-width:769px){
+      main{
+        padding:30px 24px 80px;
+      }
+    }
+
+    /* ===== CABEÇALHOS ===== */
+    .header-desktop,
+    .header-mobile{
+      flex-shrink:0;
+    }
+
+    .header-desktop{display:none;}
+    .header-mobile{display:none;}
+
+    /* Desktop */
+    @media (min-width:769px){
+      .header-desktop{
+        display:flex;
+        background-color:#007bff;
+        padding:15px 30px;
+        width:100%;
+        align-items:center;
+        justify-content:space-between;
+        box-sizing:border-box;
+        min-height:110px;
+        position:relative;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);
+        color:white;
+      }
+
+      .left-section{
+        display:flex;
+        align-items:center;
+        gap:20px;
+      }
+
+      .logo{
+        width:80px;
+        height:80px;
+        object-fit:contain;
+        border-radius:10px;
+        background-color:white;
+        padding:6px;
+      }
+
+      .text-container{
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        text-align:left;
+        color:white;
+      }
+
+      .escola-nome{
+        font-weight:700;
+        font-size:1.6rem;
+        margin:0;
+        line-height:1.1;
+      }
+
+      .escola-subtitulo{
+        font-weight:600;
+        font-size:1.1rem;
+        margin-top:4px;
+      }
+
+      .header-center-text-container{
+        position:absolute;
+        left:50%;
+        top:50%;
+        transform:translate(-50%,-50%);
+        font-weight:800;
+        font-size:1.9rem;
+        color:white;
+        letter-spacing:5px;
+        user-select:none;
+        white-space:nowrap;
+        z-index:1;
+        text-shadow:0 2px 5px rgba(0,0,0,0.3);
+      }
+
+      .header-center-text{
+        font-family:'Montserrat',sans-serif;
+      }
+
+      .btn-home{
+        background-color:#0fb300;
+        color:white;
+        padding:6px 14px;
+        border-radius:6px;
+        font-weight:700;
+        font-size:1.5rem;
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        gap:8px;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);
+        transition:background-color 0.3s ease;
+        position:absolute;
+        right:30px;
+        top:50%;
+        transform:translateY(-50%);
+        z-index:2;
+      }
+
+      .btn-home:hover{
+        background-color:#0d8a00;
+      }
+    }
+
+    /* Mobile */
+    @media (max-width:768px){
+      .header-mobile{
+        display:block;
+        width:100%;
+        box-sizing:border-box;
+        color:white;
+        position:sticky;
+        top:0;
+        z-index:1000;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);
+        background-color:#007bff;
+      }
+
+      .header-top{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:15px;
+        padding:10px 15px;
+        background-color:#007bff;
+        text-align:center;
+      }
+
+      .logo{
+        width:48px;
+        height:48px;
+        object-fit:contain;
+        border-radius:10px;
+        background-color:white;
+        padding:6px;
+      }
+
+      .text-container{
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        color:white;
+        text-align:center;
+      }
+
+      .escola-nome{
+        font-weight:700;
+        font-size:1.3rem;
+        margin:0;
+        line-height:1.1;
+      }
+
+      .escola-subtitulo{
+        font-weight:600;
+        font-size:1rem;
+        margin-top:2px;
+      }
+
+      .header-bottom{
+        background-color:#0056b3;
+        text-align:center;
+        padding:12px 10px;
+        font-weight:800;
+        font-size:1rem;
+        letter-spacing:4px;
+        user-select:none;
+        color:white;
+        box-shadow:inset 0 -2px 5px rgba(0,0,0,0.2);
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        gap:12px;
+        box-sizing:border-box;
+        white-space:nowrap;
+      }
+
+      .btn-home-mobile{
+        background-color:#0fb300;
+        color:white;
+        padding:6px 10px;
+        border-radius:6px;
+        font-weight:600;
+        font-size:1rem;
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);
+        transition:background-color 0.3s ease;
+      }
+
+      .btn-home-mobile:hover{
+        background-color:#0d8a00;
+      }
+    }
+
+    /* ===== WRAPPER DA PÁGINA ===== */
+    .page{
+      width:100%;
+      max-width:1100px;
+      margin:0 auto;
+    }
+
+    /* ===== HEADER CARD DA PÁGINA ===== */
+    .page-header-card{
+      background:#ffffff;
+      border-radius:var(--radius);
+      padding:16px 18px;
+      margin:18px auto 20px;
+      display:flex;
+      align-items:center;
+      gap:16px;
+      box-shadow:var(--card-shadow);
+      border-left:5px solid var(--primary);
+    }
+
+    .page-header-icon{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:42px;
+      height:42px;
+      border-radius:999px;
+      background:radial-gradient(circle at 30% 30%,#ffffff 0%,#e0edff 60%,#c7d9ff 100%);
+      box-shadow:0 4px 12px rgba(37,99,235,.45);
+      color:#2563eb;
+      flex-shrink:0;
+    }
+
+    .page-header-icon i{
+      font-size:22px;
+    }
+
+    .page-header-content{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .page-header-title{
+      font-size:1.15rem;
+      font-weight:800;
+      margin:0;
+      color:var(--text-main);
+    }
+
+    .page-header-subtitle{
+      font-size:.9rem;
+      margin:0;
+      color:var(--text-muted);
+    }
+
+    @media (max-width:600px){
+      .page-header-card{padding:12px 14px;}
+      .page-header-title{font-size:1.05rem;}
+      .page-header-subtitle{font-size:.82rem;}
+    }
+
+    /* ===== CARDS GERAIS ===== */
+    .content-card{
+      width:100%;
+      margin:0 auto 24px;
+      background:var(--surface);
+      border-radius:16px;
+      box-shadow:var(--card-shadow);
+      padding:18px 18px 22px;
+      border:1px solid var(--border-soft);
+      backdrop-filter:blur(8px);
+      box-sizing:border-box;
+    }
+
+    .content-title{
+      font-size:1.05rem;
+      font-weight:700;
+      margin:0 0 6px;
+      color:var(--text-main);
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .content-title i{
+      color:var(--primary);
+    }
+
+    .content-subtitle{
+      font-size:.88rem;
+      color:var(--text-muted);
+      margin:0 0 14px;
+    }
+
+    .filter-card{
+      margin-bottom:22px;
+      width:100%;
+    }
+
+    .btn{
+      border-radius:12px;
+      border:1px solid rgba(148,163,184,.45);
+      background:#fff;
+      padding:9px 14px;
+      font-size:.9rem;
+      font-weight:700;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      text-decoration:none;
+      color:#111827;
+      box-shadow:0 2px 6px rgba(15,23,42,.06);
+      transition:background .15s ease, transform .05s ease;
+    }
+
+    .btn:active{
+      transform:translateY(1px);
+      box-shadow:0 1px 3px rgba(15,23,42,.12);
+    }
+
+    .btn-primary{
+      background:linear-gradient(135deg,#0d6efd,#0b5ed7);
+      color:#fff;
+      border-color:#0d6efd;
+      box-shadow:0 10px 22px rgba(13,110,253,.24);
+    }
+
+    .btn-primary:hover{
+      background:#0b5ed7;
+    }
+
+    /* ===== FORM DE FILTRO ===== */
+    .filter-form{
+      margin-top:10px;
+    }
+
+    .filter-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      align-items:flex-end;
+    }
+
+    .filter-group{
+      display:flex;
+      flex-direction:column;
+      flex:1 1 260px;
+    }
+
+    .filter-label{
+      font-size:.8rem;
+      font-weight:600;
+      color:var(--text-muted);
+      margin-bottom:4px;
+    }
+
+    .form-select{
+      width:100%;
+      padding:11px 14px;
+      border-radius:12px;
+      border:1px solid #d1d5db;
+      font-size:.95rem;
+      outline:none;
+      transition:border-color .15s ease, box-shadow .15s ease;
+      background:#fff;
+    }
+
+    .form-select:focus{
+      border-color:#2563eb;
+      box-shadow:0 0 0 2px rgba(37,99,235,.25);
+    }
+
+    .btn-filter{
+      min-width:150px;
+      justify-content:center;
+      font-size:.95rem;
+    }
+
+    /* ===== RESUMO (CONTADOR) ===== */
+    .summary-box{
+      margin:4px 0 16px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px dashed var(--primary-soft);
+      background:linear-gradient(135deg,#f9fafb,#e5edff);
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .summary-item{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-size:.85rem;
+      font-weight:600;
+      padding:6px 10px;
+      border-radius:999px;
+      background:#fff;
+      box-shadow:0 2px 6px rgba(148,163,184,.35);
+    }
+
+    .summary-item i{
+      font-size:.9rem;
+      color:#2563eb;
+    }
+
+    @media (max-width:600px){
+      .summary-box{
+        flex-direction:column;
+        align-items:center;
+      }
+
+      .summary-item{
+        width:100%;
+        justify-content:center;
+      }
+    }
+
+    /* ===== TABELA ===== */
+    .table-wrapper{
+      width:100%;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      border-radius:12px;
+      border:1px solid #e5e7eb;
+      box-shadow:0 10px 24px rgba(15,23,42,0.08);
+      background-color:#ffffff;
+    }
+
+    table.ponto-table{
+      width:100%;
+      min-width:900px;
+      border-collapse:collapse;
+    }
+
+    .ponto-table thead th{
+      background:linear-gradient(to right,#eff6ff,#e0ecff);
+      color:#0f172a;
+      font-weight:800;
+      border-bottom:1px solid #e5e7eb;
+      white-space:nowrap;
+      text-align:center;
+      font-size:.86rem;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      padding:10px 8px;
+    }
+
+    .ponto-table td{
+      font-size:.88rem;
+      text-align:center;
+      padding:9px 8px;
+      border-bottom:1px solid #e5e7eb;
+    }
+
+    .ponto-table tr:last-child td{
+      border-bottom:none;
+    }
+
+    .ponto-row{
+      cursor:pointer;
+      transition:background .15s ease, box-shadow .15s ease;
+    }
+
+    .ponto-row:hover{
+      background:#f7fbff;
+    }
+
+    .ponto-row.conferido{
+      background:var(--success-soft) !important;
+      box-shadow:inset 3px 0 0 #16a34a;
+    }
+
+    .col-tipo{
+      white-space:nowrap;
+    }
+
+    .no-records-msg{
+      margin:8px 0 0;
+      padding:10px 12px;
+      border-radius:10px;
+      background:#fee2e2;
+      color:#991b1b;
+      font-size:.9rem;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .no-records-msg i{
+      color:#b91c1c;
+    }
+
+    /* ===== FOOTER ===== */
+    footer{
+      background:linear-gradient(to right,#222,#444);
+      color:#ddd;
+      text-align:center;
+      padding:15px 0;
+      font-size:14px;
+      border-top:2px solid #555;
+      box-shadow:0 -2px 10px rgba(0,0,0,0.3);
+      flex-shrink:0;
+      width:100%;
+    }
+
+    footer p{
+      margin:5px 0;
+      font-size:15px;
+      font-weight:300;
+    }
+
+    footer a{
+      color:#fff;
+      text-decoration:none;
+      font-weight:500;
+      transition:color .3s ease-in-out;
+    }
+
+    footer a:hover{
+      color:#00aaff;
+    }
+
+    /* ===== AJUSTES EXCLUSIVOS PARA MOBILE ===== */
+    @media (max-width:768px){
+      .filter-card{
+        max-width:480px;
+        margin-inline:auto;
+      }
+
+      /* tira o comportamento de "empurrar" o botão para baixo */
+      .filter-row{
+        display:block;
+      }
+
+      .filter-row .filter-group{
+        margin-bottom:10px;
+      }
+
+      .filter-card .btn-filter{
+        width:100%;
+        display:block;
+        margin-top:0;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="titulo-container">
-        <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
     </div>
-    <div class="container">
-        <h1>Relatório de Ponto</h1>
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
+    </a>
+  </header>
 
-        <div class="form-container">
-            <form action="{{ url_for('relatorio_ponto') }}" method="GET">
-                <label for="mes">Escolha um pagamento:</label>
-                <select name="mes" id="mes" class="form-select" required>
-                    <option value="" disabled selected>Selecione o mês</option>
-                    {% set meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"] %}
-                    {% for i in range(1, 13) %}
-                        <option value="{{ i }}" {% if i == mes_selecionado %}selected{% endif %}>{{ meses[i-1] }}</option>
-                    {% endfor %}
-                </select>
-                <button type="submit" class="filtrar-btn">
-                    <i class="fas fa-filter"></i> Filtrar
-                </button>
-            </form>
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <div class="page">
+
+      <!-- Header card da página -->
+      <div class="page-header-card">
+        <div class="page-header-icon">
+          <i class="fa-solid fa-calendar-check"></i>
         </div>
+        <div class="page-header-content">
+          <p class="page-header-title">Relatório de Ponto</p>
+          <p class="page-header-subtitle">
+            Consulte e marque como conferidos os registros de ponto por período de pagamento.
+          </p>
+        </div>
+      </div>
 
-        {% if mes_selecionado %}
-            <div class="mes-titulo">
-                Pagamento de {{ meses[mes_selecionado - 1] }}
-                ({{ periodo_inicio.strftime('%d/%m/%Y') }} a {{ periodo_fim.strftime('%d/%m/%Y') }})
+      <!-- Card de filtro -->
+      <section class="content-card filter-card">
+        <h2 class="content-title">
+          <i class="fa-solid fa-filter"></i>
+          Filtro de pagamento
+        </h2>
+        <p class="content-subtitle">
+          Selecione o mês de pagamento para listar os registros de ponto correspondentes ao período.
+        </p>
+
+        <form action="{{ url_for('relatorio_ponto') }}" method="GET" class="filter-form">
+          <div class="filter-row">
+            <div class="filter-group">
+              <label for="mes" class="filter-label">Pagamento (mês)</label>
+              <select name="mes" id="mes" class="form-select" required>
+                <option value="" disabled {% if not mes_selecionado %}selected{% endif %}>Selecione o mês</option>
+                {% set meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"] %}
+                {% for i in range(1, 13) %}
+                  <option value="{{ i }}" {% if i == mes_selecionado %}selected{% endif %}>{{ meses[i-1] }}</option>
+                {% endfor %}
+              </select>
             </div>
-            
-            {% if registros %}
-                <div class="contador">
-                    <p><strong>Total de registros:</strong> {{ registros|length }}</p>
-                    <p><strong>Total de Esquecimentos:</strong> {{ registros|selectattr('tipo', 'equalto', 'Esquecimento de Ponto')|list|length }}</p>
-                    <p><strong>Total de Agendamentos:</strong> {{ registros|selectattr('tipo', 'equalto', 'Agendamento')|list|length }}</p>
-                </div>
 
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Registro</th>
-                            <th>Nome</th>
-                            <th class="col-tipo">Tipo</th>
-                            <th>Data</th>
-                            <th>Motivo</th>
-                            <th>1ª Entrada</th>
-                            <th>1ª Saída</th>
-                            <th>2ª Entrada</th>
-                            <th>2ª Saída</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in registros %}
-                        <tr
-                            data-id="{{ item.id }}"
-                            data-tipo="{{ item.tipo }}"
-                            data-conferido="{{ 'true' if item.conferido else 'false' }}"
-                            class="{% if item.conferido %}conferido{% endif %}"
-                        >
-                            <td>{{ item.registro }}</td>
-                            <td>{{ item.usuario.nome.title() if item.usuario else 'Sem Nome' }}</td>
-                            <td class="col-tipo">{{ item.tipo }}</td>
-                            <td>{{ item.data.strftime('%d/%m/%Y') if item.data else 'Sem Data' }}</td>
-                            <td>{{ item.motivo if item.motivo else 'Sem Motivo' }}</td>
+            <button type="submit" class="btn btn-primary btn-filter">
+              <i class="fa-solid fa-filter"></i> Filtrar
+            </button>
+          </div>
+        </form>
+      </section>
 
-                            {% if item.tipo == 'Esquecimento de Ponto' %}
-                                <td>{{ item.horapentrada }}</td>
-                                <td>{{ item.horapsaida }}</td>
-                                <td>{{ item.horasentrada }}</td>
-                                <td>{{ item.horassaida }}</td>
-                            {% else %}
-                                <td colspan="4" style="text-align: center;">—</td>
-                            {% endif %}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% else %}
-                <p style="text-align: center; color: red;">Nenhum registro encontrado para este período.</p>
-            {% endif %}
-        {% endif %}
+      {% if mes_selecionado %}
+        <!-- Card principal com tabela -->
+        <section class="content-card">
+          <h2 class="content-title">
+            <i class="fa-solid fa-list-check"></i>
+            Registros de ponto do período
+          </h2>
+          <p class="content-subtitle">
+            Pagamento de <strong>{{ meses[mes_selecionado - 1] }}</strong> —
+            período de <strong>{{ periodo_inicio.strftime('%d/%m/%Y') }}</strong> a
+            <strong>{{ periodo_fim.strftime('%d/%m/%Y') }}</strong>. Clique sobre uma linha para marcar ou desmarcar como conferida.
+          </p>
 
-        <div class="voltar-link">
-            <a href="{{ url_for('index') }}">
-                <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
-            </a>
-        </div>
+          {% if registros %}
+            <!-- Resumo -->
+            <div class="summary-box">
+              <div class="summary-item">
+                <i class="fa-solid fa-clipboard-list"></i>
+                <span>Total de registros: <strong>{{ registros|length }}</strong></span>
+              </div>
+              <div class="summary-item">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>Esquecimentos: <strong>{{ registros|selectattr('tipo', 'equalto', 'Esquecimento de Ponto')|list|length }}</strong></span>
+              </div>
+              <div class="summary-item">
+                <i class="fa-solid fa-calendar-plus"></i>
+                <span>Agendamentos: <strong>{{ registros|selectattr('tipo', 'equalto', 'Agendamento')|list|length }}</strong></span>
+              </div>
+            </div>
+
+            <!-- Tabela -->
+            <div class="table-wrapper">
+              <table class="ponto-table">
+                <thead>
+                  <tr>
+                    <th>Registro</th>
+                    <th>Nome</th>
+                    <th>Tipo</th>
+                    <th>Data</th>
+                    <th>Motivo</th>
+                    <th>1ª Entrada</th>
+                    <th>1ª Saída</th>
+                    <th>2ª Entrada</th>
+                    <th>2ª Saída</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in registros %}
+                  <tr
+                    data-id="{{ item.id }}"
+                    data-tipo="{{ item.tipo }}"
+                    data-conferido="{{ 'true' if item.conferido else 'false' }}"
+                    class="ponto-row {% if item.conferido %}conferido{% endif %}"
+                  >
+                    <td>{{ item.registro }}</td>
+                    <td>{{ item.usuario.nome.title() if item.usuario else 'Sem Nome' }}</td>
+                    <td class="col-tipo">{{ item.tipo }}</td>
+                    <td>{{ item.data.strftime('%d/%m/%Y') if item.data else 'Sem Data' }}</td>
+                    <td>{{ item.motivo if item.motivo else 'Sem Motivo' }}</td>
+
+                    {% if item.tipo == 'Esquecimento de Ponto' %}
+                      <td>{{ item.horapentrada }}</td>
+                      <td>{{ item.horapsaida }}</td>
+                      <td>{{ item.horasentrada }}</td>
+                      <td>{{ item.horassaida }}</td>
+                    {% else %}
+                      <td colspan="4" style="text-align:center;">—</td>
+                    {% endif %}
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="no-records-msg">
+              <i class="fa-solid fa-circle-info"></i>
+              <span>Nenhum registro encontrado para este período.</span>
+            </div>
+          {% endif %}
+        </section>
+      {% endif %}
+
     </div>
+  </main>
 
-    <footer>
-        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-    </footer>
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const linhas = document.querySelectorAll("tbody tr");
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const linhas = document.querySelectorAll("tbody tr.ponto-row");
 
-            linhas.forEach((linha) => {
-                const registroId = linha.getAttribute("data-id");
-                const tipo = linha.getAttribute("data-tipo");
+      linhas.forEach((linha) => {
+        const registroId = linha.getAttribute("data-id");
+        const tipo = linha.getAttribute("data-tipo");
 
-                linha.addEventListener("click", function () {
-                    const estaConferido = linha.classList.contains("conferido");
-                    linha.classList.toggle("conferido");
+        if (!registroId || !tipo) return;
 
-                    fetch("/atualizar_conferido", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            id: registroId,
-                            tipo: tipo,
-                            conferido: !estaConferido,
-                        }),
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (!data.success) {
-                            alert("Erro ao atualizar conferência.");
-                            linha.classList.toggle("conferido"); // Reverte caso falhe
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Erro:", error);
-                        alert("Erro ao comunicar com o servidor.");
-                    });
-                });
-            });
+        linha.addEventListener("click", function () {
+          const novoStatus = !linha.classList.contains("conferido");
+
+          fetch("/atualizar_conferido", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: registroId,
+              tipo: tipo,
+              conferido: novoStatus,
+            }),
+          })
+          .then(async (response) => {
+            let data = {};
+            try {
+              data = await response.json();
+            } catch (e) {
+              // resposta não JSON
+            }
+
+            if (response.ok && data.success) {
+              if (novoStatus) {
+                linha.classList.add("conferido");
+                linha.setAttribute("data-conferido", "true");
+              } else {
+                linha.classList.remove("conferido");
+                linha.setAttribute("data-conferido", "false");
+              }
+            } else {
+              alert(data.error || "Erro ao atualizar conferência.");
+            }
+          })
+          .catch((error) => {
+            console.error("Erro:", error);
+            alert("Erro ao comunicar com o servidor.");
+          });
         });
-    </script>
+      });
+    });
+  </script>
 </body>
 </html>

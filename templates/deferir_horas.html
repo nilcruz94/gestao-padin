@@ -2,357 +2,568 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Deferir Banco de Horas</title>
+  <title>Deferir Banco de Horas - E.M José Padin Mouta</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, maximum-scale=3, minimum-scale=1" />
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-  <link rel="stylesheet" href="/static/css/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
   <style>
-    /* Reset básico */
+    :root {
+      --primary: #0077ff;
+      --primary-dark: #0051ff;
+      --primary-soft: #dbe9ff;
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --border-soft: #e5e7eb;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --warning: #f97316;
+      --warning-soft: #ffedd5;
+      --danger: #dc2626;
+      --danger-soft: #fee2e2;
+
+      --card-shadow: 0 14px 34px rgba(15,23,42,.1), 0 2px 4px rgba(15,23,42,.06);
+      --radius: 18px;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
     html, body {
       margin: 0;
       padding: 0;
-      width: 100%;
       height: 100%;
-      box-sizing: border-box;
-      overflow-x: hidden;
       font-family: 'Montserrat', sans-serif;
-      background-color: #f4f6f9;
-    }
-    *, *::before, *::after {
-      box-sizing: inherit;
-    }
-
-    /* Cabeçalho desktop */
-    .header-desktop {
-      display: none;
-      width: 100vw;
-      background-color: #007bff;
-      color: white;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      padding: 12px 30px; /* menor padding vertical para diminuir altura */
-      align-items: center;
-      justify-content: space-between;
-      box-sizing: border-box;
+      background: radial-gradient(circle at top, #e0f2ff 0, #f9fafb 45%, #eef2ff 100%);
+      background-attachment: fixed;
+      color: var(--text-main);
     }
 
-    .header-desktop .left-section {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-    }
-
-    .header-desktop .logo {
-      width: 80px;
-      height: 80px;
-      object-fit: contain;
-      border-radius: 10px;
-      background-color: white;
-      padding: 6px;
-    }
-
-    .header-desktop .text-container {
+    body {
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      text-align: left;
-      color: white;
-      user-select: none;
+      min-height: 100vh;
     }
 
-    .header-desktop .escola-nome {
-      font-weight: 700;
-      font-size: 1.6rem;
-      margin: 0;
-      line-height: 1.1;
+    main {
+      flex: 1 0 auto;
+      padding: 24px 12px 60px;
+      box-sizing: border-box;
     }
 
-    .header-desktop .escola-subtitulo {
-      font-weight: 600;
-      font-size: 1.1rem;
-      margin-top: 4px;
+    .shell {
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
     }
 
-    .header-desktop .header-center-text-container {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      user-select: none;
-      z-index: 1;
-      font-weight: 800;
-      font-size: 1.9rem;
-      letter-spacing: 5px;
-      white-space: nowrap;
-      color: white;
-      text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    @media (min-width: 769px) {
+      main {
+        padding: 30px 24px 80px;
+      }
     }
 
-    .header-desktop .btn-home {
-      background-color: #0fb300;
-      color: white;
-      padding: 6px 14px;
-      border-radius: 6px;
-      font-weight: 700;
-      font-size: 1.5rem;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-      transition: background-color 0.3s ease;
-      position: absolute;
-      right: 30px;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 2;
-      user-select: none;
-    }
-
-    .header-desktop .btn-home:hover {
-      background-color: #0d8a00;
-    }
-
-    /* Cabeçalho mobile */
+    /* ===== CABEÇALHOS ===== */
+    .header-desktop,
     .header-mobile {
       display: none;
-      width: 100vw;
-      box-sizing: border-box;
-      user-select: none;
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      background-color: #007bff;
-      color: white;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      flex-shrink: 0;
     }
 
-    .header-mobile .header-top {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
-      padding: 12px 15px 10px 15px; /* aumentei de 10px para 12px vertical, +2px */
-      margin: 0;
-    }
-
-    .header-mobile .logo {
-      width: 48px;
-      height: 48px;
-      object-fit: contain;
-      border-radius: 10px;
-      background-color: white;
-      padding: 6px;
-    }
-
-    .header-mobile .text-container {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      color: white;
-      text-align: center;
-      user-select: none;
-    }
-
-    .header-mobile .escola-nome {
-      font-weight: 700;
-      font-size: 1.3rem;
-      margin: 0;
-      line-height: 1.1;
-    }
-
-    .header-mobile .escola-subtitulo {
-      font-weight: 600;
-      font-size: 1rem;
-      margin-top: 2px;
-    }
-
-    .header-mobile .header-bottom {
-      background-color: #0056b3;
-      text-align: center;
-      padding: 12px 10px; /* aumentei de 10px para 12px vertical, +2px */
-      font-weight: 800;
-      font-size: 1rem;
-      letter-spacing: 4px;
-      color: white;
-      box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 12px;
-      box-sizing: border-box;
-      white-space: nowrap;
-      margin: 0;
-      width: 100vw;
-      user-select: none;
-    }
-
-    .header-mobile .btn-home-mobile {
-      background-color: #0fb300;
-      color: white;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 1rem;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-      transition: background-color 0.3s ease;
-      user-select: none;
-    }
-
-    .header-mobile .btn-home-mobile:hover {
-      background-color: #0d8a00;
-    }
-
-    /* Mostrar só desktop no >= 769px */
+    /* Desktop */
     @media (min-width: 769px) {
       .header-desktop {
         display: flex;
-        position: sticky;
-        top: 0;
+        background-color: #007bff;
+        padding: 15px 30px;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+        min-height: 110px;
+        position: relative;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        color: white;
       }
-      .header-mobile {
-        display: none;
+
+      .left-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
       }
-      /* Título menor para desktop */
-      .titulo-site {
+
+      .logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+        color: white;
+      }
+
+      .escola-nome {
+        font-weight: 700;
+        font-size: 1.6rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+
+      .escola-subtitulo {
         font-weight: 600;
-        font-size: 1.4rem !important;
-        color: #007bff;
-        margin: 0 auto 30px auto;
-        padding: 0;
-        border-bottom: none;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        text-align: center;
+        font-size: 1.1rem;
+        margin-top: 4px;
+      }
+
+      .header-center-text-container {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: 800;
+        font-size: 1.9rem;
+        color: white;
+        letter-spacing: 5px;
         user-select: none;
-        text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-        max-width: 700px;
+        white-space: nowrap;
+        z-index: 1;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      }
+
+      .header-center-text {
+        font-family: 'Montserrat', sans-serif;
+      }
+
+      .btn-home {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+      }
+
+      .btn-home:hover {
+        background-color: #0d8a00;
       }
     }
 
-    /* Mostrar só mobile no < 769px */
+    /* Mobile */
     @media (max-width: 768px) {
-      .header-desktop {
-        display: none;
-      }
       .header-mobile {
         display: block;
+        width: 100%;
+        box-sizing: border-box;
+        color: white;
         position: sticky;
         top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        background-color: #007bff;
       }
-      /* Título menor para mobile */
-      .titulo-site {
-        font-weight: 600 !important;
-        font-size: 1.2rem !important;
-        color: #007bff !important;
-        margin: 0 auto 20px auto !important;
-        padding: 0 15px !important;
-        border-bottom: none !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1.2px !important;
-        text-align: center !important;
-        user-select: none !important;
-        text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1) !important;
-        max-width: 100% !important;
+
+      .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        padding: 10px 15px;
+        background-color: #007bff;
+        text-align: center;
+      }
+
+      .logo {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: white;
+        text-align: center;
+      }
+
+      .escola-nome {
+        font-weight: 700;
+        font-size: 1.3rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+
+      .escola-subtitulo {
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 2px;
+      }
+
+      .header-bottom {
+        background-color: #0056b3;
+        text-align: center;
+        padding: 12px 10px;
+        font-weight: 800;
+        font-size: 1.0rem;
+        letter-spacing: 4px;
+        user-select: none;
+        color: white;
+        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        box-sizing: border-box;
+        white-space: nowrap;
+      }
+
+      .btn-home-mobile {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+      }
+
+      .btn-home-mobile:hover {
+        background-color: #0d8a00;
       }
     }
 
-    /* Conteúdo principal */
-    .container {
-      width: 100%;
-      max-width: 700px;
-      background: white;
-      border-radius: 10px;
-      padding: 20px;
-      box-sizing: border-box;
-      margin: 0 auto 100px auto;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-      transition: transform 0.2s ease;
-      user-select: none;
-    }
-
-    .container:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
-    }
-
-    .registro {
-      border-bottom: 1px solid #eee;
-      margin-bottom: 15px;
-      padding-bottom: 15px;
-    }
-
-    .registro p {
-      margin: 5px 0;
-      color: #555;
-    }
-
-    .buttons {
+    /* ===== HEADER CARD DA PÁGINA ===== */
+    .page-header-card {
+      background: #ffffff;
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin: 0 auto 18px;
       display: flex;
-      gap: 10px;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--card-shadow);
+      border-left: 5px solid var(--primary);
+    }
+
+    .page-header-icon {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, .45);
+      color: #2563eb;
+      flex-shrink: 0;
     }
 
-    .button {
-      padding: 10px 15px;
+    .page-header-icon i {
+      font-size: 22px;
+    }
+
+    .page-header-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .page-header-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin: 0;
+      color: var(--text-main);
+    }
+
+    .page-header-subtitle {
+      font-size: 0.9rem;
+      margin: 0;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 600px) {
+      .page-header-card {
+        padding: 12px 14px;
+      }
+
+      .page-header-title {
+        font-size: 1.05rem;
+      }
+
+      .page-header-subtitle {
+        font-size: 0.82rem;
+      }
+    }
+
+    /* ===== CARD GERAL ===== */
+    .content-card {
+      width: 100%;
+      margin: 0 auto 30px;
+      background: var(--surface);
+      border-radius: 16px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+      padding: 18px 18px 22px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      backdrop-filter: blur(8px);
+      box-sizing: border-box;
+    }
+
+    .content-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin: 0 0 6px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .content-title i {
+      color: var(--primary);
+    }
+
+    .content-subtitle {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin: 0 0 14px;
+    }
+
+    /* ===== FLASH MESSAGES ===== */
+    .flash-messages {
+      margin-bottom: 16px;
+    }
+
+    .flash {
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flash i {
+      font-size: 1rem;
+    }
+
+    .flash.success {
+      background-color: var(--success-soft);
+      color: #065f46;
+      border: 1px solid #bbf7d0;
+    }
+
+    .flash.error,
+    .flash.danger {
+      background-color: var(--danger-soft);
+      color: #7f1d1d;
+      border: 1px solid #fecaca;
+    }
+
+    .flash.info {
+      background-color: #e0f2fe;
+      color: #075985;
+      border: 1px solid #bae6fd;
+    }
+
+    /* ===== LISTA DE REGISTROS ===== */
+    .records-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .record-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border-soft);
+      background: #f9fafb;
+      box-sizing: border-box;
+    }
+
+    @media (min-width: 600px) {
+      .record-card {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    .record-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .record-main-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+      align-items: center;
+    }
+
+    .record-name {
+      font-weight: 700;
+      font-size: 0.96rem;
+    }
+
+    .record-hours {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--primary-dark);
+    }
+
+    .record-hours i {
+      color: var(--primary);
+    }
+
+    .record-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .record-meta i {
+      color: var(--primary);
+      margin-right: 4px;
+    }
+
+    .record-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    @media (min-width: 600px) {
+      .record-actions {
+        justify-content: flex-end;
+        margin-top: 0;
+      }
+    }
+
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       border: none;
-      border-radius: 5px;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.86rem;
+      font-weight: 700;
       cursor: pointer;
-      font-size: 14px;
-      user-select: none;
+      font-family: 'Montserrat', sans-serif;
+      transition: background-color 0.18s ease-out,
+                  box-shadow 0.18s ease-out,
+                  transform 0.1s ease-out;
     }
 
-    .deferir {
-      background-color: #28a745;
+    .btn-action i {
+      font-size: 0.9rem;
+    }
+
+    .btn-approve {
+      background-color: #0fb300;
       color: white;
+      box-shadow: 0 6px 14px rgba(15,179,0,0.5);
     }
 
-    .deferir:hover {
-      background-color: #218838;
+    .btn-approve:hover {
+      background-color: #0d8a00;
+      box-shadow: 0 8px 18px rgba(15,179,0,0.65);
+      transform: translateY(-1px);
     }
 
-    .indeferir {
-      background-color: #dc3545;
+    .btn-reject {
+      background-color: #dc2626;
       color: white;
+      box-shadow: 0 6px 14px rgba(220,38,38,0.45);
     }
 
-    .indeferir:hover {
-      background-color: #c82333;
+    .btn-reject:hover {
+      background-color: #b91c1c;
+      box-shadow: 0 8px 18px rgba(220,38,38,0.6);
+      transform: translateY(-1px);
     }
 
-    .no-records {
-      text-align: center;
-      color: #888;
-      font-size: 16px;
+    .btn-action:active {
+      transform: translateY(0);
+      box-shadow: 0 3px 8px rgba(15,23,42,0.35);
     }
 
-    /* Rodapé fixo */
+    /* Mensagem sem registros */
+    .no-data {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f9fafb, #e5edff);
+      border: 1px dashed var(--primary-soft);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .no-data i {
+      color: var(--primary);
+    }
+
+    /* ===== FOOTER ===== */
     footer {
       background: linear-gradient(to right, #222, #444);
       color: #ddd;
       text-align: center;
       padding: 15px 0;
-      width: 100vw;
       font-size: 14px;
       border-top: 2px solid #555;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      font-family: 'Montserrat', sans-serif;
       box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
-      z-index: 100;
-      user-select: none;
+      flex-shrink: 0;
+      width: 100%;
     }
 
     footer p {
@@ -371,33 +582,6 @@
     footer a:hover {
       color: #00aaff;
     }
-
-    /* Flash message styles */
-    .flash-message {
-      padding: 10px;
-      margin-bottom: 20px;
-      border-radius: 5px;
-      font-size: 16px;
-      width: 100%;
-      max-width: 700px;
-      box-sizing: border-box;
-      user-select: none;
-    }
-
-    .flash-success {
-      background-color: #28a745;
-      color: white;
-    }
-
-    .flash-danger {
-      background-color: #dc3545;
-      color: white;
-    }
-
-    .flash-info {
-      background-color: #17a2b8;
-      color: white;
-    }
   </style>
 </head>
 <body>
@@ -412,15 +596,13 @@
       </div>
     </div>
 
-    <div class="header-center-text-container" aria-label="Portal do Servidor">
-      PORTAL DO SERVIDOR
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
     </div>
 
-  <!-- ✅ Botão Home adicionado no desktop -->
-  <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
-    <i class="fas fa-home"></i>
-  </a>
-  
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
+    </a>
   </header>
 
   <!-- Cabeçalho Mobile -->
@@ -440,46 +622,100 @@
     </div>
   </header>
 
-  <!-- Título da página -->
-  <div class="titulo-container">
-    <h1 class="titulo-site">Deferir Banco de Horas</h1>
-  </div>
+  <main>
+    <div class="shell">
 
-  <!-- Flash messages -->
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="flash-message flash-{{ category }}">
-          {{ message }}
+      <!-- Header card da página -->
+      <div class="page-header-card">
+        <div class="page-header-icon">
+          <i class="fas fa-clipboard-check"></i>
         </div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
+        <div class="page-header-content">
+          <p class="page-header-title">Deferir Banco de Horas</p>
+          <p class="page-header-subtitle">
+            Analise e aprove ou recuse os lançamentos de banco de horas enviados pelos servidores.
+          </p>
+        </div>
+      </div>
 
-  <!-- Conteúdo -->
-  <div class="container" role="main">
-    {% if registros %}
-      {% for registro in registros %}
-        <form action="/banco_horas/deferir" method="POST" novalidate>
-          <div class="registro">
-            <p><strong>{{ registro.funcionario.nome }} - {{ registro.horas }} horas e {{ registro.minutos }} minutos</strong></p>
-            <p>Data: {{ registro.data_realizacao }}</p>
-            <input type="hidden" name="registro_id" value="{{ registro.id }}" />
-            <div class="buttons">
-              <button type="submit" name="action" value="deferir" class="button deferir">Deferir</button>
-              <button type="submit" name="action" value="indeferir" class="button indeferir">Indeferir</button>
+      <!-- Card principal -->
+      <div class="content-card">
+        <h2 class="content-title">
+          <i class="fas fa-list-ul"></i>
+          Registros aguardando deferimento
+        </h2>
+        <p class="content-subtitle">
+          Cada linha abaixo representa um lançamento pendente. Utilize os botões para <strong>deferir</strong> ou <strong>indeferir</strong> o registro.
+        </p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for category, message in messages %}
+                <div class="flash {{ category }}">
+                  {% if category == 'success' %}
+                    <i class="fas fa-check-circle"></i>
+                  {% elif category in ['error', 'danger'] %}
+                    <i class="fas fa-exclamation-triangle"></i>
+                  {% else %}
+                    <i class="fas fa-info-circle"></i>
+                  {% endif %}
+                  {{ message }}
+                </div>
+              {% endfor %}
             </div>
-          </div>
-        </form>
-        <hr />
-      {% endfor %}
-    {% else %}
-      <p class="no-records">Não há registros de horas a serem deferidas.</p>
-    {% endif %}
-  </div>
+          {% endif %}
+        {% endwith %}
 
-  <!-- Rodapé fixo -->
-  <footer role="contentinfo">
+        {% if registros %}
+          <div class="records-list">
+            {% for registro in registros %}
+              <form action="/banco_horas/deferir" method="POST" class="record-card">
+                <div class="record-info">
+                  <div class="record-main-line">
+                    <span class="record-name">
+                      {{ registro.funcionario.nome }}
+                    </span>
+                    <span class="record-hours">
+                      <i class="fas fa-clock"></i>
+                      {{ registro.horas }} horas e {{ registro.minutos }} minutos
+                    </span>
+                  </div>
+                  <div class="record-meta">
+                    <span>
+                      <i class="fas fa-calendar-alt"></i>
+                      {{ registro.data_realizacao.strftime('%d/%m/%Y') }}
+                    </span>
+                  </div>
+                </div>
+
+                <input type="hidden" name="registro_id" value="{{ registro.id }}" />
+
+                <div class="record-actions">
+                  <button type="submit" name="action" value="deferir" class="btn-action btn-approve">
+                    <i class="fas fa-check"></i>
+                    Deferir
+                  </button>
+                  <button type="submit" name="action" value="indeferir" class="btn-action btn-reject">
+                    <i class="fas fa-times"></i>
+                    Indeferir
+                  </button>
+                </div>
+              </form>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="no-data">
+            <i class="fas fa-info-circle"></i>
+            <span>Não há registros de horas aguardando deferimento no momento.</span>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
     <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
   </footer>
 

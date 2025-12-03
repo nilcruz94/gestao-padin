@@ -1,143 +1,852 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <title>Agendamentos - Administração</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Visualizar Agendamentos - Administração</title>
+
+  <!-- CSS global do projeto -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
   <style>
-    .container {
-      width: 95%;
+    :root {
+      --primary: #0077ff;
+      --primary-dark: #0051ff;
+      --primary-soft: #e0edff;
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --border-soft: #e5e7eb;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --danger: #dc2626;
+      --danger-soft: #fee2e2;
+      --warning-soft: #fef9c3;
+      --card-shadow: 0 14px 34px rgba(15,23,42,.1), 0 2px 4px rgba(15,23,42,.06);
+      --radius: 18px;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Montserrat', sans-serif;
+      background: radial-gradient(circle at top, #e0f2ff 0, #f9fafb 45%, #eef2ff 100%);
+      background-attachment: fixed;
+      color: var(--text-main);
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    main {
+      flex: 1 0 auto;
+      padding: 24px 12px 60px;
+      box-sizing: border-box;
+    }
+
+    .shell {
+      width: 100%;
       max-width: 1100px;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-      padding: 25px;
-      margin: 40px auto;
-      border: 1px solid rgba(0, 0, 0, 0.07);
+      margin: 0 auto;
     }
-    .titulo-container { display: flex; justify-content: center; margin: 20px 0; }
-    .titulo-site {
-      font-family: 'Montserrat', sans-serif; font-size: 38px; font-weight: 600; color: #007bff;
-      text-transform: uppercase; letter-spacing: 1px; border-bottom: 3px solid #007bff; padding-bottom: 8px;
-    }
-    .area-titulo { text-align: center; margin-bottom: 20px; color: #007bff; font-size: 26px; font-weight: bold; }
 
-    /* Filtros */
-    .filters { margin-bottom: 20px; text-align: center; }
-    .filter-form input, .filter-form select {
-      padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; margin-right: 6px; font-size: 14px;
+    @media (min-width: 769px) {
+      main {
+        padding: 30px 24px 80px;
+      }
     }
+
+    /* ===== Cabeçalhos ===== */
+    .header-desktop,
+    .header-mobile {
+      display: none;
+      flex-shrink: 0;
+    }
+
+    /* Desktop */
+    @media (min-width: 769px) {
+      .header-desktop {
+        display: flex;
+        background-color: #007bff;
+        padding: 15px 30px;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+        min-height: 110px;
+        position: relative;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        color: white;
+      }
+
+      .left-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+        color: white;
+      }
+
+      .escola-nome {
+        font-weight: 700;
+        font-size: 1.6rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+
+      .escola-subtitulo {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-top: 4px;
+      }
+
+      .header-center-text-container {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: 800;
+        font-size: 1.9rem;
+        color: white;
+        letter-spacing: 5px;
+        user-select: none;
+        white-space: nowrap;
+        z-index: 1;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      }
+
+      .header-center-text {
+        font-family: 'Montserrat', sans-serif;
+      }
+
+      .btn-home {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+      }
+
+      .btn-home:hover {
+        background-color: #0d8a00;
+      }
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .header-mobile {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        background-color: #007bff;
+      }
+
+      .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        padding: 10px 15px;
+        background-color: #007bff;
+        text-align: center;
+      }
+
+      .logo {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: white;
+        text-align: center;
+      }
+
+      .escola-nome {
+        font-weight: 700;
+        font-size: 1.3rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+
+      .escola-subtitulo {
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 2px;
+      }
+
+      .header-bottom {
+        background-color: #0056b3;
+        text-align: center;
+        padding: 12px 10px;
+        font-weight: 800;
+        font-size: 1rem;
+        letter-spacing: 4px;
+        user-select: none;
+        color: white;
+        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        box-sizing: border-box;
+        white-space: nowrap;
+      }
+
+      .btn-home-mobile {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+      }
+
+      .btn-home-mobile:hover {
+        background-color: #0d8a00;
+      }
+    }
+
+    /* ===== HEADER CARD DA PÁGINA (padrão) ===== */
+    .page-header-card {
+      background: #ffffff;
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin: 0 auto 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--card-shadow);
+      border-left: 5px solid var(--primary);
+    }
+
+    .page-header-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, .45);
+      color: #2563eb;
+      flex-shrink: 0;
+    }
+
+    .page-header-icon i {
+      font-size: 22px;
+    }
+
+    .page-header-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .page-header-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin: 0;
+      color: var(--text-main);
+    }
+
+    .page-header-subtitle {
+      font-size: 0.9rem;
+      margin: 0;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 600px) {
+      .page-header-card {
+        padding: 12px 14px;
+      }
+
+      .page-header-title {
+        font-size: 1.05rem;
+      }
+
+      .page-header-subtitle {
+        font-size: 0.82rem;
+      }
+    }
+
+    /* ===== CARD BASE ===== */
+    .content-card {
+      width: 100%;
+      margin: 0 auto 24px;
+      background: var(--surface);
+      border-radius: 16px;
+      box-shadow: var(--card-shadow);
+      padding: 18px 18px 20px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      backdrop-filter: blur(8px);
+      box-sizing: border-box;
+    }
+
+    .content-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin: 0 0 6px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .content-title i {
+      color: var(--primary);
+    }
+
+    .content-subtitle {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin: 0 0 14px;
+    }
+
+    .filter-card {
+      margin-bottom: 22px;
+    }
+
+    /* Alertas dinâmicos (JS) */
+    .alert-wrapper {
+      margin: 0 auto 14px;
+      max-width: 1100px;
+    }
+
+    .alert {
+      margin: 0;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .alert-success {
+      background: var(--success-soft);
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    .alert-error {
+      background: var(--danger-soft);
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
+    .alert i {
+      font-size: 0.95rem;
+    }
+
+    /* ===== FILTROS ===== */
+    .filters {
+      margin-top: 8px;
+    }
+
+    .filter-form {
+      display: grid;
+      grid-template-columns: minmax(220px, 1.5fr) minmax(160px, 1fr) minmax(180px, 1.2fr) auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    @media (max-width: 860px) {
+      .filter-form {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .filter-label {
+      font-size: .78rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: .08em;
+      margin-bottom: 4px;
+    }
+
+    .filter-form input,
+    .filter-form select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border-soft);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .filter-form input:focus,
+    .filter-form select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px rgba(59,130,246,.55);
+    }
+
     .btn-clear {
-      padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
-      background: #6c757d; color: white; text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.86rem;
+      background: #6b7280;
+      color: white;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: none;
+      box-shadow: 0 4px 12px rgba(31,41,55,.35);
+      transition: background-color .18s ease, transform .12s ease, box-shadow .18s ease;
+      white-space: nowrap;
     }
-    .btn-clear:hover { background: #5a6268; }
 
-    /* Grupos de funcionário */
-    .employee-group { margin-bottom: 20px; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; background: #fdfdfd; }
+    .btn-clear:hover {
+      background: #4b5563;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(31,41,55,.45);
+    }
+
+    .btn-clear i {
+      font-size: 0.85rem;
+    }
+
+    /* Área de resultados */
+    #resultadoAgendamentos {
+      margin-top: 10px;
+    }
+
+    .loading {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 18px 4px 6px;
+      font-size: 0.9rem;
+    }
+
+    /* Cards de funcionário */
+    .employee-card {
+      margin-bottom: 14px;
+      border-radius: 14px;
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      box-shadow: 0 10px 24px rgba(15,23,42,.12);
+      overflow: hidden;
+    }
+
     .employee-header {
-      background: #f4f6f9; padding: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-      font-weight: 600; color: #333;
+      width: 100%;
+      padding: 10px 14px;
+      background: linear-gradient(90deg,#f9fafb 0,#eef2ff 100%);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #0f172a;
     }
-    .employee-header i { transition: transform 0.3s ease; }
-    .toggle-content { display: none; padding: 12px; }
 
-    /* Tabela */
-    .toggle-content table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-    .toggle-content th, .toggle-content td { border: 1px solid #e1e1e1; padding: 8px; text-align: left; font-size: 14px; }
-    .toggle-content th { background-color: #f0f0f0; }
+    .employee-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .employee-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #eff6ff 0, #bfdbfe 60%, #93c5fd 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1d4ed8;
+      font-size: 0.9rem;
+    }
+
+    .employee-name {
+      margin: 0;
+    }
+
+    .employee-header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .employee-header-right i {
+      transition: transform 0.25s ease;
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+
+    .employee-header.open i {
+      transform: rotate(180deg);
+    }
+
+    .employee-details {
+      display: none;
+      padding: 10px 12px 12px;
+      background: #f9fafb;
+    }
+
+    .employee-table-wrapper {
+      overflow-x: auto;
+      border-radius: 10px;
+      background: #ffffff;
+      box-shadow: inset 0 0 0 1px #e5e7eb;
+    }
+
+    .employee-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 520px;
+    }
+
+    .employee-table th,
+    .employee-table td {
+      padding: 8px 10px;
+      font-size: 0.86rem;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .employee-table th {
+      background: #f3f4f6;
+      font-weight: 700;
+      color: #111827;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+    }
+
+    .employee-table td:last-child {
+      text-align: center;
+    }
+
+    .employee-table tbody tr:nth-child(even) {
+      background: #f9fafb;
+    }
 
     /* Status */
-    .status-deferido, .status-em-espera, .status-indeferido {
-      white-space: nowrap; display: inline-block; padding: 4px 10px; border-radius: 12px; font-weight: 600; font-size: 13px;
+    .status-deferido,
+    .status-em-espera,
+    .status-indeferido {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.78rem;
+      white-space: nowrap;
+      border: 1px solid transparent;
     }
-    .status-deferido { background-color: #28a745; color: #fff; }
-    .status-em-espera { background-color: #ffc107; color: #000; }
-    .status-indeferido { background-color: #dc3545; color: #fff; }
+
+    .status-deferido {
+      background: var(--success-soft);
+      color: #166534;
+      border-color: #bbf7d0;
+    }
+
+    .status-em-espera {
+      background: var(--warning-soft);
+      color: #854d0e;
+      border-color: #facc15;
+    }
+
+    .status-indeferido {
+      background: var(--danger-soft);
+      color: #b91c1c;
+      border-color: #fecaca;
+    }
+
+    .status-deferido i,
+    .status-em-espera i,
+    .status-indeferido i {
+      font-size: 0.85rem;
+    }
 
     /* Botão excluir */
     .submit-btn {
-      padding: 6px 12px; background-color: #007bff; color: #fff; border: none; font-size: 13px; cursor: pointer; border-radius: 6px;
-      transition: background 0.2s, transform 0.2s;
+      padding: 6px 11px;
+      background-color: #ef4444;
+      color: #fff;
+      border: none;
+      font-size: 0.8rem;
+      cursor: pointer;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 10px rgba(248,113,113,.35);
+      transition: background-color .2s ease, transform .12s ease, box-shadow .18s ease;
+      white-space: nowrap;
     }
-    .submit-btn:hover { background-color: #0fb300; transform: scale(1.05); }
+
+    .submit-btn i {
+      font-size: 0.85rem;
+    }
+
+    .submit-btn:hover {
+      background-color: #dc2626;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(220,38,38,.45);
+    }
 
     /* Paginação */
-    .pagination { text-align: center; margin-top: 20px; }
-    .pagination a {
-      padding: 6px 12px; border: 1px solid #007bff; border-radius: 4px; margin: 0 4px; color: #007bff; text-decoration: none; font-size: 14px; cursor: pointer;
-    }
-    .pagination a:hover { background: #007bff; color: white; }
-    .pagination span { margin: 0 8px; font-size: 14px; font-weight: 500; }
-
-    .voltar-link { display: block; text-align: center; margin-top: 25px; font-size: 16px; color: #007bff; text-decoration: none; font-weight: 500; }
-    .voltar-link:hover { text-decoration: underline; }
-
-    /* Loader simples */
-    .loading { text-align: center; color: #666; padding: 20px 0; }
-
-    /* Alertas */
-    .alert {
-      margin: 15px auto;
-      padding: 12px 20px;
-      border-radius: 6px;
-      font-size: 14px;
-      max-width: 600px;
+    .pagination {
       text-align: center;
+      margin-top: 16px;
+      font-size: 0.86rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
     }
-    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+    .pagination a {
+      padding: 6px 12px;
+      border: 1px solid #2563eb;
+      border-radius: 999px;
+      color: #2563eb;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background-color .16s ease, color .16s ease;
+    }
+
+    .pagination a:hover {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .pagination span {
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* Footer */
+    footer {
+      background: linear-gradient(to right, #222, #444);
+      color: #ddd;
+      text-align: center;
+      padding: 15px 0;
+      font-size: 14px;
+      border-top: 2px solid #555;
+      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+      width: 100%;
+    }
+
+    footer p {
+      margin: 5px 0;
+      font-size: 15px;
+      font-weight: 300;
+    }
+
+    footer a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease-in-out;
+    }
+
+    footer a:hover {
+      color: #00aaff;
+    }
   </style>
 </head>
 <body>
-  <div class="titulo-container">
-    <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
-  </div>
 
-  <div class="container">
-    <div class="area-titulo">Agendamentos - Administração</div>
-
-    <!-- Alertas dinâmicos -->
-    <div id="alertContainer"></div>
-
-    <!-- Filtros -->
-    <div class="filters">
-      <form id="filterForm" class="filter-form" onsubmit="return false;">
-        <input type="text" name="nome" id="filtroNome" placeholder="Buscar por funcionário...">
-        <select name="status" id="filtroStatus">
-          <option value="">Todos os Status</option>
-          <option value="deferido">Deferido</option>
-          <option value="em_espera">Em Espera</option>
-          <option value="indeferido">Indeferido</option>
-        </select>
-        <select name="cargo" id="filtroCargo">
-          <option value="">Todos os Cargos</option>
-          {% set cargos = [
-            "Agente Administrativo", "Assistente de Direção", "Assistente Tecnico Pedagogico",
-            "Atendente de Educação I", "Atendente de Educação II", "Diretor de Unidade Escolar",
-            "Educador de Desenvolvimento Infanto Juvenil", "Inspetor de Aluno", "Pedagoga Comunitaria",
-            "Professor I", "Professor II", "Professor III", "Professor IV", "Professor Adjunto",
-            "Secretario de Unidade Escolar", "Servente", "Servente I", "Servente II", "Trabalhador"
-          ] %}
-          {% for c in cargos|sort %}
-            <option value="{{ c }}">{{ c }}</option>
-          {% endfor %}
-        </select>
-        <a href="#" id="btnLimpar" class="btn-clear">Limpar</a>
-      </form>
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
     </div>
-
-    <!-- Resultados AJAX -->
-    <div id="resultadoAgendamentos" class="loading">
-      Carregando agendamentos...
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
     </div>
-
-    <a href="{{ url_for('index') }}" class="voltar-link">
-      <i class="fas fa-arrow-left"></i> Voltar ao Início
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
     </a>
-  </div>
+  </header>
+
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <div class="shell">
+
+      <!-- Header card da página -->
+      <div class="page-header-card">
+        <div class="page-header-icon">
+          <i class="fas fa-calendar-check"></i>
+        </div>
+        <div class="page-header-content">
+          <p class="page-header-title">Agendamentos</p>
+          <p class="page-header-subtitle">
+            Visualize, filtre e gerencie os agendamentos registrados pelos servidores da unidade.
+          </p>
+        </div>
+      </div>
+
+      <!-- Alertas dinâmicos (JS) -->
+      <div id="alertContainer" class="alert-wrapper"></div>
+
+      <!-- Card de filtros -->
+      <div class="content-card filter-card">
+        <h2 class="content-title">
+          <i class="fas fa-filter"></i>
+          Filtros de pesquisa
+        </h2>
+        <p class="content-subtitle">
+          Ajuste os filtros abaixo para localizar rapidamente agendamentos por funcionário, cargo e status.
+        </p>
+
+        <div class="filters">
+          <form id="filterForm" class="filter-form" onsubmit="return false;">
+            <div>
+              <div class="filter-label">Funcionário</div>
+              <input type="text" name="nome" id="filtroNome" placeholder="Buscar por nome do funcionário...">
+            </div>
+
+            <div>
+              <div class="filter-label">Status</div>
+              <select name="status" id="filtroStatus">
+                <option value="">Todos os status</option>
+                <option value="deferido">Deferido</option>
+                <option value="em_espera">Em espera</option>
+                <option value="indeferido">Indeferido</option>
+              </select>
+            </div>
+
+            <div>
+              <div class="filter-label">Cargo</div>
+              <select name="cargo" id="filtroCargo">
+                <option value="">Todos os cargos</option>
+                {% set cargos = [
+                  "Agente Administrativo", "Assistente de Direção", "Assistente Tecnico Pedagogico",
+                  "Atendente de Educação I", "Atendente de Educação II", "Diretor de Unidade Escolar",
+                  "Educador de Desenvolvimento Infanto Juvenil", "Inspetor de Aluno", "Pedagoga Comunitaria",
+                  "Professor I", "Professor II", "Professor III", "Professor IV", "Professor Adjunto",
+                  "Secretario de Unidade Escolar", "Servente", "Servente I", "Servente II", "Trabalhador"
+                ] %}
+                {% for c in cargos|sort %}
+                  <option value="{{ c }}">{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div>
+              <button id="btnLimpar" class="btn-clear">
+                <i class="fas fa-eraser"></i>
+                Limpar filtros
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Card principal de resultados -->
+      <section class="content-card">
+        <h2 class="content-title">
+          <i class="fas fa-users-cog"></i>
+          Agendamentos por servidor
+        </h2>
+        <p class="content-subtitle">
+          Cada card abaixo representa um servidor e reúne os agendamentos vinculados a ele.
+          Clique no cabeçalho para expandir e visualizar os detalhes.
+        </p>
+
+        <div id="resultadoAgendamentos" class="loading">
+          Carregando agendamentos...
+        </div>
+      </section>
+
+    </div>
+  </main>
 
   <footer>
     <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
@@ -151,7 +860,12 @@
 
     function showAlert(message, type="success") {
       const alertContainer = document.getElementById("alertContainer");
-      alertContainer.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+      const icon = type === "success" ? "check-circle" : "exclamation-triangle";
+      alertContainer.innerHTML = `
+        <div class="alert ${type === "success" ? "alert-success" : "alert-error"}">
+          <i class="fas fa-${icon}"></i>
+          <span>${message}</span>
+        </div>`;
       setTimeout(() => { alertContainer.innerHTML = ""; }, 4000);
     }
 
@@ -182,38 +896,65 @@
         const res = await fetch(`/admin/agendamentos/ajax?${params.toString()}`, {
           signal: currentController.signal
         });
+
         if (!res.ok) {
-          container.innerHTML = `<p style="text-align:center;color:#c00;">Erro ao carregar dados (${res.status}).</p>`;
+          container.innerHTML = `<p class="loading" style="color:#b91c1c;">Erro ao carregar dados (${res.status}).</p>`;
           return;
         }
-        const data = await res.json();
 
+        const data = await res.json();
         const nowSignature = buildSignature(data.filters || {nome:"",status:"",cargo:""}, data.page || 1);
         if (nowSignature !== lastSignature) return;
 
         let html = "";
+
         if (data.dados && data.dados.length > 0) {
           data.dados.forEach((f) => {
             const detailsId = `details-${f.id}`;
             html += `
-              <div class="employee-group">
-                <div class="employee-header" onclick="toggleDetails('${detailsId}', this)">
-                  <div class="emp-info">${f.funcionario}</div>
-                  <i class="fas fa-chevron-down"></i>
-                </div>
-                <div id="${detailsId}" class="toggle-content">
-                  <table>
-                    <thead>
-                      <tr><th>Data</th><th>Motivo</th><th>Status</th><th>Ações</th></tr>
-                    </thead>
-                    <tbody>
+              <article class="employee-card">
+                <button type="button" class="employee-header" onclick="toggleDetails('${detailsId}', this)">
+                  <div class="employee-header-left">
+                    <div class="employee-avatar">
+                      <i class="fas fa-user"></i>
+                    </div>
+                    <p class="employee-name">${f.funcionario}</p>
+                  </div>
+                  <div class="employee-header-right">
+                    <span>${f.cargo || ""}</span>
+                    <i class="fas fa-chevron-down"></i>
+                  </div>
+                </button>
+                <div id="${detailsId}" class="employee-details">
+                  <div class="employee-table-wrapper">
+                    <table class="employee-table">
+                      <thead>
+                        <tr>
+                          <th>Data</th>
+                          <th>Motivo</th>
+                          <th>Status</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
             `;
+
             (f.agendamentos || []).forEach(ag => {
               const st = (ag.status || "").toLowerCase();
               let cls = "", icon = "", label = ag.status || "";
-              if (st.startsWith("deferido")) { cls = "status-deferido"; icon = '<i class="fas fa-check-circle"></i>'; label = "Deferido"; }
-              else if (st.startsWith("indeferido")) { cls = "status-indeferido"; icon = '<i class="fas fa-times-circle"></i>'; label = "Indeferido"; }
-              else if (["em_espera","pendente","em espera"].includes(st)) { cls = "status-em-espera"; icon = '<i class="fas fa-hourglass-half"></i>'; label = "Em Espera"; }
+              if (st.startsWith("deferido")) {
+                cls = "status-deferido";
+                icon = '<i class="fas fa-check-circle"></i>';
+                label = "Deferido";
+              } else if (st.startsWith("indeferido")) {
+                cls = "status-indeferido";
+                icon = '<i class="fas fa-times-circle"></i>';
+                label = "Indeferido";
+              } else if (["em_espera","pendente","em espera"].includes(st)) {
+                cls = "status-em-espera";
+                icon = '<i class="fas fa-hourglass-half"></i>';
+                label = "Em espera";
+              }
 
               html += `
                 <tr>
@@ -222,20 +963,32 @@
                   <td><span class="${cls}">${icon} ${label}</span></td>
                   <td>
                     <button type="button" class="submit-btn" onclick="excluirAgendamento(${ag.id})">
-                      <i class="fas fa-trash-alt"></i> Excluir
+                      <i class="fas fa-trash-alt"></i>
+                      Excluir
                     </button>
                   </td>
                 </tr>
               `;
             });
-            html += `</tbody></table></div></div>`;
+
+            html += `
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </article>
+            `;
           });
 
           if (data.pages && data.pages > 1) {
             html += `<div class="pagination">`;
-            if (data.has_prev) html += `<a onclick="carregarAgendamentos(${data.prev_num})">&laquo; Anterior</a>`;
+            if (data.has_prev) {
+              html += `<a onclick="carregarAgendamentos(${data.prev_num})">&laquo; Anterior</a>`;
+            }
             html += `<span>Página ${data.page} de ${data.pages}</span>`;
-            if (data.has_next) html += `<a onclick="carregarAgendamentos(${data.next_num})">Próxima &raquo;</a>`;
+            if (data.has_next) {
+              html += `<a onclick="carregarAgendamentos(${data.next_num})">Próxima &raquo;</a>`;
+            }
             html += `</div>`;
           }
         } else {
@@ -244,13 +997,13 @@
           if (f.status || f.cargo || f.nome) {
             motivo = "Nenhum agendamento encontrado para os filtros aplicados.";
           }
-          html = `<p style="text-align:center;">${motivo}</p>`;
+          html = `<p class="loading">${motivo}</p>`;
         }
 
         container.innerHTML = html;
       } catch (err) {
         if (err.name === "AbortError") return;
-        container.innerHTML = `<p style="text-align:center;color:#c00;">Falha na conexão.</p>`;
+        container.innerHTML = `<p class="loading" style="color:#b91c1c;">Falha na conexão.</p>`;
       }
     }
 
@@ -262,7 +1015,7 @@
         const data = await res.json();
 
         if (data.success) {
-          showAlert(data.message, "success");
+          showAlert(data.message || "Agendamento excluído com sucesso.", "success");
           scheduleLoad(1);
         } else {
           showAlert(data.error || "Não foi possível excluir.", "error");
@@ -275,10 +1028,12 @@
     function toggleDetails(id, headerEl) {
       const content = document.getElementById(id);
       if (!content) return;
-      const arrow = headerEl ? headerEl.querySelector("i") : null;
-      const show = (content.style.display === "" || content.style.display === "none");
-      content.style.display = show ? "block" : "none";
-      if (arrow) arrow.style.transform = show ? "rotate(180deg)" : "rotate(0deg)";
+      const open = content.style.display === "" || content.style.display === "none";
+      content.style.display = open ? "block" : "none";
+      if (headerEl) {
+        if (open) headerEl.classList.add("open");
+        else headerEl.classList.remove("open");
+      }
     }
 
     function scheduleLoad(page = 1) {
@@ -291,9 +1046,9 @@
     document.getElementById("filtroCargo").addEventListener("change", () => scheduleLoad(1));
     document.getElementById("btnLimpar").addEventListener("click", (e) => {
       e.preventDefault();
-      document.getElementById("filtroNome").value = "";
+      document.getElementById("filtroNome").value  = "";
       document.getElementById("filtroStatus").value = "";
-      document.getElementById("filtroCargo").value = "";
+      document.getElementById("filtroCargo").value  = "";
       scheduleLoad(1);
     });
 

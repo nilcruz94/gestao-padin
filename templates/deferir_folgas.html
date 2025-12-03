@@ -1,308 +1,912 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Deferir Folgas</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <meta charset="UTF-8" />
+  <title>Deferir Folgas - E.M José Padin Mouta</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, maximum-scale=3, minimum-scale=1" />
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --primary: #0077ff;
+      --primary-dark: #0051ff;
+      --primary-soft: #dbe9ff;
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --border-soft: #e5e7eb;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --warning: #f97316;
+      --warning-soft: #ffedd5;
+      --danger: #dc2626;
+      --danger-soft: #fee2e2;
+
+      --card-shadow: 0 14px 34px rgba(15,23,42,.1), 0 2px 4px rgba(15,23,42,.06);
+      --radius: 18px;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Montserrat', sans-serif;
+      background: radial-gradient(circle at top, #e0f2ff 0, #f9fafb 45%, #eef2ff 100%);
+      background-attachment: fixed;
+      color: var(--text-main);
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    main {
+      flex: 1 0 auto;
+      padding: 24px 12px 60px;
+      box-sizing: border-box;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 769px) {
+      main {
+        padding: 30px 24px 80px;
+      }
+    }
+
+    /* ===== CABEÇALHOS ===== */
+    .header-desktop,
+    .header-mobile {
+      display: none;
+      flex-shrink: 0;
+    }
+
+    /* Desktop */
+    @media (min-width: 769px) {
+      .header-desktop {
+        display: flex;
+        background-color: #007bff;
+        padding: 15px 30px;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+        min-height: 110px;
+        position: relative;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        color: white;
+      }
+
+      .left-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+        color: white;
+      }
+
+      .escola-nome {
+        font-weight: 700;
+        font-size: 1.6rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+
+      .escola-subtitulo {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-top: 4px;
+      }
+
+      .header-center-text-container {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: 800;
+        font-size: 1.9rem;
+        color: white;
+        letter-spacing: 5px;
+        user-select: none;
+        white-space: nowrap;
+        z-index: 1;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      }
+
+      .header-center-text {
+        font-family: 'Montserrat', sans-serif;
+      }
+
+      .btn-home {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+      }
+
+      .btn-home:hover {
+        background-color: #0d8a00;
+      }
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .header-mobile {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        background-color: #007bff;
+      }
+
+      .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        padding: 10px 15px;
+        background-color: #007bff;
+        text-align: center;
+      }
+
+      .logo {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: white;
+        text-align: center;
+      }
+
+      .escola-nome {
+        font-weight: 700;
+        font-size: 1.3rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+
+      .escola-subtitulo {
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 2px;
+      }
+
+      .header-bottom {
+        background-color: #0056b3;
+        text-align: center;
+        padding: 12px 10px;
+        font-weight: 800;
+        font-size: 1.0rem;
+        letter-spacing: 4px;
+        user-select: none;
+        color: white;
+        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        box-sizing: border-box;
+        white-space: nowrap;
+      }
+
+      .btn-home-mobile {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+      }
+
+      .btn-home-mobile:hover {
+        background-color: #0d8a00;
+      }
+    }
+
+    /* ===== HEADER CARD DA PÁGINA ===== */
+    .page-header-card {
+      background: #ffffff;
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin: 0 auto 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--card-shadow);
+      border-left: 5px solid var(--primary);
+    }
+
+    .page-header-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, .45);
+      color: #2563eb;
+      flex-shrink: 0;
+    }
+
+    .page-header-icon i {
+      font-size: 22px;
+    }
+
+    .page-header-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .page-header-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin: 0;
+      color: var(--text-main);
+    }
+
+    .page-header-subtitle {
+      font-size: 0.9rem;
+      margin: 0;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 600px) {
+      .page-header-card {
+        padding: 12px 14px;
+      }
+
+      .page-header-title {
+        font-size: 1.05rem;
+      }
+
+      .page-header-subtitle {
+        font-size: 0.82rem;
+      }
+    }
+
+    /* ===== CARD PRINCIPAL ===== */
+    .content-card {
+      width: 100%;
+      margin: 0 auto 24px;
+      background: var(--surface);
+      border-radius: 16px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+      padding: 18px 18px 22px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      backdrop-filter: blur(8px);
+      box-sizing: border-box;
+    }
+
+    .content-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin: 0 0 6px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .content-title i {
+      color: var(--primary);
+    }
+
+    .content-subtitle {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin: 0 0 14px;
+    }
+
+    /* ===== ALERTA DE CONFLITOS ===== */
+    .conflito-alert {
+      margin: 0 auto 18px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      max-width: 980px;
+      background: linear-gradient(135deg, #fff7ed, #fffbeb);
+      border: 1px solid #fed7aa;
+      color: #7c2d12;
+      font-size: 0.9rem;
+      box-shadow: 0 10px 24px rgba(15,23,42,0.12);
+    }
+
+    .conflito-titulo {
+      font-size: 0.98rem;
+      font-weight: 700;
+      margin: 0 0 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .conflito-titulo i {
+      color: #f97316;
+      font-size: 1.1rem;
+    }
+
+    .conflito-alert p {
+      margin: 4px 0;
+    }
+
+    .conflito-table-wrapper {
+      margin-top: 8px;
+    }
+
+    .conflito-table-wrapper table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+      border-radius: 12px;
+      overflow: hidden;
+      background-color: #fff;
+      box-shadow: 0 6px 14px rgba(15,23,42,0.08);
+    }
+
+    .conflito-table-wrapper th,
+    .conflito-table-wrapper td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .conflito-table-wrapper thead {
+      background: #f3f4ff;
+    }
+
+    .conflito-table-wrapper tbody tr:nth-child(even) {
+      background-color: #fdfaf5;
+    }
+
+    /* ===== FLASH MESSAGES ===== */
+    .flash-messages {
+      margin: 0 auto 16px;
+      max-width: 980px;
+    }
+
+    .flash {
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flash i {
+      font-size: 1rem;
+    }
+
+    .flash.success {
+      background-color: var(--success-soft);
+      color: #065f46;
+      border: 1px solid #bbf7d0;
+    }
+
+    .flash.error,
+    .flash.danger {
+      background-color: var(--danger-soft);
+      color: #7f1d1d;
+      border: 1px solid #fecaca;
+    }
+
+    .flash.info {
+      background-color: #e0f2fe;
+      color: #075985;
+      border: 1px solid #bae6fd;
+    }
+
+    /* ===== TABELAS PRINCIPAIS ===== */
+    .cargo-block {
+      margin-top: 18px;
+    }
+
+    .cargo-header {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin: 0 0 10px;
+      padding-left: 10px;
+      border-left: 4px solid var(--primary);
+    }
+
+    .table-card {
+      margin-bottom: 14px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border-soft);
+      box-shadow: 0 10px 24px rgba(15,23,42,0.08);
+      background-color: #ffffff;
+    }
+
+    .table-container table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      min-width: 720px;
+    }
+
+    thead {
+      background: linear-gradient(to right, #eff6ff, #e0ecff);
+    }
+
+    th, td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      font-weight: 700;
+      color: #1f2933;
+      font-size: 0.86rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    td:nth-child(2),
+    td:nth-child(3),
+    td:nth-child(4),
+    td:nth-child(5),
+    th:nth-child(2),
+    th:nth-child(3),
+    th:nth-child(4),
+    th:nth-child(5) {
+      text-align: center;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+
+    tbody tr:hover {
+      background-color: #eef2ff;
+    }
+
+    /* ===== STATUS PILL ===== */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .status-em-espera {
+      background-color: var(--warning-soft);
+      color: #9a3412;
+      border: 1px solid #fed7aa;
+    }
+
+    .status-deferido {
+      background-color: var(--success-soft);
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    .status-indeferido {
+      background-color: var(--danger-soft);
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    /* ===== BADGES DOS AVISOS (Em espera / Agendado) ===== */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .bg-warning {
+      background-color: var(--warning-soft) !important;
+      color: #9a3412 !important;
+      border-color: #fed7aa !important;
+    }
+
+    .bg-success {
+      background-color: var(--success-soft) !important;
+      color: #166534 !important;
+      border-color: #bbf7d0 !important;
+    }
+
+    .text-dark {
+      color: #111827 !important;
+    }
+
+    /* ===== BOTÕES DE AÇÃO ===== */
+    .form-acoes {
+      margin: 0;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 6px;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    .button {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      font-family: 'Montserrat', sans-serif;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: background-color 0.18s ease-out,
+                  box-shadow 0.18s ease-out,
+                  transform 0.1s ease-out;
+    }
+
+    .deferir {
+      background-color: #0fb300;
+      color: #ffffff;
+      box-shadow: 0 4px 10px rgba(15,179,0,0.5);
+    }
+
+    .deferir:hover {
+      background-color: #0d8a00;
+      box-shadow: 0 6px 14px rgba(15,179,0,0.65);
+      transform: translateY(-1px);
+    }
+
+    .indeferir {
+      background-color: #dc2626;
+      color: #ffffff;
+      box-shadow: 0 4px 10px rgba(220,38,38,0.45);
+    }
+
+    .indeferir:hover {
+      background-color: #b91c1c;
+      box-shadow: 0 6px 14px rgba(220,38,38,0.6);
+      transform: translateY(-1px);
+    }
+
+    .button:active {
+      transform: translateY(0);
+      box-shadow: 0 3px 8px rgba(15,23,42,0.35);
+    }
+
+    /* ===== TEXTO QUANDO NÃO HÁ FOLGAS ===== */
+    .no-data {
+      margin-top: 6px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f9fafb, #e5edff);
+      border: 1px dashed var(--primary-soft);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .no-data i {
+      color: var(--primary);
+    }
+
+    /* ===== FOOTER ===== */
+    footer {
+      background: linear-gradient(to right, #222, #444);
+      color: #ddd;
+      text-align: center;
+      padding: 15px 0;
+      font-size: 14px;
+      border-top: 2px solid #555;
+      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+      width: 100%;
+    }
+
+    footer p {
+      margin: 5px 0;
+      font-size: 15px;
+      font-weight: 300;
+    }
+
+    footer a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease-in-out;
+    }
+
+    footer a:hover {
+      color: #00aaff;
+    }
+
+    /* ===== AJUSTES PARA MOBILE ===== */
+    @media (max-width: 640px) {
+      .table-container table {
+        min-width: 640px;
+      }
+
+      th, td {
+        padding: 8px 6px;
+        font-size: 0.8rem;
+      }
+
+      .button {
+        padding: 5px 8px;
+        font-size: 0.78rem;
+      }
+    }
+
+    /* ✅ Scroll horizontal suave do card de conflitos no mobile, sem sobra */
+    @media (max-width: 768px) {
+      .conflito-alert {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-right: 12px; /* igual esquerda, evita “faixa” grande */
+      }
+
+      .conflito-table-wrapper {
+        display: inline-block;
+        min-width: 640px;
+      }
+
+      /* mantém largura controlada pela min-width do próprio table,
+         sem width:max-content, evitando espaço vazio à direita */
+    }
+  </style>
 </head>
 <body>
 
-<!-- Título principal -->
-<h1 class="titulo-site" style="text-align:center; margin: 30px 0 10px;">
-    Gestão de Ponto E.M José Padin Mouta
-</h1>
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
+    </a>
+  </header>
 
-<!-- Alerta de conflitos -->
-{% if avisos %}
-    <div class="conflito-alert">
-        <h3 class="conflito-titulo">
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <div class="shell">
+
+      <!-- Alerta de conflitos -->
+      {% if avisos %}
+        <section class="conflito-alert">
+          <h3 class="conflito-titulo">
             <i class="fas fa-exclamation-triangle"></i>
             Conflitos de Folgas Detectados
-        </h3>
-        {% for aviso in avisos %}
-            {{ aviso|safe }}
-        {% endfor %}
-    </div>
-{% endif %}
-
-<!-- Flash messages -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <div class="flash-container">
-            {% for category, message in messages %}
-                <div class="flash-message flash-{{ category }}">{{ message }}</div>
+          </h3>
+          <div class="conflito-table-wrapper">
+            {% for aviso in avisos %}
+              {{ aviso|safe }}
             {% endfor %}
-        </div>
-    {% endif %}
-{% endwith %}
+          </div>
+        </section>
+      {% endif %}
 
-<div class="container">
-    <h1>Deferir Folgas</h1>
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">
+                {% if category == 'success' %}
+                  <i class="fas fa-check-circle"></i>
+                {% elif category in ['error', 'danger'] %}
+                  <i class="fas fa-exclamation-triangle"></i>
+                {% else %}
+                  <i class="fas fa-info-circle"></i>
+                {% endif %}
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
 
-    {% if folgas_por_cargo %}
-        {% for cargo, lista_folgas in folgas_por_cargo.items() %}
-            <h2 class="cargo-header">{{ cargo or 'Sem Cargo Definido' }}</h2>
-            <table>
-                <thead>
-                    <tr>
+      <!-- Card principal -->
+      <div class="content-card">
+        <h2 class="content-title">
+          <i class="fas fa-calendar-check"></i>
+          Deferir Folgas
+        </h2>
+        <p class="content-subtitle">
+          Visualize abaixo as folgas pendentes organizadas por cargo. Utilize os botões para
+          <strong>deferir</strong> ou <strong>indeferir</strong> cada solicitação.
+        </p>
+
+        {% if folgas_por_cargo %}
+          {% for cargo, lista_folgas in folgas_por_cargo.items() %}
+            <div class="cargo-block">
+              <h3 class="cargo-header">{{ cargo or 'Sem Cargo Definido' }}</h3>
+              <div class="table-card">
+                <div class="table-container">
+                  <table>
+                    <thead>
+                      <tr>
                         <th>Funcionário</th>
                         <th>Motivo</th>
                         <th>Status</th>
                         <th>Data da Folga</th>
                         <th>Data de Referência</th>
                         <th>Ação</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for folga in lista_folgas %}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for folga in lista_folgas %}
                         <tr>
-                            <td data-label="Funcionário">{{ folga.funcionario.nome }}</td>
-                            <td data-label="Motivo">{{ folga.motivo }}</td>
-                            <td data-label="Status">
-                                {% if folga.status == 'em_espera' %}
-                                    <span class="status-em-espera">Em espera</span>
-                                {% elif folga.status == 'deferido' %}
-                                    <span class="status-deferido">Deferida</span>
-                                {% elif folga.status == 'indeferido' %}
-                                    <span class="status-indeferido">Indeferida</span>
-                                {% else %}
-                                    {{ folga.status }}
-                                {% endif %}
-                            </td>
-                            <td data-label="Data da Folga">{{ folga.data.strftime('%d/%m/%Y') }}</td>
-                            <td data-label="Data de Referência">
-                                {% if folga.motivo == 'BH' %}
-                                    {% if folga.data_referencia %}
-                                        {{ folga.data_referencia.strftime('%d/%m/%Y') }}
-                                    {% else %}
-                                        N/A
-                                    {% endif %}
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                            </td>
-                            <td data-label="Ação">
-                                <form method="POST" class="form-acoes">
-                                    <input type="hidden" name="folga_id" value="{{ folga.id }}" />
-                                    <div class="buttons">
-                                        <button type="submit" name="status" value="deferido" class="button deferir">Deferir</button>
-                                        <button type="submit" name="status" value="indeferido" class="button indeferir">Indeferir</button>
-                                    </div>
-                                </form>
-                            </td>
+                          <td>{{ folga.funcionario.nome }}</td>
+                          <td>{{ folga.motivo }}</td>
+                          <td>
+                            {% if folga.status == 'em_espera' %}
+                              <span class="status-pill status-em-espera">Em espera</span>
+                            {% elif folga.status == 'deferido' %}
+                              <span class="status-pill status-deferido">Deferida</span>
+                            {% elif folga.status == 'indeferido' %}
+                              <span class="status-pill status-indeferido">Indeferida</span>
+                            {% else %}
+                              {{ folga.status }}
+                            {% endif %}
+                          </td>
+                          <td>{{ folga.data.strftime('%d/%m/%Y') }}</td>
+                          <td>
+                            {% if folga.motivo == 'BH' %}
+                              {% if folga.data_referencia %}
+                                {{ folga.data_referencia.strftime('%d/%m/%Y') }}
+                              {% else %}
+                                N/A
+                              {% endif %}
+                            {% else %}
+                              N/A
+                            {% endif %}
+                          </td>
+                          <td>
+                            <form method="POST" class="form-acoes">
+                              <input type="hidden" name="folga_id" value="{{ folga.id }}" />
+                              <div class="buttons">
+                                <button type="submit" name="status" value="deferido" class="button deferir">
+                                  <i class="fas fa-check"></i>
+                                  Deferir
+                                </button>
+                                <button type="submit" name="status" value="indeferido" class="button indeferir">
+                                  <i class="fas fa-times"></i>
+                                  Indeferir
+                                </button>
+                              </div>
+                            </form>
+                          </td>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% endfor %}
-    {% else %}
-        <p>Não há folgas pendentes para deferir.</p>
-    {% endif %}
-</div>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="no-data">
+            <i class="fas fa-info-circle"></i>
+            <span>Não há folgas pendentes para deferir.</span>
+          </div>
+        {% endif %}
+      </div>
 
-<a href="{{ url_for('index') }}" class="voltar-link">
-    <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
-</a>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
 
 </body>
-
-<footer>
-    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-</footer>
-
-<style>
-    .flash-container {
-        width: 100%;
-        margin: 10px auto;
-        text-align: center;
-    }
-    .flash-message {
-        padding: 10px;
-        border-radius: 5px;
-        font-weight: bold;
-        font-size: 16px;
-        display: inline-block;
-        width: 80%;
-        margin-bottom: 10px;
-    }
-    .flash-success {
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-    }
-    .flash-danger {
-        background-color: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-    }
-    .conflito-alert {
-        background-color: #fff3cd;
-        border: 1px solid #ffeeba;
-        padding: 20px;
-        margin: 20px auto;
-        border-radius: 10px;
-        max-width: 1000px;
-        font-size: 15px;
-        box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
-    }
-    .conflito-titulo {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 15px;
-        color: #b06a00;
-        font-family: 'Inter', 'Segoe UI', sans-serif;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .conflito-titulo i {
-        color: #ffc107;
-    }
-    .cargo-header {
-        margin-top: 40px;
-        font-size: 24px;
-        color: #007bff;
-        border-bottom: 2px solid #007bff;
-        padding-bottom: 5px;
-    }
-    .buttons {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        justify-content: center;
-    }
-    .button {
-        padding: 10px 15px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 14px;
-    }
-    .deferir {
-        background-color: #28a745;
-        color: white;
-    }
-    .deferir:hover {
-        background-color: #218838;
-    }
-    .indeferir {
-        background-color: #dc3545;
-        color: white;
-    }
-    .indeferir:hover {
-        background-color: #c82333;
-    }
-    .container {
-        width: 90%;
-        max-width: 1200px;
-        margin: 20px auto;
-        padding: 20px;
-        background: #fff;
-        border-radius: 8px;
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-        overflow-x: auto;
-    }
-    .voltar-link {
-        display: block;
-        width: fit-content;
-        margin: 20px auto;
-        text-align: center;
-        font-size: 16px;
-        color: #007bff;
-        text-decoration: none;
-        font-weight: 500;
-    }
-    .voltar-link:hover {
-        color: #0056b3;
-    }
-    footer {
-        background: linear-gradient(to right, #222, #444);
-        color: #ddd;
-        text-align: center;
-        padding: 15px 0;
-        width: 100%;
-        font-size: 14px;
-        border-top: 2px solid #555;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        font-family: 'Montserrat', sans-serif;
-        box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
-    }
-    footer p {
-        margin: 5px 0;
-        font-size: 15px;
-        font-weight: 300;
-    }
-
-    /* Bolinha de status */
-    .status-dot {
-        display: inline-block;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        margin-right: 6px;
-        vertical-align: middle;
-    }
-    .dot-warning {
-        background-color: #f1c40f;
-    }
-    .dot-success {
-        background-color: #27ae60;
-    }
-
-    /* Premium card */
-    .premium-alert {
-        font-family: 'Inter', 'Segoe UI', sans-serif;
-        border-radius: 10px;
-        overflow: hidden;
-        border: 1px solid #eee;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-        margin-bottom: 15px;
-    }
-    .premium-alert table {
-        font-size: 0.92rem;
-    }
-
-    @media (max-width: 768px) {
-        footer {
-            position: relative;
-            padding: 20px 0;
-        }
-        table {
-            display: block;
-            width: 100%;
-        }
-        tbody {
-            display: block;
-            width: 100%;
-        }
-        thead {
-            display: none;
-        }
-        tr {
-            display: block;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 10px;
-            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
-            background: #fff;
-        }
-        td {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px;
-            border: none;
-            text-align: left;
-        }
-        td::before {
-            content: attr(data-label);
-            font-weight: bold;
-            color: #007bff;
-        }
-    }
-</style>
 </html>

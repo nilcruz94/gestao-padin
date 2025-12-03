@@ -5,32 +5,54 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Registrar Novo Usuário - Gestão de Ponto E.M José Padin Mouta</title>
 
-  <!-- Font Awesome -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
-  
 
   <!-- jQuery e Inputmask -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js"></script>
 
   <style>
-    /* Reset e base */
+    /* BASE */
     html, body {
       height: 100%;
       margin: 0;
       padding: 0;
       background-color: #f4f6f9;
-      color: #333333;
+      color: #333;
       font-family: 'Montserrat', sans-serif;
     }
 
-    /* Cabeçalhos desktop e mobile */
-    .header-desktop, .header-mobile {
-      display: none;
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
 
-    /* === Desktop Header === */
+    main {
+      flex: 1 0 auto;
+      padding: 20px 15px 30px;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    @media (min-width: 769px) {
+      main {
+        align-items: center;
+      }
+    }
+
+    /* ===== CABEÇALHO (PADRÃO PORTAL) ===== */
+    .header-desktop,
+    .header-mobile {
+      display: none;
+      flex-shrink: 0;
+    }
+
+    /* Desktop */
     @media (min-width: 769px) {
       .header-desktop {
         display: flex;
@@ -44,7 +66,6 @@
         position: relative;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         color: white;
-        flex-shrink: 0;
       }
 
       .left-section {
@@ -52,14 +73,16 @@
         align-items: center;
         gap: 20px;
       }
+
       .logo {
-        width: 68px;
-        height: 68px;
+        width: 80px;   /* padronizado com as outras páginas */
+        height: 80px;  /* padronizado com as outras páginas */
         object-fit: contain;
         border-radius: 10px;
         background-color: white;
         padding: 6px;
       }
+
       .text-container {
         display: flex;
         flex-direction: column;
@@ -67,21 +90,20 @@
         text-align: left;
         color: white;
       }
+
       .escola-nome {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 700;
         font-size: 1.6rem;
         margin: 0;
         line-height: 1.1;
       }
+
       .escola-subtitulo {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 600;
         font-size: 1.1rem;
         margin-top: 4px;
       }
 
-      /* Container central que engloba título e botão */
       .header-center-text-container {
         position: absolute;
         left: 50%;
@@ -93,8 +115,8 @@
         user-select: none;
         z-index: 1;
       }
+
       .header-center-text {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 800;
         font-size: 1.9rem;
         color: white;
@@ -103,37 +125,32 @@
         text-shadow: 0 2px 5px rgba(0,0,0,0.3);
       }
 
-      /* Botão Home no desktop */
-        .btn-home {
-          background-color: #0fb300;
-          color: white;
-          padding: 6px 14px;
-          border-radius: 6px;
-          font-weight: 700;
-          font-size: 1.5rem;
-          text-decoration: none;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-          transition: background-color 0.3s ease;
-          position: absolute;
-          right: 30px;
-          top: 50%;
-          transform: translateY(-50%);
-          z-index: 2;
-        }
+      .btn-home {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+      }
+
       .btn-home:hover {
         background-color: #0d8a00;
       }
-
-      /* Espaçamento para footer não sobrepor conteúdo */
-      .container {
-        margin-bottom: 120px;
-      }
     }
 
-    /* === Mobile Header === */
+    /* Mobile */
     @media (max-width: 768px) {
       .header-mobile {
         display: block;
@@ -146,6 +163,7 @@
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         background-color: #007bff;
       }
+
       .header-top {
         display: flex;
         align-items: center;
@@ -155,14 +173,16 @@
         background-color: #007bff;
         text-align: center;
       }
+
       .logo {
-        width: 36px;
-        height: 36px;
+        width: 48px;   /* padronizado com as outras páginas */
+        height: 48px;  /* padronizado com as outras páginas */
         object-fit: contain;
         border-radius: 10px;
         background-color: white;
         padding: 6px;
       }
+
       .text-container {
         display: flex;
         flex-direction: column;
@@ -170,41 +190,38 @@
         color: white;
         text-align: center;
       }
+
       .escola-nome {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 700;
         font-size: 1.3rem;
         margin: 0;
         line-height: 1.1;
       }
+
       .escola-subtitulo {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 600;
         font-size: 1rem;
         margin-top: 2px;
       }
+
       .header-bottom {
         background-color: #0056b3;
         text-align: center;
         padding: 12px 10px;
-        font-family: 'Montserrat', sans-serif;
         font-weight: 800;
         font-size: 1.0rem;
         letter-spacing: 4px;
         user-select: none;
         color: white;
         box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
-
-        /* Novo container flex para texto + botão no mobile */
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 15px;
-        position: relative;
+        gap: 12px;
+        white-space: nowrap;
       }
 
-      /* Botão Home no mobile */
-        .btn-home-mobile {
+      .btn-home-mobile {
         background-color: #0fb300;
         color: white;
         padding: 6px 10px;
@@ -217,99 +234,167 @@
         justify-content: center;
         box-shadow: 0 2px 6px rgba(15,179,0,0.8);
         transition: background-color 0.3s ease;
-        }
+      }
+
       .btn-home-mobile:hover {
         background-color: #0d8a00;
       }
 
-      /* Menor margem no mobile */
-      .container {
-        margin-bottom: 50px;
+      main {
+        padding-top: 20px;
       }
     }
 
-    /* Container principal do formulário */
-    .container {
+    /* ===== CARD DE REGISTRO ===== */
+    .register-card {
       width: 100%;
-      max-width: 600px;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-      padding: 25px 30px;
-      border: 1px solid rgba(0, 0, 0, 0.07);
+      max-width: 720px;
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 15px 35px rgba(15,23,42,0.18);
+      padding: 24px 22px 22px;
+      border: 1px solid rgba(148,163,184,0.4);
       backdrop-filter: blur(6px);
-      margin: 30px auto 50px auto;
       box-sizing: border-box;
     }
 
-    h2 {
+    .register-header {
       text-align: center;
-      color: #007bff;
-      font-family: 'Montserrat', sans-serif;
-      margin-bottom: 25px;
+      margin-bottom: 18px;
+    }
+
+    .register-header-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg,#0d6efd,#2563eb);
+      color: #fff;
+      margin-bottom: 8px;
+      box-shadow: 0 6px 14px rgba(37,99,235,0.5);
+    }
+
+    .register-header h1 {
+      font-size: 1.4rem;
+      margin: 0;
+      color: #0f172a;
+    }
+
+    .register-subtitle {
+      margin-top: 4px;
+      font-size: 0.9rem;
+      color: #6b7280;
+    }
+
+    /* GRID DO FORMULÁRIO */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px 16px;
+    }
+
+    @media (min-width: 769px) {
+      .form-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .full-width {
+        grid-column: 1 / 3;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
     }
 
     label {
-      font-size: 14px;
-      margin-top: 15px;
-      display: block;
-      color: #007bff;
+      font-size: 0.9rem;
+      color: #0f172a;
       font-weight: 600;
+      margin-bottom: 4px;
     }
 
-    input, select {
-      width: 100%;
-      padding: 10px;
-      font-size: 15px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      margin-top: 6px;
-      box-sizing: border-box;
-      transition: border-color 0.3s ease;
+    label i {
+      margin-right: 4px;
+      color: #0d6efd;
     }
-    input:focus, select:focus {
-      border-color: #007bff;
+
+    input,
+    select {
+      width: 100%;
+      padding: 9px 10px;
+      font-size: 0.95rem;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      margin: 0;
+      box-sizing: border-box;
+      background-color: #f9fafb;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+
+    input:focus,
+    select:focus {
+      background-color: #ffffff;
+      border-color: #0d6efd;
       outline: none;
-      box-shadow: 0 0 6px #007bff;
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.18);
+    }
+
+    .error-message {
+      color: #b91c1c;
+      font-size: 0.75rem;
+      margin-top: 3px;
+      min-height: 14px;
+      font-weight: 600;
     }
 
     .submit-btn {
       width: 100%;
-      padding: 12px;
-      background-color: #007bff;
-      color: white;
+      padding: 11px;
+      background: linear-gradient(135deg,#0d6efd,#2563eb);
+      color: #ffffff;
       border: none;
-      font-size: 16px;
+      font-size: 1rem;
       cursor: pointer;
-      border-radius: 4px;
-      margin-top: 25px;
-      transition: background-color 0.3s ease;
+      border-radius: 999px;
+      margin-top: 14px;
       font-weight: 700;
+      letter-spacing: 0.03em;
+      box-shadow: 0 8px 18px rgba(37,99,235,0.55);
+      transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
     }
+
     .submit-btn:hover {
-      background-color: #0fb300;
+      background: linear-gradient(135deg,#16a34a,#22c55e); /* verde no hover */
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(22,163,74,0.7);
     }
 
-    .error-message {
-      color: #b00020;
-      font-size: 12px;
-      margin-top: 4px;
-      min-height: 16px;
-      font-weight: 600;
+    .submit-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 10px rgba(22,163,74,0.55);
     }
 
+    /* Rodapé */
     footer {
       background: linear-gradient(to right, #222, #444);
       color: #ddd;
       text-align: center;
-      padding: 5px 0;
+      padding: 15px 0;
       font-size: 14px;
       border-top: 2px solid #555;
       box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
       width: 100%;
       box-sizing: border-box;
-      position: relative;
-      font-family: 'Montserrat', sans-serif;
+    }
+
+    footer p {
+      margin: 5px 0;
+      font-size: 0.9rem;
     }
   </style>
 </head>
@@ -334,7 +419,6 @@
     </a>
   </header>
 
-
   <!-- Cabeçalho Mobile -->
   <header class="header-mobile">
     <div class="header-top">
@@ -344,96 +428,121 @@
         <div class="escola-subtitulo">José Padin Mouta</div>
       </div>
     </div>
-<div class="header-bottom" style="
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    box-sizing: border-box;
-    white-space: nowrap;
-">
-  <span>PORTAL DO SERVIDOR</span>
-  <a href="{{ url_for('login') }}" class="btn-home-mobile" title="Página de Login">
-    <i class="fas fa-home"></i>
-  </a>
-</div>
+    <div class="header-bottom">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('login') }}" class="btn-home-mobile" title="Página de Login">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
   </header>
 
-  <main class="container">
-    <h2>Registrar Novo Usuário</h2>
-    <form id="register-form" method="POST" novalidate>
-      <!-- Nome Completo -->
-      <label for="nome"><i class="fas fa-user"></i> Nome Completo:</label>
-      <input type="text" id="nome" name="nome" required />
-      <div id="nome-error" class="error-message"></div>
+  <main>
+    <div class="register-card">
+      <div class="register-header">
+        <div class="register-header-icon">
+          <i class="fas fa-user-plus"></i>
+        </div>
+        <h1>Registrar Novo Usuário</h1>
+        <p class="register-subtitle">Preencha seus dados para criar o acesso ao Portal do Servidor.</p>
+      </div>
 
-      <!-- Registro -->
-      <label for="registro"><i class="fas fa-id-badge"></i> Registro:</label>
-      <input type="text" id="registro" name="registro" required />
-      <div id="registro-error" class="error-message"></div>
+      <form id="register-form" method="POST" novalidate>
+        <div class="form-grid">
+          <!-- Nome Completo -->
+          <div class="form-group full-width">
+            <label for="nome"><i class="fas fa-user"></i>Nome Completo:</label>
+            <input type="text" id="nome" name="nome" required />
+            <div id="nome-error" class="error-message"></div>
+          </div>
 
-      <!-- E-mail -->
-      <label for="email"><i class="fas fa-envelope"></i> E-mail:</label>
-      <input type="email" id="email" name="email" required />
-      <div id="email-error" class="error-message"></div>
+          <!-- Registro -->
+          <div class="form-group">
+            <label for="registro"><i class="fas fa-id-badge"></i>Registro:</label>
+            <input type="text" id="registro" name="registro" required />
+            <div id="registro-error" class="error-message"></div>
+          </div>
 
-      <!-- Senha -->
-      <label for="senha"><i class="fas fa-lock"></i> Senha:</label>
-      <input type="password" id="senha" name="senha" required minlength="6" />
-      <div id="senha-error" class="error-message"></div>
+          <!-- E-mail -->
+          <div class="form-group">
+            <label for="email"><i class="fas fa-envelope"></i>E-mail:</label>
+            <input type="email" id="email" name="email" required />
+            <div id="email-error" class="error-message"></div>
+          </div>
 
-      <!-- Confirmar Senha -->
-      <label for="confirmar_senha"><i class="fas fa-lock"></i> Confirmar Senha:</label>
-      <input type="password" id="confirmar_senha" name="confirmar_senha" required minlength="6" />
-      <div id="confirmar-senha-error" class="error-message"></div>
+          <!-- Senha -->
+          <div class="form-group">
+            <label for="senha"><i class="fas fa-lock"></i>Senha:</label>
+            <input type="password" id="senha" name="senha" required minlength="6" />
+            <div id="senha-error" class="error-message"></div>
+          </div>
 
-      <!-- CPF -->
-      <label for="cpf"><i class="fas fa-id-card"></i> CPF:</label>
-      <input type="text" id="cpf" name="cpf" required />
-      <div id="cpf-error" class="error-message"></div>
+          <!-- Confirmar Senha -->
+          <div class="form-group">
+            <label for="confirmar_senha"><i class="fas fa-lock"></i>Confirmar Senha:</label>
+            <input type="password" id="confirmar_senha" name="confirmar_senha" required minlength="6" />
+            <div id="confirmar-senha-error" class="error-message"></div>
+          </div>
 
-      <!-- RG -->
-      <label for="rg"><i class="fas fa-id-card"></i> RG:</label>
-      <input type="text" id="rg" name="rg" required />
-      <div id="rg-error" class="error-message"></div>
+          <!-- CPF -->
+          <div class="form-group">
+            <label for="cpf"><i class="fas fa-id-card"></i>CPF:</label>
+            <input type="text" id="cpf" name="cpf" required />
+            <div id="cpf-error" class="error-message"></div>
+          </div>
 
-      <!-- Data de Nascimento -->
-      <label for="data_nascimento"><i class="fas fa-birthday-cake"></i> Data de Nascimento:</label>
-      <input type="date" id="data_nascimento" name="data_nascimento" required />
-      <div id="data_nascimento-error" class="error-message"></div>
+          <!-- RG -->
+          <div class="form-group">
+            <label for="rg"><i class="fas fa-id-card"></i>RG:</label>
+            <input type="text" id="rg" name="rg" required />
+            <div id="rg-error" class="error-message"></div>
+          </div>
 
-      <!-- Celular -->
-      <label for="celular"><i class="fas fa-mobile-alt"></i> Celular:</label>
-      <input type="text" id="celular" name="celular" required />
-      <div id="celular-error" class="error-message"></div>
+          <!-- Data de Nascimento -->
+          <div class="form-group">
+            <label for="data_nascimento"><i class="fas fa-birthday-cake"></i>Data de Nascimento:</label>
+            <input type="date" id="data_nascimento" name="data_nascimento" required />
+            <div id="data_nascimento-error" class="error-message"></div>
+          </div>
 
-      <!-- Cargo -->
-      <label for="cargo"><i class="fas fa-briefcase"></i> Cargo:</label>
-      <select id="cargo" name="cargo" required>
-        <option value="" disabled selected>Selecione o cargo</option>
-        <option value="Agente Administrativo">Agente Administrativo</option>
-        <option value="Assistente de Direção">Assistente de Direção</option>
-        <option value="Assistente Tecnico Pedagogico">Assistente Técnico Pedagógico</option>
-        <option value="Diretor de Unidade Escolar">Diretor de Unidade Escolar</option>
-        <option value="Educador de Desenvolvimento Infanto Juvenil">Educador de Desenvolvimento Infanto Juvenil</option>
-        <option value="Pedagoga Comunitaria">Pedagoga Comunitária</option>
-        <option value="Professor Adjunto">Professor Adjunto</option>
-        <option value="Professor I">Professor I</option>
-        <option value="Professor II">Professor II</option>
-        <option value="Professor III">Professor III</option>
-        <option value="Professor IV">Professor IV</option>
-        <option value="Secretário de Unidade Escolar">Secretário de Unidade Escolar</option>
-        <option value="Servente">Servente</option>
-        <option value="Servente I">Servente I</option>
-        <option value="Servente II">Servente II</option>
-        <option value="Trabalhador">Trabalhador</option>
-        <option value="Atendente de Educação I">Atendente de Educação I</option>
-        <option value="Atendente de Educação II">Atendente de Educação II</option>
-      </select>
-      <div id="cargo-error" class="error-message"></div>
+          <!-- Celular -->
+          <div class="form-group">
+            <label for="celular"><i class="fas fa-mobile-alt"></i>Celular:</label>
+            <input type="text" id="celular" name="celular" required />
+            <div id="celular-error" class="error-message"></div>
+          </div>
 
-      <input type="submit" value="Registrar" class="submit-btn" />
-    </form>
+          <!-- Cargo -->
+          <div class="form-group full-width">
+            <label for="cargo"><i class="fas fa-briefcase"></i>Cargo:</label>
+            <select id="cargo" name="cargo" required>
+              <option value="" disabled selected>Selecione o cargo</option>
+              <option value="Agente Administrativo">Agente Administrativo</option>
+              <option value="Assistente de Direção">Assistente de Direção</option>
+              <option value="Assistente Tecnico Pedagogico">Assistente Técnico Pedagógico</option>
+              <option value="Diretor de Unidade Escolar">Diretor de Unidade Escolar</option>
+              <option value="Educador de Desenvolvimento Infanto Juvenil">Educador de Desenvolvimento Infanto Juvenil</option>
+              <option value="Inspetor de Aluno">Inspetor de Aluno</option>
+              <option value="Pedagoga Comunitaria">Pedagoga Comunitária</option>
+              <option value="Professor Adjunto">Professor Adjunto</option>
+              <option value="Professor I">Professor I</option>
+              <option value="Professor II">Professor II</option>
+              <option value="Professor III">Professor III</option>
+              <option value="Professor IV">Professor IV</option>
+              <option value="Secretário de Unidade Escolar">Secretário de Unidade Escolar</option>
+              <option value="Servente">Servente</option>
+              <option value="Servente I">Servente I</option>
+              <option value="Servente II">Servente II</option>
+              <option value="Trabalhador">Trabalhador</option>
+              <option value="Atendente de Educação I">Atendente de Educação I</option>
+              <option value="Atendente de Educação II">Atendente de Educação II</option>
+            </select>
+            <div id="cargo-error" class="error-message"></div>
+          </div>
+        </div>
+
+        <input type="submit" value="Registrar" class="submit-btn" />
+      </form>
+    </div>
   </main>
 
   <footer>
@@ -442,12 +551,11 @@
 
   <script>
     $(document).ready(function () {
-      // Aplica máscaras nos campos
+      // Máscaras
       $("#cpf").inputmask("999.999.999-99");
       $("#rg").inputmask("99.999.999-9");
       $("#celular").inputmask("(99) 99999-9999");
 
-      // Funções para exibir e limpar erros
       function setError(campo, mensagem) {
         document.getElementById(campo + "-error").textContent = mensagem;
       }
@@ -455,7 +563,6 @@
         document.getElementById(campo + "-error").textContent = "";
       }
 
-      // Validações simples dos campos
       function validarNome() {
         const val = $("#nome").val().trim();
         if (val.length < 3) {
@@ -509,7 +616,6 @@
       }
 
       function validarCPF() {
-        const val = $("#cpf").inputmask("unmaskedvalue");
         if ($("#cpf").inputmask("unmaskedvalue").length !== 11) {
           setError("cpf", "Por favor, informe um CPF válido.");
           return false;
@@ -561,27 +667,17 @@
         return true;
       }
 
-      // Variável para debouncing das chamadas AJAX
+      // Debounce para checar duplicidade
       let timeoutIDs = {};
 
-      // Função para checar se valor já existe no banco (via backend)
-      // O backend deve implementar a rota /check_unique?campo=&valor= retornando JSON { exists: true/false }
       function checarDuplicidade(campo, valor) {
-        // Remove erros antes de checar
         clearError(campo);
+        if (!valor.trim()) return;
 
-        // Se campo vazio, não checa
-        if (!valor.trim()) {
-          clearError(campo);
-          return;
-        }
-
-        // Limpa timeout anterior para debounce
         if (timeoutIDs[campo]) {
           clearTimeout(timeoutIDs[campo]);
         }
 
-        // Executa a verificação após 500ms sem digitação (debounce)
         timeoutIDs[campo] = setTimeout(function () {
           $.ajax({
             url: "/check_unique",
@@ -607,14 +703,12 @@
               }
             },
             error: function () {
-              // Em caso de erro, não bloquear
               clearError(campo);
             },
           });
         }, 500);
       }
 
-      // Validação geral do formulário
       function validarTudo() {
         return (
           validarNome() &&
@@ -627,7 +721,6 @@
           validarDataNascimento() &&
           validarCelular() &&
           validarCargo() &&
-          // Verifica se algum erro de duplicidade está presente
           !$("#nome-error").text() &&
           !$("#registro-error").text() &&
           !$("#email-error").text() &&
@@ -641,38 +734,33 @@
         );
       }
 
-      // Eventos de validação em tempo real
+      // Eventos
       $("#nome").on("input", validarNome);
-      $("#registro")
-        .on("input", function () {
-          validarRegistro();
-          checarDuplicidade("registro", $(this).val());
-        });
-      $("#email")
-        .on("input", function () {
-          validarEmail();
-          checarDuplicidade("email", $(this).val());
-        });
+      $("#registro").on("input", function () {
+        validarRegistro();
+        checarDuplicidade("registro", $(this).val());
+      });
+      $("#email").on("input", function () {
+        validarEmail();
+        checarDuplicidade("email", $(this).val());
+      });
       $("#senha").on("input", function () {
         validarSenha();
         validarConfirmarSenha();
       });
       $("#confirmar_senha").on("input", validarConfirmarSenha);
-      $("#cpf")
-        .on("input", function () {
-          validarCPF();
-          checarDuplicidade("cpf", $(this).val());
-        });
-      $("#rg")
-        .on("input", function () {
-          validarRG();
-          checarDuplicidade("rg", $(this).val());
-        });
+      $("#cpf").on("input", function () {
+        validarCPF();
+        checarDuplicidade("cpf", $(this).val());
+      });
+      $("#rg").on("input", function () {
+        validarRG();
+        checarDuplicidade("rg", $(this).val());
+      });
       $("#data_nascimento").on("change", validarDataNascimento);
       $("#celular").on("input", validarCelular);
       $("#cargo").on("change", validarCargo);
 
-      // Evento no submit do formulário
       $("#register-form").on("submit", function (e) {
         if (!validarTudo()) {
           e.preventDefault();

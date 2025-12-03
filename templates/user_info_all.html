@@ -1,264 +1,1702 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Informações de Todos os Usuários</title>
+
+  <!-- Estilos globais do projeto -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <!-- FontAwesome para ícones -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+
   <style>
-    /* Container geral */
-    .container {
-      width: 95%;
-      max-width: 900px;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-      padding: 20px;
-      margin: 40px auto;
-      border: 1px solid rgba(0, 0, 0, 0.07);
-      backdrop-filter: blur(6px);
+    :root {
+      --padin-primary:#0d6efd;
+      --padin-primary-dark:#0b5ed7;
+      --padin-bg:#f4f6f9;
+      --padin-card:#fff;
+      --padin-border:rgba(0,0,0,.08);
+      --padin-shadow:0 14px 34px rgba(15,23,42,.1),0 2px 4px rgba(15,23,42,.06);
+      --muted:#6c757d;
     }
-    /* Cabeçalho padrão */
-    .titulo-container {
-      text-align: center;
-      margin-bottom: 20px;
+
+    * ,
+    *::before,
+    *::after {
+      box-sizing:border-box;
     }
-    .titulo-site {
-      font-family: 'Montserrat', sans-serif;
-      font-size: 42px;
-      font-weight: 600;
-      color: #007bff;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #007bff;
-      text-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+
+    html,
+    body{
+      margin:0;
+      padding:0;
+      height:100%;
+      font-family:'Montserrat',sans-serif;
+      background:radial-gradient(circle at top,#e0f2ff 0,#f9fafb 45%,#eef2ff 100%);
+      background-attachment:fixed;
+      color:#333;
     }
-    /* Título da área de usuários */
-    .area-titulo {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #007bff;
-      font-size: 28px;
-      font-weight: bold;
+
+    body{
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
     }
-    /* Search Container */
-    .search-container {
-      text-align: center;
-      margin-bottom: 20px;
+
+    main{
+      flex:1 0 auto;
+      padding:24px 12px 60px;
+      box-sizing:border-box;
     }
-    .search-container input[type="text"] {
-      width: 80%;
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+
+    @media (min-width:769px){
+      main{
+        padding:30px 24px 80px;
+      }
     }
-    /* Card de cada usuário */
-    .user-card {
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      background-color: #f9f9f9;
-      overflow: hidden;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+
+    button{
+      font-family:inherit;
     }
-    .user-header {
-      background-color: #f4f4f4;
-      padding: 15px;
-      font-size: 20px;
-      font-weight: bold;
-      color: #007bff;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
+
+    /* ===========================
+       CABEÇALHO (IGUAL AO ÍNDICE)
+       =========================== */
+
+    .header-desktop,
+    .header-mobile {
+      flex-shrink:0;
     }
-    .user-header i {
-      transition: transform 0.3s ease;
+
+    .header-desktop {
+      display:none;
     }
-    .user-header.active i {
-      transform: rotate(180deg);
+
+    .header-mobile {
+      display:none;
     }
-    .user-details {
-      padding: 15px;
-      display: none;
-      background-color: #fff;
+
+    /* Desktop */
+    @media (min-width: 769px) {
+      .header-desktop {
+        display:flex;
+        background-color:#007bff;
+        padding:15px 30px;
+        width:100%;
+        align-items:center;
+        justify-content:space-between;
+        box-sizing:border-box;
+        min-height:110px;
+        position:relative;
+        box-shadow:0 2px 6px rgba(0, 0, 0, 0.15);
+        color:white;
+      }
+      .left-section {
+        display:flex;
+        align-items:center;
+        gap:20px;
+      }
+      .logo {
+        width:80px;
+        height:80px;
+        object-fit:contain;
+        border-radius:10px;
+        background-color:white;
+        padding:6px;
+      }
+      .text-container {
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        text-align:left;
+        color:white;
+      }
+      .escola-nome {
+        font-weight:700;
+        font-size:1.6rem;
+        margin:0;
+        line-height:1.1;
+      }
+      .escola-subtitulo {
+        font-weight:600;
+        font-size:1.1rem;
+        margin-top:4px;
+      }
+      .header-center-text-container {
+        position:absolute;
+        left:50%;
+        top:50%;
+        transform:translate(-50%, -50%);
+        font-weight:800;
+        font-size:1.9rem;
+        color:white;
+        letter-spacing:5px;
+        user-select:none;
+        white-space:nowrap;
+        z-index:1;
+        text-shadow:0 2px 5px rgba(0,0,0,0.3);
+      }
+      .header-center-text {
+        font-family:'Montserrat',sans-serif;
+      }
+      .btn-home {
+        background-color:#0fb300;
+        color:white;
+        padding:6px 14px;
+        border-radius:6px;
+        font-weight:700;
+        font-size:1.5rem;
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        gap:8px;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);
+        transition:background-color 0.3s ease;
+        position:absolute;
+        right:30px;
+        top:50%;
+        transform:translateY(-50%);
+        z-index:2;
+      }
+      .btn-home:hover {
+        background-color:#0d8a00;
+      }
     }
-    .user-details table {
-      width: 100%;
-      border-collapse: collapse;
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .header-mobile {
+        display:block;
+        width:100%;
+        box-sizing:border-box;
+        color:white;
+        position:sticky;
+        top:0;
+        z-index:1000;
+        box-shadow:0 2px 6px rgba(0, 0, 0, 0.15);
+        background-color:#007bff;
+      }
+      .header-top {
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:15px;
+        padding:10px 15px;
+        background-color:#007bff;
+        text-align:center;
+      }
+      .logo {
+        width:48px;
+        height:48px;
+        object-fit:contain;
+        border-radius:10px;
+        background-color:white;
+        padding:6px;
+      }
+      .text-container {
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        color:white;
+        text-align:center;
+      }
+      .escola-nome {
+        font-weight:700;
+        font-size:1.3rem;
+        margin:0;
+        line-height:1.1;
+      }
+      .escola-subtitulo {
+        font-weight:600;
+        font-size:1rem;
+        margin-top:2px;
+      }
+      .header-bottom {
+        background-color:#0056b3;
+        text-align:center;
+        padding:12px 10px;
+        font-weight:800;
+        font-size:1rem;
+        letter-spacing:4px;
+        user-select:none;
+        color:white;
+        box-shadow:inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        gap:12px;
+        box-sizing:border-box;
+        white-space:nowrap;
+      }
+      .btn-home-mobile {
+        background-color:#0fb300;
+        color:white;
+        padding:6px 10px;
+        border-radius:6px;
+        font-weight:600;
+        font-size:1rem;
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);
+        transition:background-color 0.3s ease;
+      }
+      .btn-home-mobile:hover {
+        background-color:#0d8a00;
+      }
     }
+
+    /* ===========================
+       CONTEÚDO DA PÁGINA
+       =========================== */
+
+    .page{
+      width:100%;
+      max-width:1100px;
+      margin:0 auto;
+    }
+
+    /* Header-card da página (igual TRE) */
+    .page-header-card {
+      background:#ffffff;
+      border-radius:18px;
+      padding:16px 18px;
+      margin:18px auto 20px;
+      display:flex;
+      align-items:center;
+      gap:16px;
+      box-shadow:var(--padin-shadow);
+      border-left:5px solid var(--padin-primary);
+    }
+
+    .page-header-icon {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:42px;
+      height:42px;
+      border-radius:999px;
+      background:radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
+      box-shadow:0 4px 12px rgba(37, 99, 235, .45);
+      color:#2563eb;
+      flex-shrink:0;
+    }
+
+    .page-header-icon i {
+      font-size:22px;
+    }
+
+    .page-header-content {
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .page-header-title {
+      font-size:1.15rem;
+      font-weight:800;
+      margin:0;
+      color:#111827;
+    }
+
+    .page-header-subtitle {
+      font-size:0.9rem;
+      margin:0;
+      color:#6b7280;
+    }
+
+    @media (max-width:600px){
+      .page-header-card{
+        padding:12px 14px;
+      }
+      .page-header-title{
+        font-size:1.05rem;
+      }
+      .page-header-subtitle{
+        font-size:.82rem;
+      }
+    }
+
+    /* Cards principais */
+    .content-card{
+      background:var(--padin-card);
+      border-radius:16px;
+      box-shadow:var(--padin-shadow);
+      border:1px solid rgba(148, 163, 184, 0.35);
+      padding:18px 18px 22px;
+      box-sizing:border-box;
+      backdrop-filter:blur(8px);
+      margin-bottom:24px;
+    }
+
+    .filter-card{
+      margin-bottom:22px;
+    }
+
+    .content-title{
+      font-size:1.05rem;
+      font-weight:700;
+      margin:0 0 6px;
+      color:#111827;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .content-title i{
+      color:var(--padin-primary);
+    }
+
+    .content-subtitle{
+      font-size:.88rem;
+      color:#6b7280;
+      margin:0 0 14px;
+    }
+
+    /* linha de busca + botões */
+    .controls-row{
+      display:flex;
+      align-items:stretch;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:6px;
+    }
+
+    .tools{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      align-items:center;
+    }
+
+    .btn{
+      border:1px solid var(--padin-border);
+      background:#fff;
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:600;
+      font-size:.9rem;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      text-decoration:none;
+      color:#333;
+      box-shadow:0 2px 4px rgba(0,0,0,0.04);
+      white-space:nowrap;
+    }
+
+    .btn:hover{
+      background:#f8fbff;
+    }
+
+    .btn.primary{
+      background:var(--padin-primary);
+      color:#fff;
+      border-color:var(--padin-primary);
+      box-shadow:0 3px 6px rgba(13,110,253,.4);
+    }
+
+    .btn.primary:hover{
+      background:var(--padin-primary-dark);
+    }
+
+    .btn.outline-blue{
+      border-color:var(--padin-primary);
+      color:var(--padin-primary);
+      background:#f5f9ff;
+    }
+
+    .btn.outline-blue:hover{
+      background:#e7f1ff;
+    }
+
+    /* Barra de busca (dentro da linha de controles) */
+    .searchbar{
+      background:transparent;
+      border:none;
+      padding:0;
+      display:flex;
+      flex-direction:row;
+      flex-wrap:nowrap;
+      flex:1 1 260px;
+      align-items:center;
+      gap:10px;
+      margin:0;
+    }
+
+    .search-input-wrapper{
+      flex:1 1 auto;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      background:#fff;
+      border-radius:999px;
+      border:1px solid var(--padin-border);
+      padding:6px 12px;
+      box-shadow:0 4px 12px rgba(0,0,0,.05);
+    }
+
+    .search-input-wrapper .search-icon{
+      font-size:0.9rem;
+      color:#8a96a3;
+      flex-shrink:0;
+    }
+
+    .search-input-wrapper input{
+      border:0;
+      outline:0;
+      flex:1 1 auto;
+      background:transparent;
+      font-size:.9rem;
+      padding:2px 0;
+      color:#333;
+      min-width:120px;
+    }
+
+    .search-input-wrapper input::placeholder{
+      color:#a0a9b5;
+    }
+
+    .searchbar button{
+      border:0;
+      border-radius:999px;
+      padding:8px 16px;
+      font-size:.8rem;
+      font-weight:600;
+      background:var(--padin-primary);
+      color:#fff;
+      cursor:pointer;
+      white-space:nowrap;
+      box-shadow:0 2px 5px rgba(13,110,253,.35);
+      flex-shrink:0;
+    }
+
+    .searchbar button:hover{
+      background:var(--padin-primary-dark);
+    }
+
+    /* SELECT do filtro (compacto) */
+    .status-filter{
+      border-radius:999px;
+      border:1px solid var(--padin-border);
+      background:#fff;
+      padding:4px 10px;
+      font-size:.78rem;
+      font-weight:600;
+      color:#444;
+      flex-shrink:0;
+      width:auto;
+      max-width:140px;
+    }
+
+    /* RESPONSIVO CONTROLS / FILTRO */
+    @media (max-width: 900px){
+      .controls-row{
+        flex-direction:column;
+        align-items:stretch;
+      }
+      .searchbar{
+        flex:1 1 100%;
+      }
+      .tools{
+        justify-content:flex-start;
+      }
+    }
+
+    @media (max-width: 600px){
+      .searchbar{
+        flex-direction:column;
+        align-items:stretch;
+      }
+      .search-input-wrapper{
+        width:100%;
+      }
+      .status-filter{
+        width:100%;
+        max-width:none;
+      }
+      .searchbar button{
+        width:100%;
+        justify-content:center;
+      }
+      .tools{
+        flex-direction:column;
+        align-items:stretch;
+      }
+      .tools .btn{
+        width:100%;
+        justify-content:center;
+      }
+    }
+
+    /* === LISTA DE USUÁRIOS (FLEX) === */
+
+    .user-list{
+      display:flex;
+      flex-wrap:wrap;
+      gap:14px;
+      align-items:flex-start;
+    }
+
+    .user-card{
+      background:var(--padin-card);
+      border:1px solid var(--padin-border);
+      border-radius:16px;
+      box-shadow:var(--padin-shadow);
+      overflow:hidden;
+      flex:1 1 calc(50% - 7px);
+      min-width:260px;
+    }
+
+    @media (max-width:920px){
+      .user-card{
+        flex:1 1 100%;
+      }
+    }
+
+    .user-header{
+      padding:14px 16px 10px;
+      border-bottom:1px dashed var(--padin-border);
+      background:linear-gradient(180deg,#fff,#fcfdff);
+      cursor:pointer;
+    }
+
+    .user-header:focus-visible{
+      outline:2px solid var(--padin-primary);
+      outline-offset:2px;
+    }
+
+    /* Topo do card (nome + status + ação) */
+    .user-header-top{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .user-header-main{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .user-name{
+      font-weight:700;
+      color:#111;
+      font-size:.98rem;
+      flex:1 1 auto;
+      min-width:0;
+    }
+
+    .user-status-row{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:8px;
+    }
+
+    .chevron{
+      transition:transform .25s ease;
+      color:var(--muted);
+      margin-left:auto;
+      flex-shrink:0;
+    }
+
+    .user-header.open .chevron{
+      transform:rotate(180deg);
+    }
+
+    .metrics{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      margin-top:10px;
+    }
+
+    .metric{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border:1px solid var(--padin-border);
+      border-radius:10px;
+      background:#fff;
+      font-weight:700;
+      font-size:.88rem;
+    }
+
+    .metric .label{
+      min-width:60px;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+    }
+
+    .metric.metric-clickable{
+      cursor:pointer;
+      transition:background .2s ease, transform .08s ease, box-shadow .2s ease;
+    }
+
+    .metric.metric-clickable:hover{
+      background:#f0f4ff;
+      box-shadow:0 0 0 1px rgba(13,110,253,0.12);
+      transform:translateY(-1px);
+    }
+
+    .metric.metric-clickable:active{
+      transform:translateY(0);
+      box-shadow:none;
+    }
+
+    .m-ab{
+      color:#0b7;
+      background:#eafff7;
+      border-color:rgba(0,187,119,.25);
+    }
+
+    .m-tre{
+      color:#0d6efd;
+      background:#eef5ff;
+      border-color:rgba(13,110,253,.25);
+    }
+
+    .m-bh{
+      color:#7b3fe0;
+      background:#f5f0ff;
+      border-color:rgba(163,78,245,.25);
+    }
+
+    .user-details{
+      display:none;
+      padding:10px 16px 16px;
+      background:#fff;
+    }
+
+    .user-details-table-wrapper{
+      width:100%;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      margin-bottom:8px;
+    }
+
+    .user-details table{
+      width:100%;
+      min-width:420px;
+      border-collapse:collapse;
+    }
+
     .user-details th,
-    .user-details td {
-      padding: 8px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
+    .user-details td{
+      padding:10px 8px;
+      border-bottom:1px solid var(--padin-border);
+      font-size:14px;
+      text-align:left;
     }
-    .user-details th {
-      width: 40%;
-      color: #333;
-      font-weight: bold;
+
+    .user-details th{
+      width:36%;
+      font-weight:700;
+      color:#222;
+      background:#fafbff;
     }
-    /* Link de voltar */
-    .voltar-link {
-      display: block;
-      text-align: center;
-      margin-top: 20px;
-      font-size: 18px;
-      color: #007bff;
-      text-decoration: none;
+
+    .subsection-title{
+      margin:10px 0 4px;
+      font-size:.9rem;
+      font-weight:700;
+      color:#333;
     }
-    .voltar-link i {
-      margin-right: 8px;
+
+    .ag-list{
+      list-style:none;
+      padding:0;
+      margin:0 0 4px;
+      font-size:.86rem;
     }
-    .voltar-link:hover {
-      text-decoration: underline;
+
+    .ag-list li{
+      padding:4px 0;
+      border-bottom:1px dashed rgba(0,0,0,.06);
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
     }
-    /* Footer */
-    footer {
-      background: linear-gradient(to right, #222, #444);
-      color: #ddd;
-      text-align: center;
-      padding: 15px 0;
-      width: 100%;
-      font-size: 14px;
-      border-top: 2px solid #555;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      font-family: 'Montserrat', sans-serif;
-      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+
+    .ag-list li span.small{
+      font-size:.8rem;
+      color:#666;
     }
-    footer p {
-      margin: 5px 0;
-      font-size: 15px;
-      font-weight: 300;
+
+    .no-records{
+      font-size:.85rem;
+      color:#777;
+      margin-bottom:6px;
     }
-    footer a {
-      color: #fff;
-      text-decoration: none;
-      font-weight: 500;
-      transition: color 0.3s ease-in-out;
+
+    .tre-details,
+    .bh-details{
+      display:none;
+      margin-top:4px;
     }
-    footer a:hover {
-      color: #00aaff;
+
+    .tre-details.open,
+    .bh-details.open{
+      display:block;
+    }
+
+    /* Status ativo/inativo */
+
+    .status-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:.75rem;
+      font-weight:700;
+      white-space:nowrap;
+      border:1px solid transparent;
+    }
+
+    .status-ativo{
+      background:#e7f8ef;
+      color:#107c41;
+      border-color:rgba(16,124,65,.25);
+    }
+
+    .status-inativo{
+      background:#f0f0f0;
+      color:#666;
+      border-color:rgba(0,0,0,.12);
+    }
+
+    .status-wrapper{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .btn-mini{
+      padding:5px 12px;
+      border-radius:999px;
+      border:none;
+      font-size:.75rem;
+      font-weight:700;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .btn-mini.ativar{
+      background:#0fb300;
+      color:#fff;
+      box-shadow:0 2px 5px rgba(15,179,0,.4);
+    }
+
+    .btn-mini.ativar:hover{
+      background:#0d8a00;
+    }
+
+    .btn-mini.inativar{
+      background:#dc3545;
+      color:#fff;
+      box-shadow:0 2px 5px rgba(220,53,69,.4);
+    }
+
+    .btn-mini.inativar:hover{
+      background:#c82333;
+    }
+
+    /* Paginação */
+    .pagination-wrapper{
+      width:100%;
+      margin:18px 0 6px;
+      display:flex;
+      justify-content:center;
+    }
+
+    .pagination{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      white-space:nowrap;
+      padding:4px 6px 6px;
+      border-radius:999px;
+      background:#f9fafb;
+      box-shadow:0 8px 20px rgba(15,23,42,.08);
+    }
+
+    .pagination a,
+    .pagination span{
+      padding:8px 12px;
+      border:1px solid var(--padin-border);
+      border-radius:999px;
+      text-decoration:none;
+      color:#374151;
+      background:#fff;
+      font-weight:600;
+      font-size:.9rem;
+      min-width:34px;
+      text-align:center;
+    }
+
+    .pagination .active{
+      background:var(--padin-primary);
+      color:#fff;
+      border-color:var(--padin-primary);
+    }
+
+    .pagination .disabled{
+      opacity:.45;
+      pointer-events:none;
+    }
+
+    @media (max-width:600px){
+      .pagination{
+        gap:4px;
+        padding:4px 4px 6px;
+        max-width:100%;
+        overflow-x:auto;
+        -webkit-overflow-scrolling:touch;
+      }
+      .pagination a,
+      .pagination span{
+        padding:7px 10px;
+        font-size:.8rem;
+      }
+    }
+
+    /* Rodapé */
+    .footer{
+      margin-top:auto;
+      background:linear-gradient(90deg,#222,#444);
+      color:#ddd;
+      text-align:center;
+      padding:16px 10px;
+      border-top:2px solid #555;
+      font-size:.85rem;
+    }
+
+    .footer a{
+      color:#fff;
+      text-decoration:none;
+      font-weight:600;
+    }
+
+    .footer a:hover{
+      color:#00aaff;
+    }
+
+    /* Toast de status (alerta bonito) */
+    #statusAlert{
+      position:fixed;
+      top:90px;
+      right:15px;
+      z-index:2500;
+      max-width:320px;
+    }
+
+    .alert-toast{
+      background:#fff;
+      border-radius:10px;
+      padding:10px 12px;
+      box-shadow:0 6px 18px rgba(0,0,0,.15);
+      font-size:.85rem;
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      border-left:4px solid var(--padin-primary);
+      animation:fadeIn .2s ease-out;
+    }
+
+    .alert-toast.success{
+      border-left-color:#198754;
+    }
+
+    .alert-toast.error{
+      border-left-color:#dc3545;
+    }
+
+    .alert-toast .icon{
+      margin-top:2px;
+      color:#495057;
+    }
+
+    @keyframes fadeIn{
+      from{opacity:0; transform:translateY(-6px);}
+      to{opacity:1; transform:translateY(0);}
+    }
+
+    /* Modal de confirmação */
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,0.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:3000;
+    }
+
+    .modal-backdrop.show{
+      display:flex;
+    }
+
+    .modal-box{
+      background:#fff;
+      border-radius:18px;
+      padding:18px 20px 16px;
+      max-width:360px;
+      width:90%;
+      box-shadow:0 20px 45px rgba(15,23,42,.4);
+      animation:fadeIn .2s ease-out;
+    }
+
+    .modal-title{
+      margin:0 0 6px;
+      font-size:1rem;
+      font-weight:700;
+    }
+
+    .modal-text{
+      font-size:.9rem;
+      color:#555;
+      margin-bottom:14px;
+    }
+
+    .modal-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:8px;
+    }
+
+    .modal-btn{
+      border-radius:999px;
+      border:none;
+      padding:7px 14px;
+      font-size:.85rem;
+      font-weight:600;
+      cursor:pointer;
+    }
+
+    .modal-btn.cancel{
+      background:#e9ecef;
+      color:#333;
+    }
+
+    .modal-btn.confirm{
+      background:#dc3545;
+      color:#fff;
+      box-shadow:0 3px 8px rgba(220,53,69,.5);
+    }
+
+    .modal-btn.confirm-ativar{
+      background:#0fb300;
+      box-shadow:0 3px 8px rgba(15,179,0,.5);
     }
   </style>
+
 </head>
 <body>
-  <!-- Cabeçalho do site -->
-  <div class="titulo-container">
-    <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
-  </div>
-  
-  <div class="container">
-    <div class="area-titulo">Informações de Todos os Usuários</div>
-    
-    <div class="search-container">
-      <input type="text" id="searchInput" placeholder="Pesquisar funcionário por nome..." onkeyup="filterCards()">
-    </div>
-    
-    {% for user in users %}
-    <div class="user-card">
-      <div class="user-header" onclick="toggleDetails(this)">
-        {{ user.nome|title }}
-        <i class="fas fa-chevron-down"></i>
-      </div>
-      <div class="user-details">
-        <table>
-          <tr>
-            <th>Registro</th>
-            <td>{{ user.registro|default('Não informado') }}</td>
-          </tr>
-          <tr>
-            <th>Email</th>
-            <td>{{ user.email|default('Não informado') }}</td>
-          </tr>
-          <tr>
-            <th>Celular</th>
-            <td>{{ user.celular|default('Não informado') }}</td>
-          </tr>
-          <tr>
-            <th>Data de Nascimento</th>
-            <td>
-              {% if user.data_nascimento %}
-                {{ user.data_nascimento.strftime('%d/%m/%Y') }}
-              {% else %}
-                Não informado
-              {% endif %}
-            </td>
-          </tr>
-          <tr>
-            <th>CPF</th>
-            <td>{{ user.cpf|default('Não informado') }}</td>
-          </tr>
-          <tr>
-            <th>RG</th>
-            <td>{{ user.rg|default('Não informado') }}</td>
-          </tr>
-          <tr>
-            <th>Data Emissão RG</th>
-            <td>
-              {% if user.data_emissao_rg %}
-                {{ user.data_emissao_rg.strftime('%d/%m/%Y') }}
-              {% else %}
-                Não informado
-              {% endif %}
-            </td>
-          </tr>
-          <tr>
-            <th>Órgão Emissor</th>
-            <td>{{ user.orgao_emissor|default('Não informado') }}</td>
-          </tr>
-          <tr>
-            <th>Graduação</th>
-            <td>{{ user.graduacao|default('Não informado') }}</td>
-          </tr>
-          <!-- Novo campo de Cargo -->
-          <tr>
-            <th>Cargo</th>
-            <td>{{ user.cargo|default('Não informado') }}</td>
-          </tr>
-        </table>
+
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
       </div>
     </div>
-    {% endfor %}
-    
-    <a href="{{ url_for('index') }}" class="voltar-link">
-      <i class="fas fa-arrow-left"></i> Voltar ao Início
+
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
+    </div>
+
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fa-solid fa-home"></i>
     </a>
-  </div>
-  
-  <footer>
-    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </header>
+
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- Área de toast -->
+  <div id="statusAlert" aria-live="polite"></div>
+
+  <!-- Conteúdo -->
+  <main role="main">
+    <div class="page">
+
+      <!-- Header-card (padrão TRE) -->
+      <div class="page-header-card">
+        <div class="page-header-icon">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="page-header-content">
+          <p class="page-header-title">Informações de Usuários</p>
+          <p class="page-header-subtitle">
+            Consulte situação, abonadas, TRE e banco de horas de todos os servidores.
+          </p>
+        </div>
+      </div>
+
+      {# status_filtro para o select: padrão "ativos" #}
+      {% set status_filtro = status or 'ativos' %}
+
+      <!-- Card de filtros / ações -->
+      <section class="content-card filter-card">
+        <h2 class="content-title">
+          <i class="fa-solid fa-filter"></i>
+          Filtros e ações
+        </h2>
+        <p class="content-subtitle">
+          Utilize a busca, o filtro de status e as ações rápidas para localizar e analisar os servidores.
+        </p>
+
+        <div class="controls-row">
+
+          <!-- Busca (GET q=..., status=...) -->
+          <form
+            class="searchbar"
+            role="search"
+            method="get"
+            action="{{ url_for('user_info_all') }}"
+          >
+            <input type="hidden" name="per_page" value="{{ per_page }}">
+
+            <div class="search-input-wrapper">
+              <i class="fa-solid fa-magnifying-glass search-icon"></i>
+              <input
+                type="text"
+                name="q"
+                id="searchInput"
+                placeholder="Pesquisar funcionário por nome..."
+                autocomplete="off"
+                value="{{ q or '' }}"
+              />
+            </div>
+
+            <select name="status" class="status-filter">
+              <option value="ativos"   {% if status_filtro == 'ativos'   %}selected{% endif %}>Somente ativos</option>
+              <option value="inativos" {% if status_filtro == 'inativos' %}selected{% endif %}>Somente inativos</option>
+              <option value="todos"    {% if status_filtro == 'todos'    %}selected{% endif %}>Todos</option>
+            </select>
+
+            <button type="submit">Buscar</button>
+          </form>
+
+          <!-- Botões de ação -->
+          <div class="tools">
+            <button type="button" class="btn" id="expandAllBtn">
+              <i class="fa-solid fa-angles-down"></i> <span>Expandir tudo</span>
+            </button>
+            <button type="button" class="btn" id="collapseAllBtn">
+              <i class="fa-solid fa-angles-up"></i> <span>Recolher tudo</span>
+            </button>
+
+            <!-- Botão: Gerar Relatório PDF -->
+            <a
+              class="btn outline-blue"
+              href="{{ url_for('user_info_report') }}"
+              target="_blank"
+            >
+              <i class="fa-solid fa-file-pdf"></i>
+              <span>Gerar Relatório</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card principal com resultados -->
+      <section class="content-card">
+
+        <!-- Lista -->
+        <section class="user-list" id="userList" aria-label="Lista de usuários">
+          {% for user in users %}
+            {% set r = (resumos[user.id] if (resumos is defined and resumos and user.id in resumos) else {}) %}
+
+            {% set ab_total = r.get('abonadas_total', 6) %}
+            {% set ab_rest  = r.get('abonadas_restantes', ab_total) %}
+            {% set ab_used  = r.get('abonadas_usadas', 0) %}
+
+            {% set tre_total = r.get('tre_registros', 0) %}
+            {% set tre_saldo = r.get('tre_saldo_horas', 0) %}
+            {% set tre_usadas = tre_total - tre_saldo %}
+            {% if tre_usadas < 0 %}{% set tre_usadas = 0 %}{% endif %}
+
+            {% set tre_ag = r.get('tre_agendamentos', []) %}
+            {% set bh_ag  = r.get('bh_agendamentos', []) %}
+
+            {# Banco de horas em minutos vindo do usuário #}
+            {% set bh_total_min = user.banco_horas or 0 %}
+            {% set bh_horas = (bh_total_min // 60) | int %}
+            {% set bh_min   = (bh_total_min % 60) | int %}
+
+            <article class="user-card" data-name="{{ (user.nome or '')|lower }}">
+              <div
+                class="user-header"
+                role="button"
+                tabindex="0"
+                aria-expanded="false"
+              >
+                <div class="user-header-top">
+                  <div class="user-header-main">
+                    <div class="user-name">{{ user.nome|default('Sem nome')|title }}</div>
+                    <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
+                  </div>
+
+                  <div class="user-status-row">
+                    <span
+                      class="status-pill {% if user.ativo %}status-ativo{% else %}status-inativo{% endif %}"
+                      data-user-id="{{ user.id }}"
+                    >
+                      <i class="fa-solid fa-circle{% if user.ativo %}-check{% else %}-minus{% endif %}"></i>
+                      {% if user.ativo %}Ativo{% else %}Inativo{% endif %}
+                    </span>
+
+                    {% if current_user.is_authenticated and current_user.tipo == 'administrador' %}
+                      <button
+                        type="button"
+                        class="btn-mini {% if user.ativo %}inativar{% else %}ativar{% endif %} toggle-ativo-btn"
+                        data-user-id="{{ user.id }}"
+                        data-user-nome="{{ user.nome|e }}"
+                        data-url="{{ url_for('toggle_user_ativo', user_id=user.id) }}"
+                        data-ativo="{{ 1 if user.ativo else 0 }}"
+                      >
+                        {% if user.ativo %}
+                          <i class="fa-solid fa-user-slash"></i> Inativar
+                        {% else %}
+                          <i class="fa-solid fa-user-check"></i> Ativar
+                        {% endif %}
+                      </button>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="metrics" aria-label="Resumo do usuário">
+                  <!-- ABONADAS -->
+                  <div class="metric m-ab">
+                    <span class="label">
+                      <i class="fa-solid fa-circle-check"></i> AB:
+                    </span>
+                    <span>
+                      Total {{ ab_total }} · A usufruir {{ ab_rest }}
+                      (usadas {{ ab_used }})
+                    </span>
+                  </div>
+
+                  <!-- TRE (clicável) -->
+                  <div class="metric m-tre metric-clickable" data-metric="tre">
+                    <span class="label">
+                      <i class="fa-solid fa-hourglass-half"></i> TRE:
+                    </span>
+                    <span>
+                      Total {{ tre_total|int }} · A usufruir {{ tre_saldo|int }}
+                      (usadas {{ tre_usadas|int }}) dias
+                    </span>
+                  </div>
+
+                  <!-- Banco de Horas (clicável) -->
+                  <div class="metric m-bh metric-clickable" data-metric="bh">
+                    <span class="label">
+                      <i class="fa-solid fa-scale-balanced"></i> BH:
+                    </span>
+                    <span>
+                      Total {{ bh_horas }}h {{ "%02d"|format(bh_min) }}min
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="user-details">
+                <div class="user-details-table-wrapper">
+                  <table aria-label="Detalhes do usuário">
+                    <tr>
+                      <th>Registro</th>
+                      <td>{{ user.registro|default('Não informado') }}</td>
+                    </tr>
+                    <tr>
+                      <th>Email</th>
+                      <td>{{ user.email|default('Não informado') }}</td>
+                    </tr>
+                    <tr>
+                      <th>Celular</th>
+                      <td>{{ user.celular|default('Não informado') }}</td>
+                    </tr>
+                    <tr>
+                      <th>Data de Nascimento</th>
+                      <td>
+                        {% if user.data_nascimento %}
+                          {{ user.data_nascimento.strftime('%d/%m/%Y') }}
+                        {% else %}
+                          Não informado
+                        {% endif %}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>CPF</th>
+                      <td>{{ user.cpf|default('Não informado') }}</td>
+                    </tr>
+                    <tr>
+                      <th>RG</th>
+                      <td>{{ user.rg|default('Não informado') }}</td>
+                    </tr>
+                    <tr>
+                      <th>Data Emissão RG</th>
+                      <td>
+                        {% if user.data_emissao_rg %}
+                          {{ user.data_emissao_rg.strftime('%d/%m/%Y') }}
+                        {% else %}
+                          Não informado
+                        {% endif %}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Órgão Emissor</th>
+                      <td>{{ user.orgao_emissor|default('Não informado') }}</td>
+                    </tr>
+                    <tr>
+                      <th>Graduação</th>
+                      <td>{{ user.graduacao|default('Não informado') }}</td>
+                    </tr>
+                    <tr>
+                      <th>Cargo</th>
+                      <td>{{ user.cargo|default('Não informado') }}</td>
+                    </tr>
+
+                    <!-- Status no sistema + botão ativar/inativar também dentro do card -->
+                    <tr>
+                      <th>Status no sistema</th>
+                      <td>
+                        <div class="status-wrapper">
+                          <span
+                            class="status-pill {% if user.ativo %}status-ativo{% else %}status-inativo{% endif %}"
+                            data-user-id="{{ user.id }}"
+                          >
+                            <i class="fa-solid fa-circle{% if user.ativo %}-check{% else %}-minus{% endif %}"></i>
+                            {% if user.ativo %}Ativo{% else %}Inativo{% endif %}
+                          </span>
+
+                          {% if current_user.is_authenticated and current_user.tipo == 'administrador' %}
+                            <button
+                              type="button"
+                              class="btn-mini {% if user.ativo %}inativar{% else %}ativar{% endif %} toggle-ativo-btn"
+                              data-user-id="{{ user.id }}"
+                              data-user-nome="{{ user.nome|e }}"
+                              data-url="{{ url_for('toggle_user_ativo', user_id=user.id) }}"
+                              data-ativo="{{ 1 if user.ativo else 0 }}"
+                            >
+                              {% if user.ativo %}
+                                <i class="fa-solid fa-user-slash"></i> Marcar como inativo
+                              {% else %}
+                                <i class="fa-solid fa-user-check"></i> Marcar como ativo
+                              {% endif %}
+                            </button>
+                          {% endif %}
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+
+                <!-- Detalhes de TRE -->
+                <div class="tre-details">
+                  <div class="subsection-title">TRE — Agendamentos deferidos</div>
+                  {% if tre_ag and tre_ag|length > 0 %}
+                    <ul class="ag-list">
+                      {% for ag in tre_ag %}
+                        <li>
+                          <span>
+                            {% if ag.data %}
+                              {{ ag.data.strftime('%d/%m/%Y') }}
+                            {% else %}
+                              Sem data
+                            {% endif %}
+                            — {{ ag.motivo or 'TRE' }}
+                          </span>
+                          <span class="small">
+                            Status: {{ ag.status }}
+                          </span>
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <div class="no-records">Nenhuma TRE deferida encontrada.</div>
+                  {% endif %}
+                </div>
+
+                <!-- Detalhes de Banco de Horas -->
+                <div class="bh-details">
+                  <div class="subsection-title">Banco de Horas — Agendamentos deferidos (BH)</div>
+                  {% if bh_ag and bh_ag|length > 0 %}
+                    <ul class="ag-list">
+                      {% for ag in bh_ag %}
+                        <li>
+                          <span>
+                            {% if ag.data %}
+                              {{ ag.data.strftime('%d/%m/%Y') }}
+                            {% else %}
+                              Sem data
+                            {% endif %}
+                            — {{ ag.motivo or 'BH' }}
+                          </span>
+                          <span class="small">
+                            Status: {{ ag.status }}
+                          </span>
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <div class="no-records">Nenhum agendamento BH deferido encontrado.</div>
+                  {% endif %}
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        </section>
+
+        <!-- Paginação -->
+        {% if pages and pages > 1 %}
+          <div class="pagination-wrapper">
+            <nav class="pagination" aria-label="Paginação">
+              <a
+                class="{% if page <= 1 %}disabled{% endif %}"
+                href="{{ url_for('user_info_all', page=page-1, per_page=per_page, q=q, status=status_filtro) }}"
+              >
+                <i class="fa-solid fa-chevron-left"></i> Anterior
+              </a>
+
+              {% for p in range(1, pages + 1) %}
+                {% if p == page %}
+                  <span class="active">{{ p }}</span>
+                {% elif p == 1 or p == pages or (p >= page-2 and p <= page+2) %}
+                  <a href="{{ url_for('user_info_all', page=p, per_page=per_page, q=q, status=status_filtro) }}">{{ p }}</a>
+                {% elif p == page-3 or p == page+3 %}
+                  <span class="disabled">…</span>
+                {% endif %}
+              {% endfor %}
+
+              <a
+                class="{% if page >= pages %}disabled{% endif %}"
+                href="{{ url_for('user_info_all', page=page+1, per_page=per_page, q=q, status=status_filtro) }}"
+              >
+                Próxima <i class="fa-solid fa-chevron-right"></i>
+              </a>
+            </nav>
+          </div>
+        {% endif %}
+
+      </section> <!-- /content-card -->
+    </div>
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <p>
+      &copy; 2025 — <strong>Gestão de Ponto • E.M. José Padin Mouta</strong>.
+      Desenvolvido por Nilson Cruz.
+    </p>
   </footer>
-  
+
+  <!-- Modal de confirmação -->
+  <div
+    id="confirmModal"
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-hidden="true"
+  >
+    <div class="modal-box">
+      <h2 class="modal-title" id="confirmModalTitle">Confirmar alteração</h2>
+      <p class="modal-text" id="confirmModalMessage">
+        Tem certeza que deseja alterar o status deste usuário?
+      </p>
+      <div class="modal-actions">
+        <button type="button" class="modal-btn cancel" id="confirmModalCancel">
+          Cancelar
+        </button>
+        <button type="button" class="modal-btn confirm" id="confirmModalConfirm">
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    function toggleDetails(header) {
-      var details = header.nextElementSibling;
-      if (details.style.display === "block") {
-        details.style.display = "none";
-        header.classList.remove("active");
-      } else {
-        details.style.display = "block";
-        header.classList.add("active");
-      }
+    function toggleDetails(headerEl){
+      const details = headerEl.nextElementSibling;
+      const isOpen = details.style.display === 'block';
+
+      details.style.display = isOpen ? 'none' : 'block';
+      headerEl.classList.toggle('open', !isOpen);
+      headerEl.setAttribute('aria-expanded', String(!isOpen));
     }
-    function filterCards() {
-      var input = document.getElementById("searchInput");
-      var filter = input.value.toUpperCase();
-      var cards = document.getElementsByClassName("user-card");
-      for (var i = 0; i < cards.length; i++) {
-        var header = cards[i].getElementsByClassName("user-header")[0];
-        if (header) {
-          var txtValue = header.textContent || header.innerText;
-          cards[i].style.display = txtValue.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+
+    function expandAll(){
+      document.querySelectorAll('.user-header').forEach(header => {
+        const details = header.nextElementSibling;
+        if(details && details.style.display !== 'block'){
+          details.style.display = 'block';
+          header.classList.add('open');
+          header.setAttribute('aria-expanded', 'true');
         }
-      }
+      });
     }
+
+    function collapseAll(){
+      document.querySelectorAll('.user-header').forEach(header => {
+        const details = header.nextElementSibling;
+        if(details && details.style.display !== 'none'){
+          details.style.display = 'none';
+          header.classList.remove('open');
+          header.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const expandAllBtn = document.getElementById('expandAllBtn');
+      const collapseAllBtn = document.getElementById('collapseAllBtn');
+
+      const alertBox = document.getElementById('statusAlert');
+      const modalBackdrop = document.getElementById('confirmModal');
+      const modalTitle = document.getElementById('confirmModalTitle');
+      const modalMessage = document.getElementById('confirmModalMessage');
+      const modalBtnCancel = document.getElementById('confirmModalCancel');
+      const modalBtnConfirm = document.getElementById('confirmModalConfirm');
+
+      let currentAction = null; // { userId, userNome, url, ativo }
+
+      function showAlert(message, type = 'success') {
+        if (!alertBox) return;
+        alertBox.innerHTML = `
+          <div class="alert-toast ${type}">
+            <div class="icon">
+              <i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'}"></i>
+            </div>
+            <div>${message}</div>
+          </div>
+        `;
+        setTimeout(() => {
+          alertBox.innerHTML = '';
+        }, 4000);
+      }
+
+      function openModalForToggle(btn) {
+        const userId = btn.getAttribute('data-user-id');
+        const userNome = btn.getAttribute('data-user-nome') || 'Usuário';
+        const url = btn.getAttribute('data-url');
+        const ativo = btn.getAttribute('data-ativo') === '1';
+
+        currentAction = { userId, userNome, url, ativo };
+
+        if (ativo) {
+          modalTitle.textContent = 'Marcar como inativo';
+          modalMessage.innerHTML = `Tem certeza que deseja marcar <strong>${userNome}</strong> como <strong>inativo</strong>?`;
+          modalBtnConfirm.textContent = 'Sim, inativar';
+          modalBtnConfirm.classList.remove('confirm-ativar');
+        } else {
+          modalTitle.textContent = 'Marcar como ativo';
+          modalMessage.innerHTML = `Tem certeza que deseja marcar <strong>${userNome}</strong> como <strong>ativo</strong>?`;
+          modalBtnConfirm.textContent = 'Sim, ativar';
+          modalBtnConfirm.classList.add('confirm-ativar');
+        }
+
+        modalBackdrop.classList.add('show');
+        modalBackdrop.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeModal() {
+        modalBackdrop.classList.remove('show');
+        modalBackdrop.setAttribute('aria-hidden', 'true');
+        modalBtnConfirm.disabled = false;
+      }
+
+      // Clique nos headers (abrir/fechar card)
+      document.querySelectorAll('.user-header').forEach(header => {
+        header.addEventListener('click', function (event) {
+          if (event.target.closest('.metric') || event.target.closest('.toggle-ativo-btn')) return;
+          toggleDetails(header);
+        });
+
+        header.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            toggleDetails(header);
+          }
+        });
+      });
+
+      // Clique em TRE / BH para abrir listas internas
+      document.querySelectorAll('.metric.metric-clickable').forEach(metric => {
+        metric.addEventListener('click', function (event) {
+          event.stopPropagation();
+          const card = metric.closest('.user-card');
+          if (!card) return;
+
+          const type = metric.getAttribute('data-metric');
+          if (type === 'tre') {
+            const treBox = card.querySelector('.tre-details');
+            if (treBox) treBox.classList.toggle('open');
+          } else if (type === 'bh') {
+            const bhBox = card.querySelector('.bh-details');
+            if (bhBox) bhBox.classList.toggle('open');
+          }
+        });
+      });
+
+      if (expandAllBtn) {
+        expandAllBtn.addEventListener('click', expandAll);
+      }
+
+      if (collapseAllBtn) {
+        collapseAllBtn.addEventListener('click', collapseAll);
+      }
+
+      // Botões de ativar/inativar (topo e dentro do card)
+      document.querySelectorAll('.toggle-ativo-btn').forEach(btn => {
+        btn.addEventListener('click', function (event) {
+          event.stopPropagation();
+          openModalForToggle(btn);
+        });
+      });
+
+      // Confirmar alteração
+      modalBtnConfirm.addEventListener('click', function () {
+        if (!currentAction) return;
+
+        modalBtnConfirm.disabled = true;
+
+        fetch(currentAction.url, {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({})
+        })
+        .then(async (resp) => {
+          if (!resp.ok) {
+            const text = await resp.text().catch(() => '');
+            console.error('Erro HTTP ao alterar status:', resp.status, text);
+            throw new Error('Erro ao comunicar com o servidor (HTTP ' + resp.status + ').');
+          }
+
+          let data;
+          try {
+            data = await resp.json();
+          } catch (e) {
+            const text = await resp.text().catch(() => '');
+            console.error('Resposta não JSON da rota /toggle_user_ativo:', text);
+            throw new Error('Resposta inválida do servidor.');
+          }
+
+          if (!data || !data.success) {
+            console.error('toggle_user_ativo retornou erro:', data);
+            throw new Error((data && data.error) || 'Erro ao alterar status.');
+          }
+
+          const novoAtivo = !!data.ativo;
+          const userId = currentAction.userId;
+          const userNome = currentAction.userNome;
+
+          // Atualiza todos os pills desse usuário (header + detalhes)
+          document.querySelectorAll('.status-pill[data-user-id="' + userId + '"]').forEach(pill => {
+            pill.classList.toggle('status-ativo', novoAtivo);
+            pill.classList.toggle('status-inativo', !novoAtivo);
+            pill.innerHTML = `
+              <i class="fa-solid fa-circle${novoAtivo ? '-check' : '-minus'}"></i>
+              ${novoAtivo ? 'Ativo' : 'Inativo'}
+            `;
+          });
+
+          // Atualiza todos os botões desse usuário
+          document.querySelectorAll('.toggle-ativo-btn[data-user-id="' + userId + '"]').forEach(btn => {
+            btn.setAttribute('data-ativo', novoAtivo ? '1' : '0');
+            btn.classList.toggle('ativar', !novoAtivo);
+            btn.classList.toggle('inativar', novoAtivo);
+
+            if (!btn.closest('td')) {
+              // botão do header
+              if (novoAtivo) {
+                btn.innerHTML = '<i class="fa-solid fa-user-slash"></i> Inativar';
+              } else {
+                btn.innerHTML = '<i class="fa-solid fa-user-check"></i> Ativar';
+              }
+            } else {
+              // botão dentro da tabela
+              if (novoAtivo) {
+                btn.innerHTML = '<i class="fa-solid fa-user-slash"></i> Marcar como inativo';
+              } else {
+                btn.innerHTML = '<i class="fa-solid fa-user-check"></i> Marcar como ativo';
+              }
+            }
+          });
+
+          closeModal();
+          currentAction = null;
+
+          showAlert(
+            novoAtivo
+              ? `Usuário "${userNome}" marcado como ativo.`
+              : `Usuário "${userNome}" marcado como inativo.`,
+            'success'
+          );
+        })
+        .catch(err => {
+          console.error(err);
+          modalBtnConfirm.disabled = false;
+          closeModal();
+          currentAction = null;
+          showAlert(
+            err && err.message
+              ? err.message
+              : 'Não foi possível comunicar com o servidor. Verifique sua conexão.',
+            'error'
+          );
+        });
+      });
+
+      // Cancelar / fechar modal
+      modalBtnCancel.addEventListener('click', function () {
+        closeModal();
+        currentAction = null;
+      });
+
+      modalBackdrop.addEventListener('click', function (event) {
+        if (event.target === modalBackdrop) {
+          closeModal();
+          currentAction = null;
+        }
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && modalBackdrop.classList.contains('show')) {
+          closeModal();
+          currentAction = null;
+        }
+      });
+    });
   </script>
 </body>
 </html>

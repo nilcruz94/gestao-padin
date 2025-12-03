@@ -1,259 +1,720 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/static/css/style.css">
-    <title>Aprovar Cadastro de Usuários</title>
-    <style>
-        body {
-            font-family: 'Montserrat', sans-serif;
-            background-color: #f4f6f9;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            margin: 0;
-        }
+  <meta charset="UTF-8">
+  <title>Aprovar Cadastro de Usuários</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        h1 {
-            color: #333;
-            margin-bottom: 20px;
-        }
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
 
-        .usuario {
-            border-bottom: 1px solid #eee;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-        }
+  <style>
+    :root {
+      --primary: #0077ff;
+      --primary-dark: #0051ff;
+      --primary-soft: #dbe9ff;
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --border-soft: #e5e7eb;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --danger: #dc2626;
+      --danger-soft: #fee2e2;
+      --info-soft: #e0f2fe;
 
-        .usuario p {
-            margin: 5px 0;
-            color: #555;
-        }
+      --card-shadow: 0 14px 34px rgba(15,23,42,.1), 0 2px 4px rgba(15,23,42,.06);
+      --radius: 18px;
+    }
 
-        .buttons {
-            display: flex;
-            gap: 10px;
-        }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
 
-        .button {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-        }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Montserrat', sans-serif;
+      background: radial-gradient(circle at top, #e0f2ff 0, #f9fafb 45%, #eef2ff 100%);
+      background-attachment: fixed;
+      color: var(--text-main);
+    }
 
-        .aprovar {
-            background-color: #28a745;
-            color: white;
-        }
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
 
-        .aprovar:hover {
-            background-color: #218838;
-        }
+    main {
+      flex: 1 0 auto;
+      padding: 24px 12px 60px;
+      box-sizing: border-box;
+    }
 
-        .recusar {
-            background-color: #dc3545;
-            color: white;
-        }
+    .shell {
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto;
+    }
 
-        .recusar:hover {
-            background-color: #c82333;
-        }
+    @media (min-width: 769px) {
+      main {
+        padding: 30px 24px 80px;
+      }
+    }
 
-        .no-records {
-            text-align: center;
-            color: #888;
-            font-size: 16px;
-        }
+    /* ===== CABEÇALHOS ===== */
+    .header-desktop,
+    .header-mobile {
+      display: none;
+      flex-shrink: 0;
+    }
 
-        .back-link {
-            margin-top: 20px;
-            text-align: center;
-        }
+    /* Desktop */
+    @media (min-width: 769px) {
+      .header-desktop {
+        display: flex;
+        background-color: #007bff;
+        padding: 15px 30px;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+        min-height: 110px;
+        position: relative;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        color: white;
+      }
 
-        .back-link a {
-            color: #007bff;
-            text-decoration: none;
-        }
+      .left-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
 
-        .back-link a:hover {
-            text-decoration: underline;
-        }
+      .logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
 
-        footer {
-            background: linear-gradient(to right, #222, #444); /* Gradiente sutil */
-            color: #ddd;
-            text-align: center;
-            padding: 15px 0;
-            width: 100%;
-            font-size: 14px;
-            border-top: 2px solid #555;
-            position: fixed; /* Padrão: fixo no desktop */
-            bottom: 0;
-            left: 0;
-            font-family: 'Montserrat', sans-serif;
-            box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3); /* Sombra leve no topo */
-        }
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+        color: white;
+      }
 
-        footer p {
-            margin: 5px 0;
-            font-size: 15px;
-            font-weight: 300;
-        }
+      .escola-nome {
+        font-weight: 700;
+        font-size: 1.6rem;
+        margin: 0;
+        line-height: 1.1;
+      }
 
-        footer a {
-            color: #fff;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s ease-in-out;
-        }
+      .escola-subtitulo {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-top: 4px;
+      }
 
-        footer a:hover {
-            color: #00aaff;
-        }
+      .header-center-text-container {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: 800;
+        font-size: 1.9rem;
+        color: white;
+        letter-spacing: 5px;
+        user-select: none;
+        white-space: nowrap;
+        z-index: 1;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      }
 
-        /* Responsivo: footer fica relativo em telas menores */
-        @media (max-width: 768px) {
-            footer {
-                position: relative;
-                padding: 20px 0;
-            }
-        }
+      .header-center-text {
+        font-family: 'Montserrat', sans-serif;
+      }
 
-        .flash-message {
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            font-size: 16px;
-            width: 100%;
-        }
+      .btn-home {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+      }
 
-        .flash-success {
-            background-color: #28a745;
-            color: white;
-        }
+      .btn-home:hover {
+        background-color: #0d8a00;
+      }
+    }
 
-        .flash-danger {
-            background-color: #dc3545;
-            color: white;
-        }
+    /* Mobile */
+    @media (max-width: 768px) {
+      .header-mobile {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        background-color: #007bff;
+      }
 
-        .flash-info {
-            background-color: #17a2b8;
-            color: white;
-        }
+      .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        padding: 10px 15px;
+        background-color: #007bff;
+        text-align: center;
+      }
 
-        .titulo-container {
-            width: 100%;
-            text-align: center;
-            margin-top: 30px;
-        }
+      .logo {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
 
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: white;
+        text-align: center;
+      }
 
-        h1, h2 {
-            font-size: 24px;
-            color: #007bff;
-            text-align: center;
-            margin-bottom: 20px;
-        }
+      .escola-nome {
+        font-weight: 700;
+        font-size: 1.3rem;
+        margin: 0;
+        line-height: 1.1;
+      }
 
-        .back-link {
-            display: flex;
-            align-items: center;
-            color: #007bff;
-            font-size: 18px;
-            margin-top: 20px;
-        }
+      .escola-subtitulo {
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 2px;
+      }
 
-        .back-link i {
-            margin-right: 8px;
-        }
+      .header-bottom {
+        background-color: #0056b3;
+        text-align: center;
+        padding: 12px 10px;
+        font-weight: 800;
+        font-size: 1rem;
+        letter-spacing: 4px;
+        user-select: none;
+        color: white;
+        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        box-sizing: border-box;
+        white-space: nowrap;
+      }
 
-        .back-link:hover {
-            text-decoration: underline;
-        }
-        /* Titulo Container */
-        .titulo-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            width: 100%;
-            margin: 20px 0;
-        }
+      .btn-home-mobile {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+      }
 
-        /* Estilo para o título no topo do site */
-        .titulo-site {
-            font-family: 'Montserrat', sans-serif; /* Fonte moderna */
-            font-size: 32px; /* Ajuste o tamanho conforme necessário */
-            font-weight: 600; /* Peso de fonte mais leve */
-            color: #007bff; /* Cor azul profissional */
-            text-transform: uppercase; /* Maiúsculas para o título */
-            letter-spacing: 2px; /* Espaçamento entre as letras */
-            margin: 0s;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #007bff; /* Linha embaixo para dar ênfase */
-            text-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Leve sombra para dar profundidade */
-            text-align: center;
-            align-items: center;
-            justify-content: center;
-        }
-    </style>
+      .btn-home-mobile:hover {
+        background-color: #0d8a00;
+      }
+    }
+
+    /* ===== HEADER CARD DA PÁGINA ===== */
+    .page-header-card {
+      background: #ffffff;
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin: 0 auto 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--card-shadow);
+      border-left: 5px solid var(--primary);
+    }
+
+    .page-header-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, .45);
+      color: #2563eb;
+      flex-shrink: 0;
+    }
+
+    .page-header-icon i {
+      font-size: 22px;
+    }
+
+    .page-header-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .page-header-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin: 0;
+      color: var(--text-main);
+    }
+
+    .page-header-subtitle {
+      font-size: 0.9rem;
+      margin: 0;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 600px) {
+      .page-header-card {
+        padding: 12px 14px;
+      }
+
+      .page-header-title {
+        font-size: 1.05rem;
+      }
+
+      .page-header-subtitle {
+        font-size: 0.82rem;
+      }
+    }
+
+    /* ===== CARD GERAL ===== */
+    .content-card {
+      width: 100%;
+      margin: 0 auto 24px;
+      background: var(--surface);
+      border-radius: 16px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+      padding: 18px 18px 22px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      backdrop-filter: blur(8px);
+      box-sizing: border-box;
+    }
+
+    .content-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin: 0 0 6px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .content-title i {
+      color: var(--primary);
+    }
+
+    .content-subtitle {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin: 0 0 14px;
+    }
+
+    /* ===== FLASH MESSAGES ===== */
+    .flash-wrapper {
+      margin: 0 auto 16px;
+      max-width: 960px;
+    }
+
+    .flash-message {
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flash-message i {
+      font-size: 1rem;
+    }
+
+    .flash-success {
+      background-color: var(--success-soft);
+      color: #065f46;
+      border: 1px solid #bbf7d0;
+    }
+
+    .flash-danger,
+    .flash-error {
+      background-color: var(--danger-soft);
+      color: #7f1d1d;
+      border: 1px solid #fecaca;
+    }
+
+    .flash-info {
+      background-color: var(--info-soft);
+      color: #075985;
+      border: 1px solid #bae6fd;
+    }
+
+    /* ===== LISTA DE USUÁRIOS ===== */
+    .user-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin: 8px 0 0;
+    }
+
+    .user-card {
+      border-radius: 14px;
+      border: 1px solid var(--border-soft);
+      padding: 12px 14px 10px;
+      background-color: #ffffff;
+      box-shadow: 0 8px 20px rgba(15,23,42,0.08);
+    }
+
+    .user-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .user-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: linear-gradient(135deg,#eff6ff,#dbeafe);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1d4ed8;
+      flex-shrink: 0;
+      font-size: 1rem;
+    }
+
+    .user-name-block {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .user-name {
+      font-weight: 700;
+      font-size: 0.98rem;
+      margin: 0;
+    }
+
+    .user-registro {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .user-body {
+      font-size: 0.86rem;
+      color: #4b5563;
+      margin-bottom: 8px;
+    }
+
+    .user-body span {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .user-status-note {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .user-status-note i {
+      color: #f59e0b;
+    }
+
+    .user-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+
+    .button {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.86rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background-color 0.18s ease-out, box-shadow 0.18s ease-out, transform 0.12s ease-out;
+      box-shadow: 0 4px 10px rgba(15,23,42,0.18);
+      color: #ffffff;
+    }
+
+    .button i {
+      font-size: 0.9rem;
+    }
+
+    .aprovar {
+      background-color: #22c55e;
+    }
+
+    .aprovar:hover {
+      background-color: #16a34a;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(22,163,74,0.35);
+    }
+
+    .recusar {
+      background-color: #ef4444;
+    }
+
+    .recusar:hover {
+      background-color: #dc2626;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(220,38,38,0.35);
+    }
+
+    .no-records {
+      text-align: center;
+      color: #6b7280;
+      font-size: 0.95rem;
+      padding: 12px 8px 4px;
+    }
+
+    /* ===== LINK VOLTAR ===== */
+    .back-link-wrapper {
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .back-link i {
+      font-size: 0.9rem;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    /* ===== FOOTER ===== */
+    footer {
+      background: linear-gradient(to right, #222, #444);
+      color: #ddd;
+      text-align: center;
+      padding: 15px 0;
+      font-size: 14px;
+      border-top: 2px solid #555;
+      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+      width: 100%;
+    }
+
+    footer p {
+      margin: 5px 0;
+      font-size: 15px;
+      font-weight: 300;
+    }
+
+    footer a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease-in-out;
+    }
+
+    footer a:hover {
+      color: #00aaff;
+    }
+  </style>
 </head>
 <body>
 
-    <div class="titulo-container">
-        <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
     </div>
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
+    </a>
+  </header>
 
-    <h1>Aprovar Cadastro de Usuários</h1>
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
 
-    <!-- Bloco de Mensagem de Flash -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
+  <main>
+    <div class="shell">
+
+      <!-- Header card da página -->
+      <div class="page-header-card">
+        <div class="page-header-icon">
+          <i class="fas fa-user-check"></i>
+        </div>
+        <div class="page-header-content">
+          <p class="page-header-title">Aprovar cadastro de usuários</p>
+          <p class="page-header-subtitle">
+            Visualize os cadastros pendentes e aprove ou recuse o acesso ao Portal do Servidor.
+          </p>
+        </div>
+      </div>
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
+          <div class="flash-wrapper">
             {% for category, message in messages %}
-                <div class="flash-message flash-{{ category }}">
-                    {{ message }}
-                </div>
+              <div class="flash-message flash-{{ category }}">
+                {% if category == 'success' %}
+                  <i class="fas fa-check-circle"></i>
+                {% elif category in ['danger', 'error'] %}
+                  <i class="fas fa-exclamation-triangle"></i>
+                {% else %}
+                  <i class="fas fa-info-circle"></i>
+                {% endif %}
+                {{ message }}
+              </div>
             {% endfor %}
+          </div>
         {% endif %}
-    {% endwith %}
+      {% endwith %}
 
-    <div class="container">
-        <!-- Verifica se há usuários pendentes -->
+      <!-- Card de usuários -->
+      <div class="content-card">
+        <h2 class="content-title">
+          <i class="fas fa-users"></i>
+          Usuários aguardando aprovação
+        </h2>
+        <p class="content-subtitle">
+          Cada linha abaixo representa um cadastro ainda não validado. Utilize os botões
+          <strong>Aprovar</strong> ou <strong>Recusar</strong> para concluir o processo.
+        </p>
+
         {% if usuarios %}
-            <form action="/aprovar_usuarios" method="POST">
-                {% for usuario in usuarios %}
-                    <div class="usuario">
-                        <p><strong>{{ usuario.nome }} ({{ usuario.registro }})</strong></p>
-                        <p>Email: {{ usuario.email }}</p>
-                        <p>Registro aguardando aprovação.</p>
-                        <input type="hidden" name="usuario_id" value="{{ usuario.id }}">
-                        <div class="buttons">
-                            <button type="submit" name="acao" value="aprovar" class="button aprovar">Aprovar</button>
-                            <button type="submit" name="acao" value="recusar" class="button recusar">Recusar</button>
-                        </div>
-                    </div>
-                    <hr>
-                {% endfor %}
-            </form>
+          <form action="/aprovar_usuarios" method="POST" class="user-list">
+            {% for usuario in usuarios %}
+              <div class="user-card">
+                <div class="user-header">
+                  <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                  </div>
+                  <div class="user-name-block">
+                    <p class="user-name">{{ usuario.nome }}</p>
+                    <span class="user-registro">Registro: {{ usuario.registro }}</span>
+                  </div>
+                </div>
+
+                <div class="user-body">
+                  <div><span>Email:</span> {{ usuario.email }}</div>
+                  <div class="user-status-note">
+                    <i class="fas fa-clock"></i>
+                    Registro aguardando aprovação.
+                  </div>
+                </div>
+
+                <input type="hidden" name="usuario_id" value="{{ usuario.id }}">
+
+                <div class="user-actions">
+                  <button type="submit" name="acao" value="aprovar" class="button aprovar">
+                    <i class="fas fa-check"></i>
+                    <span>Aprovar</span>
+                  </button>
+                  <button type="submit" name="acao" value="recusar" class="button recusar">
+                    <i class="fas fa-times"></i>
+                    <span>Recusar</span>
+                  </button>
+                </div>
+              </div>
+            {% endfor %}
+          </form>
         {% else %}
-            <p class="no-records">Não há registros de usuários aguardando aprovação.</p>
+          <p class="no-records">
+            Não há registros de usuários aguardando aprovação no momento.
+          </p>
         {% endif %}
-    </div>
+      </div>
 
-    <div class="back-link">
-        <a href="/index">
-            <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial</a>
     </div>
+  </main>
 
-    <footer>
-        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-    </footer>
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
 
 </body>
 </html>

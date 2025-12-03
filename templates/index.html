@@ -1,356 +1,53 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Índice</title>
+  <title>Portal do Servidor - Início</title>
+
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
 
   <style>
+    * , *::before, *::after {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       font-family: 'Montserrat', sans-serif;
-      box-sizing: border-box;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
-      background: #f9fbfc;
-      color: #333;
-    }
-    *, *:before, *:after {
-      box-sizing: inherit;
+      background: #f3f4f6;
+      color: #111827;
     }
 
     main {
       flex: 1 0 auto;
-      padding: 0 15px 120px;
-    }
-
-    .tabs {
+      padding: 24px 16px 80px;
       display: flex;
       justify-content: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      position: relative;
-      z-index: 10;
-      background: transparent;
-      margin: 0;
-      padding: 5px 0 0 0;
-      user-select: none;
+      align-items: flex-start;
     }
 
-    .tab {
-      background-color: #e6f4ea;
-      padding: 10px 20px;
-      cursor: pointer;
-      font-weight: 700;
-      border: 2px solid #28a745;
-      border-bottom: none;
-      border-radius: 10px 10px 0 0;
-      color: #2f4f4f;
-      position: relative;
-      z-index: 20;
-      transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
-                  color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                  box-shadow 0.4s ease;
-      margin: 0;
-      box-sizing: border-box;
-      box-shadow: inset 0 4px 10px rgba(40, 167, 69, 0.15);
-    }
-
-    .tab:hover:not(.active) {
-      background-color: #d0e8ce;
-      color: #19692c;
-      box-shadow: inset 0 6px 15px rgba(40, 167, 69, 0.25);
-    }
-
-    .tab.active {
-      background-color: #28a745;
-      color: #fff;
-      border-color: #28a745;
-      border-bottom: none;
-      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.5);
-      font-weight: 800;
-      letter-spacing: 0.05em;
-    }
-
-    .access-services {
-      font-weight: 700;
-      font-size: 18px;
-      color: #28a745;
-      margin: 0 0 15px 0;
-      text-align: center;
-    }
-
-    .cards-container {
-      display: none;
-      justify-content: center;
-      padding: 0 10px 10px 10px;
-      margin: 0 auto;
-      max-width: 560px;
-      box-sizing: border-box;
-      width: 100%;
-    }
-
-    .cards-container.active {
-      display: flex;
-    }
-
-    .cards-wrapper {
-      background: #ffffff;
-      padding: 25px 25px 30px;
-      border: 1.8px solid #28a745;
-      border-radius: 18px;
-      box-shadow: 0 8px 25px rgba(40, 167, 69, 0.15);
-      width: 100%;
-      box-sizing: border-box;
-      position: relative;
-      z-index: 1;
-      margin: 0;
-      transition: box-shadow 0.4s ease;
-    }
-
-    .cards-wrapper:hover {
-      box-shadow: 0 12px 40px rgba(40, 167, 69, 0.3);
-    }
-
-    .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 160px);
-      gap: 18px;
-      justify-content: center;
-    }
-
-    .card {
-      background: linear-gradient(145deg, #2ebd4f, #238f3a);
-      color: white;
-      border-radius: 16px;
-      width: 160px;
-      height: 160px;
-      padding: 20px;
-      text-align: center;
-      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), 
-                  box-shadow 0.35s ease, 
-                  background 0.35s ease;
-      text-decoration: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 6px 12px rgba(18, 88, 22, 0.35);
-      cursor: pointer;
-      user-select: none;
-      margin: 0;
-      font-weight: 700;
-      font-size: 1rem;
-      letter-spacing: 0.03em;
-      font-family: 'Montserrat', sans-serif;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .card::before {
-      content: "";
-      position: absolute;
-      top: -40%;
-      left: -40%;
-      width: 160%;
-      height: 160%;
-      background: radial-gradient(circle at center, rgba(255,255,255,0.18) 0%, transparent 70%);
-      transform: rotate(25deg);
-      opacity: 0.3;
-      pointer-events: none;
-      transition: opacity 0.35s ease;
-      border-radius: 16px;
-      z-index: 0;
-    }
-
-    .card:hover {
-      transform: scale(1.08);
-      box-shadow: 0 12px 24px rgba(33, 136, 56, 0.75);
-      background: linear-gradient(145deg, #2af94a, #1f7e30);
-      text-decoration: none;
-    }
-
-    .card:hover::before {
-      opacity: 0.5;
-    }
-
-    .card i {
-      font-size: 28px;
-      margin-bottom: 14px;
-      color: white;
-      pointer-events: none;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
-      flex-shrink: 0;
-    }
-
-    /* Ajuste no botão logout para igualar aos cards */
-    .logout-btn {
-      background: linear-gradient(135deg, #e03e4f, #b02937);
-      border-radius: 16px;
-      border: none !important;
-      height: 160px;
-      padding: 20px;
-      margin: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      user-select: none;
-      color: white !important;
-      text-decoration: none !important;
-      box-shadow: 0 6px 16px rgba(176, 41, 55, 0.8);
-      transition: background 0.4s ease, box-shadow 0.4s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .logout-btn::before {
-      content: "";
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 180%;
-      height: 180%;
-      background: radial-gradient(circle at center, rgba(255,255,255,0.15) 0%, transparent 70%);
-      transform: rotate(30deg);
-      opacity: 0.4;
-      pointer-events: none;
-      border-radius: 16px;
-      z-index: 0;
-      transition: opacity 0.4s ease;
-    }
-
-    .logout-btn:hover {
-      background: linear-gradient(135deg, #c12630, #8f1c24);
-      box-shadow: 0 14px 28px rgba(176, 41, 55, 0.9);
-      color: white !important;
-      text-decoration: none !important;
-    }
-
-    .logout-btn:hover::before {
-      opacity: 0.6;
-    }
-
-    .welcome-container {
-      text-align: center;
-      margin-top: 30px;
-      margin-bottom: 20px;
-    }
-
-    .welcome-container span {
-      font-size: 18px;
-      font-weight: 700;
-      color: #234d20;
-      border-bottom: 2px solid #28a745;
-      padding-bottom: 4px;
-      letter-spacing: 0.04em;
-    }
-
-    footer {
-      background: linear-gradient(to right, #222, #444);
-      color: #ddd;
-      text-align: center;
-      padding: 15px 0;
-      font-size: 14px;
-      border-top: 2px solid #555;
-      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
-      flex-shrink: 0;
-      width: 100%;
-    }
-
-    .flash-container {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .flash {
-      padding: 10px 20px;
-      margin: 5px auto;
-      border-radius: 6px;
-      width: fit-content;
-      font-weight: 600;
-      font-family: 'Montserrat', sans-serif;
-    }
-
-    .flash.success {
-      background-color: #d4edda;
-      color: #155724;
-      box-shadow: 0 0 8px rgba(21, 87, 36, 0.5);
-    }
-
-    .flash.error {
-      background-color: #f8d7da;
-      color: #721c24;
-      box-shadow: 0 0 8px rgba(114, 28, 36, 0.5);
-    }
-
-    @media (max-width: 768px) {
+    @media (min-width: 769px) {
       main {
-        padding: 0 10px 60px;
-        min-height: auto;
-      }
-      .cards-grid {
-        grid-template-columns: repeat(2, 140px);
-        gap: 12px;
-      }
-      .card {
-        width: 140px;
-        height: 140px;
-        font-size: 0.95rem;
-      }
-      .card i {
-        font-size: 24px;
-        margin-bottom: 12px;
-      }
-      .access-services {
-        font-size: 16px;
-        margin-bottom: 12px;
-      }
-      .cards-container {
-        max-width: 360px;
-        padding: 0 5px 10px 5px;
-      }
-      .logout-btn {
-        height: auto;
-        padding: 15px;
-        width: 100%;
-        max-width: 200px;
-        margin: 30px auto 0;
-        font-size: 1rem;
+        padding: 30px 24px 90px;
+        align-items: center;
       }
     }
 
-    @media (max-width: 480px) {
-      .cards-grid {
-        grid-template-columns: 1fr;
-      }
-      .card {
-        width: 100%;
-        max-width: 260px;
-        height: auto;
-      }
-      .cards-container {
-        max-width: 280px;
-        padding: 0 5px 10px 5px;
-      }
-    }
+    /* ========= CABEÇALHO PADRÃO ========= */
 
-    /* Cabeçalhos */
-
-    .header-desktop {
-      display: none;
-    }
+    .header-desktop,
     .header-mobile {
       display: none;
+      flex-shrink: 0;
     }
 
+    /* Desktop */
     @media (min-width: 769px) {
       .header-desktop {
         display: flex;
@@ -361,21 +58,17 @@
         justify-content: space-between;
         box-sizing: border-box;
         min-height: 110px;
-        position: sticky;
-        top: 0;
-        z-index: 1000;
+        position: relative;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         color: white;
-        position: relative;
       }
-      main {
-        min-height: calc(100vh - 110px - 60px);
-      }
+
       .left-section {
         display: flex;
         align-items: center;
         gap: 20px;
       }
+
       .logo {
         width: 80px;
         height: 80px;
@@ -384,6 +77,7 @@
         background-color: white;
         padding: 6px;
       }
+
       .text-container {
         display: flex;
         flex-direction: column;
@@ -391,19 +85,20 @@
         text-align: left;
         color: white;
       }
+
       .escola-nome {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 700;
         font-size: 1.6rem;
         margin: 0;
         line-height: 1.1;
       }
+
       .escola-subtitulo {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 600;
         font-size: 1.1rem;
         margin-top: 4px;
       }
+
       .header-center-text-container {
         position: absolute;
         left: 50%;
@@ -415,8 +110,8 @@
         user-select: none;
         z-index: 1;
       }
+
       .header-center-text {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 800;
         font-size: 1.9rem;
         color: white;
@@ -424,6 +119,7 @@
         white-space: nowrap;
         text-shadow: 0 2px 5px rgba(0,0,0,0.3);
       }
+
       .btn-home {
         background-color: #0fb300;
         color: white;
@@ -443,11 +139,13 @@
         transform: translateY(-50%);
         z-index: 2;
       }
+
       .btn-home:hover {
         background-color: #0d8a00;
       }
     }
 
+    /* Mobile */
     @media (max-width: 768px) {
       .header-mobile {
         display: block;
@@ -460,6 +158,7 @@
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         background-color: #007bff;
       }
+
       .header-top {
         display: flex;
         align-items: center;
@@ -469,6 +168,7 @@
         background-color: #007bff;
         text-align: center;
       }
+
       .logo {
         width: 48px;
         height: 48px;
@@ -477,6 +177,7 @@
         background-color: white;
         padding: 6px;
       }
+
       .text-container {
         display: flex;
         flex-direction: column;
@@ -484,24 +185,24 @@
         color: white;
         text-align: center;
       }
+
       .escola-nome {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 700;
         font-size: 1.3rem;
         margin: 0;
         line-height: 1.1;
       }
+
       .escola-subtitulo {
-        font-family: 'Montserrat', sans-serif;
         font-weight: 600;
         font-size: 1rem;
         margin-top: 2px;
       }
+
       .header-bottom {
         background-color: #0056b3;
         text-align: center;
         padding: 12px 10px;
-        font-family: 'Montserrat', sans-serif;
         font-weight: 800;
         font-size: 1.0rem;
         letter-spacing: 4px;
@@ -511,9 +212,10 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 15px;
-        position: relative;
+        gap: 12px;
+        white-space: nowrap;
       }
+
       .btn-home-mobile {
         background-color: #0fb300;
         color: white;
@@ -528,9 +230,384 @@
         box-shadow: 0 2px 6px rgba(15,179,0,0.8);
         transition: background-color 0.3s ease;
       }
+
       .btn-home-mobile:hover {
         background-color: #0d8a00;
       }
+    }
+
+    /* ========= LAYOUT DO DASHBOARD ========= */
+
+    .dashboard-shell {
+      width: 100%;
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .welcome-banner {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+      gap: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+      border-left: 5px solid #16a34a;
+    }
+
+    .welcome-main-block {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .welcome-text-main {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+    }
+
+    .welcome-text-sub {
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin: 0;
+    }
+
+    /* spans do texto de boas-vindas: inline por padrão (desktop) */
+    .welcome-text-sub span {
+      display: inline;
+    }
+
+    .welcome-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      margin-top: 6px;
+    }
+
+    .welcome-meta-item {
+      font-size: 0.86rem;
+      color: #374151;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background-color: #f1f5f9;
+      border: 1px solid #e5e7eb;
+      white-space: nowrap;
+    }
+
+    .welcome-meta-item i {
+      font-size: 0.9rem;
+      color: #2563eb;
+    }
+
+    .welcome-meta-item span {
+      font-weight: 600;
+      color: #111827;
+    }
+
+    /* Tablet e celular maior */
+    @media (max-width: 700px) {
+      .welcome-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px 14px;
+        border-radius: 16px;
+        gap: 8px;
+      }
+    }
+
+    /* Compactar no celular, texto em duas linhas e Registro/Cargo lado a lado */
+    @media (max-width: 600px) {
+      .welcome-banner {
+        padding: 10px 12px;
+        margin-bottom: 14px;
+        border-radius: 14px;
+        gap: 6px;
+      }
+
+      .welcome-text-main {
+        font-size: 1rem;
+      }
+
+      .welcome-text-sub {
+        font-size: 0.82rem;
+      }
+
+      /* aqui forçamos as duas frases em linhas separadas */
+      .welcome-text-sub span {
+        display: block;
+      }
+
+      .welcome-meta {
+        margin-top: 6px;
+        gap: 6px 8px;
+      }
+
+      .welcome-meta-item {
+        font-size: 0.78rem;
+        padding: 3px 8px;
+        flex: 1 1 48%;
+        justify-content: flex-start;
+      }
+    }
+
+    /* ========= FLASH MESSAGES ========= */
+
+    .flash-container {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .flash {
+      padding: 9px 18px;
+      margin: 5px auto;
+      border-radius: 999px;
+      width: fit-content;
+      font-weight: 600;
+      font-size: 0.88rem;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .flash.success {
+      background-color: #dcfce7;
+      color: #166534;
+      box-shadow: 0 0 8px rgba(22, 101, 52, 0.45);
+      border: 1px solid #bbf7d0;
+    }
+
+    .flash.error,
+    .flash.danger {
+      background-color: #fee2e2;
+      color: #b91c1c;
+      box-shadow: 0 0 8px rgba(185, 28, 28, 0.45);
+      border: 1px solid #fecaca;
+    }
+
+    /* ========= TABS ========= */
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 4px 0 6px;
+      user-select: none;
+    }
+
+    .tab {
+      background-color: #e5f0ff;
+      padding: 8px 18px;
+      cursor: pointer;
+      font-weight: 700;
+      border-radius: 999px;
+      color: #1f2933;
+      border: 1px solid #0d6efd;
+      transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tab:hover:not(.active) {
+      background-color: #d3e3ff;
+      color: #0b3c91;
+      box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, #0d6efd, #2563eb);
+      color: #ffffff;
+      box-shadow: 0 5px 16px rgba(37, 99, 235, 0.75);
+      border-color: transparent;
+      letter-spacing: 0.04em;
+    }
+
+    .access-services {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #2563eb;
+      margin: 6px 0 12px;
+      text-align: center;
+    }
+
+    /* ========= CARDS ========= */
+
+    .cards-container {
+      display: none;
+      justify-content: center;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .cards-container.active {
+      display: flex;
+    }
+
+    .cards-wrapper {
+      background: #ffffff;
+      padding: 20px 20px 24px;
+      border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      width: 100%;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(150px, 1fr));
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .card {
+      background: #ffffff;
+      color: #111827;
+      border-radius: 18px;
+      padding: 14px 10px;
+      text-align: center;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 130px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      font-weight: 700;
+      font-size: 0.94rem;
+      letter-spacing: 0.01em;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.18s ease, box-shadow 0.22s ease, border-color 0.18s ease, background-color 0.18s ease;
+      cursor: pointer;
+      border: 1px solid #e5e7eb;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      top: -35%;
+      left: -35%;
+      width: 170%;
+      height: 170%;
+      background: radial-gradient(circle at center, rgba(59,130,246,0.16) 0%, transparent 60%);
+      transform: rotate(18deg);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      border-radius: 18px;
+      z-index: 0;
+    }
+
+    .card i {
+      font-size: 24px;
+      margin-bottom: 12px;
+      color: #2563eb;
+      z-index: 1;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
+      border-radius: 999px;
+      padding: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.35);
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
+      border-color: #3b82f6;
+      background-color: #f9fafb;
+      text-decoration: none;
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    /* Logout especial */
+    .logout-btn {
+      background: #fef2f2;
+      color: #b91c1c;
+      border-color: #fecaca;
+      box-shadow: 0 4px 12px rgba(185, 28, 28, 0.35);
+    }
+
+    .logout-btn i {
+      color: #b91c1c;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #fee2e2 60%, #fecaca 100%);
+      box-shadow: 0 4px 10px rgba(185, 28, 28, 0.5);
+    }
+
+    .logout-btn:hover {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      box-shadow: 0 10px 24px rgba(185, 28, 28, 0.6);
+      color: #7f1d1d;
+    }
+
+    .logout-btn:hover i {
+      color: #7f1d1d;
+    }
+
+    /* Responsivo das grids */
+
+    @media (max-width: 992px) {
+      .cards-grid {
+        grid-template-columns: repeat(2, minmax(150px, 1fr));
+      }
+    }
+
+    /* Sempre 2 por linha no celular */
+    @media (max-width: 600px) {
+      .cards-wrapper {
+        padding: 18px 12px 22px;
+      }
+      .cards-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .card {
+        min-height: 120px;
+        font-size: 0.9rem;
+        padding: 12px 8px;
+      }
+      .card i {
+        font-size: 22px;
+        margin-bottom: 10px;
+        padding: 9px;
+      }
+      .access-services {
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+      }
+    }
+
+    /* ========= RODAPÉ ========= */
+
+    footer {
+      background: linear-gradient(to right, #222, #444);
+      color: #ddd;
+      text-align: center;
+      padding: 15px 0;
+      font-size: 14px;
+      border-top: 2px solid #555;
+      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+      width: 100%;
+    }
+
+    footer p {
+      margin: 5px 0;
+      font-size: 0.9rem;
     }
   </style>
 </head>
@@ -553,7 +630,6 @@
     <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
       <i class="fas fa-home"></i>
     </a>
-
   </header>
 
   <!-- Cabeçalho Mobile -->
@@ -565,14 +641,7 @@
         <div class="escola-subtitulo">José Padin Mouta</div>
       </div>
     </div>
-    <div class="header-bottom" style="
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      box-sizing: border-box;
-      white-space: nowrap;
-    ">
+    <div class="header-bottom">
       <span>PORTAL DO SERVIDOR</span>
       <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
         <i class="fas fa-home"></i>
@@ -581,137 +650,168 @@
   </header>
 
   <main>
-    <div class="welcome-container">
-      <span>Bem-vindo, {{ current_user.nome }}!</span>
-    </div>
+    <div class="dashboard-shell">
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div class="flash-container">
-      {% for category, message in messages %}
-        <div class="flash {{ category }}">{{ message|safe }}</div>
-      {% endfor %}
-    </div>
-    <script>
-      setTimeout(() => {
-        document.querySelectorAll('.flash').forEach(flash => {
-          flash.style.transition = 'opacity 1s ease';
-          flash.style.opacity = '0';
-          setTimeout(() => flash.remove(), 1000);
-        });
-      }, 8000);
-    </script>
-    {% endif %}
-    {% endwith %}
+      <!-- Banner de boas-vindas -->
+      <div class="welcome-banner">
+        <div class="welcome-main-block">
+          <p class="welcome-text-main">Olá, {{ current_user.nome }} 👋</p>
+          <p class="welcome-text-sub">
+            <span>Bem-vindo ao Portal do Servidor.</span>
+            <span>Utilize os cards abaixo para acessar serviços disponíveis.</span>
+          </p>
 
-    <div class="tabs">
-      <div class="tab active" data-tab="geral">Geral</div>
-      {% if current_user.tipo == 'administrador' %}
-      <div class="tab" data-tab="administrativo">Administrativo</div>
+          <div class="welcome-meta">
+            <div class="welcome-meta-item">
+              <i class="fas fa-id-badge"></i>
+              <span>Registro:</span> {{ current_user.registro }}
+            </div>
+            <div class="welcome-meta-item">
+              <i class="fas fa-briefcase"></i>
+              <span>Cargo:</span> {{ current_user.cargo }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensagens flash -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message|safe }}</div>
+        {% endfor %}
+      </div>
+      <script>
+        setTimeout(() => {
+          document.querySelectorAll('.flash').forEach(flash => {
+            flash.style.transition = 'opacity 1s ease';
+            flash.style.opacity = '0';
+            setTimeout(() => flash.remove(), 1000);
+          });
+        }, 8000);
+      </script>
       {% endif %}
-    </div>
+      {% endwith %}
 
-    <div id="geral" class="cards-container active">
-      <div class="cards-wrapper">
-        <div class="cards-grid">
-          <a href="{{ url_for('perfil') }}" class="card">
-            <i class="fas fa-id-badge"></i>
-            Meu Perfil
-          </a>
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" data-tab="geral">
+          <i class="fas fa-layer-group"></i> Geral
+        </div>
+        {% if current_user.tipo == 'administrador' %}
+        <div class="tab" data-tab="administrativo">
+          <i class="fas fa-user-shield"></i> Administrativo
+        </div>
+        {% endif %}
+      </div>
 
-          <a href="{{ url_for('historico') }}" class="card">
-            <i class="fas fa-calendar-check"></i>
-            Minhas Folgas
-          </a>
+      <p class="access-services">Acesse os serviços do Portal do Servidor:</p>
 
-          <a href="{{ url_for('minhas_justificativas') }}" class="card">
-            <i class="fas fa-clipboard-list"></i>
-            Meus Agendamentos
-          </a>
+      <!-- Aba Geral -->
+      <div id="geral" class="cards-container active">
+        <div class="cards-wrapper">
+          <div class="cards-grid">
+            <a href="{{ url_for('perfil') }}" class="card">
+              <i class="fas fa-id-badge"></i>
+              Meu Perfil
+            </a>
 
-          <a href="{{ url_for('agendar') }}" class="card">
-            <i class="fas fa-calendar-plus"></i>
-            Agendar Folga
-          </a>
+            <a href="{{ url_for('historico') }}" class="card">
+              <i class="fas fa-calendar-check"></i>
+              Minhas Folgas
+            </a>
 
-          <a href="{{ url_for('adicionar_tre') }}" class="card">
-            <i class="fas fa-file-upload"></i>
-            Adicionar T.R.E
-          </a>
+            <a href="{{ url_for('minhas_justificativas') }}" class="card">
+              <i class="fas fa-clipboard-list"></i>
+              Meus Agendamentos
+            </a>
 
-          <a href="{{ url_for('calendario') }}" class="card">
-            <i class="fas fa-calendar-days"></i>
-            Calendário
-          </a>
+            <a href="{{ url_for('agendar') }}" class="card">
+              <i class="fas fa-calendar-plus"></i>
+              Agendar Folga
+            </a>
 
-          <a href="{{ url_for('relatar_esquecimento') }}" class="card">
-            <i class="fas fa-stopwatch"></i>
-            Relatar Esquecimento
-          </a>
+            <a href="{{ url_for('adicionar_tre') }}" class="card">
+              <i class="fas fa-file-upload"></i>
+              Adicionar T.R.E
+            </a>
 
-          <a href="{{ url_for('banco_horas') }}" class="card">
-            <i class="fas fa-hourglass-half"></i>
-            Banco de Horas
-          </a>
+            <a href="{{ url_for('calendario') }}" class="card">
+              <i class="fas fa-calendar-days"></i>
+              Calendário
+            </a>
 
-          <a href="{{ url_for('logout') }}" class="card logout-btn" title="Sair do sistema">
-            <i class="fas fa-right-from-bracket"></i>
-            Sair
-          </a>
+            <a href="{{ url_for('relatar_esquecimento') }}" class="card">
+              <i class="fas fa-stopwatch"></i>
+              Relatar Esquecimento
+            </a>
+
+            <a href="{{ url_for('banco_horas') }}" class="card">
+              <i class="fas fa-hourglass-half"></i>
+              Banco de Horas
+            </a>
+
+            <a href="{{ url_for('logout') }}" class="card logout-btn" title="Sair do sistema">
+              <i class="fas fa-right-from-bracket"></i>
+              Sair
+            </a>
+          </div>
         </div>
       </div>
-    </div>
 
-    {% if current_user.tipo == 'administrador' %}
-    <div id="administrativo" class="cards-container">
-      <div class="cards-wrapper">
-        <div class="cards-grid">
+      <!-- Aba Administrativa -->
+      {% if current_user.tipo == 'administrador' %}
+      <div id="administrativo" class="cards-container">
+        <div class="cards-wrapper">
+          <div class="cards-grid">
 
-          <a href="{{ url_for('deferir_folgas') }}" class="card">
-            <i class="fas fa-calendar-check"></i>
-            Deferir Folgas
-          </a>
+            <a href="{{ url_for('deferir_folgas') }}" class="card">
+              <i class="fas fa-calendar-check"></i>
+              Deferir Folgas
+            </a>
 
-          <a href="{{ url_for('admin_tres_list') }}" class="card">
-            <i class="fas fa-file-signature"></i>
-            Deferir TREs
-          </a>
+            <a href="{{ url_for('admin_tres_list') }}" class="card">
+              <i class="fas fa-file-signature"></i>
+              Deferir TREs
+            </a>
 
-          <a href="{{ url_for('aprovar_usuarios') }}" class="card">
-            <i class="fas fa-user-check"></i>
-            Aprovar Usuários
-          </a>
+            <a href="{{ url_for('aprovar_usuarios') }}" class="card">
+              <i class="fas fa-user-check"></i>
+              Aprovar Usuários
+            </a>
 
-          <a href="{{ url_for('admin_agendamentos') }}" class="card">
-            <i class="fas fa-calendar-days"></i>
-            Gerenciar Agendamentos
-          </a>
+            <a href="{{ url_for('admin_agendamentos') }}" class="card">
+              <i class="fas fa-calendar-days"></i>
+              Gerenciar Agendamentos
+            </a>
 
-          <a href="{{ url_for('user_info_all') }}" class="card">
-            <i class="fas fa-folder-open"></i>
-            Prontuarios
-          </a>
+            <a href="{{ url_for('user_info_all') }}" class="card">
+              <i class="fas fa-folder-open"></i>
+              Prontuários
+            </a>
 
-          <a href="{{ url_for('relatorio_ponto') }}" class="card">
-            <i class="fas fa-file-lines"></i>
-            Relatório de Ponto
-          </a>
+            <a href="{{ url_for('relatorio_ponto') }}" class="card">
+              <i class="fas fa-file-lines"></i>
+              Relatório de Ponto
+            </a>
 
-          <a href="{{ url_for('relatorio_horas_extras') }}" class="card">
-            <i class="fas fa-clock-rotate-left"></i>
-            Relatório de Horas Extras
-          </a>
+            <a href="{{ url_for('relatorio_horas_extras') }}" class="card">
+              <i class="fas fa-clock-rotate-left"></i>
+              Relatório de Horas Extras
+            </a>
 
-          <a href="{{ url_for('logout') }}" class="card logout-btn" title="Sair do sistema">
-            <i class="fas fa-right-from-bracket"></i>
-            Sair
-          </a>
+            <a href="{{ url_for('logout') }}" class="card logout-btn" title="Sair do sistema">
+              <i class="fas fa-right-from-bracket"></i>
+              Sair
+            </a>
 
+          </div>
         </div>
       </div>
-    </div>
-    {% endif %}
+      {% endif %}
 
+    </div>
   </main>
 
   <footer>
@@ -719,17 +819,18 @@
   </footer>
 
   <script>
-    // Script para alternar abas
+    // Alternância das abas
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
-        // Remove active de todas as abas e containers
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.cards-container').forEach(c => c.classList.remove('active'));
 
-        // Ativa a aba clicada
         tab.classList.add('active');
         const target = tab.getAttribute('data-tab');
-        document.getElementById(target).classList.add('active');
+        const targetEl = document.getElementById(target);
+        if (targetEl) {
+          targetEl.classList.add('active');
+        }
       });
     });
   </script>

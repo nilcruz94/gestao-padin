@@ -1,470 +1,704 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Agendar Folga</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-    <!-- FontAwesome para ícones -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
-    <script>
-        // Função que exibe ou esconde os campos de Data de Referência, Horas e Minutos dependendo da seleção do motivo
-        function toggleDataReferencia() {
-            var motivo = document.getElementById("motivo").value;
-            var dataReferenciaGroup = document.getElementById("data_banco_horas");
-            var dataReferenciaInput = document.getElementById("data_referencia");
-            var horasGroup = document.getElementById("horas_group");
-            var minutosGroup = document.getElementById("minutos_group");
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agendar Folga</title>
 
-            if (motivo === "BH") {
-                dataReferenciaGroup.style.display = "block"; // Exibe o campo de Data de Referência
-                dataReferenciaInput.setAttribute("required", "true"); // Torna a data de referência obrigatória
-                horasGroup.style.display = "flex"; // Exibe o campo de Horas com layout flex
-                minutosGroup.style.display = "flex"; // Exibe o campo de Minutos com layout flex
-            } else {
-                dataReferenciaGroup.style.display = "none"; // Esconde o campo de Data de Referência
-                dataReferenciaInput.removeAttribute("required"); // Remove a obrigatoriedade
-                horasGroup.style.display = "none"; // Esconde o campo de Horas
-                minutosGroup.style.display = "none"; // Esconde o campo de Minutos
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
 
-                // Define os campos de horas e minutos como "0" quando o motivo não for Banco de Horas
-                document.getElementById("quantidade_horas").value = "0";
-                document.getElementById("quantidade_minutos").value = "0";
-            }
+  <script>
+    // Exibe / esconde Data de Referência + Horas/Minutos quando motivo = BH
+    function toggleDataReferencia() {
+      var motivo = document.getElementById("motivo").value;
+      var dataReferenciaGroup = document.getElementById("data_banco_horas");
+      var dataReferenciaInput = document.getElementById("data_referencia");
+      var horasGroup = document.getElementById("horas_group");
+      var minutosGroup = document.getElementById("minutos_group");
+      var horasInput = document.getElementById("quantidade_horas");
+      var minutosInput = document.getElementById("quantidade_minutos");
+
+      if (motivo === "BH") {
+        if (dataReferenciaGroup) dataReferenciaGroup.style.display = "block";
+        if (dataReferenciaInput) dataReferenciaInput.setAttribute("required", "true");
+
+        if (horasGroup) horasGroup.style.display = "flex";
+        if (minutosGroup) minutosGroup.style.display = "flex";
+
+        if (horasInput) horasInput.setAttribute("required", "true");
+        if (minutosInput) minutosInput.setAttribute("required", "true");
+      } else {
+        if (dataReferenciaGroup) dataReferenciaGroup.style.display = "none";
+        if (dataReferenciaInput) {
+          dataReferenciaInput.removeAttribute("required");
+          dataReferenciaInput.value = "";
         }
 
-        // Função para validar o formulário antes de enviar
-        function validateForm(event) {
-            var motivo = document.getElementById("motivo").value;
-            var dataReferenciaInput = document.getElementById("data_referencia");
-            var horasInput = document.getElementById("quantidade_horas");
-            var minutosInput = document.getElementById("quantidade_minutos");
+        if (horasGroup) horasGroup.style.display = "none";
+        if (minutosGroup) minutosGroup.style.display = "none";
 
-            // Verifica se o motivo é Banco de Horas e se a data de referência não foi preenchida
-            if (motivo === "BH" && dataReferenciaInput.style.display !== "none" && !dataReferenciaInput.value) {
-                alert("A data de referência é obrigatória quando o motivo for Banco de Horas.");
-                event.preventDefault(); // Impede o envio do formulário
-                return false;
-            }
-
-            // Verifica se o motivo é Banco de Horas e se as horas ou minutos estão vazios
-            if (motivo === "BH") {
-                if (isNaN(horasInput.value) || isNaN(minutosInput.value) || horasInput.value.trim() === "" || minutosInput.value.trim() === "") {
-                    alert("As horas e os minutos são obrigatórios e devem ser números válidos quando o motivo for Banco de Horas.");
-                    event.preventDefault(); // Impede o envio do formulário
-                    return false;
-                }
-            }
-
-            return true;
+        if (horasInput) {
+          horasInput.value = "0";
+          horasInput.removeAttribute("required");
         }
-  
-        // Chama a função de toggle ao carregar a página ou ao mudar a seleção
-        window.onload = toggleDataReferencia;
-    </script>
-    <style>
-        /* Estilo para os campos de horas e minutos */
-        .horas-minutos-group {
-            display: flex;
-            gap: 10px; /* Espaçamento entre os campos */
-            margin-top: 10px;
+        if (minutosInput) {
+          minutosInput.value = "0";
+          minutosInput.removeAttribute("required");
         }
+      }
+    }
 
-        .horas-minutos-group .input-group {
-            display: flex;
-            align-items: center; /* Alinha os ícones e inputs */
+    // Mostra / esconde campo "Nome do Substituto"
+    function toggleSubstituto() {
+      var select = document.getElementById("havera_substituicao");
+      var group = document.getElementById("substituto_group");
+      if (!select || !group) return;
+
+      if (select.value === "Sim") {
+        group.style.display = "block";
+      } else {
+        group.style.display = "none";
+      }
+    }
+
+    // Validação básica antes de enviar
+    function validateForm(event) {
+      var motivo = document.getElementById("motivo").value;
+      var dataReferenciaInput = document.getElementById("data_referencia");
+      var horasInput = document.getElementById("quantidade_horas");
+      var minutosInput = document.getElementById("quantidade_minutos");
+      var tipoFolgaField = document.getElementById("tipo_folga");
+
+      // Preenche tipo_folga com o mesmo valor do motivo (caso backend use)
+      if (tipoFolgaField) {
+        tipoFolgaField.value = motivo;
+      }
+
+      if (motivo === "BH" && dataReferenciaInput && !dataReferenciaInput.value) {
+        alert("A data de referência é obrigatória quando o motivo for Banco de Horas.");
+        if (event) event.preventDefault();
+        return false;
+      }
+
+      if (motivo === "BH") {
+        if (
+          !horasInput ||
+          !minutosInput ||
+          isNaN(horasInput.value) ||
+          isNaN(minutosInput.value) ||
+          horasInput.value.trim() === "" ||
+          minutosInput.value.trim() === ""
+        ) {
+          alert("As horas e os minutos são obrigatórios e devem ser números válidos quando o motivo for Banco de Horas.");
+          if (event) event.preventDefault();
+          return false;
         }
+      }
+      return true;
+    }
 
-        /* Ícone à esquerda do label */
-        .horas-minutos-group .fas {
-            margin-right: 8px;
-            font-size: 18px;
-            color: #007bff; /* Cor azul (como os outros ícones da página) */
-        }
+    // Ajusta campos iniciais ao carregar
+    window.addEventListener("load", function () {
+      toggleDataReferencia();
+      toggleSubstituto();
+    });
+  </script>
 
-        /* Estilo para o label das horas e minutos com ícones */
-        .horas-minutos-group label {
-            display: flex;
-            align-items: center;
-            font-weight: normal; /* Retira o negrito do label */
-        }
+  <style>
+    :root {
+      --bg:#f3f4f6;
+      --ink:#0f172a;
+      --muted:#6b7280;
+      --brand:#0d6efd;
+      --border-soft:#e5e7eb;
+      --card-shadow:0 14px 34px rgba(15,23,42,.1), 0 2px 4px rgba(15,23,42,.06);
+      --radius:18px;
+    }
 
-        .horas-minutos-group input {
-            width: 120px; /* Ajuste da largura dos inputs */
-            padding-left: 30px; /* Espaço para o ícone */
-        }
+    * , *::before, *::after {
+      box-sizing: border-box;
+    }
 
-        /* Responsividade: ajuste para telas pequenas */
-        @media screen and (max-width: 768px) {
-            body {
-                font-size: 16px;
-            }
+    /* ===== BASE / LAYOUT GERAL ===== */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--bg);
+      color: var(--ink);
+    }
 
-            .titulo-container {
-                text-align: center;
-                padding: 20px;
-            }
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      overflow-y: auto;
+    }
 
-            .input-group input,
-            .input-group select {
-                width: 100%;
-            }
+    main {
+      flex: 1 0 auto;
+      padding: 24px 12px 70px;
+      box-sizing: border-box;
+    }
 
-            .form-group {
-                margin-bottom: 15px;
-            }
+    .shell {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+    }
 
-            .horas-minutos-group {
-                flex-direction: column;
-            }
+    @media (min-width:769px){
+      main{
+        padding:30px 24px 90px;
+      }
+    }
 
-            .horas-minutos-group .input-group {
-                width: 100%;
-                margin-bottom: 10px;
-            }
+    /* ===== HEADER (padrão) ===== */
+    .header-desktop, .header-mobile {
+      display: none;
+      flex-shrink: 0;
+    }
 
-            .submit-btn {
-                width: 100%;
-            }
+    /* Desktop */
+    @media (min-width: 769px) {
+      .header-desktop {
+        display: flex;
+        background-color: #007bff;
+        padding: 15px 30px;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+        min-height: 110px;
+        position: relative;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        color: white;
+      }
 
-            .submit-btn:hover {
-                background-color: #0fb300;
-            }
+      .left-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
 
-            footer {
-                position: relative;
-                text-align: center;
-                padding: 10px;
-                font-size: 14px;
-            }
-        }
+      .logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
 
-        /* Responsividade para telas muito pequenas */
-        @media screen and (max-width: 480px) {
-            .titulo-site {
-                font-size: 24px;
-            }
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+        color: white;
+      }
 
-            .submit-btn {
-                padding: 15px;
-                font-size: 16px;
-            }
-        }
+      .escola-nome {
+        font-weight: 700;
+        font-size: 1.6rem;
+        margin: 0;
+        line-height: 1.1;
+      }
 
-        /* Titulo Container */
-        .titulo-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            width: 100%;
-            margin: 20px 0;
-        }
+      .escola-subtitulo {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-top: 4px;
+      }
 
-        /* Estilo para o título no topo do site */
-        .titulo-site {
-            font-family: 'Montserrat', sans-serif; /* Fonte moderna */
-            font-size: 42px; /* Ajuste o tamanho conforme necessário */
-            font-weight: 600; /* Peso de fonte mais leve */
-            color: #007bff; /* Cor azul profissional */
-            text-transform: uppercase; /* Maiúsculas para o título */
-            letter-spacing: 2px; /* Espaçamento entre as letras */
-            margin: 0s;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #007bff; /* Linha embaixo para dar ênfase */
-            text-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Leve sombra para dar profundidade */
-            text-align: center;
-            align-items: center;
-            justify-content: center;
-        }
+      .header-center-text-container {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: 800;
+        font-size: 1.9rem;
+        color: white;
+        letter-spacing: 5px;
+        user-select: none;
+        white-space: nowrap;
+        z-index: 1;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      }
 
-        .danger {
-            color: red;
-            background-color: #f8d7da;
-            padding: 10px;
-            border: 1px solid red;
-            border-radius: 5px;
-        }
+      .header-center-text {
+        font-family: 'Montserrat', sans-serif;
+      }
 
-        .error-message {
-            color: red;
-            font-size: 12px;
-            display: none; /* Oculta por padrão */
-        }
+      .btn-home {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+      }
 
-        /* Seção de status */
-        .info-section {
-            background-color: #f8f9fa;
-            padding: 20px;
-            margin: 30px auto;
-            border-radius: 8px;
-            max-width: 900px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .info-section h2 {
-            margin-top: 0;
-            color: #007bff;
-            font-size: 20px;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 5px;
-        }
-        .info-section p {
-            font-size: 16px;
-            line-height: 1.5;
-            margin-bottom: 10px;
-        }
-        .info-section ul {
-            list-style: disc;
-            margin-left: 20px;
-            margin-bottom: 10px;
-        }
-        .info-section ul li {
-            margin-bottom: 5px;
-        }
+      .btn-home:hover {
+        background-color: #0d8a00;
+      }
+    }
 
-        /* Link para voltar à página inicial (somente texto e seta, sem background) */
-        .voltar-link {
-            display: inline-block;
-            text-align: center;
-            color: #007bff;
-            font-size: 16px;
-            margin-top: 20px;
-            text-decoration: none; /* Remove a decoração do link */
-        }
+    /* Mobile */
+    @media (max-width: 768px) {
+      .header-mobile {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        background-color: #007bff;
+      }
 
-        .voltar-link i {
-            margin-right: 5px; /* Adiciona um pequeno espaço entre o texto e a seta */
-        }
+      .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        padding: 10px 15px;
+        background-color: #007bff;
+        text-align: center;
+      }
 
-        /* Cabeçalhos */
-        .header-desktop, .header-mobile {
-          display: none;
-          flex-shrink: 0;
-        }
+      .logo {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
 
-        /* === Desktop Header === */
-        @media (min-width: 769px) {
-          .header-desktop {
-            display: flex;
-            background-color: #007bff;
-            padding: 15px 30px;
-            width: 100%;
-            align-items: center;
-            justify-content: space-between;
-            box-sizing: border-box;
-            min-height: 110px;
-            position: relative;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-            color: white;
-            flex-shrink: 0;
-          }
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: white;
+        text-align: center;
+      }
 
-          .left-section {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-          }
+      .escola-nome {
+        font-weight: 700;
+        font-size: 1.3rem;
+        margin: 0;
+        line-height: 1.1;
+      }
 
-          .logo {
-            width: 80px;
-            height: 80px;
-            object-fit: contain;
-            border-radius: 10px;
-            background-color: white;
-            padding: 6px;
-          }
+      .escola-subtitulo {
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 2px;
+      }
 
-          .text-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            text-align: left;
-            color: white;
-          }
+      .header-bottom {
+        background-color: #0056b3;
+        text-align: center;
+        padding: 12px 10px;
+        font-weight: 800;
+        font-size: 1rem;
+        letter-spacing: 4px;
+        user-select: none;
+        color: white;
+        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        white-space: nowrap;
+      }
 
-          .escola-nome {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            font-size: 1.6rem;
-            margin: 0;
-            line-height: 1.1;
-          }
+      .btn-home-mobile {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+      }
 
-          .escola-subtitulo {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin-top: 4px;
-          }
+      .btn-home-mobile:hover {
+        background-color: #0d8a00;
+      }
+    }
 
-          .header-center-text-container {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 800;
-            font-size: 1.9rem;
-            color: white;
-            letter-spacing: 5px;
-            user-select: none;
-            white-space: nowrap;
-            z-index: 1;
-            text-shadow: 0 2px 5px rgba(0,0,0,0.3);
-          }
+    /* ===== FLASH ERRO ===== */
+    .danger {
+      color: #721c24;
+      background-color: #f8d7da;
+      padding: 10px 14px;
+      border: 1px solid #f5c6cb;
+      border-radius: 10px;
+      margin: 0 auto 14px;
+      max-width: 900px;
+      box-sizing: border-box;
+      font-size: 0.9rem;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      box-shadow:0 3px 10px rgba(185,28,28,.12);
+    }
 
-          .btn-home {
-            background-color: #0fb300;
-            color: white;
-            padding: 6px 14px;
-            border-radius: 6px;
-            font-weight: 700;
-            font-size: 1.5rem;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-            transition: background-color 0.3s ease;
-            position: absolute;
-            right: 30px;
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 2;
-          }
+    /* ===== CARD HEADER DA PÁGINA ===== */
+    .page-header-card{
+      background:#ffffff;
+      border-radius:var(--radius);
+      padding:16px 18px;
+      margin:0 auto 16px;
+      display:flex;
+      align-items:center;
+      gap:16px;
+      box-shadow:var(--card-shadow);
+      border-left:5px solid var(--brand);
+      max-width:900px;
+    }
 
-          .btn-home:hover {
-            background-color: #0d8a00;
-          }
-        }
+    .page-header-icon{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:42px;
+      height:42px;
+      border-radius:999px;
+      background:radial-gradient(circle at 30% 30%,#ffffff 0%,#e0edff 60%,#c7d9ff 100%);
+      box-shadow:0 4px 12px rgba(37,99,235,.45);
+      color:#2563eb;
+      flex-shrink:0;
+    }
 
-        /* === Mobile Header === */
-        @media (max-width: 768px) {
-          .header-mobile {
-            display: block;
-            width: 100%;
-            box-sizing: border-box;
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-            background-color: #007bff;
-            flex-shrink: 0;
-          }
+    .page-header-icon i{ font-size:22px; }
 
-          .header-top {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            padding: 10px 15px;
-            background-color: #007bff;
-            text-align: center;
-          }
+    .page-header-content{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
 
-          .logo {
-            width: 48px;
-            height: 48px;
-            object-fit: contain;
-            border-radius: 10px;
-            background-color: white;
-            padding: 6px;
-          }
+    .page-header-title{
+      font-size:1.15rem;
+      font-weight:800;
+      margin:0;
+      color:var(--ink);
+    }
 
-          .text-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            color: white;
-            text-align: center;
-          }
+    .page-header-subtitle{
+      font-size:0.9rem;
+      margin:0;
+      color:var(--muted);
+    }
 
-          .escola-nome {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            font-size: 1.3rem;
-            margin: 0;
-            line-height: 1.1;
-          }
+    @media (max-width:600px){
+      .page-header-card{
+        padding:12px 14px;
+      }
+      .page-header-title{
+        font-size:1.05rem;
+      }
+      .page-header-subtitle{
+        font-size:0.82rem;
+      }
+    }
 
-          .escola-subtitulo {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 600;
-            font-size: 1rem;
-            margin-top: 2px;
-          }
+    /* ===== CARD PRINCIPAL DO FORMULÁRIO ===== */
+    .card-agendar {
+      width: 100%;
+      background: #ffffff;
+      border-radius: var(--radius);
+      box-shadow: var(--card-shadow);
+      padding: 18px 18px 20px;
+      border: 1px solid rgba(148,163,184,0.25);
+      box-sizing: border-box;
+      margin: 0 auto 18px;
+    }
 
-          .header-bottom {
-            background-color: #0056b3;
-            text-align: center;
-            padding: 12px 10px;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 800;
-            font-size: 1.0rem;
-            letter-spacing: 4px;
-            user-select: none;
-            color: white;
-            box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+    .card-agendar-header {
+      margin-bottom: 14px;
+    }
 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            position: relative;
-          }
+    .card-agendar-header h1 {
+      margin: 0 0 4px;
+      font-size: 1.25rem;
+      color: #0f172a;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight:800;
+    }
 
-          .btn-home-mobile {
-            background-color: #0fb300;
-            color: white;
-            padding: 6px 10px;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 1rem;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-            transition: background-color 0.3s ease;
-          }
+    .card-agendar-header h1 i {
+      font-size: 1.4rem;
+      color:#2563eb;
+    }
 
-          .btn-home-mobile:hover {
-            background-color: #0d8a00;
-          }
+    .card-agendar-header p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #6b7280;
+    }
 
-          /* Espaçamento para o conteúdo evitar colar nas bordas */
-          .container {
-            margin-bottom: 70px;
-            padding-left: 15px !important;
-            padding-right: 15px !important;
-          }
-        }
+    /* ===== FORM / INPUTS ===== */
+    .form-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top:4px;
+    }
 
-        /* Rodapé */
-        footer {
-          background: linear-gradient(to right, #222, #444);
-          color: #ddd;
-          text-align: center;
-          padding: 15px 0;
-          font-size: 14px;
-          border-top: 2px solid #555;
-          box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
-          flex-shrink: 0;
-          width: 100%;
-        }
+    .input-group,
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
 
-        /* Footer fixo no rodapé mobile */
-        @media (max-width: 768px) {
-          footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-          }
-        }
-    </style>
+    .input-group label,
+    .form-group label {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #374151;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .input-group label i,
+    .form-group label i {
+      color: #007bff;
+    }
+
+    .input-group input,
+    .input-group select,
+    .form-group input {
+      padding: 9px 10px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+      background-color: #ffffff;
+    }
+
+    .input-group input:focus,
+    .input-group select:focus,
+    .form-group input:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 2px rgba(13,110,253,0.15);
+    }
+
+    /* Inputs somente leitura (nome / registro) visualmente bloqueados */
+    .input-group input[readonly] {
+      background-color: #e5e7eb;
+      color: #4b5563;
+      cursor: not-allowed;
+      border-color: #d1d5db;
+      box-shadow: none;
+    }
+
+    .input-group input[readonly]:focus {
+      border-color: #d1d5db;
+      box-shadow: none;
+    }
+
+    /* Horas / minutos grupo */
+    .horas-minutos-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .horas-minutos-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .horas-minutos-group .input-group {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .horas-minutos-group input {
+      max-width: 160px;
+    }
+
+    @media (max-width: 768px) {
+      .horas-minutos-group {
+        flex-direction: column;
+      }
+
+      .horas-minutos-group input {
+        max-width: 100%;
+      }
+    }
+
+    /* Wrapper do botão para centralizar e controlar o espaço */
+    .submit-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+
+    .submit-btn {
+      background: linear-gradient(135deg,#0d6efd,#0b5ed7);
+      border: none;
+      color: #fff;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 9px 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(13,110,253,0.35);
+      transition: background-color 0.2s ease, box-shadow 0.2s ease;
+      font-size: 0.95rem;
+      white-space: nowrap;
+    }
+
+    .submit-btn i {
+      font-size: 1rem;
+    }
+
+    .submit-btn:hover {
+      background: #0fb300;
+      box-shadow: 0 8px 18px rgba(15,179,0,0.45);
+    }
+
+    .submit-btn:active {
+      box-shadow: 0 4px 10px rgba(15,179,0,0.35);
+    }
+
+    @media (max-width:768px) {
+      .submit-row {
+        justify-content: stretch;
+      }
+      .submit-btn {
+        width: 100%;
+      }
+    }
+
+    /* ===== SEÇÃO INFORMATIVA ===== */
+    .info-section {
+      background-color: #ffffff;
+      padding: 16px 16px 18px;
+      margin: 0 auto 15px;
+      border-radius: var(--radius);
+      max-width: 900px;
+      box-shadow: var(--card-shadow);
+      border: 1px solid rgba(148,163,184,0.25);
+      box-sizing: border-box;
+      font-size: 0.93rem;
+    }
+
+    .info-section h2 {
+      margin: 0 0 6px;
+      color: #0f172a;
+      font-size: 1.02rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight:800;
+    }
+
+    .info-section h2 i {
+      color: #2563eb;
+    }
+
+    .info-section p {
+      margin: 6px 0;
+      line-height: 1.5;
+      color: #374151;
+    }
+
+    .info-section ul {
+      margin: 6px 0 4px 20px;
+      padding: 0;
+    }
+
+    .info-section ul li {
+      margin-bottom: 4px;
+    }
+
+    .info-section a {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .info-section a:hover {
+      text-decoration: underline;
+    }
+
+    /* ===== LINK VOLTAR ===== */
+    .voltar-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #2563eb;
+      font-size: 0.96rem;
+      text-decoration: none;
+      margin: 0 auto;
+      padding-top: 4px;
+      font-weight:600;
+    }
+
+    .voltar-link:hover {
+      text-decoration: underline;
+    }
+
+    .voltar-link i {
+      font-size: 0.9rem;
+    }
+
+    .voltar-wrapper {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: left;
+    }
+
+    /* ===== FOOTER ===== */
+    footer {
+      background: linear-gradient(to right, #222, #444);
+      color: #ddd;
+      text-align: center;
+      padding: 15px 0;
+      font-size: 14px;
+      border-top: 2px solid #555;
+      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      flex-shrink: 0;
+    }
+  </style>
 </head>
 
 <body class="page-agendar">
@@ -496,144 +730,163 @@
         <div class="escola-subtitulo">José Padin Mouta</div>
       </div>
     </div>
-    <div class="header-bottom" style="
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        box-sizing: border-box;
-        white-space: nowrap;
-      ">
+    <div class="header-bottom">
       <span>PORTAL DO SERVIDOR</span>
       <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
         <i class="fas fa-home"></i>
       </a>
     </div>
   </header>
-  
-  {% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-      {% for category, message in messages %}
-          {% if category == "danger" %}
+
+  <!-- Conteúdo principal -->
+  <main>
+    <div class="shell">
+
+      <!-- Flash de erro (danger) -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            {% if category == "danger" %}
               <div class="danger">
-                  {{ message }}
+                <i class="fas fa-exclamation-circle"></i>
+                {{ message }}
               </div>
-          {% endif %}
-      {% endfor %}
-  {% endif %}
-  {% endwith %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
 
-  <div class="container">
-      <h1><i class="fas fa-calendar-day"></i> Realizar Agendamento </h1>
+      <!-- Header card da página -->
+      <div class="page-header-card">
+        <div class="page-header-icon">
+          <i class="fas fa-calendar-day"></i>
+        </div>
+        <div class="page-header-content">
+          <p class="page-header-title">Agendar Folga</p>
+          <p class="page-header-subtitle">
+            Solicite sua folga indicando o motivo, data e demais informações necessárias.
+          </p>
+        </div>
+      </div>
 
-      <!-- Formulário de justificativa -->
-      <form method="POST" onsubmit="return validateForm(event)">
-          <!-- Exibição do nome do funcionário (somente leitura) -->
-          <div class="input-group">
+      <!-- CARD FORMULÁRIO -->
+      <div class="card-agendar">
+        <div class="card-agendar-header">
+          <h1><i class="fas fa-edit"></i> Dados do Agendamento</h1>
+          <p>Revise os dados antes de enviar. Campos marcados como obrigatórios devem ser preenchidos.</p>
+        </div>
+
+        <form method="POST" onsubmit="return validateForm(event)">
+          <div class="form-grid">
+
+            <!-- Nome -->
+            <div class="input-group">
               <label for="nome"><i class="fas fa-user"></i> Nome do Funcionário</label>
               <input type="text" id="nome" name="nome" value="{{ current_user.nome }}" readonly />
-          </div>
+            </div>
 
-          <!-- Exibição do registro funcional do funcionário (somente leitura) -->
-          <div class="input-group">
+            <!-- Registro funcional -->
+            <div class="input-group">
               <label for="registro"><i class="fas fa-id-card"></i> Registro Funcional</label>
               <input type="text" id="registro" name="registro" value="{{ current_user.registro }}" readonly />
-          </div>
+            </div>
 
-          <!-- Campo de data da folga -->
-          <div class="input-group">
+            <!-- Data da folga -->
+            <div class="input-group">
               <label for="data"><i class="fas fa-calendar-alt"></i> Data da Folga</label>
               <input type="date" id="data" name="data" required />
-          </div>
+            </div>
 
-          <!-- Campo para selecionar o motivo da folga -->
-          <div class="input-group">
+            <!-- Motivo -->
+            <div class="input-group">
               <label for="motivo"><i class="fas fa-list-alt"></i> Motivo da Ausência</label>
               <select id="motivo" name="motivo" required onchange="toggleDataReferencia()">
-                  <option value="AB">Abonada (AB)</option>
-                  <option value="BH">Banco de Horas (BH)</option>
-                  <option value="DS">Doação de Sangue (DS)</option>
-                  <option value="TRE">TRE (TRE)</option>
-                  <option value="FS">Falta Simples (FS)</option>
+                <option value="AB">Abonada (AB)</option>
+                <option value="BH">Banco de Horas (BH)</option>
+                <option value="DS">Doação de Sangue (DS)</option>
+                <option value="TRE">TRE (TRE)</option>
+                <option value="FS">Falta Simples (FS)</option>
               </select>
-          </div>
+            </div>
 
-          <!-- Campo para selecionar se haverá substituição -->
-          <div class="input-group">
-              <label for="havera_substituicao"><i class="fas fa-user-check"></i> Haverá Substituição? (para professores):</label>
+            <!-- Haverá substituição -->
+            <div class="input-group">
+              <label for="havera_substituicao"><i class="fas fa-user-check"></i> Haverá Substituição? (para professores)</label>
               <select id="havera_substituicao" name="havera_substituicao" required onchange="toggleSubstituto()">
-                  <option value="Não">Não</option>
-                  <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+                <option value="Sim">Sim</option>
               </select>
-          </div>
+            </div>
 
-          <!-- Campo para nome do substituto (inicialmente oculto) -->
-          <div class="input-group" id="substituto_group" style="display: none;">
+            <!-- Nome do substituto -->
+            <div class="input-group" id="substituto_group" style="display: none;">
               <label for="nome_substituto"><i class="fas fa-user"></i> Nome do Substituto(a)</label>
               <input type="text" id="nome_substituto" name="nome_substituto" />
-          </div>
+            </div>
 
-          <!-- Campo de Data de Referência (aparece quando 'Banco de Horas' é selecionado) -->
-          <div class="form-group" id="data_banco_horas" style="display: none;">
-              <label for="data_referencia">Data de Referência (Dia que o banco de horas foi acumulado):</label>
+            <!-- Data de referência BH -->
+            <div class="form-group" id="data_banco_horas" style="display: none;">
+              <label for="data_referencia"><i class="fas fa-calendar-day"></i> Data de Referência (dia em que o banco foi acumulado)</label>
               <input type="date" id="data_referencia" name="data_referencia" />
-          </div>
+            </div>
 
-          <!-- Campo de Horas e Minutos (aparece quando 'Banco de Horas' é selecionado) -->
-          <div class="form-group horas-minutos-group" id="horas_group" style="display: none;">
-              <div class="input-group">
-                  <label for="quantidade_horas"><i class="fas fa-clock"></i> Horas a utilizar:</label>
-                  <input type="number" id="quantidade_horas" name="quantidade_horas" min="0" placeholder="Horas" value="0" required />
+            <!-- Horas / minutos BH -->
+            <div class="horas-minutos-wrapper">
+              <div class="horas-minutos-group" id="horas_group" style="display: none;">
+                <div class="input-group">
+                  <label for="quantidade_horas"><i class="fas fa-clock"></i> Horas a utilizar</label>
+                  <input type="number" id="quantidade_horas" name="quantidade_horas" min="0" placeholder="Horas" value="0" />
+                </div>
+
+                <div class="input-group" id="minutos_group" style="display: none;">
+                  <label for="quantidade_minutos"><i class="fas fa-clock"></i> Minutos a utilizar</label>
+                  <input type="number" id="quantidade_minutos" name="quantidade_minutos" min="0" max="59" placeholder="Minutos" value="0" />
+                </div>
               </div>
+            </div>
 
-              <div class="input-group">
-                  <label for="quantidade_minutos"><i class="fas fa-clock"></i> Minutos a utilizar:</label>
-                  <input
-                      type="number"
-                      id="quantidade_minutos"
-                      name="quantidade_minutos"
-                      min="0"
-                      max="59"
-                      placeholder="Minutos"
-                      value="0"
-                      required
-                  />
-              </div>
+            <!-- Tipo folga (hidden) -->
+            <input type="hidden" id="tipo_folga" name="tipo_folga" value="" />
+
+            <!-- Botão -->
+            <div class="submit-row">
+              <button type="submit" class="submit-btn">
+                <i class="fas fa-calendar-check"></i> Solicitar Agendamento
+              </button>
+            </div>
           </div>
+        </form>
+      </div>
 
-          <!-- Campo oculto para tipo_folga -->
-          <input type="hidden" id="tipo_folga" name="tipo_folga" value="" />
-
-          <!-- Botão para submeter o formulário -->
-          <button type="submit" class="submit-btn">
-              <i class="fas fa-calendar-check"></i> Solicitar Agendamento
-          </button>
-      </form>
-  </div>
-
-  <!-- Novo Container de Informações sobre o agendamento -->
-  <div class="info-section">
-      <h2><i class="fas fa-info-circle"></i> Informações sobre seu agendamento</h2>
-      <p>
-          Ao enviar sua solicitação, você receberá um <strong>protocolo de agendamento</strong> por e-mail. Caso não localize em sua caixa de entrada, verifique sua pasta de spam e, se necessário, marque nosso domínio como confiável para futuras mensagens.
-      </p>
-      <p>
-          Quando sua solicitação for <strong>deferida</strong> ou <strong>indeferida</strong>, você também será notificado automaticamente por e-mail.
-      </p>
-      <p>Você pode acompanhar o status da sua solicitação em:</p>
-      <ul>
+      <!-- SEÇÃO INFORMATIVA -->
+      <div class="info-section">
+        <h2><i class="fas fa-info-circle"></i> Acompanhamento do seu agendamento</h2>
+        <p>
+          Ao enviar sua solicitação, você receberá um <strong>protocolo de agendamento</strong> por e-mail.
+          Caso não localize na caixa de entrada, verifique também a pasta de spam e marque nosso domínio como confiável.
+        </p>
+        <p>
+          Quando sua solicitação for <strong>deferida</strong> ou <strong>indeferida</strong>, você também será notificado automaticamente.
+        </p>
+        <p>Você pode acompanhar o status das solicitações em:</p>
+        <ul>
           <li><a href="{{ url_for('minhas_justificativas') }}">Minhas Justificativas</a></li>
           <li><a href="{{ url_for('calendario') }}">Calendário</a></li>
-      </ul>
-  </div>
+        </ul>
+      </div>
 
-  <!-- Link para voltar à página inicial -->
-  <a href="{{ url_for('index') }}" class="voltar-link">
-      <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
-  </a>
+      <!-- Link Voltar -->
+      <div class="voltar-wrapper">
+        <a href="{{ url_for('index') }}" class="voltar-link">
+          <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
+        </a>
+      </div>
+
+    </div>
+  </main>
 
   <footer>
-      <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
   </footer>
 </body>
 </html>
