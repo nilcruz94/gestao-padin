@@ -7,7 +7,9 @@ Flask==3.1.0
 Flask-SQLAlchemy
 Flask-Migrate
 Flask-Login
+
 SQLAlchemy
+psycopg2-binary
 
 gunicorn==23.0.0
 itsdangerous==2.2.0
@@ -19,4 +21,4 @@ pandas
 openpyxl==3.1.5
 
 reportlab
-psycopg2-binary
+email-validator
