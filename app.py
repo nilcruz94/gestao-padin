@@ -2253,6 +2253,9 @@ def find_logo(filename: str):
 
 
 def format_banco_horas(minutos: int) -> str:
+    """
+    Converte o saldo em minutos para o formato ±Hh MMmin.
+    """
     minutos = minutos or 0
     sinal = "-" if minutos < 0 else ""
     m = abs(minutos)
@@ -2262,6 +2265,9 @@ def format_banco_horas(minutos: int) -> str:
 
 
 def get_tre_agendamentos(user_id: int):
+    """
+    Retorna lista de (data, situação) de TRE deferidas, ordenadas por data.
+    """
     Ag = Agendamento
     rows = (
         Ag.query
@@ -2285,6 +2291,9 @@ def get_tre_agendamentos(user_id: int):
 
 
 def get_bh_agendamentos(user_id: int):
+    """
+    Retorna lista de (data, situação) de BH deferidos, ordenados por data.
+    """
     Ag = Agendamento
     rows = (
         Ag.query
@@ -2308,16 +2317,28 @@ def get_bh_agendamentos(user_id: int):
 
 
 def draw_header_footer(c, width, height):
+    """
+    Cabeçalho e rodapé no estilo da ficha cadastral.
+    Retorna a coordenada Y inicial para o conteúdo da página.
+    """
     margin_x = 20 * mm
-    margin_right = width - margin_x
 
-    header_center_y = height - 20 * mm
-    azul = colors.HexColor("#1a73e8")
+    azul_header = colors.HexColor("#0b63ce")
+    azul_footer = colors.HexColor("#004a99")
 
-    logo_h = 16 * mm
+    # ----------------- CABEÇALHO -----------------
+    header_height = 30 * mm
+    header_bottom = height - header_height
+    header_center_y = header_bottom + header_height / 2
+
+    # Faixa azul superior
+    c.setFillColor(azul_header)
+    c.rect(0, header_bottom, width, header_height, stroke=0, fill=1)
+
+    # Logos
+    logo_h = 18 * mm
     escola_logo = find_logo("escola.png")
     municipio_logo = find_logo("municipio.png")
-
     logo_y = header_center_y - logo_h / 2
 
     if escola_logo:
@@ -2334,7 +2355,7 @@ def draw_header_footer(c, width, height):
     if municipio_logo:
         c.drawImage(
             municipio_logo,
-            margin_right - logo_h,
+            width - margin_x - logo_h,
             logo_y,
             width=logo_h,
             height=logo_h,
@@ -2342,90 +2363,95 @@ def draw_header_footer(c, width, height):
             mask="auto",
         )
 
-    titulo_y = header_center_y + 6 * mm
-    subtitulo_y = header_center_y
-    data_y = header_center_y + 12 * mm
-
-    c.setFont("Helvetica-Bold", 12)
-    c.setFillColor(azul)
+    # Título central
+    c.setFillColor(colors.white)
+    c.setFont("Helvetica-Bold", 16)
     c.drawCentredString(
         width / 2,
-        titulo_y,
-        "E.M. José Padin Mouta - Secretaria",
+        header_center_y + 5,
+        "FICHA CADASTRAL DO SERVIDOR",
     )
 
-    c.setFont("Helvetica", 10)
-    c.setFillColor(colors.black)
+    c.setFont("Helvetica", 9)
     c.drawCentredString(
         width / 2,
-        subtitulo_y,
-        "Relatório de Servidores - Portal do Servidor",
+        header_center_y - 8,
+        "Portal do Servidor — Gestão de Ponto",
     )
 
-    c.setFont("Helvetica", 8)
-    c.drawRightString(
-        margin_right,
-        data_y,
-        datetime.datetime.now().strftime("Emitido em %d/%m/%Y %H:%M"),
-    )
+    # ----------------- RODAPÉ -----------------
+    footer_height = 12 * mm
+    footer_bottom = 0
 
-    line_y = header_center_y - 10 * mm
-    c.setStrokeColor(azul)
-    c.setLineWidth(0.8)
-    c.line(margin_x, line_y, margin_right, line_y)
+    c.setFillColor(azul_footer)
+    c.rect(0, footer_bottom, width, footer_height, stroke=0, fill=1)
 
-    footer_base_y = 15 * mm
-    footer_line_y = footer_base_y + 4 * mm
-
-    c.setStrokeColor(colors.lightgrey)
-    c.setLineWidth(0.6)
-    c.line(margin_x, footer_line_y, margin_right, footer_line_y)
-
-    c.setFont("Helvetica", 8)
-    c.setFillColor(colors.grey)
+    c.setFillColor(colors.white)
+    c.setFont("Helvetica", 8.5)
     footer_text = (
         "E.M. José Padin Mouta • R. Bororós, 150 - Vila Tupi, "
         "Praia Grande - SP, 11703-390"
     )
-    c.drawCentredString(width / 2, footer_base_y + 1 * mm, footer_text)
+    c.drawCentredString(
+        width / 2,
+        footer_bottom + footer_height / 2 + 1 * mm,
+        footer_text,
+    )
 
     c.drawRightString(
-        margin_right,
-        footer_base_y - 2 * mm,
+        width - margin_x,
+        footer_bottom + footer_height / 2 + 1 * mm,
         f"Página {c.getPageNumber()}",
     )
 
-    content_start_y = line_y - 8 * mm
+    # Y inicial do conteúdo (um pouco abaixo do cabeçalho)
+    content_start_y = header_bottom - 12 * mm
     return content_start_y
 
 
 def draw_simple_table(c, x, y, col_widths, headers, rows):
+    """
+    Desenha uma tabela simples com cabeçalho destacado.
+    Retorna a nova coordenada Y após a tabela.
+    """
     row_height = 6 * mm
     total_width = sum(col_widths)
     total_rows = 1 + len(rows)
     table_height = total_rows * row_height
 
-    c.setStrokeColor(colors.lightgrey)
-    c.setLineWidth(0.5)
+    # Borda externa
+    c.setStrokeColor(colors.HexColor("#d1d5db"))
+    c.setLineWidth(0.6)
     c.rect(x, y - table_height, total_width, table_height, stroke=1, fill=0)
 
+    # Cabeçalho com fundo azul-claro
+    header_bg_color = colors.HexColor("#eff6ff")
+    c.setFillColor(header_bg_color)
+    c.rect(x, y - row_height, total_width, row_height, stroke=0, fill=1)
+
+    # Linhas horizontais
+    c.setStrokeColor(colors.HexColor("#e5e7eb"))
     for i in range(total_rows + 1):
         c.line(x, y - i * row_height, x + total_width, y - i * row_height)
 
+    # Linhas verticais
     running_x = x
     for w in col_widths[:-1]:
         running_x += w
         c.line(running_x, y, running_x, y - table_height)
 
+    # Cabeçalho
     c.setFont("Helvetica-Bold", 8)
-    c.setFillColor(colors.black)
+    c.setFillColor(colors.HexColor("#111827"))
     header_y = y - 0.75 * row_height
     col_x = x + 2 * mm
     for idx, h in enumerate(headers):
         c.drawString(col_x, header_y, h)
         col_x += col_widths[idx]
 
+    # Linhas
     c.setFont("Helvetica", 8)
+    c.setFillColor(colors.black)
     for idx, row in enumerate(rows):
         row_y = y - (idx + 1.75) * row_height
         col_x = x + 2 * mm
@@ -2437,21 +2463,35 @@ def draw_simple_table(c, x, y, col_widths, headers, rows):
 
 
 def draw_user_page(c: canvas.Canvas, user: User, width, height):
+    """
+    Desenha uma página do relatório para um único usuário
+    no estilo da ficha cadastral.
+    """
     margin_left = 20 * mm
     margin_right = width - 20 * mm
+    content_width = margin_right - margin_left
 
-    azul = colors.HexColor("#1a73e8")
+    azul = colors.HexColor("#0b63ce")
     roxo = colors.HexColor("#7b3fe0")
+    verde = colors.HexColor("#16a34a")
+    vermelho = colors.HexColor("#dc2626")
 
+    # Base Y depois do cabeçalho
     y = draw_header_footer(c, width, height)
 
+    # ==============================
+    # TÍTULO DA SEÇÃO: DADOS
+    # ==============================
     c.setFont("Helvetica-Bold", 11)
-    c.setFillColor(colors.black)
-    c.drawString(margin_left, y, f"Servidor: {user.nome or '—'}")
-    y -= 6 * mm
+    c.setFillColor(azul)
+    c.drawString(margin_left, y, "DADOS DO SERVIDOR")
+    y -= 5 * mm
 
-    c.setFont("Helvetica", 9)
+    # ==============================
+    # CARD 1 - DADOS DO SERVIDOR
+    # ==============================
     campos = [
+        ("Servidor", user.nome or "—"),
         ("Registro funcional", user.registro or "—"),
         ("CPF", user.cpf or "—"),
         ("Cargo", user.cargo or "—"),
@@ -2474,33 +2514,121 @@ def draw_user_page(c: canvas.Canvas, user: User, width, height):
         ("Graduação", user.graduacao or "—"),
     ]
 
-    for label, valor in campos:
-        c.drawString(margin_left, y, f"{label}: {valor}")
-        y -= 4.5 * mm
+    # Quebra em pares para duas colunas
+    rows = []
+    for i in range(0, len(campos), 2):
+        left = campos[i]
+        right = campos[i + 1] if i + 1 < len(campos) else None
+        rows.append((left, right))
 
-    y -= 3 * mm
-    c.setStrokeColor(azul)
-    c.setLineWidth(0.6)
-    c.line(margin_left, y, margin_right, y)
-    y -= 6 * mm
+    padding_top = 6 * mm
+    padding_bottom = 6 * mm
+    line_height = 4.8 * mm
+    header_space = 0  # já escrevemos o título fora do card
+    n_rows = len(rows)
 
+    card_height = padding_top + header_space + n_rows * line_height + padding_bottom
+    card_top_y = y
+    card_bottom_y = card_top_y - card_height
+
+    # Fundo do card
+    c.setFillColor(colors.HexColor("#f8fafc"))
+    c.setStrokeColor(colors.HexColor("#cbd5e1"))
+    c.setLineWidth(0.8)
+    c.roundRect(
+        margin_left,
+        card_bottom_y,
+        content_width,
+        card_height,
+        4 * mm,
+        stroke=1,
+        fill=1,
+    )
+
+    # Linha vertical divisória entre as colunas
+    mid_x = margin_left + content_width / 2
+    c.setStrokeColor(colors.HexColor("#e5e7eb"))
+    c.setLineWidth(0.5)
+    c.line(mid_x, card_bottom_y + 4 * mm, mid_x, card_top_y - 4 * mm)
+
+    # Conteúdo em duas colunas
+    label_width = 32 * mm
+    col_padding_x = 5 * mm
+
+    left_label_x = margin_left + col_padding_x
+    left_value_x = left_label_x + label_width
+
+    right_label_x = mid_x + col_padding_x
+    right_value_x = right_label_x + label_width
+
+    c.setFont("Helvetica", 8.5)
+    current_y = card_top_y - padding_top
+
+    for idx, (left, right) in enumerate(rows):
+        # linha divisória horizontal (entre linhas, exceto na primeira)
+        if idx > 0:
+            line_y = current_y + line_height * 0.4
+            c.setStrokeColor(colors.HexColor("#e5e7eb"))
+            c.setLineWidth(0.4)
+            c.line(
+                margin_left + 3 * mm,
+                line_y,
+                margin_right - 3 * mm,
+                line_y,
+            )
+
+        # Campo da esquerda
+        label, valor = left
+        c.setFillColor(colors.HexColor("#4b5563"))
+        c.drawString(left_label_x, current_y, f"{label}:")
+        c.setFillColor(colors.HexColor("#111827"))
+        c.drawString(left_value_x, current_y, str(valor))
+
+        # Campo da direita (se existir)
+        if right:
+            label_r, valor_r = right
+            c.setFillColor(colors.HexColor("#4b5563"))
+            c.drawString(right_label_x, current_y, f"{label_r}:")
+            c.setFillColor(colors.HexColor("#111827"))
+            c.drawString(right_value_x, current_y, str(valor_r))
+
+        current_y -= line_height
+
+    # Próxima seção
+    y = card_bottom_y - 10 * mm
+
+    # ==============================
+    # SEÇÃO TRE
+    # ==============================
     total_tre = user.tre_total or 0
     usadas_tre = user.tre_usufruidas or 0
     saldo_tre = max(total_tre - usadas_tre, 0)
 
-    c.setFont("Helvetica-Bold", 10)
+    c.setFont("Helvetica-Bold", 11)
     c.setFillColor(azul)
-    c.drawString(margin_left, y, "TRE")
+    c.drawString(margin_left, y, "FOLGAS TRE (TRIBUNAL REGIONAL ELEITORAL)")
     y -= 5 * mm
 
-    c.setFont("Helvetica", 9)
-    c.setFillColor(colors.black)
-    c.drawString(
+    # Faixa-resumo TRE
+    resumo_altura = 8 * mm
+    c.setFillColor(colors.HexColor("#e0edff"))
+    c.setStrokeColor(colors.HexColor("#c7d2fe"))
+    c.roundRect(
         margin_left,
-        y,
-        f"Total: {total_tre} dias | A usufruir: {saldo_tre} dias | Usadas: {usadas_tre} dias",
+        y - resumo_altura + 1 * mm,
+        content_width,
+        resumo_altura,
+        3 * mm,
+        stroke=1,
+        fill=1,
     )
-    y -= 7 * mm
+    c.setFillColor(colors.HexColor("#1f2937"))
+    c.setFont("Helvetica-Bold", 9)
+    resumo_tre = (
+        f"Total: {total_tre} dia(s)  •  A usufruir: {saldo_tre} dia(s)  •  Usadas: {usadas_tre} dia(s)"
+    )
+    c.drawString(margin_left + 4 * mm, y - 2 * mm, resumo_tre)
+    y -= resumo_altura + 5 * mm
 
     tre_rows = get_tre_agendamentos(user.id)
     if tre_rows:
@@ -2508,49 +2636,99 @@ def draw_user_page(c: canvas.Canvas, user: User, width, height):
             c,
             margin_left,
             y,
-            [35 * mm, (margin_right - margin_left) - 35 * mm],
+            [35 * mm, content_width - 35 * mm],
             ["Data", "Situação"],
             tre_rows,
         )
-        y -= 6 * mm
+        y -= 8 * mm
     else:
         c.setFont("Helvetica-Oblique", 8)
+        c.setFillColor(colors.HexColor("#6b7280"))
         c.drawString(
-            margin_left, y, "Nenhum agendamento TRE deferido cadastrado."
+            margin_left,
+            y,
+            "Nenhum agendamento TRE deferido cadastrado.",
         )
-        y -= 8 * mm
+        y -= 10 * mm
 
-    y -= 4 * mm
-    c.setStrokeColor(roxo)
-    c.setLineWidth(0.6)
-    c.line(margin_left, y, margin_right, y)
-    y -= 6 * mm
-
-    c.setFont("Helvetica-Bold", 10)
+    # ==============================
+    # SEÇÃO BANCO DE HORAS
+    # ==============================
+    c.setFont("Helvetica-Bold", 11)
     c.setFillColor(roxo)
-    c.drawString(margin_left, y, "Banco de Horas")
+    c.drawString(margin_left, y, "BANCO DE HORAS")
     y -= 5 * mm
 
-    c.setFont("Helvetica", 9)
-    c.setFillColor(colors.black)
-    saldo_bh_str = format_banco_horas(user.banco_horas)
-    c.drawString(margin_left, y, f"Saldo atual: {saldo_bh_str}")
-    y -= 7 * mm
+    saldo_min = user.banco_horas or 0
+    saldo_bh_str = format_banco_horas(saldo_min)
 
+    # Cor por sinal do saldo
+    if saldo_min > 0:
+        bh_bg = colors.HexColor("#dcfce7")
+        bh_border = colors.HexColor("#bbf7d0")
+        bh_text = verde
+    elif saldo_min < 0:
+        bh_bg = colors.HexColor("#fee2e2")
+        bh_border = colors.HexColor("#fecaca")
+        bh_text = vermelho
+    else:
+        bh_bg = colors.HexColor("#e5e7eb")
+        bh_border = colors.HexColor("#d1d5db")
+        bh_text = colors.HexColor("#374151")
+
+    # Chip do saldo
+    chip_altura = 8 * mm
+    chip_larg = 80 * mm
+    c.setFillColor(bh_bg)
+    c.setStrokeColor(bh_border)
+    c.roundRect(
+        margin_left,
+        y - chip_altura + 1 * mm,
+        chip_larg,
+        chip_altura,
+        3 * mm,
+        stroke=1,
+        fill=1,
+    )
+
+    c.setFont("Helvetica-Bold", 9)
+    c.setFillColor(bh_text)
+    c.drawString(
+        margin_left + 4 * mm,
+        y - 2 * mm,
+        f"Saldo atual: {saldo_bh_str}",
+    )
+
+    y -= chip_altura + 4 * mm
+
+    # Observação
+    c.setFont("Helvetica", 7.5)
+    c.setFillColor(colors.HexColor("#6b7280"))
+    c.drawString(
+        margin_left,
+        y,
+        "Saldo positivo: horas a favor do servidor • Saldo negativo: horas a compensar.",
+    )
+    y -= 6 * mm
+
+    # Tabela BH
     bh_rows = get_bh_agendamentos(user.id)
     if bh_rows:
         y = draw_simple_table(
             c,
             margin_left,
             y,
-            [35 * mm, (margin_right - margin_left) - 35 * mm],
+            [35 * mm, content_width - 35 * mm],
             ["Data", "Situação"],
             bh_rows,
         )
     else:
         c.setFont("Helvetica-Oblique", 8)
+        c.setFillColor(colors.HexColor("#6b7280"))
         c.drawString(
-            margin_left, y, "Nenhum agendamento BH deferido cadastrado."
+            margin_left,
+            y,
+            "Nenhum agendamento BH deferido cadastrado.",
         )
 
 
@@ -2564,12 +2742,19 @@ def user_info_report():
         flash("Acesso negado. Esta página é exclusiva para administradores.", "danger")
         return redirect(url_for('index'))
 
-    users = User.query.order_by(User.nome.asc()).all()
+    # Apenas usuários com ativo=True
+    users = (
+        User.query
+        .filter_by(ativo=True)
+        .order_by(User.nome.asc())
+        .all()
+    )
+
     if not users:
-        flash("Nenhum usuário encontrado para gerar o relatório.", "warning")
+        flash("Nenhum usuário ativo encontrado para gerar o relatório.", "warning")
         return redirect(url_for('user_info_all'))
 
-    # 🔄 Antes de gerar o PDF, garante que os saldos de TRE estejam atualizados
+    # Garante que os saldos de TRE dos ativos estejam atualizados
     for u in users:
         try:
             sync_tre_user(u.id)
@@ -2597,6 +2782,7 @@ def user_info_report():
         download_name="relatorio_servidores.pdf",
         mimetype="application/pdf"
     )
+
 
 # ===========================================
 # LOGIN MANAGER
