@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Login - Portal do Servidor</title>
 
+  <!-- CSRF para formulários/AJAX -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
@@ -276,20 +279,15 @@
       margin-top: 4px;
       font-size: 0.9rem;
       color: #6b7280;
-      white-space: nowrap;        /* mantém na mesma linha */
+      white-space: nowrap;
     }
 
-    /* Em telas muito pequenas deixa quebrar para não estourar */
     @media (max-width: 480px) {
-      .login-subtitle {
-        white-space: normal;
-      }
+      .login-subtitle { white-space: normal; }
     }
 
     /* Inputs */
-    .form-group {
-      margin-bottom: 14px;
-    }
+    .form-group { margin-bottom: 14px; }
 
     .form-group label {
       font-size: 0.9rem;
@@ -299,10 +297,7 @@
       font-weight: 600;
     }
 
-    .form-group label i {
-      margin-right: 4px;
-      color: #0d6efd;
-    }
+    .form-group label i { margin-right: 4px; color: #0d6efd; }
 
     .form-group input {
       width: 100%;
@@ -340,7 +335,7 @@
     }
 
     .submit-btn:hover {
-      background: linear-gradient(135deg,#16a34a,#22c55e);   /* verde no hover */
+      background: linear-gradient(135deg,#16a34a,#22c55e);
       transform: translateY(-1px);
       box-shadow: 0 10px 22px rgba(22,163,74,0.7);
     }
@@ -366,28 +361,21 @@
       font-weight: 600;
     }
 
-    .form-links a:hover {
-      text-decoration: underline;
-    }
+    .form-links a:hover { text-decoration: underline; }
 
     /* Mensagens flash */
-    .flash-messages {
-      margin-bottom: 14px;
-    }
-
+    .flash-messages { margin-bottom: 14px; }
     .flash-message {
       border-radius: 8px;
       padding: 8px 10px;
       font-size: 0.85rem;
       margin-bottom: 6px;
     }
-
     .flash-message.success {
       background-color: #d1fae5;
       color: #065f46;
       border: 1px solid #a7f3d0;
     }
-
     .flash-message.error,
     .flash-message.danger {
       background-color: #fee2e2;
@@ -408,10 +396,7 @@
       width: 100%;
     }
 
-    footer p {
-      margin: 5px 0;
-      font-size: 0.9rem;
-    }
+    footer p { margin: 5px 0; font-size: 0.9rem; }
   </style>
 </head>
 <body>
@@ -475,29 +460,30 @@
         {% endif %}
       {% endwith %}
 
-      <form action="/login" method="POST">
+      <form action="{{ url_for('login') }}" method="POST" autocomplete="on">
+        <!-- Campo oculto de CSRF (Flask-WTF/CSRFProtect) -->
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
         <div class="form-group">
           <label for="email">
             <i class="fas fa-envelope"></i>E-mail
           </label>
-          <input type="email" id="email" name="email" required placeholder="seu.email@dominio.com" />
+          <input type="email" id="email" name="email" required placeholder="seu.email@dominio.com" autocomplete="username" autofocus />
         </div>
 
         <div class="form-group">
           <label for="password">
             <i class="fas fa-lock"></i>Senha
           </label>
-          <input type="password" id="password" name="password" required placeholder="Digite sua senha" />
+          <input type="password" id="password" name="password" required placeholder="Digite sua senha" autocomplete="current-password" />
         </div>
 
-        <button type="submit" class="submit-btn">
-          Entrar
-        </button>
+        <button type="submit" class="submit-btn">Entrar</button>
       </form>
 
       <div class="form-links">
-        <a href="/register">Não tem uma conta? Registre-se</a>
-        <a href="/recuperar_senha">Esqueceu a senha?</a>
+        <a href="{{ url_for('register') }}">Não tem uma conta? Registre-se</a>
+        <a href="{{ url_for('recuperar_senha') }}">Esqueceu a senha?</a>
       </div>
     </div>
   </main>

@@ -3,225 +3,409 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Complete seu Perfil</title>
+  <title>Complete seu Perfil - E.M José Padin Mouta</title>
+
+  <!-- CSRF para formulários/AJAX -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  <!-- Assets -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <!-- FontAwesome para ícones -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  
-  <!-- Adicionando jQuery e Inputmask -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
+  <!-- jQuery + Inputmask -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js"></script>
-</head>
 
-<style>
-  /* Estilo para o link de logout */
-  a.logout-btn {
+  <style>
+    :root {
+      --primary: #0077ff;
+      --primary-dark: #0051ff;
+      --primary-soft: #dbe9ff;
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --border-soft: #e5e7eb;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --warning: #f97316;
+      --warning-soft: #ffedd5;
+      --danger: #dc2626;
+      --danger-soft: #fee2e2;
+
+      --card-shadow: 0 14px 34px rgba(15,23,42,.1), 0 2px 4px rgba(15,23,42,.06);
+      --radius: 18px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Montserrat', sans-serif;
+      background: radial-gradient(circle at top, #e0f2ff 0, #f9fafb 45%, #eef2ff 100%);
+      background-attachment: fixed;
+      color: var(--text-main);
       display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 15px;
-      background-color: #dc3545;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: bold;
-      transition: box-shadow 0.3s ease-in-out;
-      margin-top: 20px;
-  }
-  a.logout-btn:hover {
-      box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.2);
-      background-color: #dc3545;
-  }
-  
-  a {
-      text-decoration: none;
-  }
-  a:hover {
-      text-decoration: none;
-  }
-  
-  /* Container principal que envolve todo o conteúdo */
-  .container {
-      width: 90%;
-      max-width: 1200px;
-      margin: 20px auto;
+      flex-direction: column;
+    }
+
+    main {
+      flex: 1 0 auto;
+      padding: 24px 12px 70px;
       box-sizing: border-box;
-      padding: 20px;
-  }
+    }
 
-  .section-title {
-      margin-bottom: 10px;
-      font-size: 20px;
-      font-weight: bold;
-      color: #333;
-  }
+    .shell {
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+    }
 
-  .form-container {
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-  }
+    @media (min-width: 769px) {
+      main { padding: 30px 24px 90px; }
+    }
 
-  /* Estilização para o formulário */
-  form {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-  }
+    /* ===== CABEÇALHOS ===== */
+    .header-desktop, .header-mobile { display: none; flex-shrink: 0; }
 
-  /* Estilização para os campos de formulário */
-  select, input, button {
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-  }
+    /* Desktop */
+    @media (min-width: 769px) {
+      .header-desktop {
+        display: flex;
+        background-color: #007bff;
+        padding: 15px 30px;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+        min-height: 110px;
+        position: relative;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        color: white;
+      }
+      .left-section { display: flex; align-items: center; gap: 20px; }
+      .logo {
+        width: 80px; height: 80px; object-fit: contain; border-radius: 10px;
+        background-color: white; padding: 6px;
+      }
+      .text-container { display: flex; flex-direction: column; justify-content: center; text-align: left; color: white; }
+      .escola-nome { font-weight: 700; font-size: 1.6rem; margin: 0; line-height: 1.1; }
+      .escola-subtitulo { font-weight: 600; font-size: 1.1rem; margin-top: 4px; }
 
-  button {
-      background-color: #28a745;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-  }
+      .header-center-text-container {
+        position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+        display: flex; align-items: center; user-select: none; z-index: 1;
+      }
+      .header-center-text {
+        font-weight: 800; font-size: 1.9rem; color: white; letter-spacing: 5px; white-space: nowrap;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      }
 
-  button:hover {
-      background-color: #218838;
-  }
+      .btn-home {
+        background-color: #0fb300; color: white; padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 1.5rem;
+        text-decoration: none; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease; position: absolute; right: 30px; top: 50%; transform: translateY(-50%); z-index: 2;
+      }
+      .btn-home:hover { background-color: #0d8a00; }
+    }
 
-  /* Flash message container */
-  .flash-container {
-      margin: 15px;
-      padding: 10px;
-  }
+    /* Mobile */
+    @media (max-width: 768px) {
+      .header-mobile {
+        display: block; width: 100%; box-sizing: border-box; color: white; position: sticky; top: 0; z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); background-color: #007bff;
+      }
+      .header-top {
+        display: flex; align-items: center; justify-content: center; gap: 15px; padding: 10px 15px;
+        background-color: #007bff; text-align: center;
+      }
+      .logo { width: 48px; height: 48px; object-fit: contain; border-radius: 10px; background-color: white; padding: 6px; }
+      .text-container { display: flex; flex-direction: column; justify-content: center; color: white; text-align: center; }
+      .escola-nome { font-weight: 700; font-size: 1.3rem; margin: 0; line-height: 1.1; }
+      .escola-subtitulo { font-weight: 600; font-size: 1rem; margin-top: 2px; }
+      .header-bottom {
+        background-color: #0056b3; text-align: center; padding: 12px 10px; font-weight: 800; font-size: 1.0rem; letter-spacing: 4px;
+        user-select: none; color: white; box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2); display: flex; justify-content: center; align-items: center;
+        gap: 12px; box-sizing: border-box; white-space: nowrap;
+      }
+      .btn-home-mobile {
+        background-color: #0fb300; color: white; padding: 6px 10px; border-radius: 6px; font-weight: 600; font-size: 1rem;
+        text-decoration: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+      }
+      .btn-home-mobile:hover { background-color: #0d8a00; }
+    }
 
-  .flash {
-      padding: 10px;
-      border-radius: 5px;
-      text-align: center;
-      font-weight: bold;
-      color: white;
-      opacity: 1;
-  }
+    /* ===== HEADER CARD DA PÁGINA ===== */
+    .page-header-card {
+      background: #ffffff; border-radius: var(--radius); padding: 16px 18px; margin: 0 auto 18px;
+      display: flex; align-items: center; gap: 16px; box-shadow: var(--card-shadow); border-left: 5px solid var(--primary);
+    }
+    .page-header-icon {
+      display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%); box-shadow: 0 4px 12px rgba(37, 99, 235, .45);
+      color: #2563eb; flex-shrink: 0;
+    }
+    .page-header-icon i { font-size: 22px; }
+    .page-header-content { display: flex; flex-direction: column; gap: 4px; }
+    .page-header-title { font-size: 1.15rem; font-weight: 800; margin: 0; color: var(--text-main); }
+    .page-header-subtitle { font-size: 0.9rem; margin: 0; color: var(--text-muted); }
+    @media (max-width: 600px) { .page-header-card { padding: 12px 14px; } .page-header-title { font-size: 1.05rem; } .page-header-subtitle { font-size: 0.82rem; } }
 
-  .flash.warning {
-      background-color: #ff9800;
-      padding: 10px;
-      border-radius: 5px;
-      text-align: center;
-      font-weight: bold;
-      color: white;
-  }
+    /* ===== FLASH MESSAGES ===== */
+    .flash-messages { margin: 0 auto 16px; max-width: 980px; }
+    .flash {
+      padding: 10px 12px; margin-bottom: 10px; border-radius: 10px; font-weight: 600; font-size: 0.9rem;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .flash i { font-size: 1rem; }
+    .flash.success { background-color: var(--success-soft); color: #065f46; border: 1px solid #bbf7d0; }
+    .flash.error, .flash.danger { background-color: var(--danger-soft); color: #7f1d1d; border: 1px solid #fecaca; }
+    .flash.info { background-color: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
 
-  .flash .link-perfil {
-      color: #fff;
-      font-weight: bold;
-      text-decoration: underline;
-  }
+    /* ===== CARD DE CONTEÚDO ===== */
+    .content-card {
+      width: 100%; margin: 0 auto 26px; background: var(--surface); border-radius: 16px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12); padding: 18px 18px 22px; border: 1px solid rgba(148, 163, 184, 0.35);
+      backdrop-filter: blur(8px); box-sizing: border-box;
+    }
+    .content-title { font-size: 1.05rem; font-weight: 700; margin: 0 0 6px; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+    .content-title i { color: var(--primary); }
+    .content-subtitle { font-size: 0.88rem; color: var(--text-muted); margin: 0 0 14px; }
 
-  .flash .link-perfil:hover {
-      color: #004085;
-      text-decoration: none;
-  }
-</style>
+    /* ===== FORM ===== */
+    form { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    @media (min-width: 720px) {
+      form { grid-template-columns: 1fr 1fr; }
+      .full-row { grid-column: span 2; }
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    label { font-weight: 800; font-size: 0.9rem; color: #1f2937; }
+    input, select, button {
+      padding: 10px 12px; font-size: 0.95rem; border-radius: 10px; border: 1px solid var(--border-soft);
+      background: #fff; outline: none;
+    }
+    input:focus, select:focus {
+      border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(59,130,246,0.25);
+    }
+    button {
+      background-color: #0fb300; color: white; font-weight: 800; cursor: pointer; border: none;
+      box-shadow: 0 4px 12px rgba(15,179,0,0.45); transition: background-color .18s, transform .1s, box-shadow .18s;
+    }
+    button:hover { background-color: #0d8a00; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(15,179,0,0.6); }
 
+    /* ===== RODAPÉ ===== */
+    footer {
+      background: linear-gradient(to right, #222, #444); color: #ddd; text-align: center; padding: 15px 0; font-size: 14px;
+      border-top: 2px solid #555; box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3); flex-shrink: 0; width: 100%;
+    }
+    footer p { margin: 5px 0; font-size: 0.9rem; }
+    footer a { color: #fff; text-decoration: none; font-weight: 500; transition: color 0.3s ease-in-out; }
+    footer a:hover { color: #00aaff; }
+  </style>
+</head>
 <body>
-  <div class="titulo-container">
-      <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
-  </div>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-      <div class="flash-container">
-          {% for category, message in messages %}
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
+    </div>
+
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
+    </a>
+  </header>
+
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <div class="shell">
+
+      <!-- Header da página -->
+      <div class="page-header-card">
+        <div class="page-header-icon">
+          <i class="fas fa-user-edit"></i>
+        </div>
+        <div class="page-header-content">
+          <p class="page-header-title">Complete seu Perfil</p>
+          <p class="page-header-subtitle">Preencha/atualize seus dados cadastrais para habilitar todos os serviços do Portal.</p>
+        </div>
+      </div>
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
               <div class="flash {{ category }}">
-                  {{ message | safe }}
+                {% if category == 'success' %}
+                  <i class="fas fa-check-circle"></i>
+                {% elif category in ['error','danger'] %}
+                  <i class="fas fa-exclamation-triangle"></i>
+                {% else %}
+                  <i class="fas fa-info-circle"></i>
+                {% endif %}
+                {{ message | safe }}
               </div>
-          {% endfor %}
-      </div>
-      <script>
-          setTimeout(() => {
-              document.querySelectorAll('.flash').forEach(flash => {
-                  flash.style.transition = 'opacity 1s ease';
-                  flash.style.opacity = '0';
-                  setTimeout(() => flash.remove(), 1000);
+            {% endfor %}
+          </div>
+          <script>
+            setTimeout(() => {
+              document.querySelectorAll('.flash').forEach(el => {
+                el.style.transition = 'opacity 0.9s ease';
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 900);
               });
-          }, 8000);
-      </script>
-  {% endif %}
-  {% endwith %}
+            }, 8000);
+          </script>
+        {% endif %}
+      {% endwith %}
 
-  <div class="container">
-      <h1 class="section-title">Complete seu Perfil</h1>
-      <div class="form-container">
-          <form method="POST">
-              <!-- Campo CPF -->
-              <div class="editable-field">
-                  <label for="cpf">CPF:</label>
-                  <input type="text" id="cpf" name="cpf" value="{{ usuario.cpf or '' }}" required>
-              </div>
+      <!-- Card do formulário -->
+      <div class="content-card">
+        <h2 class="content-title">
+          <i class="fas fa-id-card"></i>
+          Dados cadastrais
+        </h2>
+        <p class="content-subtitle">
+          Os campos abaixo são obrigatórios para o correto funcionamento do sistema.
+        </p>
 
-              <!-- Campo RG -->
-              <div class="editable-field">
-                  <label for="rg">RG:</label>
-                  <input type="text" id="rg" name="rg" value="{{ usuario.rg or '' }}" required>
-              </div>
+        <form method="POST" autocomplete="on">
+          {% if csrf_token is defined %}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {% endif %}
 
-              <!-- Campo Data de Nascimento -->
-              <div class="editable-field">
-                  <label for="data_nascimento">Data de Nascimento:</label>
-                  <input type="date" id="data_nascimento" name="data_nascimento" value="{{ usuario.data_nascimento or '' }}" required>
-              </div>
+          <!-- CPF -->
+          <div class="field">
+            <label for="cpf">CPF</label>
+            <input
+              type="text"
+              id="cpf"
+              name="cpf"
+              inputmode="numeric"
+              placeholder="000.000.000-00"
+              value="{{ usuario.cpf or '' }}"
+              required
+              maxlength="14"
+            >
+          </div>
 
-              <!-- Campo Celular -->
-              <div class="editable-field">
-                  <label for="celular">Celular:</label>
-                  <input type="text" id="celular" name="celular" value="{{ usuario.celular or '' }}" required>
-              </div>
+          <!-- RG -->
+          <div class="field">
+            <label for="rg">RG</label>
+            <input
+              type="text"
+              id="rg"
+              name="rg"
+              inputmode="numeric"
+              placeholder="00.000.000-0"
+              value="{{ usuario.rg or '' }}"
+              required
+              maxlength="12"
+            >
+          </div>
 
-              <!-- Campo Cargo com lista suspensa em ordem alfabética -->
-              <div class="editable-field">
-                  <label for="cargo">Cargo:</label>
-                  <select id="cargo" name="cargo" required>
-                      <option value="Agente Administrativo" {% if usuario.cargo == 'Agente Administrativo' %}selected{% endif %}>Agente Administrativo</option>
-                      <option value="Assistente de Direção" {% if usuario.cargo == 'Assistente de Direção' %}selected{% endif %}>Assistente de Direção</option>
-                      <option value="Assistente Tecnico Pedagogico" {% if usuario.cargo == 'Assistente Tecnico Pedagogico' %}selected{% endif %}>Assistente Técnico Pedagógico</option>
-                      <option value="Atendente de Educação I" {% if usuario.cargo == 'Atendente de Educação I' %}selected{% endif %}>Atendente de Educação I</option>
-                      <option value="Atendente de Educação II" {% if usuario.cargo == 'Atendente de Educação II' %}selected{% endif %}>Atendente de Educação II</option>
-                      <option value="Diretor de Unidade Escolar" {% if usuario.cargo == 'Diretor de Unidade Escolar' %}selected{% endif %}>Diretor de Unidade Escolar</option>
-                      <option value="Educador de Desenvolvimento Infanto Juvenil" {% if usuario.cargo == 'Educador de Desenvolvimento Infanto Juvenil' %}selected{% endif %}>Educador de Desenvolvimento Infanto Juvenil</option>
-                      <option value="Pedagoga Comunitaria" {% if usuario.cargo == 'Pedagoga Comunitaria' %}selected{% endif %}>Pedagoga Comunitária</option>
-                      <option value="Professor Adjunto" {% if usuario.cargo == 'Professor Adjunto' %}selected{% endif %}>Professor Adjunto</option>
-                      <option value="Professor I" {% if usuario.cargo == 'Professor I' %}selected{% endif %}>Professor I</option>
-                      <option value="Professor II" {% if usuario.cargo == 'Professor II' %}selected{% endif %}>Professor II</option>
-                      <option value="Professor III" {% if usuario.cargo == 'Professor III' %}selected{% endif %}>Professor III</option>
-                      <option value="Professor IV" {% if usuario.cargo == 'Professor IV' %}selected{% endif %}>Professor IV</option>
-                      <option value="Secretário de Unidade Escolar" {% if usuario.cargo == 'Secretário de Unidade Escolar' %}selected{% endif %}>Secretário de Unidade Escolar</option>
-                      <option value="Servente" {% if usuario.cargo == 'Servente' %}selected{% endif %}>Servente</option>
-                      <option value="Servente I" {% if usuario.cargo == 'Servente I' %}selected{% endif %}>Servente I</option>
-                      <option value="Servente II" {% if usuario.cargo == 'Servente II' %}selected{% endif %}>Servente II</option>
-                      <option value="Trabalhador" {% if usuario.cargo == 'Trabalhador' %}selected{% endif %}>Trabalhador</option>
-                  </select>
-              </div>
+          <!-- Data de Nascimento -->
+          <div class="field">
+            <label for="data_nascimento">Data de Nascimento</label>
+            <input
+              type="date"
+              id="data_nascimento"
+              name="data_nascimento"
+              value="{{ usuario.data_nascimento or '' }}"
+              required
+            >
+          </div>
 
-              <button type="submit">Salvar</button>
-          </form>
+          <!-- Celular -->
+          <div class="field">
+            <label for="celular">Celular</label>
+            <input
+              type="text"
+              id="celular"
+              name="celular"
+              inputmode="tel"
+              placeholder="(00) 00000-0000"
+              value="{{ usuario.celular or '' }}"
+              required
+              maxlength="15"
+            >
+          </div>
+
+          <!-- Cargo -->
+          <div class="field full-row">
+            <label for="cargo">Cargo</label>
+            <select id="cargo" name="cargo" required>
+              <option value="" disabled {% if not usuario.cargo %}selected{% endif %}>Selecione seu cargo</option>
+              <option value="Agente Administrativo" {% if usuario.cargo == 'Agente Administrativo' %}selected{% endif %}>Agente Administrativo</option>
+              <option value="Assistente de Direção" {% if usuario.cargo == 'Assistente de Direção' %}selected{% endif %}>Assistente de Direção</option>
+              <option value="Assistente Tecnico Pedagogico" {% if usuario.cargo == 'Assistente Tecnico Pedagogico' %}selected{% endif %}>Assistente Técnico Pedagógico</option>
+              <option value="Atendente de Educação I" {% if usuario.cargo == 'Atendente de Educação I' %}selected{% endif %}>Atendente de Educação I</option>
+              <option value="Atendente de Educação II" {% if usuario.cargo == 'Atendente de Educação II' %}selected{% endif %}>Atendente de Educação II</option>
+              <option value="Diretor de Unidade Escolar" {% if usuario.cargo == 'Diretor de Unidade Escolar' %}selected{% endif %}>Diretor de Unidade Escolar</option>
+              <option value="Educador de Desenvolvimento Infanto Juvenil" {% if usuario.cargo == 'Educador de Desenvolvimento Infanto Juvenil' %}selected{% endif %}>Educador de Desenvolvimento Infanto Juvenil</option>
+              <option value="Pedagoga Comunitaria" {% if usuario.cargo == 'Pedagoga Comunitaria' %}selected{% endif %}>Pedagoga Comunitária</option>
+              <option value="Professor Adjunto" {% if usuario.cargo == 'Professor Adjunto' %}selected{% endif %}>Professor Adjunto</option>
+              <option value="Professor I" {% if usuario.cargo == 'Professor I' %}selected{% endif %}>Professor I</option>
+              <option value="Professor II" {% if usuario.cargo == 'Professor II' %}selected{% endif %}>Professor II</option>
+              <option value="Professor III" {% if usuario.cargo == 'Professor III' %}selected{% endif %}>Professor III</option>
+              <option value="Professor IV" {% if usuario.cargo == 'Professor IV' %}selected{% endif %}>Professor IV</option>
+              <option value="Secretário de Unidade Escolar" {% if usuario.cargo == 'Secretário de Unidade Escolar' %}selected{% endif %}>Secretário de Unidade Escolar</option>
+              <option value="Servente" {% if usuario.cargo == 'Servente' %}selected{% endif %}>Servente</option>
+              <option value="Servente I" {% if usuario.cargo == 'Servente I' %}selected{% endif %}>Servente I</option>
+              <option value="Servente II" {% if usuario.cargo == 'Servente II' %}selected{% endif %}>Servente II</option>
+              <option value="Trabalhador" {% if usuario.cargo == 'Trabalhador' %}selected{% endif %}>Trabalhador</option>
+            </select>
+          </div>
+
+          <button type="submit" class="full-row" aria-label="Salvar dados do perfil">
+            <i class="fas fa-save" style="margin-right:8px;"></i> Salvar
+          </button>
+        </form>
       </div>
-  </div>
+
+    </div>
+  </main>
 
   <footer>
     <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
   </footer>
 
   <script>
-      // Aplicando as máscaras nos campos CPF, RG e Celular
-      $(document).ready(function(){
-          $("#cpf").inputmask("999.999.999-99");  // Máscara de CPF
-          $("#rg").inputmask("99.999.999-9");     // Máscara de RG
-          $("#celular").inputmask("(99) 99999-9999");  // Máscara de Celular
-      });
+    // Máscaras de entrada
+    $(function(){
+      $("#cpf").inputmask("999.999.999-99");
+      $("#rg").inputmask("99.999.999-9");
+      $("#celular").inputmask("(99) 99999-9999");
+    });
   </script>
 </body>
 </html>

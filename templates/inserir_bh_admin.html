@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Inserir Banco de Horas (Admin)</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, maximum-scale=3, minimum-scale=1" />
+  <!-- Token CSRF para formulários e possíveis chamadas AJAX -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --primary: #0077ff;
+      --primary-dark: #0051ff;
+      --primary-soft: #dbe9ff;
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --border-soft: #e5e7eb;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+
+      --card-shadow: 0 14px 34px rgba(15,23,42,.1), 0 2px 4px rgba(15,23,42,.06);
+      --radius: 18px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      font-family: 'Montserrat', sans-serif;
+      background: radial-gradient(circle at top, #e0f2ff 0, #f9fafb 45%, #eef2ff 100%);
+      color: var(--text-main);
+    }
+
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+
+    main { flex: 1 0 auto; padding: 24px 12px 60px; box-sizing: border-box; }
+    .shell { width: 100%; max-width: 980px; margin: 0 auto; }
+    @media (min-width: 769px) { main { padding: 30px 24px 80px; } }
+
+    /* ===== Cabeçalhos ===== */
+    .header-desktop, .header-mobile { display: none; flex-shrink: 0; }
+
+    @media (min-width: 769px) {
+      .header-desktop {
+        display: flex; background-color: #007bff; padding: 15px 30px; width: 100%;
+        align-items: center; justify-content: space-between; box-sizing: border-box;
+        min-height: 110px; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,.15); color: white;
+      }
+      .left-section { display: flex; align-items: center; gap: 20px; }
+      .logo { width: 80px; height: 80px; object-fit: contain; border-radius: 10px; background-color: white; padding: 6px; }
+      .text-container { display: flex; flex-direction: column; justify-content: center; text-align: left; color: white; }
+      .escola-nome { font-weight: 700; font-size: 1.6rem; margin: 0; line-height: 1.1; }
+      .escola-subtitulo { font-weight: 600; font-size: 1.1rem; margin-top: 4px; }
+      .header-center-text-container {
+        position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+        font-weight: 800; font-size: 1.9rem; color: white; letter-spacing: 5px; user-select: none; white-space: nowrap; z-index: 1;
+        text-shadow: 0 2px 5px rgba(0,0,0,.3);
+      }
+      .header-center-text { font-family: 'Montserrat', sans-serif; }
+      .btn-home {
+        background-color: #0fb300; color: white; padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 1.5rem;
+        text-decoration: none; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(15,179,0,.8);
+        transition: background-color .3s ease; position: absolute; right: 30px; top: 50%; transform: translateY(-50%); z-index: 2;
+      }
+      .btn-home:hover { background-color: #0d8a00; }
+    }
+
+    @media (max-width: 768px) {
+      .header-mobile {
+        display: block; width: 100%; box-sizing: border-box; color: white; position: sticky; top: 0; z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0,0,0,.15); background-color: #007bff;
+      }
+      .header-top { display: flex; align-items: center; justify-content: center; gap: 15px; padding: 10px 15px; background-color: #007bff; text-align: center; }
+      .logo { width: 48px; height: 48px; object-fit: contain; border-radius: 10px; background-color: white; padding: 6px; }
+      .text-container { display: flex; flex-direction: column; justify-content: center; color: white; text-align: center; }
+      .escola-nome { font-weight: 700; font-size: 1.3rem; margin: 0; line-height: 1.1; }
+      .escola-subtitulo { font-weight: 600; font-size: 1rem; margin-top: 2px; }
+      .header-bottom {
+        background-color: #0056b3; text-align: center; padding: 12px 10px; font-weight: 800; font-size: 1rem; letter-spacing: 4px; user-select: none;
+        color: white; box-shadow: inset 0 -2px 5px rgba(0,0,0,.2); display: flex; justify-content: center; align-items: center; gap: 12px; white-space: nowrap;
+      }
+      .btn-home-mobile {
+        background-color: #0fb300; color: white; padding: 6px 10px; border-radius: 6px; font-weight: 600; font-size: 1rem; text-decoration: none;
+        display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(15,179,0,.8); transition: background-color .3s ease;
+      }
+      .btn-home-mobile:hover { background-color: #0d8a00; }
+    }
+
+    /* ===== Header card ===== */
+    .page-header-card {
+      background: #ffffff; border-radius: var(--radius); padding: 16px 18px; margin: 0 auto 18px; display: flex; align-items: center; gap: 16px;
+      box-shadow: var(--card-shadow); border-left: 5px solid var(--primary);
+    }
+    .page-header-icon {
+      display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%); box-shadow: 0 4px 12px rgba(37,99,235,.45); color: #2563eb; flex-shrink: 0;
+    }
+    .page-header-icon i { font-size: 22px; }
+    .page-header-title { font-size: 1.15rem; font-weight: 800; margin: 0; color: var(--text-main); }
+    .page-header-subtitle { font-size: 0.9rem; margin: 0; color: var(--text-muted); }
+    @media (max-width: 600px) {
+      .page-header-card { padding: 12px 14px; }
+      .page-header-title { font-size: 1.05rem; }
+      .page-header-subtitle { font-size: 0.82rem; }
+    }
+
+    /* ===== Card do formulário ===== */
+    .form-card {
+      width: 100%; margin: 0 auto 30px; background: var(--surface); border-radius: 16px;
+      box-shadow: 0 18px 40px rgba(15,23,42,.12); padding: 20px 22px 24px;
+      border: 1px solid rgba(148,163,184,.35); backdrop-filter: blur(8px); box-sizing: border-box;
+    }
+    .form-card h1 {
+      font-size: 1.3rem; margin: 0 0 16px; color: var(--text-main); display: flex; align-items: center; gap: 10px;
+    }
+    .form-card h1 i { color: var(--primary); font-size: 1.4rem; }
+    .form-description { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 18px; line-height: 1.5; }
+
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; }
+    .input-group { display: flex; flex-direction: column; gap: 6px; font-size: 0.9rem; }
+    .input-group.full-width { grid-column: 1 / -1; }
+    label { font-size: 0.86rem; color: var(--text-main); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    label i { color: var(--primary); font-size: 0.9rem; }
+
+    input[type="text"], input[type="number"], input[type="date"], select {
+      width: 100%; padding: 9px 10px; font-size: 0.93rem; border-radius: 10px; border: 1px solid var(--border-soft);
+      box-sizing: border-box; font-family: 'Montserrat', sans-serif; background-color: #f9fafb; outline: none;
+      transition: border-color .12s ease-out, box-shadow .12s ease-out, background-color .12s ease-out;
+    }
+    input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37,99,235,.18); background-color: #ffffff; }
+
+    .horas-minutos { display: flex; gap: 10px; }
+    .horas-minutos input { flex: 1; }
+
+    .submit-btn {
+      margin-top: 18px; width: 100%; padding: 11px 14px; background-color: #0fb300; color: white; border: none; font-size: 0.98rem;
+      cursor: pointer; border-radius: 999px; font-weight: 700; transition: background-color .18s, box-shadow .18s, transform .12s;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 6px 14px rgba(15,179,0,.7);
+    }
+    .submit-btn i { font-size: 1rem; }
+    .submit-btn:hover { background-color: #0d8a00; box-shadow: 0 10px 22px rgba(15,179,0,0.85); transform: translateY(-1px); }
+    .submit-btn:active { transform: translateY(0); box-shadow: 0 4px 10px rgba(15,179,0,.6); }
+
+    .saldo-badge {
+      display: inline-block; padding: 6px 10px; border-radius: 999px; font-weight: 700; font-size: .82rem; border: 1px solid var(--border-soft);
+      background: #f1f5ff; color: #1e3a8a;
+    }
+
+    @media (max-width: 640px) {
+      .form-card { padding: 16px 14px 20px; margin-bottom: 24px; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ===== Rodapé ===== */
+    footer {
+      background: linear-gradient(to right, #222, #444); color: #ddd; text-align: center; padding: 15px 0; font-size: 14px;
+      border-top: 2px solid #555; box-shadow: 0px -2px 10px rgba(0,0,0,.3); width: 100%; flex-shrink: 0;
+    }
+    footer p { margin: 5px 0; font-size: 15px; font-weight: 300; }
+    footer a { color: #fff; text-decoration: none; font-weight: 500; transition: color .3s ease-in-out; }
+    footer a:hover { color: #00aaff; }
+
+    /* Flash (opcional) */
+    .flash { margin-bottom: 12px; padding: 10px 12px; border-radius: 12px; font-weight: 600; }
+    .flash-success { background:#dcfce7; color:#166534; border:1px solid #bbf7d0; }
+    .flash-warning { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+    .flash-danger  { background:#fee2e2; color:#b91c1c; border:1px solid #fecaca; }
+  </style>
+</head>
+<body>
+
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
+    </a>
+  </header>
+
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- Conteúdo principal -->
+  <main>
+    <div class="shell">
+
+      <!-- Header card -->
+      <div class="page-header-card">
+        <div class="page-header-icon">
+          <i class="fas fa-database"></i>
+        </div>
+        <div class="page-header-content">
+          <p class="page-header-title">Inserir Banco de Horas (Admin)</p>
+          <p class="page-header-subtitle">
+            Cadastre créditos diretamente para um servidor. O consumo ocorrerá via agendamento de BH deferido.
+          </p>
+        </div>
+      </div>
+
+      <!-- Mensagens flash (se usadas) -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div>
+            {% for category, message in messages %}
+              <div class="flash {{ 'flash-success' if category=='success' else ('flash-warning' if category=='warning' else ('flash-danger' if category=='danger' else '') ) }}">
+                {{ message|safe }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <!-- Card do formulário -->
+      <div class="form-card">
+        <h1><i class="fas fa-edit"></i> Novo crédito de horas</h1>
+        <p class="form-description">
+          Selecione o servidor e informe a data, quantidade e motivo. O status padrão é “Deferido”.
+        </p>
+
+        <form action="{{ url_for('inserir_bh_admin') }}" method="POST" id="formInserirBH" autocomplete="on">
+          <!-- Campo oculto obrigatório do CSRF -->
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="form-grid">
+
+            <!-- Servidor -->
+            <div class="input-group full-width">
+              <label for="funcionario_id"><i class="fas fa-user"></i> Servidor</label>
+              <select id="funcionario_id" name="funcionario_id" required>
+                <option value="">Selecione...</option>
+                {% for u in usuarios %}
+                  <option
+                    value="{{ u.id }}"
+                    data-registro="{{ u.registro }}"
+                    data-email="{{ u.email }}"
+                    data-saldo="{{ u.banco_horas or 0 }}"
+                  >
+                    {{ u.nome }} — {{ u.registro }} — {{ u.email }}
+                  </option>
+                {% endfor %}
+              </select>
+              <small class="page-header-subtitle" id="saldoInfo" style="display:inline-block;margin-top:8px;">
+                <span class="saldo-badge">Saldo atual: 0h 00m</span>
+              </small>
+            </div>
+
+            <!-- Registro / Email -->
+            <div class="input-group">
+              <label for="registro"><i class="fas fa-id-card"></i> Registro</label>
+              <input type="text" id="registro" name="registro" value="" readonly />
+            </div>
+            <div class="input-group">
+              <label for="email"><i class="fas fa-envelope"></i> E-mail</label>
+              <input type="text" id="email" name="email" value="" readonly />
+            </div>
+
+            <!-- Data / Quantidade -->
+            <div class="input-group">
+              <label for="data_realizacao"><i class="fas fa-calendar-alt"></i> Data da realização</label>
+              <input type="date" id="data_realizacao" name="data_realizacao" value="{{ hoje.strftime('%Y-%m-%d') }}" required />
+            </div>
+
+            <div class="input-group full-width">
+              <label><i class="fas fa-clock"></i> Quantidade de horas</label>
+              <div class="horas-minutos">
+                <!-- REMOVIDO max="24" para permitir >24h -->
+                <input type="number" id="horas" name="horas" min="0" step="1" required placeholder="Horas" inputmode="numeric" />
+                <input type="number" id="minutos" name="minutos" min="0" max="59" step="1" required placeholder="Minutos" />
+              </div>
+            </div>
+
+            <!-- Status / Motivo -->
+            <div class="input-group">
+              <label for="status"><i class="fas fa-flag-checkered"></i> Status</label>
+              <select id="status" name="status">
+                <option value="Deferido" selected>Deferido</option>
+                <option value="Em análise">Em análise</option>
+                <option value="Indeferido">Indeferido</option>
+              </select>
+            </div>
+
+            <div class="input-group full-width">
+              <label for="motivo"><i class="fas fa-list-alt"></i> Motivo (máximo 40 caracteres)</label>
+              <input type="text" id="motivo" name="motivo" maxlength="40" required placeholder="Ex.: Organização Biblioteca, Ajuste de Saldo, Plantão..." />
+              <small class="page-header-subtitle">Evite usar “BH” — reservado ao consumo (agendamento de folga).</small>
+            </div>
+
+          </div>
+
+          <button type="submit" class="submit-btn">
+            <i class="fas fa-save"></i>
+            Inserir crédito
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Rodapé -->
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
+
+  <script>
+    // Converte minutos inteiros em "Xh YYm"
+    function fmtMinutos(totalMin) {
+      totalMin = parseInt(totalMin || 0, 10);
+      const h = Math.trunc(totalMin / 60);
+      const m = totalMin % 60;
+      return `${h}h ${String(m).padStart(2, '0')}m`;
+    }
+
+    const sel = document.getElementById('funcionario_id');
+    const reg = document.getElementById('registro');
+    const eml = document.getElementById('email');
+    const saldoInfo = document.getElementById('saldoInfo');
+    const horas = document.getElementById('horas');
+    const minutos = document.getElementById('minutos');
+    const form = document.getElementById('formInserirBH');
+
+    // Atualiza campos conforme servidor selecionado
+    sel.addEventListener('change', () => {
+      const opt = sel.options[sel.selectedIndex];
+      const r = opt.getAttribute('data-registro') || '';
+      const e = opt.getAttribute('data-email') || '';
+      const s = opt.getAttribute('data-saldo') || '0';
+
+      reg.value = r;
+      eml.value = e;
+      saldoInfo.innerHTML = `<span class="saldo-badge">Saldo atual: ${fmtMinutos(s)}</span>`;
+    });
+
+    // Validação simples (minutos < 60, não negativo, não zero total)
+    form.addEventListener('submit', (ev) => {
+      const m = parseInt(minutos.value || '0', 10);
+      const h = parseInt(horas.value || '0', 10);
+
+      if (isNaN(h) || isNaN(m) || h < 0 || m < 0) {
+        ev.preventDefault();
+        alert('Informe horas/minutos válidos (>= 0).');
+        return;
+      }
+      if (m >= 60) {
+        ev.preventDefault();
+        alert('Minutos devem estar entre 0 e 59.');
+        return;
+      }
+      if (h === 0 && m === 0) {
+        ev.preventDefault();
+        alert('Informe uma quantidade de tempo maior que zero.');
+        return;
+      }
+    });
+  </script>
+</body>
+</html>

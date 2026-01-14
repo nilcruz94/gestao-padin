@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Portal do Servidor - Início</title>
 
+  <!-- CSRF para uso em formulários/AJAX -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
@@ -277,10 +280,7 @@
       margin: 0;
     }
 
-    /* spans do texto de boas-vindas: inline por padrão (desktop) */
-    .welcome-text-sub span {
-      display: inline;
-    }
+    .welcome-text-sub span { display: inline; }
 
     .welcome-meta {
       display: flex;
@@ -312,7 +312,6 @@
       color: #111827;
     }
 
-    /* Tablet e celular maior */
     @media (max-width: 700px) {
       .welcome-banner {
         flex-direction: column;
@@ -323,7 +322,6 @@
       }
     }
 
-    /* Compactar no celular, texto em duas linhas e Registro/Cargo lado a lado */
     @media (max-width: 600px) {
       .welcome-banner {
         padding: 10px 12px;
@@ -331,264 +329,126 @@
         border-radius: 14px;
         gap: 6px;
       }
-
-      .welcome-text-main {
-        font-size: 1rem;
-      }
-
-      .welcome-text-sub {
-        font-size: 0.82rem;
-      }
-
-      /* aqui forçamos as duas frases em linhas separadas */
-      .welcome-text-sub span {
-        display: block;
-      }
-
-      .welcome-meta {
-        margin-top: 6px;
-        gap: 6px 8px;
-      }
-
+      .welcome-text-main { font-size: 1rem; }
+      .welcome-text-sub { font-size: 0.82rem; }
+      .welcome-text-sub span { display: block; }
+      .welcome-meta { margin-top: 6px; gap: 6px 8px; }
       .welcome-meta-item {
-        font-size: 0.78rem;
-        padding: 3px 8px;
-        flex: 1 1 48%;
-        justify-content: flex-start;
+        font-size: 0.78rem; padding: 3px 8px; flex: 1 1 48%; justify-content: flex-start;
       }
     }
 
     /* ========= FLASH MESSAGES ========= */
 
-    .flash-container {
-      text-align: center;
-      margin-bottom: 18px;
-    }
-
+    .flash-container { text-align: center; margin-bottom: 18px; }
     .flash {
-      padding: 9px 18px;
-      margin: 5px auto;
-      border-radius: 999px;
-      width: fit-content;
-      font-weight: 600;
-      font-size: 0.88rem;
-      font-family: 'Montserrat', sans-serif;
+      padding: 9px 18px; margin: 5px auto; border-radius: 999px; width: fit-content;
+      font-weight: 600; font-size: 0.88rem; font-family: 'Montserrat', sans-serif;
     }
-
     .flash.success {
-      background-color: #dcfce7;
-      color: #166534;
-      box-shadow: 0 0 8px rgba(22, 101, 52, 0.45);
+      background-color: #dcfce7; color: #166534; box-shadow: 0 0 8px rgba(22, 101, 52, 0.45);
       border: 1px solid #bbf7d0;
     }
-
-    .flash.error,
-    .flash.danger {
-      background-color: #fee2e2;
-      color: #b91c1c;
-      box-shadow: 0 0 8px rgba(185, 28, 28, 0.45);
+    .flash.error, .flash.danger {
+      background-color: #fee2e2; color: #b91c1c; box-shadow: 0 0 8px rgba(185, 28, 28, 0.45);
       border: 1px solid #fecaca;
     }
 
     /* ========= TABS ========= */
 
     .tabs {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin: 4px 0 6px;
-      user-select: none;
+      display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
+      margin: 4px 0 6px; user-select: none;
     }
 
     .tab {
-      background-color: #e5f0ff;
-      padding: 8px 18px;
-      cursor: pointer;
-      font-weight: 700;
-      border-radius: 999px;
-      color: #1f2933;
-      border: 1px solid #0d6efd;
-      transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
-      font-size: 0.9rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+      background-color: #e5f0ff; padding: 8px 18px; cursor: pointer; font-weight: 700; border-radius: 999px;
+      color: #1f2933; border: 1px solid #0d6efd; transition: background-color .2s, color .2s, box-shadow .2s, transform .15s;
+      font-size: 0.9rem; display: inline-flex; align-items: center; gap: 6px;
     }
 
     .tab:hover:not(.active) {
-      background-color: #d3e3ff;
-      color: #0b3c91;
-      box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
-      transform: translateY(-1px);
+      background-color: #d3e3ff; color: #0b3c91; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35); transform: translateY(-1px);
     }
 
     .tab.active {
-      background: linear-gradient(135deg, #0d6efd, #2563eb);
-      color: #ffffff;
-      box-shadow: 0 5px 16px rgba(37, 99, 235, 0.75);
-      border-color: transparent;
-      letter-spacing: 0.04em;
+      background: linear-gradient(135deg, #0d6efd, #2563eb); color: #ffffff;
+      box-shadow: 0 5px 16px rgba(37, 99, 235, 0.75); border-color: transparent; letter-spacing: 0.04em;
     }
 
     .access-services {
-      font-weight: 700;
-      font-size: 0.95rem;
-      color: #2563eb;
-      margin: 6px 0 12px;
-      text-align: center;
+      font-weight: 700; font-size: 0.95rem; color: #2563eb; margin: 6px 0 12px; text-align: center;
     }
 
     /* ========= CARDS ========= */
 
-    .cards-container {
-      display: none;
-      justify-content: center;
-      margin: 0 auto;
-      width: 100%;
-    }
-
-    .cards-container.active {
-      display: flex;
-    }
+    .cards-container { display: none; justify-content: center; margin: 0 auto; width: 100%; }
+    .cards-container.active { display: flex; }
 
     .cards-wrapper {
-      background: #ffffff;
-      padding: 20px 20px 24px;
-      border-radius: 18px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
-      width: 100%;
-      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: #ffffff; padding: 20px 20px 24px; border-radius: 18px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      width: 100%; border: 1px solid rgba(148, 163, 184, 0.4);
     }
 
     .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(150px, 1fr));
-      gap: 16px;
-      justify-content: center;
+      display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)); gap: 16px; justify-content: center;
     }
 
     .card {
-      background: #ffffff;
-      color: #111827;
-      border-radius: 18px;
-      padding: 14px 10px;
-      text-align: center;
-      text-decoration: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 130px;
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-      font-weight: 700;
-      font-size: 0.94rem;
-      letter-spacing: 0.01em;
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.18s ease, box-shadow 0.22s ease, border-color 0.18s ease, background-color 0.18s ease;
-      cursor: pointer;
-      border: 1px solid #e5e7eb;
+      background: #ffffff; color: #111827; border-radius: 18px; padding: 14px 10px; text-align: center; text-decoration: none;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 130px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); font-weight: 700; font-size: 0.94rem; letter-spacing: 0.01em;
+      position: relative; overflow: hidden; transition: transform .18s, box-shadow .22s, border-color .18s, background-color .18s;
+      cursor: pointer; border: 1px solid #e5e7eb;
     }
 
     .card::before {
-      content: "";
-      position: absolute;
-      top: -35%;
-      left: -35%;
-      width: 170%;
-      height: 170%;
-      background: radial-gradient(circle at center, rgba(59,130,246,0.16) 0%, transparent 60%);
-      transform: rotate(18deg);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s ease;
-      border-radius: 18px;
-      z-index: 0;
+      content: ""; position: absolute; top: -35%; left: -35%; width: 170%; height: 170%;
+      background: radial-gradient(circle at center, rgba(59,130,246,0.16) 0%, transparent 60%); transform: rotate(18deg);
+      opacity: 0; pointer-events: none; transition: opacity .25s; border-radius: 18px; z-index: 0;
     }
 
     .card i {
-      font-size: 24px;
-      margin-bottom: 12px;
-      color: #2563eb;
-      z-index: 1;
+      font-size: 24px; margin-bottom: 12px; color: #2563eb; z-index: 1;
       background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
-      border-radius: 999px;
-      padding: 10px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      border-radius: 999px; padding: 10px; display: inline-flex; align-items: center; justify-content: center;
       box-shadow: 0 4px 10px rgba(37, 99, 235, 0.35);
     }
 
     .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
-      border-color: #3b82f6;
-      background-color: #f9fafb;
-      text-decoration: none;
+      transform: translateY(-4px); box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16); border-color: #3b82f6;
+      background-color: #f9fafb; text-decoration: none;
     }
 
-    .card:hover::before {
-      opacity: 1;
-    }
+    .card:hover::before { opacity: 1; }
 
     /* Logout especial */
     .logout-btn {
-      background: #fef2f2;
-      color: #b91c1c;
-      border-color: #fecaca;
-      box-shadow: 0 4px 12px rgba(185, 28, 28, 0.35);
+      background: #fef2f2; color: #b91c1c; border-color: #fecaca; box-shadow: 0 4px 12px rgba(185, 28, 28, 0.35);
     }
-
     .logout-btn i {
       color: #b91c1c;
       background: radial-gradient(circle at 30% 30%, #ffffff 0%, #fee2e2 60%, #fecaca 100%);
       box-shadow: 0 4px 10px rgba(185, 28, 28, 0.5);
     }
-
     .logout-btn:hover {
-      background: #fee2e2;
-      border-color: #fca5a5;
-      box-shadow: 0 10px 24px rgba(185, 28, 28, 0.6);
-      color: #7f1d1d;
+      background: #fee2e2; border-color: #fca5a5; box-shadow: 0 10px 24px rgba(185, 28, 28, 0.6); color: #7f1d1d;
     }
+    .logout-btn:hover i { color: #7f1d1d; }
 
-    .logout-btn:hover i {
-      color: #7f1d1d;
-    }
+    /* Fazer o botão de logout virar o "card" na grid */
+    .cards-grid form.logout-form { display: contents; }
 
     /* Responsivo das grids */
-
     @media (max-width: 992px) {
-      .cards-grid {
-        grid-template-columns: repeat(2, minmax(150px, 1fr));
-      }
+      .cards-grid { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
     }
-
-    /* Sempre 2 por linha no celular */
     @media (max-width: 600px) {
-      .cards-wrapper {
-        padding: 18px 12px 22px;
-      }
-      .cards-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-      }
-      .card {
-        min-height: 120px;
-        font-size: 0.9rem;
-        padding: 12px 8px;
-      }
-      .card i {
-        font-size: 22px;
-        margin-bottom: 10px;
-        padding: 9px;
-      }
-      .access-services {
-        font-size: 0.9rem;
-        margin-bottom: 10px;
-      }
+      .cards-wrapper { padding: 18px 12px 22px; }
+      .cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .card { min-height: 120px; font-size: 0.9rem; padding: 12px 8px; }
+      .card i { font-size: 22px; margin-bottom: 10px; padding: 9px; }
+      .access-services { font-size: 0.9rem; margin-bottom: 10px; }
     }
 
     /* ========= RODAPÉ ========= */
@@ -605,10 +465,7 @@
       width: 100%;
     }
 
-    footer p {
-      margin: 5px 0;
-      font-size: 0.9rem;
-    }
+    footer p { margin: 5px 0; font-size: 0.9rem; }
   </style>
 </head>
 <body>
@@ -752,10 +609,16 @@
               Banco de Horas
             </a>
 
-            <a href="{{ url_for('logout') }}" class="card logout-btn" title="Sair do sistema">
-              <i class="fas fa-right-from-bracket"></i>
-              Sair
-            </a>
+            <!-- Logout seguro: POST + CSRF -->
+            <form method="POST" action="{{ url_for('logout') }}" class="logout-form" aria-label="Sair do sistema">
+              {% if csrf_token is defined %}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              {% endif %}
+              <button type="submit" class="card logout-btn" title="Sair do sistema">
+                <i class="fas fa-right-from-bracket"></i>
+                Sair
+              </button>
+            </form>
           </div>
         </div>
       </div>
@@ -801,11 +664,14 @@
               Relatório de Horas Extras
             </a>
 
-            <a href="{{ url_for('logout') }}" class="card logout-btn" title="Sair do sistema">
-              <i class="fas fa-right-from-bracket"></i>
-              Sair
-            </a>
-
+            <!-- Logout seguro: POST + CSRF -->
+            <form method="POST" action="{{ url_for('logout') }}" class="logout-form" aria-label="Sair do sistema">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="card logout-btn" title="Sair do sistema">
+                <i class="fas fa-right-from-bracket"></i>
+                Sair
+              </button>
+            </form>
           </div>
         </div>
       </div>
@@ -824,13 +690,10 @@
       tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.cards-container').forEach(c => c.classList.remove('active'));
-
         tab.classList.add('active');
         const target = tab.getAttribute('data-tab');
         const targetEl = document.getElementById(target);
-        if (targetEl) {
-          targetEl.classList.add('active');
-        }
+        if (targetEl) targetEl.classList.add('active');
       });
     });
   </script>

@@ -50,16 +50,19 @@
       }
     }
 
-    // Mostra / esconde campo "Nome do Substituto"
+    // Mostra / esconde campo "Nome do Substituto" e exige quando "Sim"
     function toggleSubstituto() {
       var select = document.getElementById("havera_substituicao");
       var group = document.getElementById("substituto_group");
+      var input = document.getElementById("nome_substituto");
       if (!select || !group) return;
 
       if (select.value === "Sim") {
         group.style.display = "block";
+        if (input) input.setAttribute("required", "true");
       } else {
         group.style.display = "none";
+        if (input) input.removeAttribute("required");
       }
     }
 
@@ -70,6 +73,7 @@
       var horasInput = document.getElementById("quantidade_horas");
       var minutosInput = document.getElementById("quantidade_minutos");
       var tipoFolgaField = document.getElementById("tipo_folga");
+      var dataFolgaInput = document.getElementById("data");
 
       // Preenche tipo_folga com o mesmo valor do motivo (caso backend use)
       if (tipoFolgaField) {
@@ -83,17 +87,29 @@
       }
 
       if (motivo === "BH") {
-        if (
-          !horasInput ||
-          !minutosInput ||
-          isNaN(horasInput.value) ||
-          isNaN(minutosInput.value) ||
-          horasInput.value.trim() === "" ||
-          minutosInput.value.trim() === ""
-        ) {
-          alert("As horas e os minutos são obrigatórios e devem ser números válidos quando o motivo for Banco de Horas.");
+        var h = parseInt(horasInput && horasInput.value ? horasInput.value : "0", 10);
+        var m = parseInt(minutosInput && minutosInput.value ? minutosInput.value : "0", 10);
+
+        if (Number.isNaN(h) || Number.isNaN(m) || h < 0 || m < 0 || m > 59) {
+          alert("Horas e minutos devem ser válidos (minutos entre 0 e 59) para Banco de Horas.");
           if (event) event.preventDefault();
           return false;
+        }
+        if ((h + m) === 0) {
+          alert("Informe um total de tempo maior que zero para utilizar Banco de Horas.");
+          if (event) event.preventDefault();
+          return false;
+        }
+
+        // Data de referência não pode ser posterior à data da folga
+        if (dataReferenciaInput && dataReferenciaInput.value && dataFolgaInput && dataFolgaInput.value) {
+          var ref = new Date(dataReferenciaInput.value);
+          var folga = new Date(dataFolgaInput.value);
+          if (ref > folga) {
+            alert("A data de referência do Banco de Horas não pode ser posterior à data da folga.");
+            if (event) event.preventDefault();
+            return false;
+          }
         }
       }
       return true;
@@ -776,7 +792,11 @@
           <p>Revise os dados antes de enviar. Campos marcados como obrigatórios devem ser preenchidos.</p>
         </div>
 
+        <!-- Mantido SEM action (POST para a própria URL/endpoint existente) -->
         <form method="POST" onsubmit="return validateForm(event)">
+          <!-- CSRF obrigatório -->
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
           <div class="form-grid">
 
             <!-- Nome -->

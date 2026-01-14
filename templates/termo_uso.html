@@ -3,278 +3,134 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termos de Uso - Gestão de Ponto E.M José Padin Mouta</title>
+  <title>Termos de Uso e Privacidade — Gestão de Ponto • E.M. José Padin Mouta</title>
+
+  <!-- CSRF para POSTs -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
   <style>
     html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      background-color: #f4f6f9;
-      color: #333;
+      margin: 0; padding: 0; height: 100%;
+      background-color: #f4f6f9; color: #333;
       font-family: 'Montserrat', sans-serif;
-      display: flex;
-      flex-direction: column;
+      display: flex; flex-direction: column;
     }
 
-    .header-desktop, .header-mobile {
-      display: none;
-    }
+    .header-desktop, .header-mobile { display: none; }
 
     @media (min-width: 769px) {
       .header-desktop {
-        display: flex;
-        background-color: #007bff;
-        padding: 14px 30px;
-        justify-content: space-between;
-        align-items: center;
-        position: relative;
-        color: white;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        display: flex; background-color: #007bff; padding: 14px 30px;
+        justify-content: space-between; align-items: center; position: relative;
+        color: white; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
       }
-
-      .left-section {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-      }
-
+      .left-section { display: flex; align-items: center; gap: 20px; }
       .logo {
-        width: 68px;
-        height: 68px;
-        object-fit: contain;
-        background-color: white;
-        border-radius: 10px;
-        padding: 6px;
+        width: 68px; height: 68px; object-fit: contain;
+        background-color: white; border-radius: 10px; padding: 6px;
       }
-
-      .text-container {
-        color: white;
-      }
-
-      .escola-nome {
-        font-weight: 700;
-        font-size: 1.6rem;
-        margin: 0;
-      }
-
-      .escola-subtitulo {
-        font-weight: 600;
-        font-size: 1.1rem;
-        margin-top: 4px;
-      }
-
+      .text-container { color: white; }
+      .escola-nome { font-weight: 700; font-size: 1.6rem; margin: 0; }
+      .escola-subtitulo { font-weight: 600; font-size: 1.1rem; margin-top: 4px; }
       .header-center-text-container {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 1;
+        position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1;
       }
-
       .header-center-text {
-        font-weight: 800;
-        font-size: 1.9rem;
-        letter-spacing: 5px;
-        color: white;
-        white-space: nowrap;
+        font-weight: 800; font-size: 1.9rem; letter-spacing: 5px; color: white; white-space: nowrap;
         text-shadow: 0 2px 5px rgba(0,0,0,0.3);
       }
-
       .btn-home {
-        background-color: #0fb300;
-        color: white;
-        padding: 6px 14px;
-        border-radius: 6px;
-        font-weight: 700;
-        font-size: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-        text-decoration: none;
-        transition: background-color 0.3s ease;
-        position: absolute;
-        right: 30px;
-        top: 50%;
-        transform: translateY(-50%);
+        background-color: #0fb300; color: white; padding: 6px 14px; border-radius: 6px;
+        font-weight: 700; font-size: 1.5rem; display: flex; align-items: center; gap: 8px;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8); text-decoration: none; transition: background-color 0.3s ease;
+        position: absolute; right: 30px; top: 50%; transform: translateY(-50%);
       }
-
-      .btn-home:hover {
-        background-color: #0d8a00;
-      }
+      .btn-home:hover { background-color: #0d8a00; }
     }
 
     @media (max-width: 768px) {
       .header-mobile {
-        display: block;
-        background-color: #007bff;
-        color: white;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        position: sticky;
-        top: 0;
-        z-index: 1000;
+        display: block; background-color: #007bff; color: white;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); position: sticky; top: 0; z-index: 1000;
       }
-
       .header-top {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 10px 15px;
-        gap: 15px;
+        display: flex; align-items: center; justify-content: center; padding: 10px 15px; gap: 15px;
       }
-
       .logo {
-        width: 36px;
-        height: 36px;
-        object-fit: contain;
-        background-color: white;
-        border-radius: 10px;
-        padding: 6px;
+        width: 36px; height: 36px; object-fit: contain; background-color: white; border-radius: 10px; padding: 6px;
       }
-
-      .text-container {
-        text-align: center;
-      }
-
-      .escola-nome {
-        font-weight: 700;
-        font-size: 1.3rem;
-        margin: 0;
-      }
-
-      .escola-subtitulo {
-        font-weight: 600;
-        font-size: 1rem;
-        margin-top: 2px;
-      }
-
+      .text-container { text-align: center; }
+      .escola-nome { font-weight: 700; font-size: 1.3rem; margin: 0; }
+      .escola-subtitulo { font-weight: 600; font-size: 1rem; margin-top: 2px; }
       .header-bottom {
-        background-color: #0056b3;
-        padding: 12px 10px;
-        text-align: center;
-        font-weight: 800;
-        font-size: 1rem;
-        letter-spacing: 4px;
-        color: white;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 12px;
+        background-color: #0056b3; padding: 12px 10px; text-align: center;
+        font-weight: 800; font-size: 1rem; letter-spacing: 4px; color: white;
+        display: flex; justify-content: center; align-items: center; gap: 12px;
       }
-
       .btn-home-mobile {
-        background-color: #0fb300;
-        color: white;
-        padding: 6px 10px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 1rem;
-        text-decoration: none;
-        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        background-color: #0fb300; color: white; padding: 6px 10px; border-radius: 6px; font-weight: 600; font-size: 1rem;
+        text-decoration: none; box-shadow: 0 2px 6px rgba(15,179,0,0.8);
       }
-
-      .btn-home-mobile:hover {
-        background-color: #0d8a00;
-      }
+      .btn-home-mobile:hover { background-color: #0d8a00; }
     }
 
     .container {
-      width: 100%;
-      max-width: 860px;
-      background: #ffffff;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-      padding: 30px 40px;
-      margin: 30px auto 50px;
-      box-sizing: border-box;
-      line-height: 1.7;
+      width: 100%; max-width: 920px; background: #ffffff; border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
+      padding: 30px 40px; margin: 30px auto 50px; box-sizing: border-box; line-height: 1.7;
     }
 
     h1 {
-      font-size: 1.8rem;
-      color: #007bff;
-      margin-bottom: 25px;
-      text-align: center;
+      font-size: 1.9rem; color: #0d6efd; margin: 0 0 8px; text-align: center;
+    }
+    .versao {
+      display:block; text-align:center; color:#6b7280; margin-bottom: 24px; font-size: 0.95rem;
     }
 
-    .termo-topico {
-      margin-bottom: 28px;
+    .callout {
+      background: #eef6ff; border: 1px solid #cfe2ff; color:#0b5ed7;
+      padding: 12px 14px; border-radius: 8px; margin-bottom: 18px; font-weight: 600;
     }
 
+    .termo-topico { margin-bottom: 22px; }
     .termo-topico strong {
-      display: block;
-      font-size: 1.15rem;
-      color: #004085;
-      margin-bottom: 8px;
+      display: block; font-size: 1.1rem; color: #004085; margin-bottom: 6px;
     }
+    .termo-texto { font-size: 1rem; color: #333; font-weight: 500; text-align: justify; }
+    .termo-lista { margin: 8px 0 0 18px; padding: 0; }
+    .termo-lista li { margin: 6px 0; }
 
-    .termo-texto {
-      font-size: 1rem;
-      color: #333;
-      font-weight: 500;
-      text-align: justify;
+    .aceite-bloco {
+      margin-top: 24px; padding: 14px 16px; border: 1px dashed #cfe2ff; border-radius: 10px; background: #f8fbff;
     }
+    .aceite-check { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+    .aceite-check input { transform: scale(1.15); }
 
     .btn-aceitar, .btn-recusar {
-      display: block;
-      width: 100%;
-      padding: 12px 20px;
-      font-size: 1.05rem;
-      font-weight: 700;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 18px;
-      transition: 0.3s ease;
+      display: inline-flex; justify-content: center; align-items: center;
+      padding: 12px 20px; font-size: 1.05rem; font-weight: 700; border: none; border-radius: 10px;
+      cursor: pointer; margin-top: 14px; transition: 0.2s ease; min-width: 180px;
     }
-
-    .btn-aceitar {
-      background-color: #007bff;
-      color: white;
-    }
-
-    .btn-aceitar:hover {
-      background-color: #0056b3;
-    }
-
-    .btn-recusar {
-      background-color: #dc3545;
-      color: white;
-    }
-
-    .btn-recusar:hover {
-      background-color: #b02a37;
-    }
+    .btn-aceitar { background-color: #0d6efd; color: white; box-shadow: 0 6px 14px rgba(13,110,253,.25); }
+    .btn-aceitar:disabled { opacity:.6; cursor:not-allowed; box-shadow:none; }
+    .btn-aceitar:hover:not(:disabled) { background-color: #0b5ed7; }
+    .btn-recusar { background-color: #dc3545; color: white; }
+    .btn-recusar:hover { background-color: #b02a37; }
 
     footer {
-      background: linear-gradient(to right, #222, #444);
-      color: #ddd;
-      text-align: center;
-      padding: 12px 0;
-      font-size: 15px;
-      border-top: 2px solid #555;
-      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
-      flex-shrink: 0;
+      background: linear-gradient(to right, #222, #444); color: #ddd; text-align: center; padding: 12px 0;
+      font-size: 15px; border-top: 2px solid #555; box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3); flex-shrink: 0;
     }
 
     @media (max-width: 600px) {
-      .container {
-        padding: 20px;
-      }
-
-      h1 {
-        font-size: 1.5rem;
-      }
-
-      .termo-topico strong {
-        font-size: 1.1rem;
-      }
-
-      .termo-texto {
-        font-size: 0.95rem;
-      }
+      .container { padding: 20px; }
+      h1 { font-size: 1.6rem; }
+      .termo-topico strong { font-size: 1.05rem; }
+      .termo-texto { font-size: 0.96rem; }
+      .btn-aceitar, .btn-recusar { width: 100%; min-width: unset; }
     }
   </style>
 </head>
@@ -317,51 +173,166 @@
   <!-- Conteúdo Principal -->
   <main class="container">
     <h1>Termos de Uso e Política de Privacidade</h1>
+    <small class="versao">Versão 1.0 — Última atualização em 13/01/2026</small>
 
-    <div class="termo-topico">
-      <strong>1. Finalidade do Sistema</strong>
-      <p class="termo-texto">Este sistema foi desenvolvido exclusivamente para uso interno da unidade escolar, com a finalidade de auxiliar no controle de agendamentos de folgas, banco de horas e justificativas de ponto dos servidores da unidade.</p>
+    <div class="callout">
+      <i class="fas fa-info-circle"></i>
+      &nbsp;Este sistema é de iniciativa e gestão exclusiva da <strong>E.M. José Padin Mouta</strong>, para uso interno da unidade escolar.
+      <strong>Não possui vínculo institucional, autorização, integração, espelhamento ou endosso da Prefeitura Municipal, SED/SEDUC
+      ou quaisquer sistemas oficiais</strong>. Todas as informações registradas são <strong>fornecidas pelos próprios usuários</strong>.
     </div>
 
     <div class="termo-topico">
-      <strong>2. Uso Interno e Responsabilidade</strong>
-      <p class="termo-texto">O acesso ao sistema é permitido somente a usuários devidamente cadastrados. Cada usuário é responsável pelas informações inseridas com seu login.</p>
+      <strong>1) Identificação e natureza do sistema</strong>
+      <p class="termo-texto">
+        O “Gestão de Ponto — E.M. José Padin Mouta” é uma ferramenta interna destinada à organização de agendamentos de folgas,
+        banco de horas, justificativas e conferência de registros da unidade escolar. Não é sistema oficial de RH ou ponto eletrônico.
+        Não consulta, importa ou sincroniza dados de plataformas da Prefeitura; todo o conteúdo é inserido manualmente pelos usuários.
+      </p>
     </div>
 
     <div class="termo-topico">
-      <strong>3. Limitação de Responsabilidade</strong>
-      <p class="termo-texto">Este sistema é uma ferramenta auxiliar. Nenhuma informação aqui possui valor legal perante órgãos públicos. A escola e os desenvolvedores não se responsabilizam por falhas externas ou uso indevido.</p>
+      <strong>2) Finalidade e bases legais (LGPD)</strong>
+      <p class="termo-texto">
+        Tratamos dados pessoais exclusivamente para: (i) controle operacional interno de agendamentos/justificativas; (ii) gestão de
+        banco de horas da unidade; (iii) comunicação administrativa com os servidores usuários. As bases legais aplicáveis são
+        <em>legítimo interesse</em> da unidade escolar na organização de suas rotinas internas e/ou <em>consentimento</em> do titular quando exigido.
+      </p>
     </div>
 
     <div class="termo-topico">
-      <strong>4. Privacidade e Proteção de Dados</strong>
-      <p class="termo-texto">As informações cadastradas são protegidas e utilizadas apenas para fins internos, respeitando a confidencialidade dos dados dos servidores.</p>
+      <strong>3) Origem dos dados e responsabilidade do usuário</strong>
+      <p class="termo-texto">
+        Os dados cadastrados têm origem no próprio usuário (ex.: nome, registro funcional, horários e justificativas).
+        O usuário é responsável pela veracidade e atualização das informações que insere com seu login e senha.
+        Informações inseridas indevidamente devem ser corrigidas pelo usuário ou solicitadas à secretaria para ajuste.
+      </p>
     </div>
 
     <div class="termo-topico">
-      <strong>5. Coleta de Informações</strong>
-      <p class="termo-texto">O sistema coleta apenas os dados necessários informados pelos próprios usuários, como nome, cargo e registros de ponto.</p>
+      <strong>4) Escopo de uso e limites</strong>
+      <p class="termo-texto">
+        O sistema é um instrumento auxiliar de controle interno e não substitui normas, portarias, sistemas oficiais (como SED) ou
+        processos formais da Administração. Nenhum relatório aqui gerado possui, por si só, valor legal externo ou caráter de ato
+        administrativo da Prefeitura.
+      </p>
     </div>
 
     <div class="termo-topico">
-      <strong>6. Alterações e Atualizações</strong>
-      <p class="termo-texto">Este termo pode ser alterado sem aviso prévio. O uso contínuo do sistema após mudanças representa aceite automático.</p>
+      <strong>5) Segurança da informação</strong>
+      <p class="termo-texto">
+        Empregamos medidas técnicas e administrativas proporcionais, tais como perfis de acesso, autenticação por sessão,
+        proteção contra CSRF e registro de atividades relevantes. Contudo, nenhum sistema é imune a riscos. O usuário deve
+        manter seu acesso em sigilo e encerrar a sessão ao finalizar o uso.
+      </p>
     </div>
 
     <div class="termo-topico">
-      <strong>7. Aceite</strong>
-      <p class="termo-texto">Ao utilizar este sistema, você declara que leu, compreendeu e concorda com os termos aqui descritos.</p>
+      <strong>6) Compartilhamento e armazenamento</strong>
+      <p class="termo-texto">
+        Não compartilhamos dados com a Prefeitura, fornecedores externos ou terceiros, salvo quando necessário para cumprimento de obrigação
+        legal/ordem de autoridade. Os dados ficam armazenados apenas no ambiente administrado pela unidade escolar e são acessíveis
+        exclusivamente por pessoal autorizado.
+      </p>
     </div>
 
-    <form method="POST">
-      <button type="submit" name="acao" value="aceito" class="btn-aceitar">Aceito os Termos</button>
-      <button type="submit" name="acao" value="nao_aceito" class="btn-recusar">Não Aceito</button>
+    <div class="termo-topico">
+      <strong>7) Retenção e descarte</strong>
+      <p class="termo-texto">
+        Os dados são mantidos pelo tempo necessário ao atendimento das finalidades internas descritas e por prazos eventualmente
+        exigidos por normas aplicáveis. Após o término da necessidade ou a pedido do titular (quando cabível), os dados serão
+        eliminados ou anonimizados com segurança.
+      </p>
+    </div>
+
+    <div class="termo-topico">
+      <strong>8) Direitos do titular (LGPD)</strong>
+      <p class="termo-texto">
+        Nos termos da LGPD, você pode solicitar: confirmação de tratamento, acesso, correção, anonimização, portabilidade (quando aplicável),
+        eliminação de dados tratados com consentimento, informação sobre compartilhamentos e revisão de decisões automatizadas (se houver).
+        Para exercer seus direitos, utilize o contato indicado ao final deste documento.
+      </p>
+    </div>
+
+    <div class="termo-topico">
+      <strong>9) Conta, acesso e conduta</strong>
+      <ul class="termo-lista">
+        <li>O acesso é restrito a usuários previamente cadastrados pela unidade.</li>
+        <li>É vedado divulgar credenciais, inserir dados de terceiros sem autorização ou manipular registros.</li>
+        <li>Usos indevidos podem resultar em bloqueio de acesso e medidas administrativas cabíveis.</li>
+      </ul>
+    </div>
+
+    <div class="termo-topico">
+      <strong>10) Alterações destes termos</strong>
+      <p class="termo-texto">
+        Este documento pode ser atualizado para refletir melhorias do sistema, exigências legais ou mudanças de processo interno.
+        Sempre exibiremos a data da última atualização. O uso contínuo após uma alteração implica ciência dos novos termos.
+      </p>
+    </div>
+
+    <div class="termo-topico">
+      <strong>11) Canal de contato e responsável</strong>
+      <p class="termo-texto">
+        Em caso de dúvidas, solicitações LGPD ou reportes de incidentes, entre em contato com a Secretaria da E.M. José Padin Mouta
+        (canal interno da unidade). As demandas serão registradas e tratadas com prioridade.
+      </p>
+    </div>
+
+    <div class="termo-topico">
+      <strong>12) Declaração de independência institucional</strong>
+      <p class="termo-texto">
+        Reforçamos que este é um sistema próprio da unidade escolar, destinado exclusivamente à sua gestão interna, sem
+        qualquer vínculo, delegação, chancela, integração técnica ou responsabilidade solidária da Prefeitura Municipal de Praia Grande
+        ou de suas secretarias. Quaisquer interpretações externas devem ser validadas pelos canais oficiais competentes.
+      </p>
+    </div>
+
+    <!-- Aceite -->
+    <form method="POST" id="form-termos">
+      <!-- CSRF hidden (mantém compatibilidade com Flask-WTF ou middleware próprio) -->
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+      <div class="aceite-bloco">
+        <label class="aceite-check">
+          <input type="checkbox" id="chk-aceite" />
+          Declaro que li e concordo com os Termos de Uso e a Política de Privacidade acima.
+        </label>
+
+        <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
+          <button type="submit" name="acao" value="aceito" class="btn-aceitar" id="btn-aceitar" disabled>
+            <i class="fas fa-check"></i>&nbsp;Aceito os Termos
+          </button>
+          <button type="submit" name="acao" value="nao_aceito" class="btn-recusar">
+            <i class="fas fa-times"></i>&nbsp;Não Aceito
+          </button>
+        </div>
+      </div>
     </form>
   </main>
 
   <footer>
-    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+    <p>&copy; 2025 - Desenvolvido pela E.M. José Padin Mouta • Sistema interno da unidade escolar (sem vínculo com a Prefeitura)</p>
   </footer>
 
+  <script>
+    // Habilita o botão "Aceito" apenas quando o usuário marcar a confirmação
+    (function(){
+      const chk = document.getElementById('chk-aceite');
+      const btn = document.getElementById('btn-aceitar');
+      if(chk && btn){
+        chk.addEventListener('change', () => { btn.disabled = !chk.checked; });
+      }
+
+      // Opcional: reforça CSRF se houver submissões via fetch no futuro
+      const form = document.getElementById('form-termos');
+      if(form){
+        form.addEventListener('submit', function(e){
+          // Se no projeto existir um middleware que exija o header X-CSRFToken em POST comuns,
+          // você pode converter para fetch aqui. Para submissão padrão, o hidden input já cobre.
+        });
+      }
+    })();
+  </script>
 </body>
 </html>

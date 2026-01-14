@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Registrar Novo Usuário - Gestão de Ponto E.M José Padin Mouta</title>
 
+  <!-- CSRF (meta para Ajax e hidden no form para POST) -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
@@ -40,9 +43,7 @@
     }
 
     @media (min-width: 769px) {
-      main {
-        align-items: center;
-      }
+      main { align-items: center; }
     }
 
     /* ===== CABEÇALHO (PADRÃO PORTAL) ===== */
@@ -68,41 +69,22 @@
         color: white;
       }
 
-      .left-section {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-      }
+      .left-section { display: flex; align-items: center; gap: 20px; }
 
       .logo {
-        width: 80px;   /* padronizado com as outras páginas */
-        height: 80px;  /* padronizado com as outras páginas */
+        width: 80px;
+        height: 80px;
         object-fit: contain;
         border-radius: 10px;
         background-color: white;
         padding: 6px;
       }
 
-      .text-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        text-align: left;
-        color: white;
-      }
+      .text-container { display: flex; flex-direction: column; justify-content: center; text-align: left; color: white; }
 
-      .escola-nome {
-        font-weight: 700;
-        font-size: 1.6rem;
-        margin: 0;
-        line-height: 1.1;
-      }
+      .escola-nome { font-weight: 700; font-size: 1.6rem; margin: 0; line-height: 1.1; }
 
-      .escola-subtitulo {
-        font-weight: 600;
-        font-size: 1.1rem;
-        margin-top: 4px;
-      }
+      .escola-subtitulo { font-weight: 600; font-size: 1.1rem; margin-top: 4px; }
 
       .header-center-text-container {
         position: absolute;
@@ -145,9 +127,7 @@
         z-index: 2;
       }
 
-      .btn-home:hover {
-        background-color: #0d8a00;
-      }
+      .btn-home:hover { background-color: #0d8a00; }
     }
 
     /* Mobile */
@@ -175,34 +155,19 @@
       }
 
       .logo {
-        width: 48px;   /* padronizado com as outras páginas */
-        height: 48px;  /* padronizado com as outras páginas */
+        width: 48px;
+        height: 48px;
         object-fit: contain;
         border-radius: 10px;
         background-color: white;
         padding: 6px;
       }
 
-      .text-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        color: white;
-        text-align: center;
-      }
+      .text-container { display: flex; flex-direction: column; justify-content: center; color: white; text-align: center; }
 
-      .escola-nome {
-        font-weight: 700;
-        font-size: 1.3rem;
-        margin: 0;
-        line-height: 1.1;
-      }
+      .escola-nome { font-weight: 700; font-size: 1.3rem; margin: 0; line-height: 1.1; }
 
-      .escola-subtitulo {
-        font-weight: 600;
-        font-size: 1rem;
-        margin-top: 2px;
-      }
+      .escola-subtitulo { font-weight: 600; font-size: 1rem; margin-top: 2px; }
 
       .header-bottom {
         background-color: #0056b3;
@@ -236,13 +201,9 @@
         transition: background-color 0.3s ease;
       }
 
-      .btn-home-mobile:hover {
-        background-color: #0d8a00;
-      }
+      .btn-home-mobile:hover { background-color: #0d8a00; }
 
-      main {
-        padding-top: 20px;
-      }
+      main { padding-top: 20px; }
     }
 
     /* ===== CARD DE REGISTRO ===== */
@@ -258,35 +219,16 @@
       box-sizing: border-box;
     }
 
-    .register-header {
-      text-align: center;
-      margin-bottom: 18px;
-    }
+    .register-header { text-align: center; margin-bottom: 18px; }
 
     .register-header-icon {
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg,#0d6efd,#2563eb);
-      color: #fff;
-      margin-bottom: 8px;
-      box-shadow: 0 6px 14px rgba(37,99,235,0.5);
+      width: 56px; height: 56px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg,#0d6efd,#2563eb); color: #fff; margin-bottom: 8px; box-shadow: 0 6px 14px rgba(37,99,235,0.5);
     }
 
-    .register-header h1 {
-      font-size: 1.4rem;
-      margin: 0;
-      color: #0f172a;
-    }
+    .register-header h1 { font-size: 1.4rem; margin: 0; color: #0f172a; }
 
-    .register-subtitle {
-      margin-top: 4px;
-      font-size: 0.9rem;
-      color: #6b7280;
-    }
+    .register-subtitle { margin-top: 4px; font-size: 0.9rem; color: #6b7280; }
 
     /* GRID DO FORMULÁRIO */
     .form-grid {
@@ -296,87 +238,39 @@
     }
 
     @media (min-width: 769px) {
-      .form-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .full-width {
-        grid-column: 1 / 3;
-      }
+      .form-grid { grid-template-columns: repeat(2, 1fr); }
+      .full-width { grid-column: 1 / 3; }
     }
 
-    .form-group {
-      display: flex;
-      flex-direction: column;
+    .form-group { display: flex; flex-direction: column; }
+
+    label { font-size: 0.9rem; color: #0f172a; font-weight: 600; margin-bottom: 4px; }
+    label i { margin-right: 4px; color: #0d6efd; }
+
+    input, select {
+      width: 100%; padding: 9px 10px; font-size: 0.95rem; border-radius: 8px; border: 1px solid #cbd5e1; margin: 0;
+      box-sizing: border-box; background-color: #f9fafb; transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     }
 
-    label {
-      font-size: 0.9rem;
-      color: #0f172a;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    label i {
-      margin-right: 4px;
-      color: #0d6efd;
-    }
-
-    input,
-    select {
-      width: 100%;
-      padding: 9px 10px;
-      font-size: 0.95rem;
-      border-radius: 8px;
-      border: 1px solid #cbd5e1;
-      margin: 0;
-      box-sizing: border-box;
-      background-color: #f9fafb;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-    }
-
-    input:focus,
-    select:focus {
-      background-color: #ffffff;
-      border-color: #0d6efd;
-      outline: none;
-      box-shadow: 0 0 0 2px rgba(37,99,235,0.18);
+    input:focus, select:focus {
+      background-color: #ffffff; border-color: #0d6efd; outline: none; box-shadow: 0 0 0 2px rgba(37,99,235,0.18);
     }
 
     .error-message {
-      color: #b91c1c;
-      font-size: 0.75rem;
-      margin-top: 3px;
-      min-height: 14px;
-      font-weight: 600;
+      color: #b91c1c; font-size: 0.75rem; margin-top: 3px; min-height: 14px; font-weight: 600;
     }
 
     .submit-btn {
-      width: 100%;
-      padding: 11px;
-      background: linear-gradient(135deg,#0d6efd,#2563eb);
-      color: #ffffff;
-      border: none;
-      font-size: 1rem;
-      cursor: pointer;
-      border-radius: 999px;
-      margin-top: 14px;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      box-shadow: 0 8px 18px rgba(37,99,235,0.55);
+      width: 100%; padding: 11px; background: linear-gradient(135deg,#0d6efd,#2563eb); color: #ffffff; border: none; font-size: 1rem; cursor: pointer;
+      border-radius: 999px; margin-top: 14px; font-weight: 700; letter-spacing: 0.03em; box-shadow: 0 8px 18px rgba(37,99,235,0.55);
       transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
     }
 
     .submit-btn:hover {
-      background: linear-gradient(135deg,#16a34a,#22c55e); /* verde no hover */
-      transform: translateY(-1px);
-      box-shadow: 0 10px 22px rgba(22,163,74,0.7);
+      background: linear-gradient(135deg,#16a34a,#22c55e); transform: translateY(-1px); box-shadow: 0 10px 22px rgba(22,163,74,0.7);
     }
 
-    .submit-btn:active {
-      transform: translateY(0);
-      box-shadow: 0 4px 10px rgba(22,163,74,0.55);
-    }
+    .submit-btn:active { transform: translateY(0); box-shadow: 0 4px 10px rgba(22,163,74,0.55); }
 
     /* Rodapé */
     footer {
@@ -392,10 +286,7 @@
       box-sizing: border-box;
     }
 
-    footer p {
-      margin: 5px 0;
-      font-size: 0.9rem;
-    }
+    footer p { margin: 5px 0; font-size: 0.9rem; }
   </style>
 </head>
 <body>
@@ -446,7 +337,10 @@
         <p class="register-subtitle">Preencha seus dados para criar o acesso ao Portal do Servidor.</p>
       </div>
 
-      <form id="register-form" method="POST" novalidate>
+      <!-- Importante: action aponta para a rota de registro; POST protegido com CSRF -->
+      <form id="register-form" action="{{ url_for('register') }}" method="POST" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
         <div class="form-grid">
           <!-- Nome Completo -->
           <div class="form-group full-width">
@@ -550,6 +444,16 @@
   </footer>
 
   <script>
+    // Anexa o CSRF em requisições Ajax (incluindo o GET de checagem, caso o backend exija)
+    $.ajaxSetup({
+      beforeSend: function (xhr, settings) {
+        const token = $('meta[name="csrf-token"]').attr('content');
+        if (token) {
+          xhr.setRequestHeader('X-CSRFToken', token);
+        }
+      }
+    });
+
     $(document).ready(function () {
       // Máscaras
       $("#cpf").inputmask("999.999.999-99");
@@ -688,22 +592,19 @@
               if (response.exists) {
                 setError(
                   campo,
-                  campo === "email"
-                    ? "Este e-mail já está cadastrado."
-                    : campo === "cpf"
-                    ? "Este CPF já está cadastrado."
-                    : campo === "rg"
-                    ? "Este RG já está cadastrado."
-                    : campo === "registro"
-                    ? "Este registro já está cadastrado."
-                    : "Valor já cadastrado."
+                  campo === "email" ? "Este e-mail já está cadastrado."
+                  : campo === "cpf" ? "Este CPF já está cadastrado."
+                  : campo === "rg" ? "Este RG já está cadastrado."
+                  : campo === "registro" ? "Este registro já está cadastrado."
+                  : "Valor já cadastrado."
                 );
               } else {
                 clearError(campo);
               }
             },
             error: function () {
-              clearError(campo);
+              // Silencioso para não interferir na UX; backend pode não exigir CSRF em GET
+              // e a rota pode estar protegida por outras validações.
             },
           });
         }, 500);

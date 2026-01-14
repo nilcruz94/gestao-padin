@@ -1,9 +1,12 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Histórico de Folgas</title>
+
+  <!-- CSRF para uso futuro (AJAX, etc.) -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
 
   <!-- Assets -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
@@ -844,7 +847,7 @@
   </footer>
 
   <script>
-    // some feedback: esmaecer mensagens de sucesso depois de alguns segundos
+    // Esmaecer mensagens de sucesso após alguns segundos
     setTimeout(() => {
       document.querySelectorAll('.flash-success').forEach(el => {
         el.style.transition = 'opacity 0.8s ease';

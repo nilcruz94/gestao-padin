@@ -1,143 +1,156 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Agendar Folga</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <!-- FontAwesome para ícones -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script>
-        // Função que exibe ou esconde o campo de Data de Referência dependendo da seleção do motivo
-        function toggleDataReferencia() {
-            var motivo = document.getElementById("motivo").value;
-            var dataReferenciaGroup = document.getElementById("data_banco_horas");
-            var dataReferenciaInput = document.getElementById("data_referencia");
-            
-            if (motivo === "BH") {
-                dataReferenciaGroup.style.display = "block"; // Exibe o campo
-                dataReferenciaInput.setAttribute("required", "true"); // Torna a data de referência obrigatória
-            } else {
-                dataReferenciaGroup.style.display = "none"; // Esconde o campo
-                dataReferenciaInput.removeAttribute("required"); // Remove a obrigatoriedade
-            }
-        }
+  <meta charset="UTF-8">
+  <title>Agendar Folga</title>
 
-        // Função para validar o formulário antes de enviar
-        function validateForm(event) {
-            var motivo = document.getElementById("motivo").value;
-            var dataReferenciaInput = document.getElementById("data_referencia");
+  <!-- CSS principal -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
-            // Verifica se o motivo é Banco de Horas e se a data de referência não foi preenchida
-            if (motivo === "BH" && dataReferenciaInput.style.display !== "none" && !dataReferenciaInput.value) {
-                alert("A data de referência é obrigatória quando o motivo for Banco de Horas.");
-                event.preventDefault(); // Impede o envio do formulário
-                return false;
-            }
-            return true;
-        }
-        
-        // Chama a função de toggle ao carregar a página ou ao mudar a seleção
-        window.onload = toggleDataReferencia;
-    </script>
+  <!-- Ícones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+  <!-- Token CSRF para uso geral e eventual AJAX -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  <script>
+    // Exibe / oculta o grupo da Data de Referência conforme o motivo
+    function toggleDataReferencia() {
+      var motivo = document.getElementById("motivo").value;
+      var grupo = document.getElementById("data_banco_horas");
+      var input = document.getElementById("data_referencia");
+
+      if (!grupo || !input) return;
+
+      if (motivo === "BH") {
+        grupo.style.display = "block";
+        input.setAttribute("required", "true");
+      } else {
+        grupo.style.display = "none";
+        input.removeAttribute("required");
+        input.value = "";
+      }
+    }
+
+    // Validação do formulário (regra mínima para BH)
+    function validateForm(event) {
+      var motivo = document.getElementById("motivo").value;
+      var input = document.getElementById("data_referencia");
+
+      if (motivo === "BH" && input && !input.value) {
+        alert("A data de referência é obrigatória quando o motivo for Banco de Horas.");
+        if (event) event.preventDefault();
+        return false;
+      }
+      return true;
+    }
+
+    // Inicialização na carga
+    window.addEventListener("DOMContentLoaded", function () {
+      // Preenche tipo_folga inicialmente e aplica o toggle
+      var motivoSel = document.getElementById("motivo");
+      var tipoFolgaField = document.getElementById("tipo_folga");
+
+      if (motivoSel && tipoFolgaField) {
+        tipoFolgaField.value = motivoSel.value;
+        motivoSel.addEventListener("change", function () {
+          tipoFolgaField.value = this.value;
+          toggleDataReferencia();
+        });
+      }
+
+      toggleDataReferencia();
+
+      // Se houver uso futuro de fetch/AJAX, padrão para enviar o header X-CSRFToken
+      // Exemplo:
+      // const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      // fetch('/rota', { method: 'POST', headers: { 'X-CSRFToken': csrf } , body: ... })
+    });
+  </script>
 </head>
 
 <body class="page-agendar">
-    <div class="titulo-container">
-        <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
-    </div>
+  <div class="titulo-container">
+    <h1 class="titulo-site">Gestão de Ponto E.M José Padin Mouta</h1>
+  </div>
 
-    <div class="container">
-        <h1><i class="fas fa-calendar-day"></i> Realizar Justificativa </h1>
+  <div class="container">
+    <h1><i class="fas fa-calendar-day"></i> Realizar Justificativa</h1>
 
-            <!-- Formulário de justificativa -->
-            <form method="POST" onsubmit="return validateForm(event)">
-                <!-- Exibição do nome do funcionário (somente leitura) -->
-                <div class="input-group">
-                    <label for="nome"><i class="fas fa-user"></i> Nome do Funcionário</label>
-                    <input type="text" id="nome" name="nome" value="{{ current_user.nome }}" readonly>
-                </div>
+    <!-- Formulário de justificativa -->
+    <form method="POST" onsubmit="return validateForm(event)">
+      <!-- Campo oculto obrigatório do CSRF -->
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                <!-- Exibição do registro funcional do funcionário (somente leitura) -->
-                <div class="input-group">
-                    <label for="registro"><i class="fas fa-id-card"></i> Registro Funcional</label>
-                    <input type="text" id="registro" name="registro" value="{{ current_user.registro }}" readonly>
-                </div>
+      <!-- Nome do Funcionário (somente leitura) -->
+      <div class="input-group">
+        <label for="nome"><i class="fas fa-user"></i> Nome do Funcionário</label>
+        <input type="text" id="nome" name="nome" value="{{ current_user.nome }}" readonly>
+      </div>
 
-                <!-- Campo de data da folga -->
-                <div class="input-group">
-                    <label for="data"><i class="fas fa-calendar-alt"></i> Data da Folga</label>
-                    <input type="date" id="data" name="data" required>
-                </div>
+      <!-- Registro Funcional (somente leitura) -->
+      <div class="input-group">
+        <label for="registro"><i class="fas fa-id-card"></i> Registro Funcional</label>
+        <input type="text" id="registro" name="registro" value="{{ current_user.registro }}" readonly>
+      </div>
 
-                <!-- Campo para selecionar o motivo da folga -->
-                <div class="input-group">
-                    <label for="motivo"><i class="fas fa-list-alt"></i> Motivo da Ausência</label>
-                    <select id="motivo" name="motivo" required onchange="toggleDataReferencia()">
-                        <option value="AB">Abonada (AB)</option>
-                        <option value="BH">Banco de Horas (BH)</option>
-                        <option value="DS">Doação de Sangue (DS)</option>
-                        <option value="TRE">TRE (TRE)</option>
-                        <option value="FS">Falta Simples (FS)</option>
-                    </select>
-                </div>
+      <!-- Data da Folga -->
+      <div class="input-group">
+        <label for="data"><i class="fas fa-calendar-alt"></i> Data da Folga</label>
+        <input type="date" id="data" name="data" required>
+      </div>
 
-                <!-- Campo de Data de Referência (aparece quando 'Banco de Horas' é selecionado) -->
-                <div class="form-group" id="data_banco_horas" style="display: none;">
-                    <label for="data_referencia">Data de Referência (Dia que o banco de horas foi acumulado):</label>
-                    <input type="date" id="data_referencia" name="data_referencia">
-                </div>
+      <!-- Motivo -->
+      <div class="input-group">
+        <label for="motivo"><i class="fas fa-list-alt"></i> Motivo da Ausência</label>
+        <select id="motivo" name="motivo" required>
+          <option value="AB">Abonada (AB)</option>
+          <option value="BH">Banco de Horas (BH)</option>
+          <option value="DS">Doação de Sangue (DS)</option>
+          <option value="TRE">TRE (TRE)</option>
+          <option value="FS">Falta Simples (FS)</option>
+        </select>
+      </div>
 
-                <!-- Campo oculto para tipo_folga -->
-                <input type="hidden" id="tipo_folga" name="tipo_folga" value="">
+      <!-- Data de Referência (apenas para BH) -->
+      <div class="form-group" id="data_banco_horas" style="display: none;">
+        <label for="data_referencia"><i class="fas fa-calendar-day"></i> Data de Referência (dia em que o banco foi acumulado)</label>
+        <input type="date" id="data_referencia" name="data_referencia">
+      </div>
 
-                <!-- Botão para submeter o formulário -->
-                <button type="submit" class="submit-btn">
-                    <i class="fas fa-calendar-check"></i> Enviar justificativa
-                </button>
-            </form>
-        <script>
-            // Script para atualizar o tipo_folga e mostrar/ocultar o campo de data de referência
-            document.getElementById('motivo').addEventListener('change', function() {
-                var motivo = this.value;
-                var tipoFolgaField = document.getElementById('tipo_folga');
-                var dataBancoHorasField = document.getElementById('data_banco_horas');
-        
-                // Atualiza o campo tipo_folga conforme a seleção
-                tipoFolgaField.value = motivo;
-        
-                // Mostra ou oculta o campo de data de referência para Banco de Horas
-                if (motivo === 'BH') {
-                    dataBancoHorasField.style.display = 'block';
-                } else {
-                    dataBancoHorasField.style.display = 'none';
-                }
-            });
-        </script>
+      <!-- Tipo folga (hidden) -->
+      <input type="hidden" id="tipo_folga" name="tipo_folga" value="">
 
-        <!-- Link para voltar ao calendário -->
-        <a href="{{ url_for('index') }}" class="voltar-link">
-            <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
-        </a>
-    </div>
+      <!-- Botão -->
+      <button type="submit" class="submit-btn">
+        <i class="fas fa-calendar-check"></i> Enviar justificativa
+      </button>
+    </form>
 
-    <footer>
-        <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-    </footer>
+    <!-- Voltar -->
+    <a href="{{ url_for('index') }}" class="voltar-link">
+      <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
+    </a>
+  </div>
 
-    <style>
-        /* Estilo para o título no topo do site */
-            .titulo-site {
-                font-family: 'Montserrat', sans-serif; /* Fonte moderna */
-                font-size: 42px; /* Ajuste o tamanho conforme necessário */
-                font-weight: 600; /* Peso de fonte mais leve */
-                color: #007bff; /* Cor azul profissional */
-                text-transform: uppercase; /* Maiúsculas para o título */
-                letter-spacing: 2px; /* Espaçamento entre as letras */
-                margin: 0s;
-                padding-bottom: 10px;
-                border-bottom: 2px solid #007bff; /* Linha embaixo para dar ênfase */
-                text-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Leve sombra para dar profundidade */
-            }
-    </style>
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
+
+  <style>
+    /* Estilo do título */
+    .titulo-site {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 42px;
+      font-weight: 600;
+      color: #007bff;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin: 0;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #007bff;
+      text-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+  </style>
 </body>
 </html>
