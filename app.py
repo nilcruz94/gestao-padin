@@ -3421,6 +3421,19 @@ def user_info_report():
         mimetype="application/pdf"
     )
 
+# --- HUB TRE ---
+from flask import render_template, url_for
+from flask_login import login_required, current_user
+
+@app.route("/tre", methods=["GET"], strict_slashes=False)
+@login_required
+def tre_menu():
+    """
+    Hub da Sessão TRE: aponta para 'Adicionar TRE' e 'Minhas TREs'.
+    """
+    # Se quiser, você pode passar dados de contexto para o template
+    return render_template("tre_menu.html")
+
 # ===========================================
 # LOGIN MANAGER
 # ===========================================
