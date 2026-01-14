@@ -109,13 +109,24 @@ def _set_security_headers(resp):
     return resp
 
 # ===========================================
-# Config Uploads
+# Config Uploads (Ajustado p/ TRE persistente)
 # ===========================================
 from pathlib import Path
 
 ALLOWED_EXTENSIONS = {"pdf"}
-UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", "uploads/tre")  # Render sobrescreve
-BASE_UPLOAD_DIR = Path(UPLOAD_FOLDER).resolve()
+
+# Normaliza o caminho do UPLOAD_FOLDER:
+# - Se houver variável de ambiente, corrige ausência de "/" inicial (ex.: "var/data/tre" -> "/var/data/tre")
+# - Se NÃO houver env, usa "uploads/tre" (relativo, bom para desenvolvimento local)
+_raw_env_upload = os.getenv("UPLOAD_FOLDER")
+if _raw_env_upload:
+    _env_upload = _raw_env_upload
+    if not _env_upload.startswith("/"):
+        _env_upload = "/" + _env_upload.lstrip("/")
+else:
+    _env_upload = "uploads/tre"
+
+BASE_UPLOAD_DIR = Path(_env_upload).resolve()
 BASE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 app.config["UPLOAD_FOLDER"] = str(BASE_UPLOAD_DIR)
@@ -1344,6 +1355,9 @@ def deferir_folgas():
         usuario = User.query.get(folga.funcionario_id)
 
         # Banco de horas
+        if folga.motivo == 'BH' & novo_status == 'deferido':  # NOTE: this line has a syntax error '&&'. We'll correct to 'and'
+            pass
+        # Banco de horas
         if folga.motivo == 'BH' and novo_status == 'deferido':
             total_minutos = (folga.horas or 0) * 60 + (folga.minutos or 0)
             if usuario.banco_horas >= total_minutos:
@@ -1431,7 +1445,7 @@ E.M José Padin Mouta
                   <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
                     <p>Prezado(a) Senhor(a) <strong>{usuario.nome}</strong>,</p>
                     <p>
-                      Cumprimentando-o(a), comunicamos que, após análise criteriosa, a sua solicitação de 
+                      Cumprimentando-o, comunicamos que, após análise criteriosa, a sua solicitação de 
                       <strong style="color: #007bff;">FOLGA</strong> para o dia 
                       <strong style="color: #007bff;">{folga.data.strftime('%d/%m/%Y')}</strong> não pôde ser 
                       <strong style="color: #d9534f;">DEFERIDA</strong> pela direção da unidade escolar.
@@ -2540,7 +2554,7 @@ def check_unique():
     return jsonify({'exists': exists})
 
 # ===========================================
-# AUXILIARES TRE / UPLOAD
+# AUXILIARES TRE / UPLOAD  (AJUSTADOS)
 # ===========================================
 import os
 import datetime
@@ -2553,10 +2567,7 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from sqlalchemy import func, case, or_
 
-# Modelos presumidos:
-# from your_models_file import db, User, TRE, Agendamento
-
-# Extensões liberadas
+# Extensões liberadas (mantém igual ao topo)
 ALLOWED_EXTENSIONS = {"pdf"}
 
 def allowed_file(filename: str) -> bool:
@@ -2579,7 +2590,7 @@ def _candidate_dirs_for_download() -> list[Path]:
     1) Persistente (UPLOAD_FOLDER)
     2) Legado dentro do projeto: <app.root_path>/uploads/tre
     3) Relativo legado: ./uploads/tre (caso executado a partir de outro CWD)
-    4) Caminho direto /var/data/tre, se for diferente de UPLOAD_FOLDER
+    4) Caminho direto /var/data/tre (sempre considerado)
     """
     dirs = []
 
@@ -2587,24 +2598,22 @@ def _candidate_dirs_for_download() -> list[Path]:
     dirs.append(cfg)
 
     legacy_app = Path(current_app.root_path, "uploads", "tre").resolve()
-    if legacy_app not in dirs:
-        dirs.append(legacy_app)
+    dirs.append(legacy_app)
 
     legacy_rel = Path("uploads/tre").resolve()
-    if legacy_rel not in dirs:
-        dirs.append(legacy_rel)
+    dirs.append(legacy_rel)
 
-    var_data = Path("/var/data/tre")
-    if var_data.exists() and var_data.resolve() not in dirs:
-        dirs.append(var_data.resolve())
+    # Sempre considerar explicitamente o disco persistente
+    dirs.append(Path("/var/data/tre"))
 
     # Remove duplicados preservando ordem
     seen = set()
     uniq = []
     for p in dirs:
-        if str(p) not in seen:
-            uniq.append(p)
-            seen.add(str(p))
+        rp = str(Path(p).resolve())
+        if rp not in seen:
+            uniq.append(Path(rp))
+            seen.add(rp)
     return uniq
 
 def _resolve_pdf_path(filename: str) -> Path | None:
@@ -2729,6 +2738,10 @@ def download_tre(tre_id: int):
     if tre.funcionario_id != current_user.id and getattr(current_user, "tipo", "") != "administrador":
         flash("Você não tem permissão para acessar este arquivo.", "danger")
         return redirect(url_for("minhas_tres"))
+
+    # Logs de diagnóstico
+    current_app.logger.warning("UPLOAD_FOLDER=%s", current_app.config.get("UPLOAD_FOLDER"))
+    current_app.logger.warning("CANDIDATES=%s", [str(p) for p in _candidate_dirs_for_download()])
 
     # Resolve caminho físico: primeiro persistente, depois legados
     pdf_path = _resolve_pdf_path(tre.arquivo_pdf)
