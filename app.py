@@ -111,9 +111,15 @@ def _set_security_headers(resp):
 # ===========================================
 # Config Uploads
 # ===========================================
-UPLOAD_FOLDER = "uploads/tre"
+from pathlib import Path
+
 ALLOWED_EXTENSIONS = {"pdf"}
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", "uploads/tre")  # Render sobrescreve
+BASE_UPLOAD_DIR = Path(UPLOAD_FOLDER).resolve()
+BASE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+app.config["UPLOAD_FOLDER"] = str(BASE_UPLOAD_DIR)
+app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024  # opcional: 20MB
 
 # ===========================================
 # Extensões
@@ -2536,10 +2542,86 @@ def check_unique():
 # ===========================================
 # AUXILIARES TRE / UPLOAD
 # ===========================================
-def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+import os
+import datetime
+from pathlib import Path
 
-def sync_tre_user(usuario_id):
+from flask import (
+    current_app, render_template, request, redirect, url_for, flash, jsonify, send_file
+)
+from flask_login import login_required, current_user
+from werkzeug.utils import secure_filename
+from sqlalchemy import func, case, or_
+
+# Modelos presumidos:
+# from your_models_file import db, User, TRE, Agendamento
+
+# Extensões liberadas
+ALLOWED_EXTENSIONS = {"pdf"}
+
+def allowed_file(filename: str) -> bool:
+    """Valida extensão; evita nomes vazios ou sem ponto."""
+    return bool(filename) and "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def _ensure_upload_dir() -> Path:
+    """
+    Garante que o diretório de upload exista.
+    Em produção (Render), configure UPLOAD_FOLDER=/var/data/tre.
+    Localmente, pode cair no default (ex.: uploads/tre).
+    """
+    base_dir = Path(current_app.config.get("UPLOAD_FOLDER", "uploads/tre")).resolve()
+    base_dir.mkdir(parents=True, exist_ok=True)
+    return base_dir
+
+def _candidate_dirs_for_download() -> list[Path]:
+    """
+    Diretórios onde vamos procurar o PDF, nesta ordem:
+    1) Persistente (UPLOAD_FOLDER)
+    2) Legado dentro do projeto: <app.root_path>/uploads/tre
+    3) Relativo legado: ./uploads/tre (caso executado a partir de outro CWD)
+    4) Caminho direto /var/data/tre, se for diferente de UPLOAD_FOLDER
+    """
+    dirs = []
+
+    cfg = Path(current_app.config.get("UPLOAD_FOLDER", "uploads/tre")).resolve()
+    dirs.append(cfg)
+
+    legacy_app = Path(current_app.root_path, "uploads", "tre").resolve()
+    if legacy_app not in dirs:
+        dirs.append(legacy_app)
+
+    legacy_rel = Path("uploads/tre").resolve()
+    if legacy_rel not in dirs:
+        dirs.append(legacy_rel)
+
+    var_data = Path("/var/data/tre")
+    if var_data.exists() and var_data.resolve() not in dirs:
+        dirs.append(var_data.resolve())
+
+    # Remove duplicados preservando ordem
+    seen = set()
+    uniq = []
+    for p in dirs:
+        if str(p) not in seen:
+            uniq.append(p)
+            seen.add(str(p))
+    return uniq
+
+def _resolve_pdf_path(filename: str) -> Path | None:
+    """
+    Dado um nome de arquivo armazenado no banco, procura o arquivo físico
+    nos diretórios candidatos. Retorna Path absoluto se existir.
+    """
+    # Segurança: impede path traversal mesmo que o banco tenha algo malformado
+    safe_name = os.path.basename(filename)
+
+    for base in _candidate_dirs_for_download():
+        candidate = (base / safe_name)
+        if candidate.is_file():
+            return candidate.resolve()
+    return None
+
+def sync_tre_user(usuario_id: int):
     """
     Sincroniza os campos tre_total / tre_usufruidas do usuário com base em:
       - TRE deferidas (tabela TRE)
@@ -2549,7 +2631,7 @@ def sync_tre_user(usuario_id):
     if not usuario:
         return 0, 0, 0
 
-    # Total de dias deferidos (créditos) a partir da tabela TRE
+    # Total de dias deferidos (créditos)
     tre_total = db.session.query(
         func.coalesce(func.sum(
             case(
@@ -2563,7 +2645,7 @@ def sync_tre_user(usuario_id):
         ), 0)
     ).filter(TRE.funcionario_id == usuario_id).scalar()
 
-    # Quantidade de dias já utilizados (agendamentos TRE deferidos)
+    # Dias já utilizados (agendamentos TRE deferidos)
     tre_usufruidas = db.session.query(
         func.count(Agendamento.id)
     ).filter(
@@ -2580,6 +2662,7 @@ def sync_tre_user(usuario_id):
 
     return usuario.tre_total, usuario.tre_usufruidas, tre_restantes
 
+
 # ===========================================
 # TRE - USUÁRIO
 # ===========================================
@@ -2590,7 +2673,7 @@ def adicionar_tre():
         dias_folga = request.form.get("dias_folga", type=int)
         arquivo = request.files.get("arquivo_pdf")
 
-        if not dias_folga or dias_folga < 1 or not arquivo:
+        if not dias_folga or dias_folga < 1 or not arquivo or not arquivo.filename:
             flash("Preencha corretamente os campos e anexe o PDF.", "danger")
             return redirect(url_for("adicionar_tre"))
 
@@ -2598,28 +2681,32 @@ def adicionar_tre():
             flash("Somente PDF é permitido.", "danger")
             return redirect(url_for("adicionar_tre"))
 
-        filename = secure_filename(f"{current_user.id}_{datetime.datetime.now():%Y%m%d%H%M%S}_{arquivo.filename}")
-        save_path = os.path.join(app.root_path, UPLOAD_FOLDER)
-        os.makedirs(save_path, exist_ok=True)
-        arquivo.save(os.path.join(save_path, filename))
+        # Nome do arquivo: <userId>_<timestamp>_<nomeOriginalSanitizado>.pdf
+        filename = secure_filename(
+            f"{current_user.id}_{datetime.datetime.now():%Y%m%d%H%M%S}_{arquivo.filename}"
+        )
+
+        # Salva no diretório persistente configurado
+        save_dir = _ensure_upload_dir()
+        arquivo.save(str(save_dir / filename))
 
         nova = TRE(
             funcionario_id=current_user.id,
             dias_folga=dias_folga,
             arquivo_pdf=filename,
-            status="pendente"
+            status="pendente",
         )
         db.session.add(nova)
         db.session.commit()
 
         sync_tre_user(current_user.id)
-
         flash("TRE enviada para análise do administrador.", "success")
         return redirect(url_for("historico"))
 
     tres_ultimas = (TRE.query.filter_by(funcionario_id=current_user.id)
                     .order_by(TRE.data_envio.desc()).limit(3).all())
     return render_template("adicionar_tre.html", user=current_user, tres=tres_ultimas)
+
 
 @app.route("/minhas_tres", methods=["GET"])
 @login_required
@@ -2630,20 +2717,47 @@ def minhas_tres():
                    .all())
 
     sync_tre_user(current_user.id)
-
     return render_template("minhas_tres.html", tres=minhas_tres, user=current_user)
+
 
 @app.route("/download_tre/<int:tre_id>", methods=["GET"])
 @login_required
-def download_tre(tre_id):
+def download_tre(tre_id: int):
     tre = TRE.query.get_or_404(tre_id)
 
-    if tre.funcionario_id != current_user.id and current_user.tipo != "administrador":
+    # Autorização: dono do arquivo OU administrador
+    if tre.funcionario_id != current_user.id and getattr(current_user, "tipo", "") != "administrador":
         flash("Você não tem permissão para acessar este arquivo.", "danger")
         return redirect(url_for("minhas_tres"))
 
-    directory = os.path.join(app.root_path, UPLOAD_FOLDER)
-    return send_from_directory(directory, tre.arquivo_pdf, as_attachment=True)
+    # Resolve caminho físico: primeiro persistente, depois legados
+    pdf_path = _resolve_pdf_path(tre.arquivo_pdf)
+
+    # Log para depuração em produção
+    current_app.logger.info(
+        "Download TRE id=%s filename=%s resolved_path=%s found=%s",
+        tre_id, tre.arquivo_pdf, pdf_path, bool(pdf_path)
+    )
+
+    if not pdf_path:
+        # Arquivo não está no filesystem (p.ex. upload antigo em camada efêmera)
+        flash(
+            "Arquivo de TRE não está disponível no servidor no momento. "
+            "Isso pode ocorrer após atualização do sistema. "
+            "Entre em contato com a secretaria para reenvio.",
+            "warning"
+        )
+        return redirect(url_for("minhas_tres"))
+
+    # Envia o arquivo diretamente (compatível com Flask 2.x/3.x)
+    return send_file(
+        path_or_file=str(pdf_path),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=os.path.basename(tre.arquivo_pdf),
+        max_age=0  # evita cache
+    )
+
 
 # ===========================================
 # TRE - ADMIN
@@ -2651,18 +2765,18 @@ def download_tre(tre_id):
 @app.route("/admin/tres", methods=["GET"])
 @login_required
 def admin_tres_list():
-    if current_user.tipo != "administrador":
+    if getattr(current_user, "tipo", "") != "administrador":
         flash("Acesso negado.", "danger")
         return redirect(url_for("index"))
 
     status = request.args.get("status", "pendente")
     busca = request.args.get("q", "").strip()
 
-    # 🔹 Base: TRE apenas de usuários ATIVOS
+    # Base: somente usuários ativos
     q = (
         TRE.query
         .join(User, User.id == TRE.funcionario_id)
-        .filter(User.ativo.is_(True))          # <<--- filtro de ativos
+        .filter(User.ativo.is_(True))
     )
 
     if status in ("pendente", "deferida", "indeferida"):
@@ -2675,10 +2789,11 @@ def admin_tres_list():
     tres = q.order_by(TRE.data_envio.desc()).all()
     return render_template("admin_tres.html", tres=tres, status=status)
 
+
 @app.route("/admin/tre/<int:tre_id>/decidir", methods=["POST"])
 @login_required
-def admin_tre_decidir(tre_id):
-    if current_user.tipo != "administrador":
+def admin_tre_decidir(tre_id: int):
+    if getattr(current_user, "tipo", "") != "administrador":
         return jsonify({"error": "Acesso negado"}), 403
 
     tre = TRE.query.get_or_404(tre_id)
@@ -2706,21 +2821,22 @@ def admin_tre_decidir(tre_id):
         sync_tre_user(user.id)
         return jsonify({"success": True, "message": f"TRE deferida (+{dias_aprovados} dia(s))."})
 
-    else:
-        tre.status = "indeferida"
-        tre.dias_validados = dias_validados if (dias_validados and dias_validados > 0) else None
-        tre.parecer_admin = parecer or None
-        tre.validado_em = datetime.datetime.utcnow()
-        tre.validado_por_id = current_user.id
+    # Indeferir
+    tre.status = "indeferida"
+    tre.dias_validados = dias_validados if (dias_validados and dias_validados > 0) else None
+    tre.parecer_admin = parecer or None
+    tre.validado_em = datetime.datetime.utcnow()
+    tre.validado_por_id = current_user.id
 
-        db.session.commit()
-        sync_tre_user(user.id)
-        return jsonify({"success": True, "message": "TRE indeferida."})
+    db.session.commit()
+    sync_tre_user(user.id)
+    return jsonify({"success": True, "message": "TRE indeferida."})
+
 
 @app.route("/admin/tre/<int:tre_id>/excluir", methods=["POST"])
 @login_required
-def admin_tre_excluir(tre_id):
-    if current_user.tipo != "administrador":
+def admin_tre_excluir(tre_id: int):
+    if getattr(current_user, "tipo", "") != "administrador":
         return jsonify({"error": "Acesso negado"}), 403
 
     tre = TRE.query.get_or_404(tre_id)
@@ -2731,7 +2847,8 @@ def admin_tre_excluir(tre_id):
         db.session.commit()
         sync_tre_user(user.id)
         return jsonify({"success": True})
-    except Exception:
+    except Exception as e:
+        current_app.logger.exception("Erro ao excluir TRE id=%s: %s", tre_id, e)
         db.session.rollback()
         return jsonify({"error": "Falha ao excluir a TRE."}), 500
 
