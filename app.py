@@ -680,9 +680,10 @@ def agendar():
         # 🔹 Mantém o saldo de TRE sempre correto antes de validar
         sync_tre_user(current_user.id)
 
-        tipo_folga = request.form['tipo_folga']         # 'AB', 'BH', 'DS', 'TRE', 'FS'
-        data_folga = request.form['data']
-        motivo = request.form['motivo']
+        # Valores do formulário
+        tipo_folga = request.form.get('tipo_folga')      # ex.: 'AB', 'BH', 'DS', 'TRE', 'LM', 'FS'
+        data_folga = request.form.get('data')
+        motivo = request.form.get('motivo')              # deve espelhar o select
         data_referencia = request.form.get('data_referencia')
 
         substituicao = request.form.get("havera_substituicao")
@@ -690,12 +691,11 @@ def agendar():
         if substituicao == "Não":
             nome_substituto = None
 
-        if tipo_folga == 'AB':
-            motivo = 'AB'
-            tipo_folga = 'AB'
+        # 🔸 Mantém motivo/tipo_folga sincronizados (o select é a fonte da verdade)
+        tipo_folga = motivo or tipo_folga
 
         # ---- Validação específica para TRE ----
-        if tipo_folga == 'TRE' or motivo == 'TRE':
+        if tipo_folga == 'TRE':
             usuario = User.query.get(current_user.id)
             tre_total = int(usuario.tre_total or 0)
             tre_usuf = int(usuario.tre_usufruidas or 0)
@@ -716,21 +716,25 @@ def agendar():
                 flash("Você não possui TREs disponíveis para agendar no momento.", "danger")
                 return render_template('agendar.html')
 
+        # Descrição amigável para o e-mail/notificações
         descricao_motivo = {
-            'AB': 'Abonada',
-            'BH': 'Banco de Horas',
-            'DS': 'Doação de Sangue',
+            'AB':  'Abonada',
+            'BH':  'Banco de Horas',
+            'DS':  'Doação de Sangue',
             'TRE': 'TRE',
-            'FS': 'Falta Simples'
-        }.get(motivo, 'Agendamento')
+            'LM':  'Licença Médica',
+            'FS':  'Falta Simples',
+        }.get(tipo_folga, 'Agendamento')
 
+        # ---- Validação e parsing da data da folga ----
         try:
             data_folga = datetime.datetime.strptime(data_folga, '%Y-%m-%d').date()
-        except ValueError:
+        except (TypeError, ValueError):
             flash("Data inválida.", "danger")
             return redirect(url_for('agendar'))
 
-        if motivo == 'AB':
+        # ---- Regras específicas AB (1 por mês; 6 deferidas por ano) ----
+        if tipo_folga == 'AB':
             agendamento_existente = Agendamento.query.filter(
                 Agendamento.funcionario_id == current_user.id,
                 Agendamento.motivo == 'AB',
@@ -752,6 +756,7 @@ def agendar():
                 flash("Você já atingiu o limite de 6 folgas 'AB' deferidas neste ano.", "danger")
                 return render_template('agendar.html')
 
+        # ---- Banco de Horas: validação de data de referência e tempo ----
         if tipo_folga == 'BH' and data_referencia:
             try:
                 data_referencia = datetime.datetime.strptime(data_referencia, '%Y-%m-%d').date()
@@ -761,9 +766,10 @@ def agendar():
         else:
             data_referencia = None
 
+        # Horas/minutos (para BH; para outros motivos mantém 0/0)
         try:
-            horas = int(request.form['quantidade_horas']) if request.form['quantidade_horas'].strip() else 0
-            minutos = int(request.form['quantidade_minutos']) if request.form['quantidade_minutos'].strip() else 0
+            horas = int(request.form.get('quantidade_horas', '0').strip() or 0)
+            minutos = int(request.form.get('quantidade_minutos', '0').strip() or 0)
         except ValueError:
             flash("Horas ou minutos inválidos.", "danger")
             return redirect(url_for('agendar'))
@@ -771,15 +777,32 @@ def agendar():
         total_minutos = (horas * 60) + minutos
         usuario = User.query.get(current_user.id)
 
-        if tipo_folga == 'BH' and usuario.banco_horas < total_minutos:
-            flash("Você não possui horas suficientes no banco de horas para este agendamento.", "danger")
-            return redirect(url_for('index'))
+        if tipo_folga == 'BH':
+            # Consistência do tempo informado
+            if minutos < 0 or minutos > 59 or horas < 0 or total_minutos == 0:
+                flash("Informe um tempo válido para Banco de Horas (minutos entre 0 e 59 e total > 0).", "danger")
+                return redirect(url_for('agendar'))
 
+            # Data de referência não pode ser posterior à data da folga
+            if data_referencia and data_referencia > data_folga:
+                flash("A data de referência do Banco de Horas não pode ser posterior à data da folga.", "danger")
+                return redirect(url_for('agendar'))
+
+            # Saldo suficiente
+            if (usuario.banco_horas or 0) < total_minutos:
+                flash("Você não possui horas suficientes no banco de horas para este agendamento.", "danger")
+                return redirect(url_for('index'))
+        else:
+            # Para motivos diferentes de BH, zera horas/minutos
+            horas = 0
+            minutos = 0
+
+        # ---- Criação do agendamento ----
         novo_agendamento = Agendamento(
             funcionario_id=current_user.id,
             status='em_espera',
             data=data_folga,
-            motivo=motivo,
+            motivo=tipo_folga,            # usa o valor já sincronizado
             tipo_folga=tipo_folga,
             data_referencia=data_referencia,
             horas=horas,
@@ -792,32 +815,86 @@ def agendar():
             db.session.add(novo_agendamento)
             db.session.commit()
 
-            assunto = "E.M José Padin Mouta – Confirmação de Agendamento"
             nome = current_user.nome
             data_str = novo_agendamento.data.strftime('%d/%m/%Y')
 
-            mensagem_html = f"""
-            <html>
-              <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
-                <p>Prezado(a) Senhor(a) <strong>{nome}</strong>,</p>
-                <p>
-                  Sua solicitação de <strong>{descricao_motivo}</strong> para o dia
-                  <strong>{data_str}</strong> foi registrada com sucesso e encontra-se
-                  em <strong style="color: #FFA500;">EM ESPERA</strong>, aguardando análise da direção.
-                </p>
-                <p>Você será notificado assim que houver uma decisão.</p>
-                <br>
-                <p>Atenciosamente,</p>
-                <p>
-                  Nilson Cruz<br>
-                  Secretário da Unidade Escolar<br>
-                  E.M José Padin Mouta
-                </p>
-              </body>
-            </html>
-            """
+            # ==== E-MAIL ESPECÍFICO PARA LM ====
+            if tipo_folga == 'LM':
+                assunto = "E.M José Padin Mouta – Comunicação de Licença Médica registrada"
+                mensagem_html = f"""
+                <html>
+                  <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
+                    <p>Prezado(a) Senhor(a) <strong>{nome}</strong>,</p>
+                    <p>
+                      Registramos sua <strong>comunicação de Licença Médica (LM)</strong> para o dia
+                      <strong>{data_str}</strong>. Este registro serve para <strong>ciência da direção e organização interna</strong>
+                      (cobertura/substituição), não sendo um pedido de autorização.
+                    </p>
+                    <p>
+                      <strong>Importante:</strong> a <u>concessão</u>, <u>homologação</u> e eventual <u>indeferimento</u> de Licença Médica
+                      são de responsabilidade da <strong>Prefeitura/órgão central</strong>, conforme as normas municipais vigentes.
+                      A escola <strong>não defere nem indefere</strong> licenças médicas.
+                    </p>
+                    <p>
+                      Caso ainda não o tenha feito, siga o procedimento oficial do município para apresentação do
+                      <strong>atestado/laudo</strong> e abertura do processo correspondente. Este e-mail é apenas a confirmação de que a
+                      escola foi notificada.
+                    </p>
+                    <p>
+                      No sistema, o status aparecerá como <strong style="color:#FFA500;">EM ESPERA</strong> apenas para fins administrativos
+                      (ciência/organização). Não se trata de fila de aprovação.
+                    </p>
+                    <br>
+                    <p>Atenciosamente,</p>
+                    <p>
+                      Nilson Cruz<br>
+                      Secretário da Unidade Escolar<br>
+                      E.M José Padin Mouta
+                    </p>
+                  </body>
+                </html>
+                """
+                mensagem_texto = f"""Prezado(a) Senhor(a) {nome},
 
-            mensagem_texto = f"""Prezado(a) Senhor(a) {nome},
+Registramos sua COMUNICAÇÃO DE LICENÇA MÉDICA (LM) para o dia {data_str}.
+Este registro é para CIÊNCIA da direção e organização interna (cobertura), não sendo um pedido de autorização.
+
+Importante: a concessão/homologação/indeferimento de LM é de responsabilidade da Prefeitura/órgão central, conforme normas municipais.
+A escola não defere nem indefere licenças médicas.
+
+Caso ainda não tenha feito, siga o procedimento oficial do município para apresentação do atestado/laudo e abertura do processo.
+No sistema, o status “EM ESPERA” é apenas administrativo (ciência/organização), não se trata de fila de aprovação.
+
+Atenciosamente,
+
+Nilson Cruz
+Secretário da Unidade Escolar
+E.M José Padin Mouta
+"""
+            else:
+                # ==== E-MAIL PADRÃO (demais motivos) ====
+                assunto = "E.M José Padin Mouta – Confirmação de Agendamento"
+                mensagem_html = f"""
+                <html>
+                  <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
+                    <p>Prezado(a) Senhor(a) <strong>{nome}</strong>,</p>
+                    <p>
+                      Sua solicitação de <strong>{descricao_motivo}</strong> para o dia
+                      <strong>{data_str}</strong> foi registrada com sucesso e encontra-se
+                      em <strong style="color: #FFA500;">EM ESPERA</strong>, aguardando análise da direção.
+                    </p>
+                    <p>Você será notificado assim que houver uma decisão.</p>
+                    <br>
+                    <p>Atenciosamente,</p>
+                    <p>
+                      Nilson Cruz<br>
+                      Secretário da Unidade Escolar<br>
+                      E.M José Padin Mouta
+                    </p>
+                  </body>
+                </html>
+                """
+                mensagem_texto = f"""Prezado(a) Senhor(a) {nome},
 
 Sua solicitação de {descricao_motivo} para o dia {data_str} foi registrada com sucesso e encontra-se EM ESPERA, aguardando análise da direção.
 
@@ -829,6 +906,7 @@ Nilson Cruz
 Secretário da Unidade Escolar
 E.M José Padin Mouta
 """
+
             enviar_email(current_user.email, assunto, mensagem_html, mensagem_texto)
             flash("Agendamento realizado com sucesso. Você receberá um e-mail de confirmação.", "success")
 
@@ -1397,7 +1475,7 @@ def deferir_folgas():
 
         usuario = User.query.get(folga.funcionario_id)
 
-        # Banco de horas
+        # Banco de horas: ao deferir, debita saldo e registra movimento
         if folga.motivo == 'BH' and novo_status == 'deferido':
             total_minutos = (folga.horas or 0) * 60 + (folga.minutos or 0)
             if usuario.banco_horas >= total_minutos:
@@ -1417,7 +1495,7 @@ def deferir_folgas():
                 flash("O funcionário não tem horas suficientes no banco de horas para este agendamento.", "danger")
                 return redirect(url_for('deferir_folgas'))
 
-        # Atualiza status da folga
+        # Atualiza status
         folga.status = novo_status
 
         try:
@@ -1431,31 +1509,81 @@ def deferir_folgas():
                 "success" if novo_status == 'deferido' else "danger"
             )
 
+            # =========================
+            # E-mails de notificação
+            # =========================
             if novo_status == 'deferido':
-                assunto = "E.M José Padin Mouta - Deferimento de Folga"
-                mensagem_html = f"""
-                <html>
-                  <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
-                    <p>Prezado(a) Senhor(a) <strong>{usuario.nome}</strong>,</p>
-                    <p>
-                      Cumprimentando-o(a), informamos que a sua solicitação de 
-                      <strong style="color: #007bff;">FOLGA</strong> para o dia 
-                      <strong style="color: #007bff;">{folga.data.strftime('%d/%m/%Y')}</strong> foi 
-                      <strong style="color: #5cb85c;">DEFERIDA</strong> pela direção da unidade escolar.
-                    </p>
-                    <p>Agradecemos a colaboração e estamos à disposição para quaisquer esclarecimentos adicionais.</p>
-                    <br>
-                    <p>Atenciosamente,</p>
-                    <p>
-                      Nilson Cruz<br>
-                      Secretário da Unidade Escolar<br>
-                      3496-5321<br>
-                      E.M José Padin Mouta
-                    </p>
-                  </body>
-                </html>
-                """
-                mensagem_texto = f"""Prezado(a) Senhor(a) {usuario.nome},
+                if folga.motivo == 'LM':
+                    # E-mail específico para Licença Médica (ciência)
+                    assunto = "E.M José Padin Mouta – Ciência de Licença Médica registrada"
+                    mensagem_html = f"""
+                    <html>
+                      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
+                        <p>Prezado(a) Senhor(a) <strong>{usuario.nome}</strong>,</p>
+                        <p>
+                          Informamos que a sua <strong>comunicação de Licença Médica (LM)</strong> para o dia
+                          <strong style="color:#007bff;">{folga.data.strftime('%d/%m/%Y')}</strong> foi registrada e a direção
+                          <strong>tomou ciência</strong>.
+                        </p>
+                        <p>
+                          Esclarecemos que a <u>concessão/homologação</u> de Licença Médica é de responsabilidade da
+                          <strong>Prefeitura/órgão central</strong>. A escola <strong>não defere nem indefere</strong> LM.
+                        </p>
+                        <p>
+                          No sistema, o status <strong style="color:#28a745;">DEFERIDO</strong> indica apenas a <strong>ciência administrativa</strong>
+                          e a organização interna (cobertura/substituição), não sendo uma autorização médica.
+                        </p>
+                        <br>
+                        <p>Atenciosamente,</p>
+                        <p>
+                          Nilson Cruz<br>
+                          Secretário da Unidade Escolar<br>
+                          3496-5321<br>
+                          E.M José Padin Mouta
+                        </p>
+                      </body>
+                    </html>
+                    """
+                    mensagem_texto = f"""Prezado(a) Senhor(a) {usuario.nome},
+
+Sua COMUNICAÇÃO DE LICENÇA MÉDICA (LM) para o dia {folga.data.strftime('%d/%m/%Y')} foi registrada e a direção tomou ciência.
+
+A concessão/homologação de LM é de responsabilidade da Prefeitura/órgão central; a escola não defere nem indefere LM.
+O status "DEFERIDO" no sistema indica somente ciência administrativa e organização interna (cobertura/substituição).
+
+Atenciosamente,
+
+Nilson Cruz
+Secretário da Unidade Escolar
+3496-5321
+E.M José Padin Mouta
+"""
+                else:
+                    # E-mail padrão de deferimento (demais motivos)
+                    assunto = "E.M José Padin Mouta - Deferimento de Folga"
+                    mensagem_html = f"""
+                    <html>
+                      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
+                        <p>Prezado(a) Senhor(a) <strong>{usuario.nome}</strong>,</p>
+                        <p>
+                          Cumprimentando-o(a), informamos que a sua solicitação de 
+                          <strong style="color: #007bff;">FOLGA</strong> para o dia 
+                          <strong style="color: #007bff;">{folga.data.strftime('%d/%m/%Y')}</strong> foi 
+                          <strong style="color: #5cb85c;">DEFERIDA</strong> pela direção da unidade escolar.
+                        </p>
+                        <p>Agradecemos a colaboração e estamos à disposição para quaisquer esclarecimentos adicionais.</p>
+                        <br>
+                        <p>Atenciosamente,</p>
+                        <p>
+                          Nilson Cruz<br>
+                          Secretário da Unidade Escolar<br>
+                          3496-5321<br>
+                          E.M José Padin Mouta
+                        </p>
+                      </body>
+                    </html>
+                    """
+                    mensagem_texto = f"""Prezado(a) Senhor(a) {usuario.nome},
 
 Informamos que a sua solicitação de FOLGA para o dia {folga.data.strftime('%d/%m/%Y')} foi DEFERIDA pela direção da unidade escolar.
 
@@ -1467,6 +1595,7 @@ Secretário da Unidade Escolar
 E.M José Padin Mouta
 """
             else:
+                # E-mail de indeferimento (mantido como está)
                 assunto = "E.M José Padin Mouta - Indeferimento de Folga"
                 mensagem_html = f"""
                 <html>
@@ -1494,6 +1623,8 @@ E.M José Padin Mouta
 
 Após análise criteriosa, a sua solicitação de FOLGA para o dia {folga.data.strftime('%d/%m/%Y')} não pôde ser DEFERIDA.
 
+Estamos à disposição para eventuais esclarecimentos.
+
 Atenciosamente,
 
 Nilson Cruz
@@ -1501,6 +1632,7 @@ Secretário da Unidade Escolar
 3496-5321
 E.M José Padin Mouta
 """
+
             enviar_email(usuario.email, assunto, mensagem_html, mensagem_texto)
 
         except Exception as e:
