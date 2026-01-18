@@ -13,9 +13,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
 
   <style>
-    * , *::before, *::after {
-      box-sizing: border-box;
-    }
+    * , *::before, *::after { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -34,21 +32,12 @@
       justify-content: center;
       align-items: flex-start;
     }
-
     @media (min-width: 769px) {
-      main {
-        padding: 30px 24px 90px;
-        align-items: center;
-      }
+      main { padding: 30px 24px 90px; align-items: center; }
     }
 
     /* ========= CABEÇALHO PADRÃO ========= */
-
-    .header-desktop,
-    .header-mobile {
-      display: none;
-      flex-shrink: 0;
-    }
+    .header-desktop, .header-mobile { display: none; flex-shrink: 0; }
 
     /* Desktop */
     @media (min-width: 769px) {
@@ -65,362 +54,164 @@
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         color: white;
       }
-
-      .left-section {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-      }
-
+      .left-section { display: flex; align-items: center; gap: 20px; }
       .logo {
-        width: 80px;
-        height: 80px;
-        object-fit: contain;
-        border-radius: 10px;
-        background-color: white;
-        padding: 6px;
+        width: 80px; height: 80px; object-fit: contain; border-radius: 10px;
+        background-color: white; padding: 6px;
       }
-
-      .text-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        text-align: left;
-        color: white;
-      }
-
-      .escola-nome {
-        font-weight: 700;
-        font-size: 1.6rem;
-        margin: 0;
-        line-height: 1.1;
-      }
-
-      .escola-subtitulo {
-        font-weight: 600;
-        font-size: 1.1rem;
-        margin-top: 4px;
-      }
+      .text-container { display: flex; flex-direction: column; justify-content: center; text-align: left; color: white; }
+      .escola-nome { font-weight: 700; font-size: 1.6rem; margin: 0; line-height: 1.1; }
+      .escola-subtitulo { font-weight: 600; font-size: 1.1rem; margin-top: 4px; }
 
       .header-center-text-container {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        user-select: none;
-        z-index: 1;
+        position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+        display: flex; align-items: center; gap: 20px; user-select: none; z-index: 1;
       }
-
       .header-center-text {
-        font-weight: 800;
-        font-size: 1.9rem;
-        color: white;
-        letter-spacing: 5px;
-        white-space: nowrap;
+        font-weight: 800; font-size: 1.9rem; color: white; letter-spacing: 5px; white-space: nowrap;
         text-shadow: 0 2px 5px rgba(0,0,0,0.3);
       }
-
       .btn-home {
-        background-color: #0fb300;
-        color: white;
-        padding: 6px 14px;
-        border-radius: 6px;
-        font-weight: 700;
-        font-size: 1.5rem;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-        transition: background-color 0.3s ease;
-        position: absolute;
-        right: 30px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 2;
+        background-color: #0fb300; color: white; padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 1.5rem;
+        text-decoration: none; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease; position: absolute; right: 30px; top: 50%; transform: translateY(-50%); z-index: 2;
       }
-
-      .btn-home:hover {
-        background-color: #0d8a00;
-      }
+      .btn-home:hover { background-color: #0d8a00; }
     }
 
     /* Mobile */
     @media (max-width: 768px) {
       .header-mobile {
-        display: block;
-        width: 100%;
-        box-sizing: border-box;
-        color: white;
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        background-color: #007bff;
+        display: block; width: 100%; box-sizing: border-box; color: white; position: sticky; top: 0; z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); background-color: #007bff;
       }
-
       .header-top {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 15px;
-        padding: 10px 15px;
-        background-color: #007bff;
-        text-align: center;
+        display: flex; align-items: center; justify-content: center; gap: 15px; padding: 10px 15px;
+        background-color: #007bff; text-align: center;
       }
-
-      .logo {
-        width: 48px;
-        height: 48px;
-        object-fit: contain;
-        border-radius: 10px;
-        background-color: white;
-        padding: 6px;
-      }
-
-      .text-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        color: white;
-        text-align: center;
-      }
-
-      .escola-nome {
-        font-weight: 700;
-        font-size: 1.3rem;
-        margin: 0;
-        line-height: 1.1;
-      }
-
-      .escola-subtitulo {
-        font-weight: 600;
-        font-size: 1rem;
-        margin-top: 2px;
-      }
-
+      .logo { width: 48px; height: 48px; object-fit: contain; border-radius: 10px; background-color: white; padding: 6px; }
+      .text-container { display: flex; flex-direction: column; justify-content: center; color: white; text-align: center; }
+      .escola-nome { font-weight: 700; font-size: 1.3rem; margin: 0; line-height: 1.1; }
+      .escola-subtitulo { font-weight: 600; font-size: 1rem; margin-top: 2px; }
       .header-bottom {
-        background-color: #0056b3;
-        text-align: center;
-        padding: 12px 10px;
-        font-weight: 800;
-        font-size: 1.0rem;
-        letter-spacing: 4px;
-        user-select: none;
-        color: white;
-        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 12px;
-        white-space: nowrap;
+        background-color: #0056b3; text-align: center; padding: 12px 10px; font-weight: 800; font-size: 1.0rem; letter-spacing: 4px; user-select: none;
+        color: white; box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2); display: flex; justify-content: center; align-items: center; gap: 12px; white-space: nowrap;
       }
-
       .btn-home-mobile {
-        background-color: #0fb300;
-        color: white;
-        padding: 6px 10px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 1rem;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-        transition: background-color 0.3s ease;
+        background-color: #0fb300; color: white; padding: 6px 10px; border-radius: 6px; font-weight: 600; font-size: 1rem; text-decoration: none;
+        display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(15,179,0,0.8); transition: background-color 0.3s ease;
       }
-
-      .btn-home-mobile:hover {
-        background-color: #0d8a00;
-      }
+      .btn-home-mobile:hover { background-color: #0d8a00; }
     }
 
     /* ========= LAYOUT DO DASHBOARD ========= */
-
-    .dashboard-shell {
-      width: 100%;
-      max-width: 1120px;
-      margin: 0 auto;
-    }
+    .dashboard-shell { width: 100%; max-width: 1120px; margin: 0 auto; }
 
     .welcome-banner {
-      background: #ffffff;
-      border-radius: 18px;
-      padding: 16px 18px;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: flex-start;
-      justify-content: flex-start;
-      gap: 16px;
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
-      border-left: 5px solid #16a34a;
+      background: #ffffff; border-radius: 18px; padding: 16px 18px; margin-bottom: 20px;
+      display: flex; align-items: flex-start; justify-content: flex-start; gap: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12); border-left: 5px solid #16a34a;
     }
-
-    .welcome-main-block {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      width: 100%;
-    }
-
-    .welcome-text-main {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #0f172a;
-      margin: 0;
-    }
-
-    .welcome-text-sub {
-      font-size: 0.9rem;
-      color: #6b7280;
-      margin: 0;
-    }
-
+    .welcome-main-block { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+    .welcome-text-main { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0; }
+    .welcome-text-sub { font-size: 0.9rem; color: #6b7280; margin: 0; }
     .welcome-text-sub span { display: inline; }
 
-    .welcome-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 14px;
-      margin-top: 6px;
-    }
-
+    .welcome-meta { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 6px; }
     .welcome-meta-item {
-      font-size: 0.86rem;
-      color: #374151;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background-color: #f1f5f9;
-      border: 1px solid #e5e7eb;
-      white-space: nowrap;
+      font-size: 0.86rem; color: #374151; display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px; background-color: #f1f5f9; border: 1px solid #e5e7eb; white-space: nowrap;
     }
-
-    .welcome-meta-item i {
-      font-size: 0.9rem;
-      color: #2563eb;
-    }
-
-    .welcome-meta-item span {
-      font-weight: 600;
-      color: #111827;
-    }
+    .welcome-meta-item i { font-size: 0.9rem; color: #2563eb; }
+    .welcome-meta-item span { font-weight: 600; color: #111827; }
 
     @media (max-width: 700px) {
-      .welcome-banner {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 12px 14px;
-        border-radius: 16px;
-        gap: 8px;
-      }
+      .welcome-banner { flex-direction: column; align-items: flex-start; padding: 12px 14px; border-radius: 16px; gap: 8px; }
     }
-
     @media (max-width: 600px) {
-      .welcome-banner {
-        padding: 10px 12px;
-        margin-bottom: 14px;
-        border-radius: 14px;
-        gap: 6px;
-      }
+      .welcome-banner { padding: 10px 12px; margin-bottom: 14px; border-radius: 14px; gap: 6px; }
       .welcome-text-main { font-size: 1rem; }
       .welcome-text-sub { font-size: 0.82rem; }
       .welcome-text-sub span { display: block; }
       .welcome-meta { margin-top: 6px; gap: 6px 8px; }
-      .welcome-meta-item {
-        font-size: 0.78rem; padding: 3px 8px; flex: 1 1 48%; justify-content: flex-start;
-      }
+      .welcome-meta-item { font-size: 0.78rem; padding: 3px 8px; flex: 1 1 48%; justify-content: flex-start; }
     }
 
     /* ========= FLASH MESSAGES ========= */
-
     .flash-container { text-align: center; margin-bottom: 18px; }
     .flash {
       padding: 9px 18px; margin: 5px auto; border-radius: 999px; width: fit-content;
       font-weight: 600; font-size: 0.88rem; font-family: 'Montserrat', sans-serif;
     }
     .flash.success {
-      background-color: #dcfce7; color: #166534; box-shadow: 0 0 8px rgba(22, 101, 52, 0.45);
-      border: 1px solid #bbf7d0;
+      background-color: #dcfce7; color: #166534; box-shadow: 0 0 8px rgba(22, 101, 52, 0.45); border: 1px solid #bbf7d0;
     }
     .flash.error, .flash.danger {
-      background-color: #fee2e2; color: #b91c1c; box-shadow: 0 0 8px rgba(185, 28, 28, 0.45);
-      border: 1px solid #fecaca;
+      background-color: #fee2e2; color: #b91c1c; box-shadow: 0 0 8px rgba(185, 28, 28, 0.45); border: 1px solid #fecaca;
     }
 
     /* ========= TABS ========= */
-
     .tabs {
       display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
       margin: 4px 0 6px; user-select: none;
     }
-
     .tab {
       background-color: #e5f0ff; padding: 8px 18px; cursor: pointer; font-weight: 700; border-radius: 999px;
       color: #1f2933; border: 1px solid #0d6efd; transition: background-color .2s, color .2s, box-shadow .2s, transform .15s;
       font-size: 0.9rem; display: inline-flex; align-items: center; gap: 6px;
     }
-
     .tab:hover:not(.active) {
       background-color: #d3e3ff; color: #0b3c91; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35); transform: translateY(-1px);
     }
-
     .tab.active {
       background: linear-gradient(135deg, #0d6efd, #2563eb); color: #ffffff;
       box-shadow: 0 5px 16px rgba(37, 99, 235, 0.75); border-color: transparent; letter-spacing: 0.04em;
     }
-
-    .access-services {
-      font-weight: 700; font-size: 0.95rem; color: #2563eb; margin: 6px 0 12px; text-align: center;
-    }
+    .access-services { font-weight: 700; font-size: 0.95rem; color: #2563eb; margin: 6px 0 12px; text-align: center; }
 
     /* ========= CARDS ========= */
-
     .cards-container { display: none; justify-content: center; margin: 0 auto; width: 100%; }
     .cards-container.active { display: flex; }
 
     .cards-wrapper {
-      background: #ffffff; padding: 20px 20px 24px; border-radius: 18px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
-      width: 100%; border: 1px solid rgba(148, 163, 184, 0.4);
+      background: #ffffff; padding: 20px 20px 24px; border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12); width: 100%;
+      border: 1px solid rgba(148, 163, 184, 0.4);
     }
 
-    .cards-grid {
-      display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)); gap: 16px; justify-content: center;
-    }
+    .cards-grid { display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)); gap: 16px; justify-content: center; }
 
     .card {
       background: #ffffff; color: #111827; border-radius: 18px; padding: 14px 10px; text-align: center; text-decoration: none;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 130px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 150px;
       box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); font-weight: 700; font-size: 0.94rem; letter-spacing: 0.01em;
       position: relative; overflow: hidden; transition: transform .18s, box-shadow .22s, border-color .18s, background-color .18s;
       cursor: pointer; border: 1px solid #e5e7eb;
     }
-
     .card::before {
       content: ""; position: absolute; top: -35%; left: -35%; width: 170%; height: 170%;
       background: radial-gradient(circle at center, rgba(59,130,246,0.16) 0%, transparent 60%); transform: rotate(18deg);
       opacity: 0; pointer-events: none; transition: opacity .25s; border-radius: 18px; z-index: 0;
     }
-
     .card i {
-      font-size: 24px; margin-bottom: 12px; color: #2563eb; z-index: 1;
+      font-size: 24px; margin-bottom: 10px; color: #2563eb; z-index: 1;
       background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
       border-radius: 999px; padding: 10px; display: inline-flex; align-items: center; justify-content: center;
       box-shadow: 0 4px 10px rgba(37, 99, 235, 0.35);
     }
-
     .card:hover {
       transform: translateY(-4px); box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16); border-color: #3b82f6;
       background-color: #f9fafb; text-decoration: none;
     }
-
     .card:hover::before { opacity: 1; }
+
+    /* Títulos e descrições nos cards */
+    .card-title { font-size: 0.98rem; font-weight: 800; z-index: 1; }
+    .card-subtitle {
+      margin-top: 6px; font-size: 0.82rem; font-weight: 600; color: #6b7280; z-index: 1;
+      line-height: 1.3; max-width: 90%;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
 
     /* Logout especial */
     .logout-btn {
@@ -446,25 +237,19 @@
     @media (max-width: 600px) {
       .cards-wrapper { padding: 18px 12px 22px; }
       .cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-      .card { min-height: 120px; font-size: 0.9rem; padding: 12px 8px; }
-      .card i { font-size: 22px; margin-bottom: 10px; padding: 9px; }
+      .card { min-height: 140px; font-size: 0.9rem; padding: 12px 8px; }
+      .card i { font-size: 22px; margin-bottom: 8px; padding: 9px; }
       .access-services { font-size: 0.9rem; margin-bottom: 10px; }
+      .card-subtitle { font-size: 0.8rem; }
     }
 
     /* ========= RODAPÉ ========= */
-
     footer {
       background: linear-gradient(to right, #222, #444);
-      color: #ddd;
-      text-align: center;
-      padding: 15px 0;
-      font-size: 14px;
-      border-top: 2px solid #555;
-      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
-      flex-shrink: 0;
-      width: 100%;
+      color: #ddd; text-align: center; padding: 15px 0; font-size: 14px;
+      border-top: 2px solid #555; box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0; width: 100%;
     }
-
     footer p { margin: 5px 0; font-size: 0.9rem; }
   </style>
 </head>
@@ -512,19 +297,19 @@
       <!-- Banner de boas-vindas -->
       <div class="welcome-banner">
         <div class="welcome-main-block">
-          <p class="welcome-text-main">Olá, {{ current_user.nome }} 👋</p>
+          <p class="welcome-text-main">Olá, {{ current_user.nome }}</p>
           <p class="welcome-text-sub">
             <span>Bem-vindo ao Portal do Servidor.</span>
-            <span>Utilize os cards abaixo para acessar serviços disponíveis.</span>
+            <span>Utilize os cards abaixo para acessar os serviços disponíveis.</span>
           </p>
 
           <div class="welcome-meta">
             <div class="welcome-meta-item">
-              <i class="fas fa-id-badge"></i>
+              <i class="fas fa-id-badge" aria-hidden="true"></i>
               <span>Registro:</span> {{ current_user.registro }}
             </div>
             <div class="welcome-meta-item">
-              <i class="fas fa-briefcase"></i>
+              <i class="fas fa-briefcase" aria-hidden="true"></i>
               <span>Cargo:</span> {{ current_user.cargo }}
             </div>
           </div>
@@ -554,11 +339,11 @@
       <!-- Tabs -->
       <div class="tabs">
         <div class="tab active" data-tab="geral">
-          <i class="fas fa-layer-group"></i> Geral
+          <i class="fas fa-layer-group" aria-hidden="true"></i> Geral
         </div>
         {% if current_user.tipo == 'administrador' %}
         <div class="tab" data-tab="administrativo">
-          <i class="fas fa-user-shield"></i> Administrativo
+          <i class="fas fa-user-shield" aria-hidden="true"></i> Administrativo
         </div>
         {% endif %}
       </div>
@@ -569,45 +354,54 @@
       <div id="geral" class="cards-container active">
         <div class="cards-wrapper">
           <div class="cards-grid">
-            <a href="{{ url_for('perfil') }}" class="card">
-              <i class="fas fa-id-badge"></i>
-              Meu Perfil
+
+            <a href="{{ url_for('perfil') }}" class="card" aria-label="Meu Perfil">
+              <i class="fas fa-id-badge" aria-hidden="true"></i>
+              <div class="card-title">Meu Perfil</div>
+              <div class="card-subtitle">Atualize seus dados pessoais e profissionais.</div>
             </a>
 
-            <a href="{{ url_for('historico') }}" class="card">
-              <i class="fas fa-calendar-check"></i>
-              Minhas Folgas
+            <a href="{{ url_for('historico') }}" class="card" aria-label="Minhas Folgas">
+              <i class="fas fa-calendar-check" aria-hidden="true"></i>
+              <div class="card-title">Minhas Folgas</div>
+              <div class="card-subtitle">Consulte saldo, histórico e avisos.</div>
             </a>
 
-            <a href="{{ url_for('minhas_justificativas') }}" class="card">
-              <i class="fas fa-clipboard-list"></i>
-              Meus Agendamentos
+            <a href="{{ url_for('minhas_justificativas') }}" class="card" aria-label="Meus Agendamentos">
+              <i class="fas fa-clipboard-list" aria-hidden="true"></i>
+              <div class="card-title">Meus Agendamentos</div>
+              <div class="card-subtitle">Acompanhe o status das suas solicitações.</div>
             </a>
 
-            <a href="{{ url_for('agendar') }}" class="card">
-              <i class="fas fa-calendar-plus"></i>
-              Agendar Folga
+            <a href="{{ url_for('agendar') }}" class="card" aria-label="Agendar Folga">
+              <i class="fas fa-calendar-plus" aria-hidden="true"></i>
+              <div class="card-title">Agendar Folga</div>
+              <div class="card-subtitle">Solicite folgas e comunique ausências.</div>
             </a>
 
-            <a href="{{ url_for('relatar_esquecimento') }}" class="card">
-              <i class="fas fa-stopwatch"></i>
-              Relatar Esquecimento
+            <a href="{{ url_for('relatar_esquecimento') }}" class="card" aria-label="Relatar Esquecimento">
+              <i class="fas fa-stopwatch" aria-hidden="true"></i>
+              <div class="card-title">Relatar Esquecimento</div>
+              <div class="card-subtitle">Informe registros de ponto não lançados.</div>
             </a>
-            
+
             <!-- HUB TRE -->
-            <a href="{{ url_for('tre_menu') }}" class="card">
-              <i class="fas fa-scale-balanced"></i>
-              TRE
+            <a href="{{ url_for('tre_menu') }}" class="card" aria-label="TRE">
+              <i class="fas fa-scale-balanced" aria-hidden="true"></i>
+              <div class="card-title">TRE</div>
+              <div class="card-subtitle">Envie, consulte e gerencie seus dias de TRE.</div>
             </a>
 
-            <a href="{{ url_for('calendario') }}" class="card">
-              <i class="fas fa-calendar-days"></i>
-              Calendário
-            </a>            
+            <a href="{{ url_for('calendario') }}" class="card" aria-label="Calendário">
+              <i class="fas fa-calendar-days" aria-hidden="true"></i>
+              <div class="card-title">Calendário</div>
+              <div class="card-subtitle">Visualize seus agendamentos no calendário.</div>
+            </a>
 
-            <a href="{{ url_for('banco_horas') }}" class="card">
-              <i class="fas fa-hourglass-half"></i>
-              Banco de Horas
+            <a href="{{ url_for('banco_horas') }}" class="card" aria-label="Banco de Horas">
+              <i class="fas fa-hourglass-half" aria-hidden="true"></i>
+              <div class="card-title">Banco de Horas</div>
+              <div class="card-subtitle">Consulte e registre Banco de Horas.</div>
             </a>
 
             <!-- Logout seguro: POST + CSRF -->
@@ -616,10 +410,12 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               {% endif %}
               <button type="submit" class="card logout-btn" title="Sair do sistema">
-                <i class="fas fa-right-from-bracket"></i>
-                Sair
+                <i class="fas fa-right-from-bracket" aria-hidden="true"></i>
+                <div class="card-title">Sair</div>
+                <div class="card-subtitle">Encerre a sessão com segurança.</div>
               </button>
             </form>
+
           </div>
         </div>
       </div>
@@ -630,49 +426,58 @@
         <div class="cards-wrapper">
           <div class="cards-grid">
 
-            <a href="{{ url_for('deferir_folgas') }}" class="card">
-              <i class="fas fa-calendar-check"></i>
-              Deferir Folgas
+            <a href="{{ url_for('deferir_folgas') }}" class="card" aria-label="Deferir Folgas">
+              <i class="fas fa-calendar-check" aria-hidden="true"></i>
+              <div class="card-title">Deferir Folgas</div>
+              <div class="card-subtitle">Analise e delibere sobre solicitações de folga.</div>
             </a>
 
-            <a href="{{ url_for('admin_tres_list') }}" class="card">
-              <i class="fas fa-file-signature"></i>
-              Deferir TREs
+            <a href="{{ url_for('admin_tres_list') }}" class="card" aria-label="Deferir TREs">
+              <i class="fas fa-file-signature" aria-hidden="true"></i>
+              <div class="card-title">Deferir TREs</div>
+              <div class="card-subtitle">Valide TREs e ajuste dias.</div>
             </a>
 
-            <a href="{{ url_for('aprovar_usuarios') }}" class="card">
-              <i class="fas fa-user-check"></i>
-              Aprovar Usuários
+            <a href="{{ url_for('aprovar_usuarios') }}" class="card" aria-label="Aprovar Usuários">
+              <i class="fas fa-user-check" aria-hidden="true"></i>
+              <div class="card-title">Aprovar Usuários</div>
+              <div class="card-subtitle">Habilite novos cadastros.</div>
             </a>
 
-            <a href="{{ url_for('admin_agendamentos') }}" class="card">
-              <i class="fas fa-calendar-days"></i>
-              Gerenciar Agendamentos
+            <a href="{{ url_for('admin_agendamentos') }}" class="card" aria-label="Gerenciar Agendamentos">
+              <i class="fas fa-calendar-days" aria-hidden="true"></i>
+              <div class="card-title">Gerenciar Agendamentos</div>
+              <div class="card-subtitle">Liste, filtre e edite agendamentos.</div>
             </a>
 
-            <a href="{{ url_for('user_info_all') }}" class="card">
-              <i class="fas fa-folder-open"></i>
-              Prontuários
+            <a href="{{ url_for('user_info_all') }}" class="card" aria-label="Prontuários">
+              <i class="fas fa-folder-open" aria-hidden="true"></i>
+              <div class="card-title">Prontuários</div>
+              <div class="card-subtitle">Acesse informações de servidores.</div>
             </a>
 
-            <a href="{{ url_for('relatorio_ponto') }}" class="card">
-              <i class="fas fa-file-lines"></i>
-              Relatório de Ponto
+            <a href="{{ url_for('relatorio_ponto') }}" class="card" aria-label="Relatório de Ponto">
+              <i class="fas fa-file-lines" aria-hidden="true"></i>
+              <div class="card-title">Relatório de Ponto</div>
+              <div class="card-subtitle">Gere relatórios de frequência.</div>
             </a>
 
-            <a href="{{ url_for('relatorio_horas_extras') }}" class="card">
-              <i class="fas fa-clock-rotate-left"></i>
-              Relatório de Horas Extras
+            <a href="{{ url_for('relatorio_horas_extras') }}" class="card" aria-label="Relatório de Horas Extras">
+              <i class="fas fa-clock-rotate-left" aria-hidden="true"></i>
+              <div class="card-title">Relatório de Horas Extras</div>
+              <div class="card-subtitle">Consolide e exporte horas extras.</div>
             </a>
 
             <!-- Logout seguro: POST + CSRF -->
             <form method="POST" action="{{ url_for('logout') }}" class="logout-form" aria-label="Sair do sistema">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button type="submit" class="card logout-btn" title="Sair do sistema">
-                <i class="fas fa-right-from-bracket"></i>
-                Sair
+                <i class="fas fa-right-from-bracket" aria-hidden="true"></i>
+                <div class="card-title">Sair</div>
+                <div class="card-subtitle">Encerre a sessão com segurança.</div>
               </button>
             </form>
+
           </div>
         </div>
       </div>
