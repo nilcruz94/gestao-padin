@@ -121,7 +121,7 @@ login_manager.login_view = "login"
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 SMTP_USER = "nilcr94@gmail.com"
-SMTP_PASS = "smqvqabjbgoyzhml"   # 🔒 Ideal: usar variável de ambiente!
+SMTP_PASS = "etvgjtsfgwfdtuof"   # 🔒 Ideal: usar variável de ambiente!
 MAIL_FROM = f"Portal do Servidor <{SMTP_USER}>"
 
 # --- Diag rápido de SMTP (opcional) ---
@@ -657,18 +657,81 @@ def index():
     return render_template('index.html', usuario=usuario)
 
 # ===========================================
-# MINHAS JUSTIFICATIVAS
+# MINHAS JUSTIFICATIVAS (com paginação/filtros no back-end)
+# GET /minhas_justificativas?page=1&per_page=10&q=tre&status=em_espera
+# Para JSON: /minhas_justificativas?...&format=json
 # ===========================================
 @app.route('/minhas_justificativas')
 @login_required
 def minhas_justificativas():
-    agendamentos = (
-        Agendamento.query
-        .filter_by(funcionario_id=current_user.id)
-        .order_by(Agendamento.data.desc(), Agendamento.id.desc())
-        .all()
+    # Parâmetros de paginação/consulta
+    page = request.args.get('page', default=1, type=int)
+    per_page = request.args.get('per_page', default=10, type=int)
+    per_page = max(5, min(per_page, 50))  # limita entre 5 e 50
+    q = (request.args.get('q', default='', type=str) or '').strip()
+    status = (request.args.get('status', default='', type=str) or '').strip().lower()
+
+    # Query base
+    query = Agendamento.query.filter(Agendamento.funcionario_id == current_user.id)
+
+    # Filtro por status (opcional)
+    if status in ('em_espera', 'deferido', 'indeferido'):
+        query = query.filter(Agendamento.status == status)
+
+    # Busca por texto (motivo) e/ou data (dd/mm/yyyy ou yyyy-mm-dd)
+    if q:
+        like = f"%{q}%"
+        parsed_date = None
+        try:
+            parsed_date = datetime.datetime.strptime(q, "%d/%m/%Y").date()
+        except Exception:
+            try:
+                parsed_date = datetime.datetime.strptime(q, "%Y-%m-%d").date()
+            except Exception:
+                parsed_date = None
+
+        if parsed_date:
+            query = query.filter(Agendamento.data == parsed_date)
+        else:
+            # requer from sqlalchemy import or_
+            query = query.filter(or_(Agendamento.motivo.ilike(like)))
+
+    # Ordenação (mais recentes primeiro)
+    query = query.order_by(Agendamento.data.desc(), Agendamento.id.desc())
+
+    # Paginação (sem usar .paginate para evitar dependência de versão)
+    total = query.count()
+    agendamentos = query.offset((page - 1) * per_page).limit(per_page).all()
+    pages = (total + per_page - 1) // per_page  # ceil
+
+    # Opcional: resposta JSON para AJAX
+    if request.args.get('format') == 'json':
+        def _ser(a):
+            return {
+                "id": a.id,
+                "data": a.data.strftime("%Y-%m-%d"),
+                "motivo": a.motivo,
+                "status": a.status,
+            }
+        return jsonify({
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "pages": pages,
+            "items": [_ser(a) for a in agendamentos],
+        })
+
+    # Render HTML
+    return render_template(
+        'minhas_justificativas.html',
+        agendamentos=agendamentos,
+        page=page,
+        per_page=per_page,
+        total=total,
+        pages=pages,
+        q=q,
+        status=status
     )
-    return render_template('minhas_justificativas.html', agendamentos=agendamentos)
 
 # ===========================================
 # AGENDAR FOLGA

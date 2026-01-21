@@ -207,11 +207,16 @@
 
     /* Títulos e descrições nos cards */
     .card-title { font-size: 0.98rem; font-weight: 800; z-index: 1; }
+
     .card-subtitle {
       margin-top: 6px; font-size: 0.82rem; font-weight: 600; color: #6b7280; z-index: 1;
       line-height: 1.3; max-width: 90%;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
+
+    /* Versões de texto responsivas */
+    .desktop-only { display: inline; }
+    .mobile-only  { display: none; }
 
     /* Logout especial */
     .logout-btn {
@@ -230,7 +235,7 @@
     /* Fazer o botão de logout virar o "card" na grid */
     .cards-grid form.logout-form { display: contents; }
 
-    /* Responsivo das grids */
+    /* Responsivo das grids + textos curtos no mobile sem ellipsis */
     @media (max-width: 992px) {
       .cards-grid { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
     }
@@ -240,7 +245,19 @@
       .card { min-height: 140px; font-size: 0.9rem; padding: 12px 8px; }
       .card i { font-size: 22px; margin-bottom: 8px; padding: 9px; }
       .access-services { font-size: 0.9rem; margin-bottom: 10px; }
-      .card-subtitle { font-size: 0.8rem; }
+
+      /* Mobile: mostrar versão curta e remover clamp (sem …) */
+      .desktop-only { display: none; }
+      .mobile-only  { display: inline; }
+      .card-subtitle {
+        display: block;
+        -webkit-line-clamp: unset;
+        -webkit-box-orient: unset;
+        overflow: visible;
+        white-space: normal;
+        max-width: 95%;
+        font-size: 0.78rem;
+      }
     }
 
     /* ========= RODAPÉ ========= */
@@ -358,50 +375,74 @@
             <a href="{{ url_for('perfil') }}" class="card" aria-label="Meu Perfil">
               <i class="fas fa-id-badge" aria-hidden="true"></i>
               <div class="card-title">Meu Perfil</div>
-              <div class="card-subtitle">Atualize seus dados pessoais e profissionais.</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Atualize seus dados pessoais e profissionais.</span>
+                <span class="mobile-only">Dados pessoais.</span>
+              </div>
             </a>
 
             <a href="{{ url_for('historico') }}" class="card" aria-label="Minhas Folgas">
               <i class="fas fa-calendar-check" aria-hidden="true"></i>
               <div class="card-title">Minhas Folgas</div>
-              <div class="card-subtitle">Consulte saldo, histórico e avisos.</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Consulte saldo, histórico e avisos.</span>
+                <span class="mobile-only">Saldo e avisos.</span>
+              </div>
             </a>
 
             <a href="{{ url_for('minhas_justificativas') }}" class="card" aria-label="Meus Agendamentos">
               <i class="fas fa-clipboard-list" aria-hidden="true"></i>
               <div class="card-title">Meus Agendamentos</div>
-              <div class="card-subtitle">Acompanhe o status das suas solicitações.</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Acompanhe o status das suas solicitações.</span>
+                <span class="mobile-only">Status dos pedidos.</span>
+              </div>
             </a>
 
             <a href="{{ url_for('agendar') }}" class="card" aria-label="Agendar Folga">
               <i class="fas fa-calendar-plus" aria-hidden="true"></i>
               <div class="card-title">Agendar Folga</div>
-              <div class="card-subtitle">Solicite folgas e comunique ausências.</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Solicite folgas e comunique ausências.</span>
+                <span class="mobile-only">Nova solicitação.</span>
+              </div>
             </a>
 
             <a href="{{ url_for('relatar_esquecimento') }}" class="card" aria-label="Relatar Esquecimento">
               <i class="fas fa-stopwatch" aria-hidden="true"></i>
               <div class="card-title">Relatar Esquecimento</div>
-              <div class="card-subtitle">Informe registros de ponto não lançados.</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Informe registros de ponto não lançados.</span>
+                <span class="mobile-only">Ajuste de ponto.</span>
+              </div>
             </a>
 
             <!-- HUB TRE -->
             <a href="{{ url_for('tre_menu') }}" class="card" aria-label="TRE">
               <i class="fas fa-scale-balanced" aria-hidden="true"></i>
               <div class="card-title">TRE</div>
-              <div class="card-subtitle">Envie, consulte e gerencie seus dias de TRE.</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Envie, consulte e gerencie seus dias de TRE.</span>
+                <span class="mobile-only">Gestão de TRE.</span>
+              </div>
             </a>
 
             <a href="{{ url_for('calendario') }}" class="card" aria-label="Calendário">
               <i class="fas fa-calendar-days" aria-hidden="true"></i>
               <div class="card-title">Calendário</div>
-              <div class="card-subtitle">Visualize seus agendamentos no calendário.</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Visualize seus agendamentos no calendário.</span>
+                <span class="mobile-only">Agenda.</span>
+              </div>
             </a>
 
             <a href="{{ url_for('banco_horas') }}" class="card" aria-label="Banco de Horas">
               <i class="fas fa-hourglass-half" aria-hidden="true"></i>
               <div class="card-title">Banco de Horas</div>
-              <div class="card-subtitle">Consulte e registre Banco de Horas.</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Consulte e registre Banco de Horas.</span>
+                <span class="mobile-only">Horas e saldo.</span>
+              </div>
             </a>
 
             <!-- Logout seguro: POST + CSRF -->
@@ -412,7 +453,10 @@
               <button type="submit" class="card logout-btn" title="Sair do sistema">
                 <i class="fas fa-right-from-bracket" aria-hidden="true"></i>
                 <div class="card-title">Sair</div>
-                <div class="card-subtitle">Encerre a sessão com segurança.</div>
+                <div class="card-subtitle">
+                  <span class="desktop-only">Encerre a sessão com segurança.</span>
+                  <span class="mobile-only">Encerrar sessão.</span>
+                </div>
               </button>
             </form>
 
@@ -429,43 +473,64 @@
             <a href="{{ url_for('deferir_folgas') }}" class="card" aria-label="Deferir Folgas">
               <i class="fas fa-calendar-check" aria-hidden="true"></i>
               <div class="card-title">Deferir Folgas</div>
-              <div class="card-subtitle">Analise e delibere sobre solicitações de folga.</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Analise e delibere sobre solicitações de folga.</span>
+                <span class="mobile-only">Analisar pedidos.</span>
+              </div>
             </a>
 
             <a href="{{ url_for('admin_tres_list') }}" class="card" aria-label="Deferir TREs">
               <i class="fas fa-file-signature" aria-hidden="true"></i>
               <div class="card-title">Deferir TREs</div>
-              <div class="card-subtitle">Valide TREs e ajuste dias.</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Valide TREs e ajuste dias.</span>
+                <span class="mobile-only">Validar TREs.</span>
+              </div>
             </a>
 
             <a href="{{ url_for('aprovar_usuarios') }}" class="card" aria-label="Aprovar Usuários">
               <i class="fas fa-user-check" aria-hidden="true"></i>
               <div class="card-title">Aprovar Usuários</div>
-              <div class="card-subtitle">Habilite novos cadastros.</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Habilite novos cadastros.</span>
+                <span class="mobile-only">Liberar acessos.</span>
+              </div>
             </a>
 
             <a href="{{ url_for('admin_agendamentos') }}" class="card" aria-label="Gerenciar Agendamentos">
               <i class="fas fa-calendar-days" aria-hidden="true"></i>
               <div class="card-title">Gerenciar Agendamentos</div>
-              <div class="card-subtitle">Liste, filtre e edite agendamentos.</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Liste, filtre e edite agendamentos.</span>
+                <span class="mobile-only">Listar/editar.</span>
+              </div>
             </a>
 
             <a href="{{ url_for('user_info_all') }}" class="card" aria-label="Prontuários">
               <i class="fas fa-folder-open" aria-hidden="true"></i>
               <div class="card-title">Prontuários</div>
-              <div class="card-subtitle">Acesse informações de servidores.</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Acesse informações de servidores.</span>
+                <span class="mobile-only">Dados dos servidores.</span>
+              </div>
             </a>
 
             <a href="{{ url_for('relatorio_ponto') }}" class="card" aria-label="Relatório de Ponto">
               <i class="fas fa-file-lines" aria-hidden="true"></i>
               <div class="card-title">Relatório de Ponto</div>
-              <div class="card-subtitle">Gere relatórios de frequência.</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Gere relatórios de frequência.</span>
+                <span class="mobile-only">Frequência.</span>
+              </div>
             </a>
 
             <a href="{{ url_for('relatorio_horas_extras') }}" class="card" aria-label="Relatório de Horas Extras">
               <i class="fas fa-clock-rotate-left" aria-hidden="true"></i>
               <div class="card-title">Relatório de Horas Extras</div>
-              <div class="card-subtitle">Consolide e exporte horas extras.</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Consolide e exporte horas extras.</span>
+                <span class="mobile-only">Horas extras.</span>
+              </div>
             </a>
 
             <!-- Logout seguro: POST + CSRF -->
@@ -474,7 +539,10 @@
               <button type="submit" class="card logout-btn" title="Sair do sistema">
                 <i class="fas fa-right-from-bracket" aria-hidden="true"></i>
                 <div class="card-title">Sair</div>
-                <div class="card-subtitle">Encerre a sessão com segurança.</div>
+                <div class="card-subtitle">
+                  <span class="desktop-only">Encerre a sessão com segurança.</span>
+                  <span class="mobile-only">Encerrar sessão.</span>
+                </div>
               </button>
             </form>
 

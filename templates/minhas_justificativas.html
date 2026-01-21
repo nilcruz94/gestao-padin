@@ -13,483 +13,126 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
 
   <style>
-    :root {
-      --bg:#f3f4f6;
-      --ink:#0f172a;
-      --muted:#6b7280;
-      --brand:#0d6efd;
-      --brand-soft:#e0edff;
-      --border-soft:#e5e7eb;
-      --card-shadow:0 14px 34px rgba(15,23,42,.08), 0 2px 4px rgba(15,23,42,.05);
+    :root{
+      --bg:#f3f4f6; --ink:#0f172a; --muted:#6b7280; --brand:#0d6efd; --brand-soft:#e0edff;
+      --border-soft:#e5e7eb; --card-shadow:0 14px 34px rgba(15,23,42,.08), 0 2px 4px rgba(15,23,42,.05);
       --radius:18px;
     }
+    *,*::before,*::after{ box-sizing:border-box; }
+    html,body{ height:100%; margin:0; padding:0; background:var(--bg); color:var(--ink); font-family:'Montserrat',sans-serif; display:flex; flex-direction:column; min-height:100vh; }
+    body{ overflow-y:auto; }
+    main{ flex:1 0 auto; padding:24px 12px 70px; }
+    .shell{ max-width:1000px; margin:0 auto; }
+    @media (min-width:769px){ main{ padding:30px 24px 90px; } }
 
-    *, *::before, *::after{ box-sizing:border-box; }
-
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      background-color: var(--bg);
-      color: var(--ink);
-      font-family: 'Montserrat', sans-serif;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    body { overflow-y:auto; }
-
-    main {
-      flex: 1 0 auto;
-      padding: 24px 12px 70px;
-    }
-
-    .shell{ max-width: 1000px; margin:0 auto; }
-
+    /* Headers (mesmos estilos do seu projeto) */
+    .header-desktop,.header-mobile{ display:none; flex-shrink:0; }
     @media (min-width:769px){
-      main{ padding:30px 24px 90px; }
+      .header-desktop{ display:flex; background:#007bff; padding:15px 30px; width:100%; align-items:center; justify-content:space-between; min-height:110px; position:relative; box-shadow:0 2px 6px rgba(0,0,0,.15); color:#fff; }
+      .left-section{ display:flex; align-items:center; gap:20px; }
+      .logo{ width:80px; height:80px; object-fit:contain; border-radius:10px; background:#fff; padding:6px; }
+      .text-container{ display:flex; flex-direction:column; color:#fff; }
+      .escola-nome{ font-weight:700; font-size:1.6rem; margin:0; line-height:1.1; }
+      .escola-subtitulo{ font-weight:600; font-size:1.1rem; margin-top:4px; }
+      .header-center-text-container{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-weight:800; font-size:1.9rem; color:#fff; letter-spacing:5px; user-select:none; white-space:nowrap; text-shadow:0 2px 5px rgba(0,0,0,.3); }
+      .btn-home{ background:#0fb300; color:#fff; padding:6px 14px; border-radius:6px; font-weight:700; font-size:1.5rem; text-decoration:none; display:flex; align-items:center; gap:8px; box-shadow:0 2px 6px rgba(15,179,0,.8); transition:.3s; position:absolute; right:30px; top:50%; transform:translateY(-50%); z-index:2; }
+      .btn-home:hover{ background:#0d8a00; }
+    }
+    @media (max-width:768px){
+      .header-mobile{ display:block; width:100%; color:#fff; position:sticky; top:0; z-index:1000; box-shadow:0 2px 6px rgba(0,0,0,.15); background:#007bff; }
+      .header-top{ display:flex; align-items:center; justify-content:center; gap:15px; padding:10px 15px; background:#007bff; text-align:center; }
+      .logo{ width:48px; height:48px; object-fit:contain; border-radius:10px; background:#fff; padding:6px; }
+      .text-container{ display:flex; flex-direction:column; text-align:center; }
+      .escola-nome{ font-weight:700; font-size:1.3rem; margin:0; line-height:1.1; }
+      .escola-subtitulo{ font-weight:600; font-size:1rem; margin-top:2px; }
+      .header-bottom{ background:#0056b3; text-align:center; padding:12px 10px; font-weight:800; font-size:1rem; letter-spacing:4px; user-select:none; color:#fff; box-shadow:inset 0 -2px 5px rgba(0,0,0,.2); display:flex; justify-content:center; align-items:center; gap:12px; position:relative; white-space:nowrap; }
+      .btn-home-mobile{ background:#0fb300; color:#fff; padding:6px 10px; border-radius:6px; font-weight:600; font-size:1rem; text-decoration:none; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(15,179,0,.8); transition:.3s; }
+      .btn-home-mobile:hover{ background:#0d8a00; }
     }
 
-    /* Cabeçalhos */
-    .header-desktop, .header-mobile { display: none; flex-shrink: 0; }
-
-    /* === Desktop Header === */
-    @media (min-width: 769px) {
-      .header-desktop {
-        display: flex;
-        background-color: #007bff;
-        padding: 15px 30px;
-        width: 100%;
-        align-items: center;
-        justify-content: space-between;
-        box-sizing: border-box;
-        min-height: 110px;
-        position: relative;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        color: white;
-      }
-
-      .left-section { display: flex; align-items: center; gap: 20px; }
-
-      .logo {
-        width: 80px;
-        height: 80px;
-        object-fit: contain;
-        border-radius: 10px;
-        background-color: white;
-        padding: 6px;
-      }
-
-      .text-container { display: flex; flex-direction: column; justify-content: center; text-align: left; color: white; }
-
-      .escola-nome { font-weight: 700; font-size: 1.6rem; margin: 0; line-height: 1.1; }
-
-      .escola-subtitulo { font-weight: 600; font-size: 1.1rem; margin-top: 4px; }
-
-      .header-center-text-container {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        font-weight: 800;
-        font-size: 1.9rem;
-        color: white;
-        letter-spacing: 5px;
-        user-select: none;
-        white-space: nowrap;
-        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
-      }
-
-      .btn-home {
-        background-color: #0fb300;
-        color: white;
-        padding: 6px 14px;
-        border-radius: 6px;
-        font-weight: 700;
-        font-size: 1.5rem;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-        transition: background-color 0.3s ease;
-        position: absolute;
-        right: 30px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 2;
-      }
-
-      .btn-home:hover { background-color: #0d8a00; }
-    }
-
-    /* === Mobile Header === */
-    @media (max-width: 768px) {
-      .header-mobile {
-        display: block;
-        width: 100%;
-        box-sizing: border-box;
-        color: white;
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        background-color: #007bff;
-      }
-
-      .header-top {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 15px;
-        padding: 10px 15px;
-        background-color: #007bff;
-        text-align: center;
-      }
-
-      .logo {
-        width: 48px;
-        height: 48px;
-        object-fit: contain;
-        border-radius: 10px;
-        background-color: white;
-        padding: 6px;
-      }
-
-      .text-container { display: flex; flex-direction: column; justify-content: center; color: white; text-align: center; }
-
-      .escola-nome { font-weight: 700; font-size: 1.3rem; margin: 0; line-height: 1.1; }
-
-      .escola-subtitulo { font-weight: 600; font-size: 1rem; margin-top: 2px; }
-
-      .header-bottom {
-        background-color: #0056b3;
-        text-align: center;
-        padding: 12px 10px;
-        font-weight: 800;
-        font-size: 1.0rem;
-        letter-spacing: 4px;
-        user-select: none;
-        color: white;
-        box-shadow: inset 0  -2px 5px rgba(0, 0, 0, 0.2);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 12px;
-        position: relative;
-        white-space: nowrap;
-      }
-
-      .btn-home-mobile {
-        background-color: #0fb300;
-        color: white;
-        padding: 6px 10px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 1rem;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-        transition: background-color 0.3s ease;
-      }
-
-      .btn-home-mobile:hover { background-color: #0d8a00; }
-    }
-
-    /* ===== Cabeçalho da página ===== */
-    .page-header-card{
-      background:#ffffff;
-      border-radius:var(--radius);
-      padding:16px 18px;
-      margin-bottom:18px;
-      display:flex;
-      align-items:center;
-      gap:16px;
-      box-shadow:var(--card-shadow);
-      border-left:5px solid var(--brand);
-    }
-
-    .page-header-icon{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      width:42px;
-      height:42px;
-      border-radius:999px;
-      background:radial-gradient(circle at 30% 30%,#ffffff 0%,var(--brand-soft) 60%,#c7d9ff 100%);
-      box-shadow:0 4px 12px rgba(37,99,235,.45);
-      color:#2563eb;
-      flex-shrink:0;
-    }
-
+    /* Header da página */
+    .page-header-card{ background:#fff; border-radius:var(--radius); padding:16px 18px; margin-bottom:18px; display:flex; align-items:center; gap:16px; box-shadow:var(--card-shadow); border-left:5px solid var(--brand); }
+    .page-header-icon{ display:inline-flex; align-items:center; justify-content:center; width:42px; height:42px; border-radius:999px; background:radial-gradient(circle at 30% 30%,#fff 0%,var(--brand-soft) 60%,#c7d9ff 100%); box-shadow:0 4px 12px rgba(37,99,235,.45); color:#2563eb; flex-shrink:0; }
     .page-header-icon i{ font-size:22px; }
-
     .page-header-content{ display:flex; flex-direction:column; gap:4px; }
+    .page-header-title{ font-size:1.2rem; font-weight:800; margin:0; color:var(--ink); }
+    .page-header-subtitle{ font-size:.9rem; margin:0; color:var(--muted); }
+    @media (max-width:600px){ .page-header-card{ padding:12px 14px; margin-bottom:14px; } .page-header-title{ font-size:1.05rem; } .page-header-subtitle{ font-size:.82rem; } }
 
-    .page-header-title{
-      font-size:1.2rem;
-      font-weight:800;
-      margin:0;
-      color:var(--ink);
-    }
+    /* Flash */
+    .flash-messages{ margin-bottom:14px; }
+    .flash{ padding:9px 12px; border-radius:12px; margin-bottom:6px; font-size:.86rem; font-weight:600; display:flex; align-items:center; gap:8px; box-shadow:0 3px 10px rgba(15,23,42,.08); }
+    .flash.success{ background:#e8f7ee; color:#065f46; border:1px solid #b7ebc6; }
+    .flash.danger{ background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
+    .flash.warning{ background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+    .flash.info{ background:#e0edff; color:#1d4ed8; border:1px solid #bfdbfe; }
 
-    .page-header-subtitle{ font-size:0.9rem; margin:0; color:var(--muted); }
-
-    @media (max-width:600px){
-      .page-header-card{ padding:12px 14px; margin-bottom:14px; }
-      .page-header-title{ font-size:1.05rem; }
-      .page-header-subtitle{ font-size:0.82rem; }
-    }
-
-    /* Flash messages */
-    .flash-messages { margin-bottom: 14px; }
-
-    .flash {
-      padding: 9px 12px;
-      border-radius: 12px;
-      margin-bottom: 6px;
-      font-size: 0.86rem;
-      font-weight:600;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      box-shadow:0 3px 10px rgba(15,23,42,.08);
-    }
-
-    .flash.success { background: #e8f7ee; color: #065f46; border:1px solid #b7ebc6; }
-    .flash.danger  { background: #fee2e2; color: #991b1b; border:1px solid #fecaca; }
-    .flash.warning { background: #fef3c7; color: #92400e; border:1px solid #fde68a; }
-    .flash.info    { background: #e0edff; color: #1d4ed8; border:1px solid #bfdbfe; }
-
-    /* Card principal da lista */
-    .agenda-card{
-      width:100%;
-      background:#ffffff;
-      border-radius:var(--radius);
-      box-shadow:var(--card-shadow);
-      padding:18px 16px 20px;
-      border:1px solid rgba(148,163,184,0.25);
-      box-sizing:border-box;
-      margin-bottom:18px;
-    }
-
+    /* Card da lista */
+    .agenda-card{ width:100%; background:#fff; border-radius:var(--radius); box-shadow:var(--card-shadow); padding:18px 16px 20px; border:1px solid rgba(148,163,184,.25); margin-bottom:18px; }
     .agenda-headline{ display:flex; flex-direction:column; gap:4px; margin-bottom:12px; }
-
     .agenda-title{ font-size:1.05rem; font-weight:800; color:var(--ink); }
+    .agenda-subtitle{ font-size:.86rem; color:var(--muted); }
+    @media (min-width:640px){ .agenda-headline{ flex-direction:row; justify-content:space-between; align-items:center; } .agenda-title{ font-size:1.1rem; } }
 
-    .agenda-subtitle{ font-size:0.86rem; color:var(--muted); }
-
-    @media (min-width:640px){
-      .agenda-headline{ flex-direction:row; justify-content:space-between; align-items:center; }
-      .agenda-title{ font-size:1.1rem; }
+    /* Controles (busca, filtro, tamanho de página) */
+    .controls{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:8px 0 12px; }
+    .controls .control{ display:flex; align-items:center; gap:6px; }
+    .controls input[type="search"], .controls select{
+      padding:8px 10px; border:1px solid var(--border-soft); border-radius:10px; font-size:.9rem; background:#fff;
     }
+    .summary{ font-size:.86rem; color:#4b5563; margin-left:auto; }
 
-    .no-data { text-align: center; margin-top: 10px; font-size: 0.95rem; color: var(--muted); }
-
-    /* Tabela */
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top:6px; }
-    thead th {
-      background-color: #f8fafc; color: #0f172a; padding: 8px 6px; font-weight: 800; text-align: center;
-      border-bottom:1px solid #e5e7eb; white-space:nowrap;
-    }
-    tbody td { padding: 8px 6px; border-bottom: 1px solid #e5e7eb; text-align: center; color: #111827; vertical-align: middle; }
-    tbody tr:nth-child(even) { background-color: #f9fafb; }
+    /* Tabela + responsividade */
+    .table-wrapper{ overflow-x:auto; border:1px solid #eef2f7; border-radius:12px; }
+    table{ width:100%; border-collapse:collapse; font-size:.9rem; }
+    thead th{ background:#f8fafc; color:#0f172a; padding:10px 8px; font-weight:800; text-align:center; border-bottom:1px solid #e5e7eb; white-space:nowrap; position:sticky; top:0; z-index:1; }
+    tbody td{ padding:8px 6px; border-bottom:1px solid #e5e7eb; text-align:center; color:#111827; vertical-align:middle; }
+    tbody tr:nth-child(even){ background:#f9fafb; }
     tbody tr:hover{ background:#f7fbff; }
+    @media (max-width:768px){ thead th,tbody td{ font-size:.8rem; padding:6px 4px; } }
 
     /* Status pill */
-    .status-pill {
-      display: inline-flex; align-items: center; justify-content: center; padding: 2px 10px; border-radius: 999px;
-      font-size: 0.8rem; font-weight: 700; white-space: nowrap;
-    }
-    .status-pill.espera { background-color: #fef3c7; color: #92400e; }
-    .status-pill.deferido { background-color: #d1fae5; color: #065f46; }
-    .status-pill.indeferido { background-color: #fee2e2; color: #991b1b; }
+    .status-pill{ display:inline-flex; align-items:center; justify-content:center; padding:2px 10px; border-radius:999px; font-size:.8rem; font-weight:700; white-space:nowrap; }
+    .status-pill.espera{ background:#fef3c7; color:#92400e; }
+    .status-pill.deferido{ background:#d1fae5; color:#065f46; }
+    .status-pill.indeferido{ background:#fee2e2; color:#991b1b; }
 
-    /* Botão excluir */
-    .delete-btn {
-      font-size: 1.1rem; color: #e74c3c; cursor: pointer; text-decoration: none; background: none; border: none; padding: 0; margin: 0; line-height: 1;
-      display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%;
-      transition: background-color 0.2s ease, color 0.2s ease;
-    }
-    .delete-btn i { pointer-events: none; }
-    .delete-btn:hover { color: #c0392b; background: rgba(231, 76, 60, 0.12); }
+    /* Ações */
+    .delete-btn{ font-size:1.1rem; color:#e74c3c; cursor:pointer; background:none; border:none; padding:0; margin:0; line-height:1; display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; transition:.2s; }
+    .delete-btn:hover{ color:#c0392b; background:rgba(231,76,60,.12); }
+    .no-data{ text-align:center; margin-top:10px; font-size:.95rem; color:var(--muted); }
 
     /* Paginação */
-    .pagination {
-      margin-top: 14px; display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap;
-    }
-    .pagination button {
-      border: 1px solid #007bff; background-color: #fff; color: #007bff; padding: 4px 9px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;
-    }
-    .pagination button:hover:not(.active):not(:disabled) { background-color: #007bff; color: #fff; }
-    .pagination button.active { background-color: #007bff; color: #fff; font-weight: 700; }
-    .pagination button:disabled { opacity: 0.5; cursor: default; }
-    .pagination span { font-size: 0.85rem; color: #555; }
-
-    @media (max-width: 768px) {
-      thead th, tbody td { font-size: 0.8rem; padding: 6px 4px; }
-    }
+    .pagination{ margin-top:14px; display:flex; justify-content:center; align-items:center; gap:6px; flex-wrap:wrap; }
+    .pagination button{ border:1px solid #007bff; background:#fff; color:#007bff; padding:4px 9px; border-radius:6px; cursor:pointer; font-size:.85rem; }
+    .pagination button:hover:not(.active):not(:disabled){ background:#007bff; color:#fff; }
+    .pagination button.active{ background:#007bff; color:#fff; font-weight:700; }
+    .pagination button:disabled{ opacity:.5; cursor:default; }
+    .pagination span{ font-size:.85rem; color:#555; }
 
     /* Modal */
-    .modal {
-      display: none; position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%;
-      background-color: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; padding: 10px; box-sizing: border-box;
-    }
-    .modal-content {
-      background-color: #fff; padding: 20px; border-radius: 14px; width: 90%; max-width: 320px; box-sizing: border-box; text-align: center;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
-    }
-    .modal-content h2{ margin-top:0; margin-bottom:8px; font-size:1.1rem; font-weight:800; color:#111827; }
-    .modal-content p{ margin:0 0 14px 0; font-size:0.9rem; color:#4b5563; }
-
-    .btn {
-      margin: 4px 6px; padding: 9px 18px; border: none; cursor: pointer; border-radius: 999px; font-size: 0.9rem; font-weight:700;
-      transition: background-color 0.25s ease, box-shadow 0.25s ease;
-    }
+    .modal{ display:none; position:fixed; z-index:1000; inset:0; background:rgba(0,0,0,.5); justify-content:center; align-items:center; padding:10px; }
+    .modal-content{ background:#fff; padding:20px; border-radius:14px; width:90%; max-width:320px; text-align:center; box-shadow:0 4px 18px rgba(0,0,0,.25); }
+    .modal-content h2{ margin:0 0 8px 0; font-size:1.1rem; font-weight:800; color:#111827; }
+    .modal-content p{ margin:0 0 14px 0; font-size:.9rem; color:#4b5563; }
+    .btn{ margin:4px 6px; padding:9px 18px; border:none; cursor:pointer; border-radius:999px; font-size:.9rem; font-weight:700; transition:.25s; }
     .btn-danger{ background:#ef4444; color:#fff; box-shadow:0 6px 14px rgba(239,68,68,.55); }
-    .btn-danger:hover{ background:#dc2626; box-shadow:0 4px 10px rgba(220,38,38,.6); }
+    .btn-danger:hover{ background:#dc2626; }
     .btn-secondary{ background:#e5e7eb; color:#111827; }
     .btn-secondary:hover{ background:#d1d5db; }
 
     /* Link voltar */
-    .voltar-wrapper { text-align: center; margin-top: 4px; }
-    .voltar-link {
-      display: inline-flex; align-items:center; gap:6px; margin: 0 auto; font-size: 0.9rem; color: #2563eb; text-decoration: none; font-weight:700;
-    }
-    .voltar-link:hover { text-decoration: underline; }
+    .voltar-wrapper{ text-align:center; margin-top:4px; }
+    .voltar-link{ display:inline-flex; align-items:center; gap:6px; margin:0 auto; font-size:. nine0rem; color:#2563eb; text-decoration:none; font-weight:700; }
+    .voltar-link:hover{ text-decoration:underline; }
 
     /* Rodapé */
-    footer {
-      background: linear-gradient(to right, #222, #444);
-      color: #ddd;
-      text-align: center;
-      padding: 15px 0;
-      font-size: 14px;
-      border-top: 2px solid #555;
-      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
-      flex-shrink: 0;
-      width: 100%;
-    }
+    footer{ background:linear-gradient(to right,#222,#444); color:#ddd; text-align:center; padding:15px 0; font-size:14px; border-top:2px solid #555; box-shadow:0 -2px 10px rgba(0,0,0,.3); width:100%; }
+    .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
   </style>
 </head>
 
-<script>
-  // Disponibiliza o token CSRF no escopo global (útil se você fizer fetch/AJAX nesta página).
-  (function () {
-    const el = document.querySelector('meta[name="csrf-token"]');
-    if (el) window.csrfToken = el.getAttribute('content');
-  })();
-
-  document.addEventListener("DOMContentLoaded", function () {
-    let agendamentoIdToDelete = null;
-
-    function confirmDelete(agendamentoId) {
-      agendamentoIdToDelete = agendamentoId;
-      const modal = document.getElementById("confirmModal");
-      modal.style.display = "flex";
-      // Mantém a mesma rota REST usada no projeto (/delete_agendamento/<id>)
-      document.getElementById("confirmDeleteForm").action = "/delete_agendamento/" + agendamentoIdToDelete;
-    }
-
-    window.confirmDelete = confirmDelete;
-
-    const confirmBtn = document.getElementById("confirmDeleteBtn");
-    const cancelBtn = document.getElementById("cancelDeleteBtn");
-    const modal = document.getElementById("confirmModal");
-
-    if (confirmBtn) {
-      confirmBtn.addEventListener("click", function (event) {
-        event.preventDefault();
-        if (agendamentoIdToDelete) {
-          document.getElementById("confirmDeleteForm").submit();
-        } else {
-          alert("ID de agendamento inválido!");
-        }
-      });
-    }
-
-    if (cancelBtn) {
-      cancelBtn.addEventListener("click", function () {
-        modal.style.display = "none";
-      });
-    }
-
-    window.addEventListener("pageshow", function () {
-      modal.style.display = "none";
-      agendamentoIdToDelete = null;
-      const f = document.getElementById("confirmDeleteForm");
-      if (f) f.action = "";
-    });
-
-    // Paginação front-end
-    const table = document.getElementById("agendamentosTable");
-    if (table) {
-      const tbody = table.querySelector("tbody");
-      const allRows = Array.from(tbody.querySelectorAll("tr"));
-      const rowsPerPage = 10;
-      let currentPage = 1;
-      const totalPages = Math.max(1, Math.ceil(allRows.length / rowsPerPage));
-      const paginationContainer = document.getElementById("pagination");
-
-      function renderTablePage(page) {
-        currentPage = page;
-        const start = (currentPage - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
-
-        allRows.forEach((row, idx) => {
-          row.style.display = (idx >= start && idx < end) ? "" : "none";
-        });
-
-        renderPaginationControls();
-      }
-
-      function renderPaginationControls() {
-        if (!paginationContainer) return;
-        paginationContainer.innerHTML = "";
-
-        if (totalPages <= 1) return;
-
-        const prevBtn = document.createElement("button");
-        prevBtn.textContent = "«";
-        prevBtn.disabled = currentPage === 1;
-        prevBtn.addEventListener("click", () => {
-          if (currentPage > 1) renderTablePage(currentPage - 1);
-        });
-        paginationContainer.appendChild(prevBtn);
-
-        for (let p = 1; p <= totalPages; p++) {
-          if (p === 1 || p === totalPages || (p >= currentPage - 2 && p <= currentPage + 2)) {
-            const btn = document.createElement("button");
-            btn.textContent = p;
-            if (p === currentPage) btn.classList.add("active");
-            btn.addEventListener("click", () => renderTablePage(p));
-            paginationContainer.appendChild(btn);
-          } else if (p === currentPage - 3 || p === currentPage + 3) {
-            const span = document.createElement("span");
-            span.textContent = "...";
-            paginationContainer.appendChild(span);
-          }
-        }
-
-        const nextBtn = document.createElement("button");
-        nextBtn.textContent = "»";
-        nextBtn.disabled = currentPage === totalPages;
-        nextBtn.addEventListener("click", () => {
-          if (currentPage < totalPages) renderTablePage(currentPage + 1);
-        });
-        paginationContainer.appendChild(nextBtn);
-      }
-
-      renderTablePage(1);
-    }
-  });
-</script>
-
 <body>
-
   <!-- Cabeçalho Desktop -->
   <header class="header-desktop">
     <div class="left-section">
@@ -499,14 +142,8 @@
         <div class="escola-subtitulo">José Padin Mouta</div>
       </div>
     </div>
-
-    <div class="header-center-text-container">
-      PORTAL DO SERVIDOR
-    </div>
-
-    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
-      <i class="fas fa-home"></i>
-    </a>
+    <div class="header-center-text-container">PORTAL DO SERVIDOR</div>
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial"><i class="fas fa-home"></i></a>
   </header>
 
   <!-- Cabeçalho Mobile -->
@@ -520,13 +157,10 @@
     </div>
     <div class="header-bottom">
       <span>PORTAL DO SERVIDOR</span>
-      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
-        <i class="fas fa-home"></i>
-      </a>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial"><i class="fas fa-home"></i></a>
     </div>
   </header>
 
-  <!-- Conteúdo principal -->
   <main>
     <div class="shell">
 
@@ -535,15 +169,10 @@
           <div class="flash-messages">
             {% for category, message in messages %}
               <div class="flash {{ category }}">
-                {% if category == 'success' %}
-                  <i class="fas fa-check-circle"></i>
-                {% elif category in ['danger', 'error'] %}
-                  <i class="fas fa-exclamation-circle"></i>
-                {% elif category == 'warning' %}
-                  <i class="fas fa-exclamation-triangle"></i>
-                {% else %}
-                  <i class="fas fa-info-circle"></i>
-                {% endif %}
+                {% if category == 'success' %}<i class="fas fa-check-circle"></i>
+                {% elif category in ['danger','error'] %}<i class="fas fa-exclamation-circle"></i>
+                {% elif category == 'warning' %}<i class="fas fa-exclamation-triangle"></i>
+                {% else %}<i class="fas fa-info-circle"></i>{% endif %}
                 {{ message }}
               </div>
             {% endfor %}
@@ -553,93 +182,103 @@
 
       <!-- Cabeçalho da página -->
       <div class="page-header-card">
-        <div class="page-header-icon">
-          <i class="fas fa-calendar-check"></i>
-        </div>
+        <div class="page-header-icon"><i class="fas fa-calendar-check"></i></div>
         <div class="page-header-content">
           <p class="page-header-title">Meus Agendamentos</p>
-          <p class="page-header-subtitle">
-            Visualize suas folgas agendadas, verifique o status e cancele agendamentos ainda em espera.
-          </p>
+          <p class="page-header-subtitle">Visualize, filtre e cancele agendamentos em espera.</p>
         </div>
       </div>
 
       <!-- Card principal -->
       <div class="agenda-card">
         <div class="agenda-headline">
-          <div class="agenda-title">
-            Agendamentos de {{ current_user.nome }}
+          <div class="agenda-title">Agendamentos de {{ current_user.nome }}</div>
+          <div class="agenda-subtitle">Mais recentes primeiro.</div>
+        </div>
+
+        <!-- Controles -->
+        <div class="controls" aria-label="Controles de listagem">
+          <div class="control">
+            <label for="q" class="sr-only">Buscar</label>
+            <input id="q" type="search" placeholder="Buscar por motivo/data…" aria-label="Buscar">
           </div>
-          <div class="agenda-subtitle">
-            Listados do mais recente para o mais antigo.
+          <div class="control">
+            <label for="status" class="sr-only">Status</label>
+            <select id="status" aria-label="Filtrar por status">
+              <option value="">Todos os status</option>
+              <option value="em_espera">Em Espera</option>
+              <option value="deferido">Deferido</option>
+              <option value="indeferido">Indeferido</option>
+            </select>
           </div>
+          <div class="control">
+            <label for="pageSize" class="sr-only">Itens por página</label>
+            <select id="pageSize" aria-label="Itens por página">
+              <option value="5">5 por página</option>
+              <option value="10" selected>10 por página</option>
+              <option value="20">20 por página</option>
+            </select>
+          </div>
+          <div id="summary" class="summary" aria-live="polite"></div>
         </div>
 
         {% if agendamentos %}
-          <table id="agendamentosTable">
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Motivo</th>
-                <th>Status</th>
-                <th>Opções</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% set status_map = {'em_espera': 'Em Espera', 'deferido': 'Deferido', 'indeferido': 'Indeferido'} %}
-              {% for agendamento in agendamentos|sort(attribute='data', reverse=True) %}
-              <tr>
-                <td>{{ agendamento.data.strftime('%d/%m/%Y') }}</td>
-                <td>{{ agendamento.motivo | default('Não informado') }}</td>
-                <td>
-                  {% set rotulo = status_map.get(agendamento.status, 'Status Desconhecido') %}
-                  {% set s = (agendamento.status or '')|lower() %}
-                  <span class="status-pill
-                    {% if s == 'em_espera' %}espera
-                    {% elif s == 'deferido' %}deferido
-                    {% elif s == 'indeferido' %}indeferido
-                    {% endif %}">
-                    {{ rotulo }}
-                  </span>
-                </td>
-                <td>
-                  {% if agendamento.status == 'em_espera' %}
-                    <a href="javascript:void(0);" class="delete-btn" onclick="confirmDelete({{ agendamento.id }})" title="Excluir agendamento">
-                      <i class="fas fa-times"></i>
-                    </a>
-                  {% else %}
-                    <span style="font-size:0.8rem; color:#6b7280;">—</span>
-                  {% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-
-          <!-- Paginação (front-end) -->
-          <div id="pagination" class="pagination"></div>
-        {% else %}
-          <div class="no-data">
-            Você não tem agendamentos cadastrados.
+          <div class="table-wrapper">
+            <table id="agendamentosTable">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Motivo</th>
+                  <th>Status</th>
+                  <th>Opções</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% set status_map = {'em_espera':'Em Espera','deferido':'Deferido','indeferido':'Indeferido'} %}
+                {% for ag in agendamentos|sort(attribute='data', reverse=True) %}
+                <tr data-status="{{ (ag.status or '')|lower }}">
+                  <td>{{ ag.data.strftime('%d/%m/%Y') }}</td>
+                  <td>{{ ag.motivo | default('Não informado') }}</td>
+                  <td>
+                    {% set s = (ag.status or '')|lower %}
+                    <span class="status-pill {% if s=='em_espera' %}espera{% elif s=='deferido' %}deferido{% elif s=='indeferido' %}indeferido{% endif %}">
+                      {{ status_map.get(ag.status, 'Status Desconhecido') }}
+                    </span>
+                  </td>
+                  <td>
+                    {% if ag.status == 'em_espera' %}
+                      <a href="javascript:void(0);" class="delete-btn" onclick="confirmDelete({{ ag.id }})" title="Excluir agendamento">
+                        <i class="fas fa-times"></i>
+                      </a>
+                    {% else %}
+                      <span style="font-size:.8rem; color:#6b7280;">—</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
+
+          <!-- Paginação -->
+          <nav id="pagination" class="pagination" aria-label="Paginação"></nav>
+        {% else %}
+          <div class="no-data">Você não tem agendamentos cadastrados.</div>
         {% endif %}
       </div>
 
       <div class="voltar-wrapper">
-        <a href="{{ url_for('index') }}" class="voltar-link">
-          <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
-        </a>
+        <a href="{{ url_for('index') }}" class="voltar-link"><i class="fas fa-arrow-left"></i> Voltar para a Página Inicial</a>
       </div>
     </div>
   </main>
 
-  <!-- Janela de Confirmação -->
-  <div id="confirmModal" class="modal">
+  <!-- Modal de Confirmação -->
+  <div id="confirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
     <div class="modal-content">
-      <h2>Excluir agendamento</h2>
+      <h2 id="confirmTitle">Excluir agendamento</h2>
       <p>Você tem certeza de que deseja excluir este agendamento?</p>
       <form id="confirmDeleteForm" action="" method="POST">
-        <!-- CSRF obrigatório para POST -->
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button id="confirmDeleteBtn" class="btn btn-danger">Sim, excluir</button>
         <button id="cancelDeleteBtn" type="button" class="btn btn-secondary">Cancelar</button>
@@ -647,9 +286,137 @@
     </div>
   </div>
 
-  <!-- Rodapé -->
   <footer>
     <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
   </footer>
+
+  <script>
+    // CSRF global
+    (function () {
+      const el = document.querySelector('meta[name="csrf-token"]');
+      if (el) window.csrfToken = el.getAttribute('content');
+    })();
+
+    // Modal de exclusão
+    document.addEventListener('DOMContentLoaded', () => {
+      let agendamentoIdToDelete = null;
+      const modal = document.getElementById('confirmModal');
+      const confirmBtn = document.getElementById('confirmDeleteBtn');
+      const cancelBtn = document.getElementById('cancelDeleteBtn');
+
+      window.confirmDelete = function (id) {
+        agendamentoIdToDelete = id;
+        document.getElementById('confirmDeleteForm').action = '/delete_agendamento/' + id;
+        modal.style.display = 'flex';
+      };
+
+      confirmBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (agendamentoIdToDelete) document.getElementById('confirmDeleteForm').submit();
+      });
+      cancelBtn?.addEventListener('click', () => modal.style.display = 'none');
+      window.addEventListener('pageshow', () => { modal.style.display = 'none'; agendamentoIdToDelete = null; });
+    });
+
+    // Paginação + filtros (front-end)
+    document.addEventListener('DOMContentLoaded', () => {
+      const table = document.getElementById('agendamentosTable');
+      if (!table) return;
+
+      const tbody = table.querySelector('tbody');
+      const allRows = Array.from(tbody.querySelectorAll('tr'));
+      const q = document.getElementById('q');
+      const statusSel = document.getElementById('status');
+      const pageSizeSel = document.getElementById('pageSize');
+      const pagination = document.getElementById('pagination');
+      const summary = document.getElementById('summary');
+
+      let rowsPerPage = parseInt(localStorage.getItem('ag_page_size') || '10', 10);
+      pageSizeSel.value = String(rowsPerPage);
+      let currentPage = 1;
+      let filteredRows = allRows.slice();
+
+      function normalize(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+
+      function applyFilters(){
+        const qv = normalize(q.value);
+        const sv = statusSel.value;
+
+        filteredRows = allRows.filter(row => {
+          const statusOk = !sv || (row.dataset.status === sv);
+          if (!statusOk) return false;
+          if (!qv) return true;
+          const text = normalize(row.textContent);
+          return text.includes(qv);
+        });
+
+        // reseta página se extrapolar
+        const maxPage = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+        if (currentPage > maxPage) currentPage = 1;
+
+        render();
+      }
+
+      function render(){
+        // Oculta todas
+        allRows.forEach(r => r.style.display = 'none');
+
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        const pageRows = filteredRows.slice(start, end);
+
+        pageRows.forEach(r => r.style.display = '');
+
+        renderPagination();
+        renderSummary(start, pageRows.length, filteredRows.length);
+      }
+
+      function renderSummary(start, count, total){
+        const from = total ? (start + 1) : 0;
+        const to = start + count;
+        summary.textContent = `Mostrando ${from}–${to} de ${total}`;
+      }
+
+      function renderPagination(){
+        pagination.innerHTML = '';
+        const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+        if (totalPages <= 1) return;
+
+        const addBtn = (label, disabled, onClick, active=false) => {
+          const b = document.createElement('button');
+          b.textContent = label;
+          if (active) b.classList.add('active');
+          if (disabled) b.disabled = true;
+          if (onClick) b.addEventListener('click', onClick);
+          pagination.appendChild(b);
+        };
+
+        addBtn('«', currentPage === 1, () => { currentPage--; render(); });
+
+        for (let p = 1; p <= totalPages; p++) {
+          if (p === 1 || p === totalPages || (p >= currentPage - 2 && p <= currentPage + 2)) {
+            addBtn(String(p), false, () => { currentPage = p; render(); }, p === currentPage);
+          } else if (p === currentPage - 3 || p === currentPage + 3) {
+            const span = document.createElement('span'); span.textContent = '…'; pagination.appendChild(span);
+          }
+        }
+
+        addBtn('»', currentPage === totalPages, () => { currentPage++; render(); });
+      }
+
+      // Listeners
+      q.addEventListener('input', () => { currentPage = 1; applyFilters(); });
+      statusSel.addEventListener('change', () => { currentPage = 1; applyFilters(); });
+      pageSizeSel.addEventListener('change', () => {
+        rowsPerPage = parseInt(pageSizeSel.value, 10);
+        localStorage.setItem('ag_page_size', String(rowsPerPage));
+        currentPage = 1;
+        render();
+      });
+
+      // Inicial
+      applyFilters();
+    });
+  </script>
 </body>
 </html>
