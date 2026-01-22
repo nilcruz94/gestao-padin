@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
@@ -173,7 +173,7 @@
       min-height:90px; font-size:13px; position:relative; display:flex; flex-direction:column; gap:4px;
       transition: border-color .16s, box-shadow .16s, transform .16s, background-color .16s;
 
-      /* >>> AJUSTE MÍNIMO PARA GARANTIR QUE O CONTEÚDO (EVENTOS) NÃO “VAZE” DO QUADRADO <<< */
+      /* Mantém conteúdo dentro do quadrado */
       overflow: hidden;
     }
     .calendar .day:not(.weekdays):hover{ border-color:var(--primary-soft); background:#fff; box-shadow:0 10px 25px rgba(15,23,42,.12); transform: translateY(-2px); }
@@ -201,42 +201,42 @@
     .calendar .agenda-indeferido { background:#fecaca; color:#7f1d1d; border-color:var(--danger); font-weight:600; }
     .calendar .agenda-indeferido:hover { background:#fee2e2; }
 
-    /* NOVO: evento (renderiza acima dos agendamentos) */
+    /* ===========================
+       EVENTO (TOPO DO DIA)
+       Ajuste: NÃO quebrar palavra no meio (ex.: "Facultativ" + "o")
+       Mantém dentro do quadrado (overflow hidden do dia e do próprio evento)
+       =========================== */
     .evento{
       padding:6px 8px; margin-top:3px; border-radius:10px; font-size:12px; text-align:left;
       border:1px solid var(--event-border);
       display:flex; flex-direction:column; align-items:flex-start; line-height:1.25; gap:2px;
       background: var(--event-soft); color: var(--event);
       font-weight:700;
-      white-space:normal; word-break:normal; overflow-wrap: break-word;
 
-      /* >>> AJUSTES PARA O TEXTO DO EVENTO NÃO ESTOURAR O QUADRADO <<< */
+      /* Permite quebrar SOMENTE em espaços (não no meio da palavra) */
+      white-space: normal;
+      overflow-wrap: normal;
+      word-break: keep-all;
+      hyphens: none;
+
       width: 100%;
       max-width: 100%;
       min-width: 0;
       overflow: hidden;
     }
-    .evento .evento-titulo{
-      display:flex;
-      align-items:flex-start;
-      gap:6px;
 
-      /* >>> AJUSTE CRÍTICO EM FLEX: permite o span “encolher” e quebrar dentro <<< */
+    .evento .evento-titulo{
       width: 100%;
       min-width: 0;
-      flex-wrap: wrap;
-    }
-    .evento .evento-titulo i{ font-size:12px; opacity:.9; flex: 0 0 auto; }
 
-    /* O span é o que estoura quando está em flex (min-width:auto). Aqui corrigimos. */
-    .evento .evento-titulo span{
-      flex: 1 1 auto;
-      min-width: 0;
-      max-width: 100%;
+      /* Texto simples (sem ícone), com quebra apenas entre palavras */
+      display: block;
+      text-align: left;
 
-      /* Mantém dentro do quadrado mesmo com nomes grandes */
-      overflow-wrap: anywhere;
-      word-break: break-word;
+      white-space: normal;
+      overflow-wrap: normal;
+      word-break: keep-all;
+      hyphens: none;
     }
 
     /* Centraliza somente o horário (se existir) */
@@ -275,8 +275,8 @@
       .calendar .day:not(.weekdays){ font-size:11px; min-height:80px; }
       .agendamento{ font-size:11px; padding:4px 6px; }
 
-      /* evento no mobile */
-      .evento{ font-size:11px; padding:4px 6px; }
+      /* Evento no mobile: fonte um pouco menor para caber melhor, sem quebrar palavra no meio */
+      .evento{ font-size:10.5px; padding:4px 6px; }
       .evento .evento-horario{ font-size:9px; }
     }
 
@@ -408,14 +408,12 @@
 
               {# ==========================================================
                  EVENTOS DA ESCOLA (sempre no topo do dia)
-                 (sem exibir período, pois já aparece em todos os dias)
                  ========================================================== #}
               {% if eventos %}
                 {% for ev in eventos %}
                   <div class="evento" {% if ev.cor %}style="border-color: {{ ev.cor }}55; background: {{ ev.cor }}14; color: {{ ev.cor }};"{% endif %}>
                     <div class="evento-titulo">
-                      <i class="fas fa-bullhorn"></i>
-                      <span>{{ (ev.nome or 'Evento') }}</span>
+                      {{ (ev.nome or 'Evento') }}
                     </div>
 
                     {# HORÁRIO opcional #}
