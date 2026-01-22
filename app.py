@@ -154,21 +154,33 @@ TERMO_VERSION = "2025-01-15"
 # ===========================================
 # MODELOS
 # ===========================================
+import datetime
+from sqlalchemy import CheckConstraint, Index
+from flask_login import UserMixin
+
+# Observação:
+# - Mantive sua tabela/FK como 'user.id' para não quebrar o que você já tem.
+# - Incluí o model Evento (como você já tinha) e AGORA o model EventoVisto (Opção B).
+# - Adicionei relacionamentos (User <-> EventoVisto) e (Evento <-> EventoVisto) para facilitar consultas.
+# - Mantive defaults, indexes e constraints sem alterar comportamento existente.
+
 class User(UserMixin, db.Model):
+    __tablename__ = "user"  # mantém compatibilidade com FKs existentes (ex.: 'user.id')
+
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(150), nullable=False)
-    registro = db.Column(db.String(150), nullable=False, unique=True)
-    email = db.Column(db.String(150), nullable=False, unique=True)
+    registro = db.Column(db.String(150), nullable=False, unique=True, index=True)
+    email = db.Column(db.String(150), nullable=False, unique=True, index=True)
     senha = db.Column(db.String(256), nullable=False)
     tipo = db.Column(db.String(20), nullable=False)  # 'funcionario' ou 'administrador'
-    status = db.Column(db.String(20), default='pendente')  # 'pendente', 'aprovado', 'rejeitado'
+    status = db.Column(db.String(20), default='pendente', nullable=False)  # 'pendente', 'aprovado', 'rejeitado'
 
     # Controle de ativo na unidade (soft delete)
     ativo = db.Column(db.Boolean, nullable=False, default=True, index=True)
 
     # Campos para TRE
-    tre_total = db.Column(db.Integer, default=0)         # Total de dias de TRE deferidos (créditos)
-    tre_usufruidas = db.Column(db.Integer, default=0)    # Dias de TRE já utilizados (agendamentos deferidos)
+    tre_total = db.Column(db.Integer, default=0, nullable=False)         # Total de dias de TRE deferidos (créditos)
+    tre_usufruidas = db.Column(db.Integer, default=0, nullable=False)    # Dias de TRE já utilizados (agendamentos deferidos)
     cargo = db.Column(db.String(100), nullable=True)
 
     # Banco de horas em minutos
@@ -179,27 +191,51 @@ class User(UserMixin, db.Model):
     data_nascimento = db.Column(db.Date, nullable=True)
 
     # Documentos
-    cpf = db.Column(db.String(14), nullable=False, unique=True)
-    rg = db.Column(db.String(20), nullable=False, unique=True)
+    cpf = db.Column(db.String(14), nullable=False, unique=True, index=True)
+    rg = db.Column(db.String(20), nullable=False, unique=True, index=True)
     data_emissao_rg = db.Column(db.Date, nullable=True)
     orgao_emissor = db.Column(db.String(20), nullable=True)
 
     graduacao = db.Column(db.String(50), nullable=True)
 
     # Termos
-    aceitou_termo = db.Column(db.Boolean, default=False)
+    aceitou_termo = db.Column(db.Boolean, default=False, nullable=False)
     versao_termo = db.Column(db.String(20), default=None)
 
-    agendamentos = db.relationship('Agendamento', backref='user_funcionario', lazy=True)
+    # Relacionamentos
+    agendamentos = db.relationship(
+        'Agendamento',
+        backref=db.backref('user_funcionario', lazy=True),
+        lazy=True,
+        foreign_keys='Agendamento.funcionario_id',
+        overlaps="funcionario,agendamentos_funcionario"
+    )
+
+    # Eventos criados (admin)
+    eventos_criados = db.relationship(
+        'Evento',
+        backref=db.backref('criado_por', lazy=True),
+        lazy=True,
+        foreign_keys='Evento.criado_por_id'
+    )
+
+    # NOVO (Opção B): registros de "evento visto" por este usuário
+    eventos_vistos = db.relationship(
+        'EventoVisto',
+        backref=db.backref('usuario', lazy=True),
+        lazy=True,
+        foreign_keys='EventoVisto.user_id',
+        cascade="all, delete-orphan"
+    )
 
 
 class Agendamento(db.Model):
     __tablename__ = 'agendamento'
 
     id = db.Column(db.Integer, primary_key=True)
-    funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    status = db.Column(db.String(50), nullable=False)
-    data = db.Column(db.Date, nullable=False)
+    funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    status = db.Column(db.String(50), nullable=False, index=True)
+    data = db.Column(db.Date, nullable=False, index=True)
     motivo = db.Column(db.String(100), nullable=False)
     tipo_folga = db.Column(db.String(50))
     data_referencia = db.Column(db.Date)
@@ -207,17 +243,27 @@ class Agendamento(db.Model):
     minutos = db.Column(db.Integer, nullable=True)
     substituicao = db.Column(db.String(3), nullable=False, default="Não")
     nome_substituto = db.Column(db.String(255), nullable=True)
-    conferido = db.Column(db.Boolean, default=False)
+    conferido = db.Column(db.Boolean, default=False, nullable=False)
 
-    funcionario = db.relationship('User', backref='agendamentos_funcionario', lazy=True)
+    # Mantido por compatibilidade (caso você use agendamento.funcionario em algum lugar)
+    funcionario = db.relationship(
+        'User',
+        backref=db.backref('agendamentos_funcionario', lazy=True),
+        lazy=True,
+        foreign_keys=[funcionario_id],
+        overlaps="agendamentos,user_funcionario"
+    )
 
 
 class Folga(db.Model):
+    __tablename__ = 'folga'
+
     id = db.Column(db.Integer, primary_key=True)
-    funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    data = db.Column(db.Date, nullable=False)
+    funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    data = db.Column(db.Date, nullable=False, index=True)
     motivo = db.Column(db.String(50), nullable=False)
-    status = db.Column(db.String(50), default="Pendente")
+    status = db.Column(db.String(50), default="Pendente", nullable=False, index=True)
+
     funcionario = db.relationship('User', backref=db.backref('folgas', lazy=True))
 
 
@@ -225,16 +271,16 @@ class BancoDeHoras(db.Model):
     __tablename__ = 'banco_de_horas'
 
     id = db.Column(db.Integer, primary_key=True)
-    funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     horas = db.Column(db.Integer, nullable=False)
     minutos = db.Column(db.Integer, nullable=False)
-    total_minutos = db.Column(db.Integer, default=0)
-    data_realizacao = db.Column(db.Date, nullable=False)
-    status = db.Column(db.String(50), default="Horas a Serem Deferidas")
-    data_criacao = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    data_atualizacao = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    total_minutos = db.Column(db.Integer, default=0, nullable=False)
+    data_realizacao = db.Column(db.Date, nullable=False, index=True)
+    status = db.Column(db.String(50), default="Horas a Serem Deferidas", nullable=False, index=True)
+    data_criacao = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
+    data_atualizacao = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
     motivo = db.Column(db.String(40), nullable=True)
-    usufruido = db.Column(db.Boolean, default=False)
+    usufruido = db.Column(db.Boolean, default=False, nullable=False)
 
     funcionario = db.relationship('User', backref='banco_de_horas')
 
@@ -245,13 +291,13 @@ class EsquecimentoPonto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(150), nullable=False)
     registro = db.Column(db.String(150), nullable=False)
-    data_esquecimento = db.Column(db.Date, nullable=False)
+    data_esquecimento = db.Column(db.Date, nullable=False, index=True)
     hora_primeira_entrada = db.Column(db.Time, nullable=True)
     hora_primeira_saida = db.Column(db.Time, nullable=True)
     hora_segunda_entrada = db.Column(db.Time, nullable=True)
     hora_segunda_saida = db.Column(db.Time, nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    conferido = db.Column(db.Boolean, default=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    conferido = db.Column(db.Boolean, default=False, nullable=False)
     motivo = db.Column(db.Text, nullable=True)
 
     usuario = db.relationship('User', backref=db.backref('esquecimentos_ponto', lazy=True))
@@ -261,19 +307,19 @@ class TRE(db.Model):
     __tablename__ = 'tre'
 
     id = db.Column(db.Integer, primary_key=True)
-    funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
 
     # enviado pelo usuário
     dias_folga = db.Column(db.Integer, nullable=False)
     arquivo_pdf = db.Column(db.String(255), nullable=False)
-    data_envio = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    data_envio = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
 
     # workflow de aprovação
-    status = db.Column(db.String(20), default='pendente')  # 'pendente' | 'deferida' | 'indeferida'
+    status = db.Column(db.String(20), default='pendente', nullable=False, index=True)  # 'pendente' | 'deferida' | 'indeferida'
     dias_validados = db.Column(db.Integer, nullable=True)
     parecer_admin = db.Column(db.Text, nullable=True)
     validado_em = db.Column(db.DateTime, nullable=True)
-    validado_por_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    validado_por_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
 
     funcionario = db.relationship(
         'User',
@@ -286,6 +332,107 @@ class TRE(db.Model):
         backref=db.backref('tres_validadas', lazy=True),
         foreign_keys=[validado_por_id],
         lazy=True
+    )
+
+
+# ===========================================
+# EVENTOS DA ESCOLA (ADMIN)
+# ===========================================
+class Evento(db.Model):
+    """
+    Eventos institucionais (criados por administrador) para aparecerem no calendário.
+
+    Campos:
+      - nome: obrigatório
+      - data_evento: obrigatória (data principal do evento)
+      - data_inicio / data_fim: opcionais (período do evento, se existir)
+      - hora_inicio / hora_fim: opcionais (horário do evento, se existir)
+    """
+    __tablename__ = 'evento'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    nome = db.Column(db.String(150), nullable=False)
+    descricao = db.Column(db.Text, nullable=True)
+
+    # Data principal (sempre presente)
+    data_evento = db.Column(db.Date, nullable=False, index=True)
+
+    # Período (opcional)
+    data_inicio = db.Column(db.Date, nullable=True, index=True)
+    data_fim = db.Column(db.Date, nullable=True, index=True)
+
+    # Horário (opcional)
+    hora_inicio = db.Column(db.Time, nullable=True)
+    hora_fim = db.Column(db.Time, nullable=True)
+
+    # Auditoria/controle
+    criado_por_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    ativo = db.Column(db.Boolean, nullable=False, default=True, index=True)
+
+    # Opcional (para pintar no calendário)
+    cor = db.Column(db.String(20), nullable=True)  # ex.: "#1f2937"
+
+    criado_em = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
+    atualizado_em = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
+
+    # NOVO (Opção B): registros de "visto" deste evento por usuários
+    vistos = db.relationship(
+        'EventoVisto',
+        backref=db.backref('evento', lazy=True),
+        lazy=True,
+        foreign_keys='EventoVisto.evento_id',
+        cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        # Período válido (se os dois existirem)
+        CheckConstraint(
+            "(data_inicio IS NULL OR data_fim IS NULL) OR (data_fim >= data_inicio)",
+            name="ck_evento_periodo_valido"
+        ),
+        # Horário válido (se os dois existirem)
+        CheckConstraint(
+            "(hora_inicio IS NULL OR hora_fim IS NULL) OR (hora_fim >= hora_inicio)",
+            name="ck_evento_horario_valido"
+        ),
+        Index("ix_evento_datas", "data_evento", "data_inicio", "data_fim"),
+    )
+
+
+# ===========================================
+# NOVO (Opção B): EVENTO VISTO (por usuário)
+# ===========================================
+class EventoVisto(db.Model):
+    """
+    Controle de "notificação lida" por evento e por usuário.
+
+    - Um usuário vê um evento no index (notificação).
+    - Ao clicar "Entendi", gravamos um registro aqui.
+    - Nunca mais aparece para o mesmo usuário (para o mesmo evento).
+    """
+    __tablename__ = "evento_visto"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    evento_id = db.Column(
+        db.Integer,
+        db.ForeignKey("evento.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    visto_em = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "evento_id", name="uq_evento_visto_user_evento"),
+        Index("ix_evento_visto_user_evento", "user_id", "evento_id"),
     )
 
 # ===========================================
@@ -625,6 +772,9 @@ def logout():
 def index():
     usuario = current_user
 
+    # ======================================================
+    # 1) Validações de perfil (mantidas como você já tinha)
+    # ======================================================
     campos_obrigatorios = {
         "Celular": usuario.celular,
         "Data de Nascimento": usuario.data_nascimento,
@@ -653,6 +803,42 @@ def index():
             <a href="{url_for('perfil')}" class="link-perfil">Clique aqui para preenchê-los</a>.
         """
         flash(mensagem_opcional, "info")
+
+    # ======================================================
+    # 2) OPÇÃO B: Notificação de novos eventos (1ª visita após criar)
+    #    - Busca eventos não vistos do usuário (evento_visto)
+    #    - Exibe flash no index
+    #    - Marca como visto para não repetir
+    #
+    # Requer que no seu app existam os helpers:
+    #   _get_eventos_nao_vistos(user_id, limit)
+    #   _marcar_eventos_como_vistos(user_id, evento_ids)
+    # ======================================================
+    try:
+        novos_eventos = _get_eventos_nao_vistos(usuario.id, limit=3)
+        if novos_eventos:
+            itens = []
+            for ev in novos_eventos:
+                # Mostra data principal (quando existir) de forma amigável
+                data_principal = ev.get("data_evento")
+                if data_principal:
+                    try:
+                        data_fmt = data_principal.strftime("%d/%m/%Y")
+                    except Exception:
+                        data_fmt = str(data_principal)
+                    itens.append(f"• <strong>{ev.get('nome', 'Evento')}</strong> <span style='opacity:.85'>( {data_fmt} )</span>")
+                else:
+                    itens.append(f"• <strong>{ev.get('nome', 'Evento')}</strong>")
+
+            flash(
+                "Novos eventos no calendário:<br>" + "<br>".join(itens),
+                "warning"
+            )
+
+            _marcar_eventos_como_vistos(usuario.id, [ev["id"] for ev in novos_eventos if ev.get("id")])
+    except Exception:
+        # Não derruba o index por falha de notificação; mantém UX do portal
+        pass
 
     return render_template('index.html', usuario=usuario)
 
@@ -1016,10 +1202,15 @@ def calendario(year=None, month=None):
 
     estados_validos = ['em_espera', 'deferido', 'indeferido']
 
+    # ---------------------------
+    # AGENDAMENTOS (como já era)
+    # ---------------------------
     agendamentos = (
         Agendamento.query
-        .filter(Agendamento.data >= first_day_of_month,
-                Agendamento.data <= last_day_of_month)
+        .filter(
+            Agendamento.data >= first_day_of_month,
+            Agendamento.data <= last_day_of_month
+        )
         .filter(Agendamento.status.in_(estados_validos))
         .filter(~func.lower(Agendamento.motivo).like('%ajuste%'))
         .filter(~func.lower(Agendamento.motivo).like('%recuper%'))
@@ -1030,6 +1221,71 @@ def calendario(year=None, month=None):
     for agendamento in agendamentos:
         folgas_por_data.setdefault(agendamento.data, []).append(agendamento)
 
+    # ---------------------------
+    # EVENTOS DA ESCOLA (NOVO)
+    # ---------------------------
+    eventos = (
+        Evento.query
+        .filter(Evento.ativo.is_(True))
+        .filter(
+            (
+                # Evento SEM período (apenas data_evento)
+                (Evento.data_inicio.is_(None) & Evento.data_fim.is_(None) &
+                 (Evento.data_evento >= first_day_of_month) & (Evento.data_evento <= last_day_of_month))
+            )
+            |
+            (
+                # Evento COM período completo
+                (Evento.data_inicio.isnot(None) & Evento.data_fim.isnot(None) &
+                 (Evento.data_inicio <= last_day_of_month) & (Evento.data_fim >= first_day_of_month))
+            )
+            |
+            (
+                # Evento com só data_inicio
+                (Evento.data_inicio.isnot(None) & Evento.data_fim.is_(None) &
+                 (Evento.data_inicio >= first_day_of_month) & (Evento.data_inicio <= last_day_of_month))
+            )
+            |
+            (
+                # Evento com só data_fim
+                (Evento.data_inicio.is_(None) & Evento.data_fim.isnot(None) &
+                 (Evento.data_fim >= first_day_of_month) & (Evento.data_fim <= last_day_of_month))
+            )
+        )
+        # Melhor: ordena por data e, quando existir, por hora_inicio/hora_fim
+        .order_by(
+            Evento.data_evento.asc(),
+            Evento.data_inicio.asc().nullsfirst(),
+            Evento.data_fim.asc().nullsfirst(),
+            Evento.hora_inicio.asc().nullsfirst(),
+            Evento.hora_fim.asc().nullsfirst(),
+            Evento.nome.asc()
+        )
+        .all()
+    )
+
+    eventos_por_data = {}
+
+    def _clamp_date(d, min_d, max_d):
+        return max(min_d, min(d, max_d))
+
+    for ev in eventos:
+        # Define intervalo efetivo do evento (dentro do mês)
+        if ev.data_inicio and ev.data_fim:
+            start = _clamp_date(ev.data_inicio, first_day_of_month, last_day_of_month)
+            end = _clamp_date(ev.data_fim, first_day_of_month, last_day_of_month)
+        elif ev.data_inicio and not ev.data_fim:
+            start = end = _clamp_date(ev.data_inicio, first_day_of_month, last_day_of_month)
+        elif ev.data_fim and not ev.data_inicio:
+            start = end = _clamp_date(ev.data_fim, first_day_of_month, last_day_of_month)
+        else:
+            start = end = _clamp_date(ev.data_evento, first_day_of_month, last_day_of_month)
+
+        cursor = start
+        while cursor <= end:
+            eventos_por_data.setdefault(cursor, []).append(ev)
+            cursor += datetime.timedelta(days=1)
+
     return render_template(
         'calendario.html',
         year=year,
@@ -1039,6 +1295,7 @@ def calendario(year=None, month=None):
         prev_year=prev_year,
         next_year=next_year,
         folgas_por_data=folgas_por_data,
+        eventos_por_data=eventos_por_data,
         days_in_month=calendar.monthrange(year, month)[1],
         calendar=calendar,
         datetime=datetime,
@@ -3247,6 +3504,321 @@ def user_info_report():
         download_name="relatorio_servidores.pdf",
         mimetype="application/pdf"
     )
+
+# ===========================================
+# EVENTOS (ADMIN) - CRUD COMPLETO
+# Rotas:
+#   GET   /admin/eventos                 -> lista (com filtro)
+#   GET   /admin/eventos/<id>            -> detalhes (visualizar) [opcional]
+#   POST  /admin/eventos/criar           -> criar
+#   POST  /admin/eventos/<id>/editar     -> editar
+#   POST  /admin/eventos/<id>/excluir    -> excluir (soft delete: ativo=False)
+#
+# PLUS (OPÇÃO B):
+#   Helpers para notificar no /index:
+#     - _get_eventos_nao_vistos(user_id, limit)
+#     - _marcar_eventos_como_vistos(user_id, evento_ids)
+# ===========================================
+
+import datetime as dt
+from functools import wraps
+from flask import render_template, request, redirect, url_for, flash, abort
+from flask_login import login_required, current_user
+from sqlalchemy import func, text
+
+# Defina a cor padrão fixa aqui (backend não permite edição via form)
+EVENTO_COR_PADRAO = "#1d4ed8"
+
+
+# ======================================================
+# HELPERS (NÃO conflita com seu _parse_date do BH)
+# ======================================================
+def _parse_date_evento(s: str):
+    """Aceita 'YYYY-MM-DD' (input type=date). Retorna datetime.date ou None."""
+    if not s:
+        return None
+    try:
+        return dt.datetime.strptime(s, "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+
+def _parse_time_evento(s: str):
+    """Aceita 'HH:MM' (input type=time). Retorna datetime.time ou None."""
+    if not s:
+        return None
+    try:
+        return dt.datetime.strptime(s, "%H:%M").time()
+    except Exception:
+        return None
+
+
+def admin_required(view_func):
+    """Garante que apenas tipo == 'administrador' acesse."""
+    @wraps(view_func)
+    def _wrapped(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+        if getattr(current_user, 'tipo', None) != 'administrador':
+            abort(403)
+        return view_func(*args, **kwargs)
+    return _wrapped
+
+
+def _validar_datas_e_horas(data_evento, data_inicio, data_fim, hora_inicio, hora_fim):
+    """
+    Regras:
+      - precisa existir ao menos 1 data (data_evento ou início/fim)
+      - se inicio e fim existirem: fim >= inicio
+      - se hora_inicio e hora_fim existirem: fim >= inicio
+    Retorna (ok: bool, msg: str|None)
+    """
+    if not data_evento and not data_inicio and not data_fim:
+        return False, "Informe a data do evento (ou ao menos início/fim)."
+
+    if data_inicio and data_fim and data_fim < data_inicio:
+        return False, "Período inválido: a data fim não pode ser menor que a data início."
+
+    if hora_inicio and hora_fim and hora_fim < hora_inicio:
+        return False, "Horário inválido: a hora fim não pode ser menor que a hora início."
+
+    return True, None
+
+
+def _normalizar_data_evento(data_evento, data_inicio, data_fim):
+    """
+    data_evento é obrigatória no model.
+    Conveniência: se não vier, usa data_inicio ou data_fim.
+    """
+    return data_evento or data_inicio or data_fim
+
+
+# ======================================================
+# OPÇÃO B (evento_visto): Helpers para notificação no index
+# ======================================================
+def _get_eventos_nao_vistos(user_id: int, limit: int = 5):
+    """
+    Retorna uma lista (mappings) de eventos ATIVOS e RELEVANTES (não encerrados)
+    que ainda não foram vistos pelo usuário (sem registro em evento_visto).
+    Não exige Model SQLAlchemy de evento_visto (usa SQL direto).
+    """
+    sql = text("""
+        SELECT
+            e.id,
+            e.nome,
+            e.descricao,
+            e.data_evento,
+            e.data_inicio,
+            e.data_fim,
+            e.hora_inicio,
+            e.hora_fim,
+            e.cor
+        FROM evento e
+        WHERE e.ativo = TRUE
+          AND COALESCE(e.data_fim, e.data_inicio, e.data_evento) >= CURRENT_DATE
+          AND NOT EXISTS (
+              SELECT 1
+              FROM evento_visto v
+              WHERE v.user_id = :uid
+                AND v.evento_id = e.id
+          )
+        ORDER BY e.criado_em DESC, e.data_evento DESC
+        LIMIT :lim
+    """)
+    return db.session.execute(sql, {"uid": user_id, "lim": limit}).mappings().all()
+
+
+def _marcar_eventos_como_vistos(user_id: int, evento_ids):
+    """
+    Marca como visto (insere em evento_visto), com ON CONFLICT para não duplicar.
+    """
+    if not evento_ids:
+        return
+
+    sql = text("""
+        INSERT INTO evento_visto (user_id, evento_id, visto_em)
+        VALUES (:uid, :eid, timezone('utc', now()))
+        ON CONFLICT (user_id, evento_id) DO NOTHING
+    """)
+    for eid in evento_ids:
+        db.session.execute(sql, {"uid": user_id, "eid": int(eid)})
+
+    db.session.commit()
+
+
+# ===========================================
+# LISTA (com busca e opção de incluir inativos)
+# ===========================================
+@app.route("/admin/eventos", methods=["GET"])
+@login_required
+@admin_required
+def admin_eventos():
+    q = (request.args.get("q") or "").strip()
+    incluir_inativos = (request.args.get("incluir_inativos") == "1")
+
+    query = Evento.query
+
+    if not incluir_inativos:
+        query = query.filter(Evento.ativo.is_(True))
+
+    if q:
+        q_like = f"%{q}%"
+        # evita NULL quebrando o filtro com COALESCE
+        query = query.filter(
+            (Evento.nome.ilike(q_like)) |
+            (func.coalesce(Evento.descricao, "").ilike(q_like))
+        )
+
+    eventos = (
+        query
+        .order_by(
+            Evento.ativo.desc(),
+            Evento.data_inicio.asc().nullslast(),
+            Evento.data_evento.asc(),
+            Evento.hora_inicio.asc().nullslast(),
+            Evento.nome.asc()
+        )
+        .all()
+    )
+
+    return render_template(
+        "admin_eventos.html",
+        eventos=eventos,
+        q=q,
+        incluir_inativos=incluir_inativos
+    )
+
+
+# ===========================================
+# VISUALIZAR (detalhe) - opcional
+# ===========================================
+@app.route("/admin/eventos/<int:evento_id>", methods=["GET"])
+@login_required
+@admin_required
+def admin_eventos_ver(evento_id):
+    ev = Evento.query.get_or_404(evento_id)
+    return render_template("admin_eventos_ver.html", ev=ev)
+
+
+# ===========================================
+# CRIAR
+# ===========================================
+@app.route("/admin/eventos/criar", methods=["POST"])
+@login_required
+@admin_required
+def admin_eventos_criar():
+    nome = (request.form.get("nome") or "").strip()
+    descricao = (request.form.get("descricao") or "").strip() or None
+
+    # COR FIXA (não editável): ignora qualquer input do form
+    cor = EVENTO_COR_PADRAO
+
+    data_evento = _parse_date_evento(request.form.get("data_evento", ""))
+    data_inicio = _parse_date_evento(request.form.get("data_inicio", ""))
+    data_fim = _parse_date_evento(request.form.get("data_fim", ""))
+
+    hora_inicio = _parse_time_evento(request.form.get("hora_inicio", ""))
+    hora_fim = _parse_time_evento(request.form.get("hora_fim", ""))
+
+    ativo = (request.form.get("ativo") == "1")
+
+    if not nome:
+        flash("Informe o nome do evento.", "danger")
+        return redirect(url_for("admin_eventos"))
+
+    data_evento = _normalizar_data_evento(data_evento, data_inicio, data_fim)
+
+    ok, msg = _validar_datas_e_horas(data_evento, data_inicio, data_fim, hora_inicio, hora_fim)
+    if not ok:
+        flash(msg, "danger")
+        return redirect(url_for("admin_eventos"))
+
+    ev = Evento(
+        nome=nome,
+        descricao=descricao,
+        cor=cor,
+        data_evento=data_evento,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+        hora_inicio=hora_inicio,
+        hora_fim=hora_fim,
+        criado_por_id=current_user.id,
+        ativo=bool(ativo)
+    )
+
+    db.session.add(ev)
+    db.session.commit()
+
+    flash("Evento criado com sucesso.", "success")
+    return redirect(url_for("admin_eventos"))
+
+
+# ===========================================
+# EDITAR
+# ===========================================
+@app.route("/admin/eventos/<int:evento_id>/editar", methods=["POST"])
+@login_required
+@admin_required
+def admin_eventos_editar(evento_id):
+    ev = Evento.query.get_or_404(evento_id)
+
+    nome = (request.form.get("nome") or "").strip()
+    descricao = (request.form.get("descricao") or "").strip() or None
+
+    # COR FIXA (não editável):
+    # - Não altera a cor do evento aqui (mantém o valor já gravado).
+    # - Se você quiser forçar sempre a padrão, descomente a linha abaixo.
+    # ev.cor = EVENTO_COR_PADRAO
+
+    data_evento = _parse_date_evento(request.form.get("data_evento", ""))
+    data_inicio = _parse_date_evento(request.form.get("data_inicio", ""))
+    data_fim = _parse_date_evento(request.form.get("data_fim", ""))
+
+    hora_inicio = _parse_time_evento(request.form.get("hora_inicio", ""))
+    hora_fim = _parse_time_evento(request.form.get("hora_fim", ""))
+
+    ativo = (request.form.get("ativo") == "1")
+
+    if not nome:
+        flash("Informe o nome do evento.", "danger")
+        return redirect(url_for("admin_eventos"))
+
+    data_evento = _normalizar_data_evento(data_evento, data_inicio, data_fim)
+
+    ok, msg = _validar_datas_e_horas(data_evento, data_inicio, data_fim, hora_inicio, hora_fim)
+    if not ok:
+        flash(msg, "danger")
+        return redirect(url_for("admin_eventos"))
+
+    ev.nome = nome
+    ev.descricao = descricao
+    ev.data_evento = data_evento
+    ev.data_inicio = data_inicio
+    ev.data_fim = data_fim
+    ev.hora_inicio = hora_inicio
+    ev.hora_fim = hora_fim
+    ev.ativo = bool(ativo)
+
+    db.session.commit()
+
+    flash("Evento atualizado com sucesso.", "success")
+    return redirect(url_for("admin_eventos"))
+
+
+# ===========================================
+# EXCLUIR (SOFT DELETE)
+# ===========================================
+@app.route("/admin/eventos/<int:evento_id>/excluir", methods=["POST"])
+@login_required
+@admin_required
+def admin_eventos_excluir(evento_id):
+    ev = Evento.query.get_or_404(evento_id)
+
+    ev.ativo = False
+    db.session.commit()
+
+    flash("Evento excluído (inativado).", "success")
+    return redirect(url_for("admin_eventos"))
 
 # --- HUB TRE ---
 @app.route("/tre", methods=["GET"], strict_slashes=False)

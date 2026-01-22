@@ -27,6 +27,11 @@
 
       --card-shadow: 0 14px 34px rgba(15,23,42,.1), 0 2px 4px rgba(15,23,42,.06);
       --radius: 18px;
+
+      /* NOVO: cores para eventos */
+      --event: #1d4ed8;
+      --event-soft: #e0edff;
+      --event-border: rgba(29, 78, 216, .35);
     }
 
     *, *::before, *::after { box-sizing: border-box; }
@@ -167,6 +172,9 @@
       background:#f9fafb; padding:8px 7px 6px; text-align:right; border-radius:14px; border:1px solid var(--border-soft);
       min-height:90px; font-size:13px; position:relative; display:flex; flex-direction:column; gap:4px;
       transition: border-color .16s, box-shadow .16s, transform .16s, background-color .16s;
+
+      /* >>> AJUSTE MÍNIMO PARA GARANTIR QUE O CONTEÚDO (EVENTOS) NÃO “VAZE” DO QUADRADO <<< */
+      overflow: hidden;
     }
     .calendar .day:not(.weekdays):hover{ border-color:var(--primary-soft); background:#fff; box-shadow:0 10px 25px rgba(15,23,42,.12); transform: translateY(-2px); }
 
@@ -193,6 +201,55 @@
     .calendar .agenda-indeferido { background:#fecaca; color:#7f1d1d; border-color:var(--danger); font-weight:600; }
     .calendar .agenda-indeferido:hover { background:#fee2e2; }
 
+    /* NOVO: evento (renderiza acima dos agendamentos) */
+    .evento{
+      padding:6px 8px; margin-top:3px; border-radius:10px; font-size:12px; text-align:left;
+      border:1px solid var(--event-border);
+      display:flex; flex-direction:column; align-items:flex-start; line-height:1.25; gap:2px;
+      background: var(--event-soft); color: var(--event);
+      font-weight:700;
+      white-space:normal; word-break:normal; overflow-wrap: break-word;
+
+      /* >>> AJUSTES PARA O TEXTO DO EVENTO NÃO ESTOURAR O QUADRADO <<< */
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .evento .evento-titulo{
+      display:flex;
+      align-items:flex-start;
+      gap:6px;
+
+      /* >>> AJUSTE CRÍTICO EM FLEX: permite o span “encolher” e quebrar dentro <<< */
+      width: 100%;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+    .evento .evento-titulo i{ font-size:12px; opacity:.9; flex: 0 0 auto; }
+
+    /* O span é o que estoura quando está em flex (min-width:auto). Aqui corrigimos. */
+    .evento .evento-titulo span{
+      flex: 1 1 auto;
+      min-width: 0;
+      max-width: 100%;
+
+      /* Mantém dentro do quadrado mesmo com nomes grandes */
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    /* Centraliza somente o horário (se existir) */
+    .evento .evento-horario{
+      width: 100%;
+      text-align: center;
+      font-size:10px;
+      font-weight:600;
+      color: rgba(29, 78, 216, .88);
+      opacity:.95;
+      line-height: 1.2;
+    }
+
     /* Legenda */
     .legenda{
       margin-top:20px; padding:14px 16px 10px; background:linear-gradient(135deg,#f9fafb,#eef2ff);
@@ -217,6 +274,10 @@
       .calendar .day.weekdays{ font-size:11px; height:34px; min-height:34px; }
       .calendar .day:not(.weekdays){ font-size:11px; min-height:80px; }
       .agendamento{ font-size:11px; padding:4px 6px; }
+
+      /* evento no mobile */
+      .evento{ font-size:11px; padding:4px 6px; }
+      .evento .evento-horario{ font-size:9px; }
     }
 
     /* Footer */
@@ -339,9 +400,43 @@
 
           {% for day in range(1, days_in_month + 1) %}
             {% set current_day = datetime.date(year, month, day) %}
+            {% set eventos = (eventos_por_data.get(current_day, []) if eventos_por_data is defined else []) %}
             {% set folgas = folgas_por_data.get(current_day, []) %}
+
             <div class="day {% if current_day == hoje %}today{% endif %}">
               {{ day }}
+
+              {# ==========================================================
+                 EVENTOS DA ESCOLA (sempre no topo do dia)
+                 (sem exibir período, pois já aparece em todos os dias)
+                 ========================================================== #}
+              {% if eventos %}
+                {% for ev in eventos %}
+                  <div class="evento" {% if ev.cor %}style="border-color: {{ ev.cor }}55; background: {{ ev.cor }}14; color: {{ ev.cor }};"{% endif %}>
+                    <div class="evento-titulo">
+                      <i class="fas fa-bullhorn"></i>
+                      <span>{{ (ev.nome or 'Evento') }}</span>
+                    </div>
+
+                    {# HORÁRIO opcional #}
+                    {% if ev.hora_inicio or ev.hora_fim %}
+                      <div class="evento-horario">
+                        {% if ev.hora_inicio and ev.hora_fim %}
+                          {{ ev.hora_inicio.strftime('%H:%M') }}–{{ ev.hora_fim.strftime('%H:%M') }}
+                        {% elif ev.hora_inicio %}
+                          {{ ev.hora_inicio.strftime('%H:%M') }}
+                        {% else %}
+                          até {{ ev.hora_fim.strftime('%H:%M') }}
+                        {% endif %}
+                      </div>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              {% endif %}
+
+              {# ==========================================================
+                 AGENDAMENTOS/FOLGAS (como já era)
+                 ========================================================== #}
               {% if folgas %}
                 {% for folga in folgas %}
                   {# --------- FILTRO DEFENSIVO PARA ESCONDER AJUSTES DE BH --------- #}
@@ -384,6 +479,7 @@
 
         <div class="legenda">
           <h3>Legenda</h3>
+          <div><span class="cor" style="background-color:#e0edff; border: 1px solid rgba(29,78,216,.35);"></span><strong>Evento da escola</strong></div>
           <div><span class="cor" style="background-color:#fed7aa;"></span><strong>Folga em espera</strong></div>
           <div><span class="cor" style="background-color:#a7f3d0;"></span><strong>Folga deferida</strong></div>
           <div><span class="cor" style="background-color:#fecaca;"></span><strong>Folga indeferida</strong></div>

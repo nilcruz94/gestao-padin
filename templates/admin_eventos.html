@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Eventos - Portal do Servidor</title>
+
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root{
+      --primary:#0077ff;
+      --primary-dark:#0051ff;
+      --primary-soft:#dbe9ff;
+
+      --bg:#f3f4f6;
+      --surface:#ffffff;
+      --border:#e5e7eb;
+      --text:#111827;
+      --muted:#6b7280;
+
+      --success:#22c55e;
+      --success-soft:#dcfce7;
+
+      --danger:#ef4444;
+      --danger-soft:#fee2e2;
+
+      --warning:#fb923c;
+      --warning-soft:#ffedd5;
+
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      --shadow-soft: 0 6px 18px rgba(15, 23, 42, 0.10);
+      --radius: 18px;
+    }
+
+    * , *::before, *::after { box-sizing: border-box; }
+
+    body{
+      margin:0;
+      font-family:'Montserrat',sans-serif;
+      display:flex;
+      flex-direction:column;
+      min-height:100vh;
+      background: radial-gradient(circle at top, #e0f2ff 0, #f9fafb 45%, #eef2ff 100%);
+      color:var(--text);
+    }
+
+    main{
+      flex:1 0 auto;
+      padding:24px 16px 90px;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+    }
+    @media (min-width: 769px){
+      main{ padding:30px 24px 100px; align-items:center; }
+    }
+
+    /* ========= CABEÇALHO PADRÃO ========= */
+    .header-desktop, .header-mobile { display:none; flex-shrink:0; }
+
+    @media (min-width: 769px){
+      .header-desktop{
+        display:flex;
+        background-color:#007bff;
+        padding:15px 30px;
+        width:100%;
+        align-items:center;
+        justify-content:space-between;
+        box-sizing:border-box;
+        min-height:110px;
+        position:relative;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);
+        color:#fff;
+      }
+      .left-section{ display:flex; align-items:center; gap:20px; }
+      .logo{
+        width:80px; height:80px; object-fit:contain; border-radius:10px;
+        background-color:#fff; padding:6px;
+      }
+      .text-container{ display:flex; flex-direction:column; justify-content:center; text-align:left; color:#fff; }
+      .escola-nome{ font-weight:700; font-size:1.6rem; margin:0; line-height:1.1; }
+      .escola-subtitulo{ font-weight:600; font-size:1.1rem; margin-top:4px; }
+
+      .header-center-text-container{
+        position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+        display:flex; align-items:center; gap:20px; user-select:none; z-index:1;
+      }
+      .header-center-text{
+        font-weight:800; font-size:1.9rem; color:#fff; letter-spacing:5px; white-space:nowrap;
+        text-shadow:0 2px 5px rgba(0,0,0,0.3);
+      }
+
+      .btn-home{
+        background-color:#0fb300; color:#fff; padding:6px 14px; border-radius:6px;
+        font-weight:700; font-size:1.5rem; text-decoration:none;
+        display:flex; align-items:center; gap:8px;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);
+        transition:background-color .3s ease;
+        position:absolute; right:30px; top:50%; transform:translateY(-50%); z-index:2;
+      }
+      .btn-home:hover{ background-color:#0d8a00; }
+    }
+
+    @media (max-width: 768px){
+      .header-mobile{
+        display:block;
+        width:100%;
+        box-sizing:border-box;
+        color:#fff;
+        /* antes era sticky (parecia fixo); agora rola normalmente */
+        position:relative;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);
+        background-color:#007bff;
+      }
+      .header-top{
+        display:flex; align-items:center; justify-content:center; gap:15px;
+        padding:10px 15px; background-color:#007bff; text-align:center;
+      }
+      .logo{ width:48px; height:48px; object-fit:contain; border-radius:10px; background-color:#fff; padding:6px; }
+      .text-container{ display:flex; flex-direction:column; justify-content:center; color:#fff; text-align:center; }
+      .escola-nome{ font-weight:700; font-size:1.3rem; margin:0; line-height:1.1; }
+      .escola-subtitulo{ font-weight:600; font-size:1rem; margin-top:2px; }
+
+      .header-bottom{
+        background-color:#0056b3; text-align:center; padding:12px 10px; font-weight:800;
+        font-size:1rem; letter-spacing:4px; user-select:none; color:#fff;
+        box-shadow: inset 0 -2px 5px rgba(0,0,0,0.2);
+        display:flex; justify-content:center; align-items:center; gap:12px; white-space:nowrap;
+      }
+      .btn-home-mobile{
+        background-color:#0fb300; color:#fff; padding:6px 10px; border-radius:6px; font-weight:600; font-size:1rem;
+        text-decoration:none; display:flex; align-items:center; justify-content:center;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8); transition:background-color .3s ease;
+      }
+      .btn-home-mobile:hover{ background-color:#0d8a00; }
+    }
+
+    /* ========= CONTEÚDO ========= */
+    .shell{ width:100%; max-width: 1120px; margin:0 auto; }
+
+    .page-header{
+      background:#fff;
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+      border-left: 5px solid var(--primary);
+      display:flex; align-items:flex-start; justify-content:flex-start; gap:16px;
+      margin-bottom: 14px;
+    }
+    .page-header-left{ display:flex; gap:14px; align-items:flex-start; }
+    .page-icon{
+      width:46px; height:46px; border-radius: 999px;
+      display:inline-flex; align-items:center; justify-content:center;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.45);
+      color:#2563eb; flex-shrink:0;
+    }
+    .page-icon i{ font-size:22px; }
+    .page-title{ margin:0; font-weight:800; font-size:1.1rem; }
+    .page-subtitle{ margin:4px 0 0; color:var(--muted); font-weight:600; font-size:0.9rem; }
+
+    /* Flash */
+    .flash-container { text-align: center; margin: 12px 0 16px; }
+    .flash{
+      padding: 9px 18px; margin: 6px auto; border-radius: 999px; width: fit-content;
+      font-weight: 700; font-size: 0.88rem;
+      border:1px solid transparent;
+    }
+    .flash.success{ background: var(--success-soft); color:#166534; border-color: #bbf7d0; box-shadow: 0 0 8px rgba(22, 101, 52, 0.35); }
+    .flash.error, .flash.danger{ background: var(--danger-soft); color:#b91c1c; border-color: #fecaca; box-shadow: 0 0 8px rgba(185, 28, 28, 0.25); }
+    .flash.warning{ background: var(--warning-soft); color:#7c2d12; border-color:#fed7aa; box-shadow: 0 0 8px rgba(124, 45, 18, 0.18); }
+
+    /* ========= PAINÉIS ========= */
+    .panel{
+      background:#fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      overflow:hidden;
+      margin-bottom: 14px;
+    }
+    .panel-header{
+      padding: 14px 16px;
+      background: linear-gradient(to right, #eff6ff, #f9fafb);
+      border-bottom: 1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    .panel-header h3{
+      margin:0;
+      font-size: 0.98rem;
+      font-weight: 900;
+      color:#0f172a;
+      display:flex; align-items:center; gap:10px;
+    }
+    .panel-header h3 i{ color:#2563eb; }
+    .panel-body{ padding: 14px 16px; }
+
+    /* ========= FORM (elegante e intuitivo) ========= */
+    .form-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 12px;
+    }
+    @media (max-width: 740px){
+      .form-grid{ grid-template-columns: 1fr; }
+    }
+
+    .field{
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 12px 12px 10px;
+      box-shadow: 0 4px 14px rgba(15,23,42,.05);
+      transition: border-color .15s, box-shadow .15s, transform .15s;
+    }
+    .field:focus-within{
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.28);
+      transform: translateY(-1px);
+    }
+
+    label{
+      font-size: 0.82rem;
+      font-weight: 900;
+      color:#0f172a;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin:0 0 8px;
+    }
+    label i{ color:#2563eb; }
+
+    .hint{
+      font-size:0.78rem;
+      color: var(--muted);
+      font-weight:600;
+      margin-top: 8px;
+      line-height: 1.35;
+    }
+
+    input[type="text"], input[type="date"], input[type="time"], textarea{
+      width:100%;
+      padding: 10px 10px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      outline: none;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      font-size: 0.92rem;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(15,23,42,.05);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    textarea{ min-height: 96px; resize: vertical; font-weight: 700; }
+    input:focus, textarea:focus{
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.30);
+    }
+
+    .row-span-2{ grid-column: 1 / -1; }
+
+    /* Toggle (corrigido: clique funciona em toda área do controle) */
+    .toggle-wrap{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .toggle-text{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      text-align:left;
+    }
+    .toggle-text strong{ font-size:0.9rem; font-weight:900; color:#0f172a; }
+    .toggle-text span{ font-size:0.78rem; font-weight:700; color:var(--muted); line-height:1.25; }
+
+    .toggle{
+      position:relative;
+      width: 54px;
+      height: 30px;
+      flex: 0 0 auto;
+      display:inline-block;
+      cursor:pointer;
+      user-select:none;
+    }
+    .toggle input{
+      position:absolute;
+      inset:0;
+      opacity:0;
+      cursor:pointer;
+      z-index: 3;              /* garante que o clique vá no input */
+    }
+    .toggle-slider{
+      position:absolute;
+      inset:0;
+      background:#e2e8f0;
+      border:1px solid #cbd5e1;
+      border-radius: 999px;
+      transition: .18s;
+      box-shadow: inset 0 2px 6px rgba(15,23,42,.12);
+      z-index: 1;
+      pointer-events:none;     /* impede “roubo” de clique */
+    }
+    .toggle-slider::after{
+      content:"";
+      position:absolute;
+      width: 24px;
+      height: 24px;
+      left: 3px;
+      top: 50%;
+      transform: translateY(-50%);
+      background:#ffffff;
+      border-radius: 999px;
+      border:1px solid rgba(15,23,42,.12);
+      box-shadow: 0 6px 14px rgba(15,23,42,.15);
+      transition: .18s;
+      pointer-events:none;
+    }
+    .toggle input:checked + .toggle-slider{
+      background: #dcfce7;
+      border-color:#86efac;
+    }
+    .toggle input:checked + .toggle-slider::after{
+      left: 27px;
+    }
+
+    .form-actions{
+      display:flex; gap:10px; align-items:center; justify-content:flex-end; flex-wrap:wrap;
+      margin-top: 12px;
+    }
+    .btn-small{
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 0.88rem;
+      font-weight: 900;
+      cursor:pointer;
+      border:none;
+      display:inline-flex; align-items:center; gap:8px;
+      transition: transform .15s, box-shadow .2s, background-color .2s;
+      white-space:nowrap;
+    }
+    .btn-save{
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      color:#fff;
+      box-shadow: 0 8px 20px rgba(34, 197, 94, .25);
+    }
+    .btn-save:hover{ transform: translateY(-1px); box-shadow: 0 12px 26px rgba(34, 197, 94, .32); }
+    .btn-cancel{
+      background:#f1f5f9;
+      color:#0f172a;
+      border:1px solid #e5e7eb;
+      box-shadow: 0 6px 14px rgba(15,23,42,.08);
+    }
+    .btn-cancel:hover{ transform: translateY(-1px); box-shadow: 0 10px 18px rgba(15,23,42,.12); }
+    .btn-danger{
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
+      color:#fff;
+      box-shadow: 0 8px 20px rgba(239, 68, 68, .25);
+    }
+    .btn-danger:hover{ transform: translateY(-1px); box-shadow: 0 12px 26px rgba(239, 68, 68, .35); }
+
+    /* ========= LISTA / TABELA ========= */
+    .toolbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      flex-wrap:wrap;
+      margin-bottom: 10px;
+    }
+    .search{
+      flex: 1 1 340px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius: 999px;
+      padding: 10px 12px;
+      box-shadow: var(--shadow-soft);
+    }
+    .search i{ color:#2563eb; }
+    .search input{
+      border:none; outline:none; box-shadow:none;
+      padding:0;
+      font-weight:900;
+      font-size:0.9rem;
+      width:100%;
+      font-family:'Montserrat',sans-serif;
+    }
+
+    .table-wrap{ overflow:auto; -webkit-overflow-scrolling: touch; }
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      min-width: 980px;
+    }
+    th, td{
+      padding: 10px 12px;
+      text-align:center;
+      border-bottom: 1px solid #eef2f7;
+      vertical-align: middle;
+      font-size: 0.88rem;
+      font-weight: 800;
+    }
+    th{
+      background: #f8fafc;
+      color:#0f172a;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    tr:hover td{ background:#fafafa; }
+    .muted{ color: var(--muted); font-weight: 800; }
+
+    .badge{
+      display:inline-flex; align-items:center; gap:6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 900;
+      border: 1px solid transparent;
+      white-space:nowrap;
+      justify-content:center;
+    }
+    .badge-on{ background: var(--success-soft); color:#166534; border-color:#bbf7d0; }
+    .badge-off{ background:#f1f5f9; color:#334155; border-color:#e5e7eb; }
+
+    .actions{
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+      justify-content:center;
+    }
+    .link-btn{
+      border:none; background:transparent; cursor:pointer; padding:0;
+      font-weight: 900; color:#2563eb; display:inline-flex; align-items:center; gap:6px;
+      text-decoration:none;
+      font-family:'Montserrat',sans-serif;
+    }
+    .link-btn:hover{ text-decoration: underline; }
+    .link-danger{ color:#b91c1c; }
+
+    /* ========= MODAL ========= */
+    .modal-backdrop{
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      z-index: 2000;
+    }
+    .modal-backdrop.show{ display:flex; }
+    .modal{
+      width: 100%;
+      max-width: 860px;
+      background:#fff;
+      border-radius: 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+      overflow:hidden;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+    }
+    .modal-header{
+      padding: 14px 16px;
+      background: linear-gradient(to right, #eff6ff, #f9fafb);
+      border-bottom: 1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .modal-header h3{
+      margin:0;
+      font-size: 1rem;
+      font-weight: 900;
+      display:flex; align-items:center; gap:10px;
+      color:#0f172a;
+    }
+    .modal-close{
+      border:none; background:#fff; border:1px solid #e5e7eb;
+      border-radius: 999px;
+      padding: 8px 10px;
+      cursor:pointer;
+      font-weight: 900;
+      color:#0f172a;
+      box-shadow: 0 6px 14px rgba(15,23,42,.08);
+    }
+    .modal-close:hover{ transform: translateY(-1px); box-shadow: 0 10px 18px rgba(15,23,42,.12); }
+
+    /* ========= RODAPÉ ========= */
+    footer{
+      background: linear-gradient(to right, #222, #444);
+      color: #ddd;
+      text-align: center;
+      padding: 15px 0;
+      font-size: 14px;
+      border-top: 2px solid #555;
+      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+      width: 100%;
+    }
+    footer p { margin: 5px 0; font-size: 0.9rem; }
+  </style>
+</head>
+
+<body>
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
+    </div>
+
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
+    </a>
+  </header>
+
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <div class="shell">
+
+      <div class="page-header">
+        <div class="page-header-left">
+          <div class="page-icon"><i class="fas fa-bullhorn"></i></div>
+          <div>
+            <p class="page-title">Administração de Eventos</p>
+            <p class="page-subtitle">Cadastro e gerenciamento de eventos do calendário.</p>
+          </div>
+        </div>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message|safe }}</div>
+        {% endfor %}
+      </div>
+      <script>
+        setTimeout(() => {
+          document.querySelectorAll('.flash').forEach(flash => {
+            flash.style.transition = 'opacity 1s ease';
+            flash.style.opacity = '0';
+            setTimeout(() => flash.remove(), 900);
+          });
+        }, 6500);
+      </script>
+      {% endif %}
+      {% endwith %}
+
+      <!-- PAINEL: INSERIR -->
+      <section class="panel" id="panel-inserir">
+        <div class="panel-header">
+          <h3><i class="fas fa-plus-circle"></i> Cadastrar novo evento</h3>
+        </div>
+
+        <div class="panel-body">
+          <form method="POST" action="{{ url_for('admin_eventos_criar') }}">
+            {% if csrf_token is defined %}
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% endif %}
+
+            <div class="form-grid">
+              <div class="field row-span-2">
+                <label for="nome"><i class="fas fa-pen"></i> Nome do evento <span class="muted" style="font-weight:900;">(obrigatório)</span></label>
+                <input type="text" id="nome" name="nome" maxlength="150" required placeholder="Ex.: Convocação SEDUC">
+                <div class="hint">Use um título objetivo. Ele será exibido no calendário e na lista.</div>
+              </div>
+
+              <div class="field row-span-2">
+                <label for="descricao"><i class="fas fa-align-left"></i> Descrição <span class="muted" style="font-weight:900;">(opcional)</span></label>
+                <textarea id="descricao" name="descricao" maxlength="2000" placeholder="Local, orientações, público-alvo, observações..."></textarea>
+                <div class="hint">A descrição aparece nos detalhes e pode ajudar a equipe a entender o contexto.</div>
+              </div>
+
+              <div class="field">
+                <label for="data_evento"><i class="fas fa-calendar-day"></i> Data principal <span class="muted" style="font-weight:900;">(obrigatório)</span></label>
+                <input type="date" id="data_evento" name="data_evento" required>
+                <div class="hint">Se for evento de 1 dia, basta preencher somente esta data.</div>
+              </div>
+
+              <div class="field">
+                <label><i class="fas fa-toggle-on"></i> Visibilidade</label>
+                <div class="toggle-wrap">
+                  <div class="toggle-text">
+                    <strong>Ativo</strong>
+                    <span>Se desligado, o evento não aparece no calendário.</span>
+                  </div>
+                  <label class="toggle" title="Ativo (visível no calendário)">
+                    <input type="checkbox" id="ativo" name="ativo" value="1" checked>
+                    <span class="toggle-slider" aria-hidden="true"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="data_inicio"><i class="fas fa-calendar-plus"></i> Data início <span class="muted" style="font-weight:900;">(opcional)</span></label>
+                <input type="date" id="data_inicio" name="data_inicio">
+                <div class="hint">Preencha para evento em período (com data fim).</div>
+              </div>
+
+              <div class="field">
+                <label for="data_fim"><i class="fas fa-calendar-check"></i> Data fim <span class="muted" style="font-weight:900;">(opcional)</span></label>
+                <input type="date" id="data_fim" name="data_fim">
+                <div class="hint">Se preencher início/fim, o evento aparece em todos os dias do período.</div>
+              </div>
+
+              <div class="field">
+                <label for="hora_inicio"><i class="fas fa-clock"></i> Hora início <span class="muted" style="font-weight:900;">(opcional)</span></label>
+                <input type="time" id="hora_inicio" name="hora_inicio">
+                <div class="hint">Horário não é obrigatório.</div>
+              </div>
+
+              <div class="field">
+                <label for="hora_fim"><i class="fas fa-hourglass-end"></i> Hora fim <span class="muted" style="font-weight:900;">(opcional)</span></label>
+                <input type="time" id="hora_fim" name="hora_fim">
+                <div class="hint">Pode deixar em branco se não houver hora final.</div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="reset" class="btn-small btn-cancel">
+                <i class="fas fa-rotate-left"></i> Limpar
+              </button>
+              <button type="submit" class="btn-small btn-save">
+                <i class="fas fa-check"></i> Salvar
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- PAINEL: VISUALIZAR -->
+      <section class="panel" id="panel-visualizar">
+        <div class="panel-header">
+          <h3><i class="fas fa-list-check"></i> Lista de eventos</h3>
+          <span class="muted">Total: {{ eventos|length if eventos is defined else '—' }}</span>
+        </div>
+
+        <div class="panel-body">
+          <div class="toolbar">
+            <div class="search">
+              <i class="fas fa-magnifying-glass"></i>
+              <input id="filtro" type="text" placeholder="Buscar por nome/descrição..." autocomplete="off">
+            </div>
+            <button type="button" class="btn-small btn-cancel" id="btnRecarregar" title="Recarregar">
+              <i class="fas fa-arrows-rotate"></i> Atualizar
+            </button>
+          </div>
+
+          <div class="table-wrap">
+            <table id="tabelaEventos">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Evento</th>
+                  <th>Data / Período</th>
+                  <th>Horário</th>
+                  <th>Cor</th>
+                  <th style="min-width:240px;">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if eventos is defined and eventos %}
+                  {% for ev in eventos %}
+                    {% set has_period = (ev.data_inicio or ev.data_fim) %}
+                    {% set has_time = (ev.hora_inicio or ev.hora_fim) %}
+                    <tr class="row-evento"
+                        data-text="{{ ((ev.nome or '') ~ ' ' ~ (ev.descricao or ''))|lower }}"
+                        data-id="{{ ev.id }}"
+                        data-nome="{{ ev.nome or '' }}"
+                        data-descricao="{{ ev.descricao or '' }}"
+                        data-data_evento="{{ ev.data_evento.strftime('%Y-%m-%d') if ev.data_evento else '' }}"
+                        data-data_inicio="{{ ev.data_inicio.strftime('%Y-%m-%d') if ev.data_inicio else '' }}"
+                        data-data_fim="{{ ev.data_fim.strftime('%Y-%m-%d') if ev.data_fim else '' }}"
+                        data-hora_inicio="{{ ev.hora_inicio.strftime('%H:%M') if ev.hora_inicio else '' }}"
+                        data-hora_fim="{{ ev.hora_fim.strftime('%H:%M') if ev.hora_fim else '' }}"
+                        data-cor="{{ ev.cor or '' }}"
+                        data-ativo="{{ 1 if ev.ativo else 0 }}"
+                    >
+                      <td>
+                        {% if ev.ativo %}
+                          <span class="badge badge-on"><i class="fas fa-circle-check"></i> Ativo</span>
+                        {% else %}
+                          <span class="badge badge-off"><i class="fas fa-circle-pause"></i> Inativo</span>
+                        {% endif %}
+                      </td>
+
+                      <td>
+                        <div style="font-weight: 900; color:#0f172a;">{{ ev.nome or '—' }}</div>
+                        {% if ev.descricao %}
+                          <div class="muted" style="margin-top:3px; font-size:0.82rem;">
+                            {{ ev.descricao }}
+                          </div>
+                        {% endif %}
+                      </td>
+
+                      <td>
+                        {% if has_period %}
+                          <div style="font-weight:900;">
+                            {% if ev.data_inicio and ev.data_fim %}
+                              {{ ev.data_inicio.strftime('%d/%m/%Y') }} - {{ ev.data_fim.strftime('%d/%m/%Y') }}
+                            {% elif ev.data_inicio %}
+                              Início: {{ ev.data_inicio.strftime('%d/%m/%Y') }}
+                            {% else %}
+                              Fim: {{ ev.data_fim.strftime('%d/%m/%Y') }}
+                            {% endif %}
+                          </div>
+                        {% else %}
+                          <div style="font-weight:900;">
+                            {{ ev.data_evento.strftime('%d/%m/%Y') if ev.data_evento else '—' }}
+                          </div>
+                        {% endif %}
+                      </td>
+
+                      <td>
+                        {% if has_time %}
+                          <div style="font-weight:900;">
+                            {% if ev.hora_inicio and ev.hora_fim %}
+                              {{ ev.hora_inicio.strftime('%H:%M') }} - {{ ev.hora_fim.strftime('%H:%M') }}
+                            {% elif ev.hora_inicio %}
+                              Início: {{ ev.hora_inicio.strftime('%H:%M') }}
+                            {% else %}
+                              Fim: {{ ev.hora_fim.strftime('%H:%M') }}
+                            {% endif %}
+                          </div>
+                        {% else %}
+                          <span class="muted">—</span>
+                        {% endif %}
+                      </td>
+
+                      <td>
+                        {% if ev.cor %}
+                          <span style="display:inline-flex; align-items:center; justify-content:center; gap:8px;">
+                            <span style="width:16px; height:16px; border-radius:999px; border:1px solid rgba(15,23,42,.15); background:{{ ev.cor }};"></span>
+                            <span style="font-weight:900;">{{ ev.cor }}</span>
+                          </span>
+                        {% else %}
+                          <span class="muted">Padrão</span>
+                        {% endif %}
+                      </td>
+
+                      <td>
+                        <div class="actions">
+                          <button type="button" class="link-btn btnAbrirEditar">
+                            <i class="fas fa-pen-to-square"></i> Editar
+                          </button>
+
+                          <button type="button" class="link-btn link-danger btnAbrirExcluir">
+                            <i class="fas fa-trash"></i> Excluir
+                          </button>
+
+                          <button type="button" class="link-btn btnAbrirDetalhes">
+                            <i class="fas fa-eye"></i> Detalhes
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="6" class="muted">
+                      Nenhum evento cadastrado ainda.
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- MODAL: EDITAR -->
+      <div class="modal-backdrop" id="modalEdit" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalEditTitle">
+          <div class="modal-header">
+            <h3 id="modalEditTitle"><i class="fas fa-pen-to-square"></i> Editar Evento</h3>
+            <button type="button" class="modal-close" data-close="modalEdit" aria-label="Fechar">
+              <i class="fas fa-xmark"></i>
+            </button>
+          </div>
+
+          <div class="panel-body" style="padding: 14px 16px;">
+            <form method="POST" action="#" id="formEditar">
+              {% if csrf_token is defined %}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              {% endif %}
+
+              <div class="form-grid">
+                <div class="field row-span-2">
+                  <label for="edit_nome"><i class="fas fa-pen"></i> Nome <span class="muted" style="font-weight:900;">(obrigatório)</span></label>
+                  <input type="text" id="edit_nome" name="nome" maxlength="150" required>
+                </div>
+
+                <div class="field">
+                  <label for="edit_data_evento"><i class="fas fa-calendar-day"></i> Data principal <span class="muted" style="font-weight:900;">(obrigatório)</span></label>
+                  <input type="date" id="edit_data_evento" name="data_evento" required>
+                </div>
+
+                <div class="field">
+                  <label><i class="fas fa-toggle-on"></i> Status</label>
+                  <div class="toggle-wrap">
+                    <div class="toggle-text">
+                      <strong>Ativo</strong>
+                      <span>Se desligado, não aparece no calendário.</span>
+                    </div>
+                    <label class="toggle">
+                      <input type="checkbox" id="edit_ativo" name="ativo" value="1">
+                      <span class="toggle-slider" aria-hidden="true"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="field row-span-2">
+                  <label for="edit_descricao"><i class="fas fa-align-left"></i> Descrição <span class="muted" style="font-weight:900;">(opcional)</span></label>
+                  <textarea id="edit_descricao" name="descricao" maxlength="2000"></textarea>
+                </div>
+
+                <div class="field">
+                  <label for="edit_data_inicio"><i class="fas fa-calendar-plus"></i> Data início <span class="muted" style="font-weight:900;">(opcional)</span></label>
+                  <input type="date" id="edit_data_inicio" name="data_inicio">
+                </div>
+
+                <div class="field">
+                  <label for="edit_data_fim"><i class="fas fa-calendar-check"></i> Data fim <span class="muted" style="font-weight:900;">(opcional)</span></label>
+                  <input type="date" id="edit_data_fim" name="data_fim">
+                </div>
+
+                <div class="field">
+                  <label for="edit_hora_inicio"><i class="fas fa-clock"></i> Hora início <span class="muted" style="font-weight:900;">(opcional)</span></label>
+                  <input type="time" id="edit_hora_inicio" name="hora_inicio">
+                </div>
+
+                <div class="field">
+                  <label for="edit_hora_fim"><i class="fas fa-hourglass-end"></i> Hora fim <span class="muted" style="font-weight:900;">(opcional)</span></label>
+                  <input type="time" id="edit_hora_fim" name="hora_fim">
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn-small btn-cancel" data-close="modalEdit">
+                  <i class="fas fa-ban"></i> Cancelar
+                </button>
+                <button type="submit" class="btn-small btn-save">
+                  <i class="fas fa-check"></i> Salvar alterações
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL: EXCLUIR -->
+      <div class="modal-backdrop" id="modalDelete" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalDeleteTitle">
+          <div class="modal-header">
+            <h3 id="modalDeleteTitle"><i class="fas fa-trash"></i> Excluir Evento</h3>
+            <button type="button" class="modal-close" data-close="modalDelete" aria-label="Fechar">
+              <i class="fas fa-xmark"></i>
+            </button>
+          </div>
+
+          <div class="panel-body" style="padding: 14px 16px;">
+            <div class="hint" style="font-size:0.86rem; margin-bottom: 12px;">
+              Confirme a exclusão do evento abaixo. Esta ação não pode ser desfeita.
+            </div>
+
+            <div style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:14px; padding:12px 14px; margin-bottom: 12px; text-align:center;">
+              <div style="font-weight:900; color:#0f172a;" id="del_nome">—</div>
+              <div class="muted" style="margin-top:4px;" id="del_datas">—</div>
+              <div class="muted" style="margin-top:4px;" id="del_horas">—</div>
+            </div>
+
+            <form method="POST" action="#" id="formExcluir">
+              {% if csrf_token is defined %}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              {% endif %}
+
+              <div class="form-actions">
+                <button type="button" class="btn-small btn-cancel" data-close="modalDelete">
+                  <i class="fas fa-ban"></i> Cancelar
+                </button>
+                <button type="submit" class="btn-small btn-danger">
+                  <i class="fas fa-trash"></i> Confirmar exclusão
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL: DETALHES -->
+      <div class="modal-backdrop" id="modalDetails" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalDetailsTitle">
+          <div class="modal-header">
+            <h3 id="modalDetailsTitle"><i class="fas fa-eye"></i> Detalhes do Evento</h3>
+            <button type="button" class="modal-close" data-close="modalDetails" aria-label="Fechar">
+              <i class="fas fa-xmark"></i>
+            </button>
+          </div>
+
+          <div class="panel-body" style="padding: 14px 16px;">
+            <div style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:14px; padding:12px 14px; text-align:center;">
+              <div style="font-weight:900; color:#0f172a; font-size:1rem;" id="det_nome">—</div>
+              <div class="muted" style="margin-top:6px;" id="det_desc">—</div>
+              <hr style="border:none; border-top:1px solid #e5e7eb; margin:12px 0;">
+              <div class="muted" id="det_data_evento">—</div>
+              <div class="muted" id="det_periodo" style="margin-top:6px;">—</div>
+              <div class="muted" id="det_horario" style="margin-top:6px;">—</div>
+              <div class="muted" id="det_cor" style="margin-top:6px;">—</div>
+              <div class="muted" id="det_status" style="margin-top:6px;">—</div>
+              <div class="muted" id="det_id" style="margin-top:6px;">—</div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn-small btn-cancel" data-close="modalDetails">
+                <i class="fas fa-check"></i> Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
+
+  <script>
+    // Recarregar
+    const btnRecarregar = document.getElementById('btnRecarregar');
+    if (btnRecarregar) btnRecarregar.addEventListener('click', () => window.location.reload());
+
+    // Filtro de tabela
+    const filtro = document.getElementById('filtro');
+    const linhas = () => Array.from(document.querySelectorAll('#tabelaEventos tbody tr.row-evento'));
+    function aplicarFiltro(){
+      const q = (filtro.value || '').trim().toLowerCase();
+      linhas().forEach(tr => {
+        const hay = (tr.dataset.text || '');
+        tr.style.display = (!q || hay.includes(q)) ? '' : 'none';
+      });
+    }
+    if (filtro) filtro.addEventListener('input', aplicarFiltro);
+
+    // Utilitários
+    function openModal(id){
+      const m = document.getElementById(id);
+      if (!m) return;
+      m.classList.add('show');
+      m.setAttribute('aria-hidden', 'false');
+    }
+    function closeModal(id){
+      const m = document.getElementById(id);
+      if (!m) return;
+      m.classList.remove('show');
+      m.setAttribute('aria-hidden', 'true');
+    }
+    function fmtDateISOtoBR(iso){
+      if (!iso) return '';
+      const [y,m,d] = iso.split('-');
+      if (!y || !m || !d) return iso;
+      return `${d}/${m}/${y}`;
+    }
+    function buildPeriodo(data_inicio, data_fim, data_evento){
+      if (data_inicio || data_fim){
+        if (data_inicio && data_fim) return `${fmtDateISOtoBR(data_inicio)} - ${fmtDateISOtoBR(data_fim)}`;
+        if (data_inicio) return `Início: ${fmtDateISOtoBR(data_inicio)}`;
+        return `Fim: ${fmtDateISOtoBR(data_fim)}`;
+      }
+      return data_evento ? fmtDateISOtoBR(data_evento) : '—';
+    }
+    function buildHorario(hora_inicio, hora_fim){
+      if (hora_inicio || hora_fim){
+        if (hora_inicio && hora_fim) return `${hora_inicio} - ${hora_fim}`;
+        if (hora_inicio) return `Início: ${hora_inicio}`;
+        return `Fim: ${hora_fim}`;
+      }
+      return '—';
+    }
+
+    // Fechar modais
+    document.querySelectorAll('[data-close]').forEach(btn => {
+      btn.addEventListener('click', () => closeModal(btn.getAttribute('data-close')));
+    });
+
+    // Clique no backdrop fecha
+    ['modalEdit', 'modalDelete', 'modalDetails'].forEach(mid => {
+      const m = document.getElementById(mid);
+      if (!m) return;
+      m.addEventListener('click', (e) => { if (e.target === m) closeModal(mid); });
+    });
+
+    // ESC fecha
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      ['modalEdit','modalDelete','modalDetails'].forEach(mid => {
+        const m = document.getElementById(mid);
+        if (m && m.classList.contains('show')) closeModal(mid);
+      });
+    });
+
+    // Abrir Editar / Excluir / Detalhes
+    const formEditar = document.getElementById('formEditar');
+    const formExcluir = document.getElementById('formExcluir');
+
+    document.querySelectorAll('.btnAbrirEditar').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tr = btn.closest('tr');
+        if (!tr) return;
+
+        const id = tr.dataset.id;
+        formEditar.setAttribute('action', `/admin/eventos/${id}/editar`);
+
+        document.getElementById('edit_nome').value = tr.dataset.nome || '';
+        document.getElementById('edit_descricao').value = tr.dataset.descricao || '';
+        document.getElementById('edit_data_evento').value = tr.dataset.data_evento || '';
+        document.getElementById('edit_data_inicio').value = tr.dataset.data_inicio || '';
+        document.getElementById('edit_data_fim').value = tr.dataset.data_fim || '';
+        document.getElementById('edit_hora_inicio').value = tr.dataset.hora_inicio || '';
+        document.getElementById('edit_hora_fim').value = tr.dataset.hora_fim || '';
+
+        const ativo = (tr.dataset.ativo || '0') === '1';
+        document.getElementById('edit_ativo').checked = ativo;
+
+        openModal('modalEdit');
+      });
+    });
+
+    document.querySelectorAll('.btnAbrirExcluir').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tr = btn.closest('tr');
+        if (!tr) return;
+
+        const id = tr.dataset.id;
+        formExcluir.setAttribute('action', `/admin/eventos/${id}/excluir`);
+
+        const nome = tr.dataset.nome || '—';
+        const periodo = buildPeriodo(tr.dataset.data_inicio || '', tr.dataset.data_fim || '', tr.dataset.data_evento || '');
+        const horario = buildHorario(tr.dataset.hora_inicio || '', tr.dataset.hora_fim || '');
+
+        document.getElementById('del_nome').textContent = nome;
+        document.getElementById('del_datas').textContent = `Data/Período: ${periodo}`;
+        document.getElementById('del_horas').textContent = `Horário: ${horario}`;
+
+        openModal('modalDelete');
+      });
+    });
+
+    document.querySelectorAll('.btnAbrirDetalhes').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tr = btn.closest('tr');
+        if (!tr) return;
+
+        const nome = tr.dataset.nome || '—';
+        const desc = tr.dataset.descricao || '—';
+        const data_evento = tr.dataset.data_evento || '';
+        const data_inicio = tr.dataset.data_inicio || '';
+        const data_fim = tr.dataset.data_fim || '';
+        const hora_inicio = tr.dataset.hora_inicio || '';
+        const hora_fim = tr.dataset.hora_fim || '';
+        const cor = (tr.dataset.cor || '').trim();
+        const ativo = (tr.dataset.ativo || '0') === '1';
+        const id = tr.dataset.id || '—';
+
+        document.getElementById('det_nome').textContent = nome;
+        document.getElementById('det_desc').textContent = desc;
+
+        document.getElementById('det_data_evento').textContent =
+          `Data principal: ${data_evento ? fmtDateISOtoBR(data_evento) : '—'}`;
+
+        document.getElementById('det_periodo').textContent =
+          `Período: ${buildPeriodo(data_inicio, data_fim, '')}`;
+
+        document.getElementById('det_horario').textContent =
+          `Horário: ${buildHorario(hora_inicio, hora_fim)}`;
+
+        document.getElementById('det_cor').textContent =
+          `Cor: ${cor || 'Padrão'}`;
+
+        document.getElementById('det_status').textContent =
+          `Status: ${ativo ? 'Ativo' : 'Inativo'}`;
+
+        document.getElementById('det_id').textContent =
+          `ID: ${id}`;
+
+        openModal('modalDetails');
+      });
+    });
+  </script>
+</body>
+</html>

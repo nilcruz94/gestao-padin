@@ -140,14 +140,54 @@
     /* ========= FLASH MESSAGES ========= */
     .flash-container { text-align: center; margin-bottom: 18px; }
     .flash {
-      padding: 9px 18px; margin: 5px auto; border-radius: 999px; width: fit-content;
-      font-weight: 600; font-size: 0.88rem; font-family: 'Montserrat', sans-serif;
+      padding: 12px 18px;
+      margin: 8px auto;
+      border-radius: 14px; /* melhor para textos multilinha (eventos) */
+      width: min(920px, calc(100% - 12px));
+      font-weight: 700;
+      font-size: 0.9rem;
+      font-family: 'Montserrat', sans-serif;
+      line-height: 1.35;
+      border: 1px solid transparent;
+      text-align: center;
+      box-shadow: 0 0 8px rgba(15, 23, 42, 0.08);
+      overflow-wrap: anywhere;
     }
+    .flash a { color: inherit; text-decoration: underline; font-weight: 800; }
     .flash.success {
-      background-color: #dcfce7; color: #166534; box-shadow: 0 0 8px rgba(22, 101, 52, 0.45); border: 1px solid #bbf7d0;
+      background-color: #dcfce7;
+      color: #166534;
+      box-shadow: 0 0 8px rgba(22, 101, 52, 0.35);
+      border: 1px solid #bbf7d0;
+      border-left: 5px solid #22c55e;
     }
     .flash.error, .flash.danger {
-      background-color: #fee2e2; color: #b91c1c; box-shadow: 0 0 8px rgba(185, 28, 28, 0.45); border: 1px solid #fecaca;
+      background-color: #fee2e2;
+      color: #b91c1c;
+      box-shadow: 0 0 8px rgba(185, 28, 28, 0.25);
+      border: 1px solid #fecaca;
+      border-left: 5px solid #ef4444;
+    }
+    .flash.warning{
+      background-color: #ffedd5;
+      color: #7c2d12;
+      box-shadow: 0 0 8px rgba(124, 45, 18, 0.18);
+      border: 1px solid #fed7aa;
+      border-left: 5px solid #fb923c;
+    }
+    .flash.info{
+      background-color: #dbeafe;
+      color: #1e3a8a;
+      box-shadow: 0 0 8px rgba(30, 58, 138, 0.18);
+      border: 1px solid #bfdbfe;
+      border-left: 5px solid #3b82f6;
+    }
+    @media (max-width: 600px){
+      .flash{
+        font-size: 0.85rem;
+        padding: 11px 14px;
+        border-radius: 12px;
+      }
     }
 
     /* ========= TABS ========= */
@@ -333,12 +373,12 @@
         </div>
       </div>
 
-      <!-- Mensagens flash -->
+      <!-- Mensagens flash (inclui notificação de novos eventos) -->
       {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
       <div class="flash-container">
         {% for category, message in messages %}
-          <div class="flash {{ category }}">{{ message|safe }}</div>
+          <div class="flash {{ category }}" role="alert">{{ message|safe }}</div>
         {% endfor %}
       </div>
       <script>
@@ -530,6 +570,16 @@
               <div class="card-subtitle">
                 <span class="desktop-only">Consolide e exporte horas extras.</span>
                 <span class="mobile-only">Horas extras.</span>
+              </div>
+            </a>
+
+            <!-- NOVO: Card Eventos (Admin) -->
+            <a href="{{ url_for('admin_eventos') }}" class="card" aria-label="Eventos">
+              <i class="fas fa-bullhorn" aria-hidden="true"></i>
+              <div class="card-title">Eventos</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Crie, edite e gerencie eventos institucionais no calendário.</span>
+                <span class="mobile-only">Gerenciar eventos.</span>
               </div>
             </a>
 
