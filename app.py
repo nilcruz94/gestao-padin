@@ -920,6 +920,402 @@ def minhas_justificativas():
     )
 
 # ===========================================
+# PROTOCOLO DE AGENDAMENTOS (PDF)
+# ===========================================
+
+import os
+import datetime
+import textwrap
+from flask import current_app
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm
+from reportlab.lib.utils import ImageReader
+from reportlab.lib import colors
+
+
+def _status_legivel_agendamento(status: str) -> str:
+    """
+    No seu sistema, 'pendente' e 'em_espera' entram juntos como "aguardando".
+    Então exibimos ambos como "EM ESPERA" no protocolo.
+    """
+    s = (status or "").strip().lower()
+    return {
+        "em_espera": "EM ESPERA",
+        "pendente": "EM ESPERA",
+        "deferido": "DEFERIDO",
+        "indeferido": "INDEFERIDO",
+    }.get(s, (status or "N/A").strip().upper() or "N/A")
+
+
+def _status_badge_style(status: str):
+    """
+    Retorna (bg, fg, border) para o badge do status.
+    """
+    s = (status or "").strip().lower()
+    if s == "deferido":
+        return (colors.HexColor("#DCFCE7"), colors.HexColor("#166534"), colors.HexColor("#86EFAC"))
+    if s == "indeferido":
+        return (colors.HexColor("#FEE2E2"), colors.HexColor("#991B1B"), colors.HexColor("#FCA5A5"))
+    # em_espera / pendente / default
+    return (colors.HexColor("#FEF3C7"), colors.HexColor("#92400E"), colors.HexColor("#FCD34D"))
+
+
+def _motivo_legivel(motivo: str) -> str:
+    m = (motivo or "").strip()
+    return {
+        "AB": "Abonada",
+        "BH": "Banco de Horas",
+        "DS": "Doação de Sangue",
+        "TRE": "TRE",
+        "LM": "Licença Médica",
+        "FS": "Falta Simples",
+    }.get(m, m or "Agendamento")
+
+
+def _protocolo_agendamento_abs_path(agendamento_id: int) -> str:
+    """
+    Caminho ABSOLUTO do PDF do protocolo.
+    Usa UPLOAD_FOLDER (ideal se ele apontar para o Render Disk).
+    """
+    base = current_app.config.get("UPLOAD_FOLDER", "uploads")
+    if not os.path.isabs(base):
+        base = os.path.join(current_app.root_path, base)
+
+    pasta = os.path.join(base, "protocolos", "agendamentos")
+    os.makedirs(pasta, exist_ok=True)
+
+    return os.path.join(pasta, f"protocolo_agendamento_{agendamento_id}.pdf")
+
+
+def _clamp_radius(w, h, r):
+    # garante que o raio nunca “exploda” o path
+    try:
+        return max(0, min(float(r), float(w) / 2.0, float(h) / 2.0))
+    except Exception:
+        return 0
+
+
+def _round_rect(c, x, y, w, h, r, stroke=1, fill=0):
+    rr = _clamp_radius(w, h, r)
+    c.roundRect(x, y, w, h, rr, stroke=stroke, fill=fill)
+
+
+def gerar_protocolo_agendamento_pdf(agendamento, usuario) -> str:
+    """
+    Gera (ou sobrescreve) o PDF do protocolo do agendamento no disco.
+    Retorna o caminho absoluto do arquivo gerado.
+    """
+    pdf_path = _protocolo_agendamento_abs_path(agendamento.id)
+
+    agora = datetime.datetime.now()
+
+    # Ano do protocolo: usa o ano da data solicitada (agendamento.data).
+    # Se não existir por algum motivo, cai no ano atual.
+    ano_protocolo = getattr(agendamento, "data", None).year if getattr(agendamento, "data", None) else agora.year
+
+    protocolo_num = f"AG-{agendamento.id:06d}/{ano_protocolo}"
+
+    emitido_em = agora.strftime("%d/%m/%Y %H:%M")
+
+    data_agendada = agendamento.data.strftime("%d/%m/%Y") if getattr(agendamento, "data", None) else "—"
+    data_ref = agendamento.data_referencia.strftime("%d/%m/%Y") if getattr(agendamento, "data_referencia", None) else "—"
+
+    motivo_raw = (getattr(agendamento, "motivo", None) or getattr(agendamento, "tipo_folga", None) or "").strip()
+    motivo = _motivo_legivel(motivo_raw)
+
+    status_raw = getattr(agendamento, "status", None)
+    status_legivel = _status_legivel_agendamento(status_raw)
+    badge_bg, badge_fg, badge_border = _status_badge_style(status_raw)
+
+    # Logo (se existir)
+    logo_path = os.path.join(current_app.root_path, "static", "img", "logo.png")
+    logo_img = None
+    if os.path.exists(logo_path):
+        try:
+            logo_img = ImageReader(logo_path)
+        except Exception:
+            logo_img = None
+
+    # Canvas
+    c = canvas.Canvas(pdf_path, pagesize=A4)
+    c.setTitle(f"Protocolo de Agendamento {protocolo_num}")
+    c.setAuthor("E.M. José Padin Mouta")
+
+    w, h = A4
+    margin = 16 * mm
+    inner_pad = 9 * mm
+
+    # Fundo branco
+    c.setFillColor(colors.white)
+    c.rect(0, 0, w, h, stroke=0, fill=1)
+
+    # ==========================
+    # HEADER (branco, sem fundo azul)
+    # ==========================
+    header_h = 24 * mm  # ✅ mais baixo (compacto)
+    header_top = h - (10 * mm)  # leve respiro topo
+    header_bottom = header_top - header_h
+
+    # Logo box
+    logo_box = 18 * mm
+    logo_x = margin
+    logo_y = header_bottom + (header_h - logo_box) / 2
+
+    # caixinha do logo
+    c.setFillColor(colors.white)
+    c.setStrokeColor(colors.HexColor("#CBD5E1"))
+    c.setLineWidth(0.9)
+    _round_rect(c, logo_x, logo_y, logo_box, logo_box, 4, stroke=1, fill=1)
+
+    if logo_img:
+        try:
+            pad = 1.8 * mm
+            c.drawImage(
+                logo_img,
+                logo_x + pad,
+                logo_y + pad,
+                width=logo_box - 2 * pad,
+                height=logo_box - 2 * pad,
+                preserveAspectRatio=True,
+                mask="auto",
+            )
+        except Exception:
+            pass
+
+    # Textos do header
+    text_x = logo_x + logo_box + 7 * mm
+    title_y = header_top - 7.5 * mm
+    subtitle_y = header_top - 14.5 * mm
+
+    c.setFillColor(colors.HexColor("#0F172A"))
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(text_x, title_y, "Escola Municipal José Padin Mouta")
+
+    c.setFillColor(colors.HexColor("#334155"))
+    c.setFont("Helvetica", 9.4)
+    c.drawString(text_x, subtitle_y, "Portal do Servidor — Protocolo Interno")
+
+    c.setFont("Helvetica", 9.0)
+    c.drawRightString(w - margin, subtitle_y, f"Emitido em: {emitido_em}")
+
+    # linha separadora (abaixo do logo, sem cruzar)
+    c.setStrokeColor(colors.HexColor("#E5E7EB"))
+    c.setLineWidth(1.0)
+    c.line(margin, header_bottom - 3 * mm, w - margin, header_bottom - 3 * mm)
+
+    # ==========================
+    # TÍTULO
+    # ==========================
+    y = header_bottom - 12 * mm
+
+    c.setFillColor(colors.HexColor("#0F172A"))
+    c.setFont("Helvetica-Bold", 15)
+    c.drawCentredString(w / 2, y, "PROTOCOLO DE AGENDAMENTO")
+
+    y -= 7 * mm
+    c.setFillColor(colors.HexColor("#334155"))
+    c.setFont("Helvetica", 10.6)
+    c.drawCentredString(w / 2, y, f"Nº {protocolo_num}")
+
+    # ==========================
+    # CARD PRINCIPAL
+    # ==========================
+    card_top = y - 10 * mm
+    card_bottom = 28 * mm
+    card_x = margin
+    card_w = w - 2 * margin
+    card_h = card_top - card_bottom
+
+    # sombra leve
+    c.setFillColor(colors.HexColor("#F1F5F9"))
+    c.setStrokeColor(colors.HexColor("#F1F5F9"))
+    c.setLineWidth(0)
+    _round_rect(c, card_x + 1.2 * mm, card_bottom - 1.2 * mm, card_w, card_h, 10, stroke=0, fill=1)
+
+    # card
+    c.setFillColor(colors.white)
+    c.setStrokeColor(colors.HexColor("#E5E7EB"))
+    c.setLineWidth(1)
+    _round_rect(c, card_x, card_bottom, card_w, card_h, 10, stroke=1, fill=1)
+
+    # Cursor interno (topo do card)
+    y = card_top - inner_pad
+
+    def section_title(title: str):
+        nonlocal y
+        box_h = 9 * mm
+        box_x = card_x + inner_pad
+        box_w = card_w - 2 * inner_pad
+        box_y = y - box_h
+
+        c.setFillColor(colors.HexColor("#F8FAFC"))
+        c.setStrokeColor(colors.HexColor("#E5E7EB"))
+        c.setLineWidth(1)
+        _round_rect(c, box_x, box_y, box_w, box_h, 6, stroke=1, fill=1)
+
+        c.setFillColor(colors.HexColor("#0F172A"))
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(box_x + 4 * mm, box_y + 3.1 * mm, title)
+
+        y = box_y - 7 * mm
+
+    def kv(label: str, value: str, wrap_width=96):
+        nonlocal y
+        if value is None or str(value).strip() == "":
+            value = "—"
+        value = str(value)
+
+        x_label = card_x + inner_pad + 2 * mm
+        x_value = card_x + inner_pad + 44 * mm
+
+        c.setFillColor(colors.HexColor("#111827"))
+        c.setFont("Helvetica-Bold", 9.5)
+        c.drawString(x_label, y, f"{label}:")
+
+        c.setFillColor(colors.HexColor("#111827"))
+        c.setFont("Helvetica", 9.5)
+
+        lines = textwrap.wrap(value, width=wrap_width) or ["—"]
+        for i, line in enumerate(lines):
+            c.drawString(x_value, y, line)
+            if i < len(lines) - 1:
+                y -= 5.2 * mm
+
+        y -= 6.2 * mm
+
+    section_title("Dados do Servidor")
+    kv("Servidor", getattr(usuario, "nome", "—"))
+    kv("Registro", getattr(usuario, "registro", "—"))
+    kv("Cargo", getattr(usuario, "cargo", "") or "—")
+    kv("E-mail", getattr(usuario, "email", "") or "—")
+
+    section_title("Dados do Agendamento")
+    kv("Tipo/Motivo", motivo)
+    kv("Data solicitada", data_agendada)
+
+    if motivo_raw == "BH":
+        kv("Data referência (BH)", data_ref)
+        kv("Tempo (BH)", f"{int(getattr(agendamento, 'horas', 0) or 0)}h {int(getattr(agendamento, 'minutos', 0) or 0)}min")
+
+    sub = getattr(agendamento, "substituicao", None)
+    if sub:
+        kv("Haverá substituição", sub)
+        if str(sub).strip().lower() == "sim":
+            kv("Substituto", getattr(agendamento, "nome_substituto", None) or "—")
+
+    # ✅ Status do Agendamento (NO LUGAR CERTO)
+    section_title("Status do Agendamento")
+
+    # “Pill” centralizada
+    pill_w = 62 * mm
+    pill_h = 10 * mm
+    pill_x = card_x + (card_w - pill_w) / 2
+    pill_y = y - pill_h + 2 * mm  # pequeno ajuste
+
+    c.setFillColor(badge_bg)
+    c.setStrokeColor(badge_border)
+    c.setLineWidth(1)
+    _round_rect(c, pill_x, pill_y, pill_w, pill_h, pill_h / 2, stroke=1, fill=1)
+
+    c.setFillColor(badge_fg)
+    c.setFont("Helvetica-Bold", 10)
+    c.drawCentredString(pill_x + pill_w / 2, pill_y + 3.2 * mm, status_legivel)
+
+    y = pill_y - 10 * mm
+
+    # ==========================
+    # Observações (box) - abaixo do status
+    # ==========================
+    obs = (
+        "Este documento é um comprovante interno de registro no Portal do Servidor da unidade escolar. "
+        "Não substitui processos oficiais e não possui, por si só, valor de ato administrativo externo."
+    )
+
+    obs_box_h = 20 * mm
+    obs_box_w = card_w - 2 * inner_pad
+    obs_box_x = card_x + inner_pad
+
+    # garante que não encoste no rodapé
+    min_y = 20 * mm
+    obs_box_y = max(min_y, y - obs_box_h)
+
+    c.setFillColor(colors.HexColor("#F8FAFC"))
+    c.setStrokeColor(colors.HexColor("#E5E7EB"))
+    c.setLineWidth(1)
+    _round_rect(c, obs_box_x, obs_box_y, obs_box_w, obs_box_h, 8, stroke=1, fill=1)
+
+    c.setFillColor(colors.HexColor("#334155"))
+    c.setFont("Helvetica-Bold", 9)
+    c.drawString(obs_box_x + 4 * mm, obs_box_y + obs_box_h - 6.5 * mm, "Observações")
+
+    c.setFillColor(colors.HexColor("#334155"))
+    c.setFont("Helvetica", 8.7)
+
+    text = c.beginText(obs_box_x + 4 * mm, obs_box_y + obs_box_h - 11.5 * mm)
+    text.setLeading(10.5)
+    for line in textwrap.wrap(obs, width=112):
+        text.textLine(line)
+    c.drawText(text)
+
+    # ==========================
+    # Rodapé
+    # ==========================
+    c.setFillColor(colors.HexColor("#64748B"))
+    c.setFont("Helvetica", 8)
+    c.drawString(margin, 12 * mm, "E.M. José Padin Mouta • Protocolo gerado automaticamente")
+    c.drawRightString(w - margin, 12 * mm, "Página 1/1")
+
+    c.showPage()
+    c.save()
+
+    return pdf_path
+
+
+import os
+from flask import send_file, abort, current_app
+from flask_login import login_required, current_user
+
+@app.route("/agendamentos/<int:agendamento_id>/protocolo", methods=["GET"])
+@login_required
+def agendamento_protocolo(agendamento_id):
+    # Busca o agendamento
+    ag = Agendamento.query.get_or_404(agendamento_id)
+
+    # Permissão: admin pode ver tudo; usuário só o próprio
+    if current_user.tipo != "administrador" and ag.funcionario_id != current_user.id:
+        abort(403)
+
+    # Busca usuário dono do agendamento (para dados no PDF)
+    usuario = User.query.get(ag.funcionario_id)
+    if not usuario:
+        abort(404)
+
+    # Gera/Sobrescreve o PDF SEMPRE para refletir status atual
+    try:
+        pdf_path = gerar_protocolo_agendamento_pdf(ag, usuario)
+    except Exception:
+        current_app.logger.exception("Erro ao gerar protocolo do agendamento %s", agendamento_id)
+        abort(500)
+
+    # Entrega o arquivo
+    download_name = os.path.basename(pdf_path)
+    resp = send_file(
+        pdf_path,
+        mimetype="application/pdf",
+        as_attachment=False,          # True se quiser forçar download
+        download_name=download_name,
+        conditional=True
+    )
+
+    # Evita cache (pra não abrir “versão antiga” do PDF)
+    resp.headers["Cache-Control"] = "no-store, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    return resp
+
+
+# ===========================================
 # AGENDAR FOLGA
 # ===========================================
 @app.route('/agendar', methods=['GET', 'POST'])
@@ -1063,6 +1459,13 @@ def agendar():
         try:
             db.session.add(novo_agendamento)
             db.session.commit()
+
+            # ✅ NOVO: gera/salva protocolo PDF (status inicial: EM ESPERA)
+            try:
+                gerar_protocolo_agendamento_pdf(novo_agendamento, current_user)
+            except Exception as pdf_err:
+                current_app.logger.exception("Falha ao gerar protocolo PDF do agendamento %s", novo_agendamento.id)
+                flash("Agendamento registrado, mas não foi possível gerar o protocolo em PDF neste momento.", "warning")
 
             nome = current_user.nome
             data_str = novo_agendamento.data.strftime('%d/%m/%Y')
@@ -1820,6 +2223,13 @@ def deferir_folgas():
 
         try:
             db.session.commit()
+
+            # ✅ NOVO: após mudar o status, REGERA/SOBRESCREVE o protocolo PDF com o status atualizado
+            try:
+                gerar_protocolo_agendamento_pdf(folga, usuario)
+            except Exception:
+                current_app.logger.exception("Falha ao regenerar protocolo PDF do agendamento %s", folga.id)
+                flash("Status atualizado, mas não foi possível atualizar o protocolo em PDF.", "warning")
 
             if folga.motivo == 'TRE':
                 sync_tre_user(usuario.id)

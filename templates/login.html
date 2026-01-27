@@ -370,18 +370,26 @@
       padding: 8px 10px;
       font-size: 0.85rem;
       margin-bottom: 6px;
+      border: 1px solid transparent;
     }
-    .flash-message.success {
+
+    /* AJUSTE MÍNIMO: tratar 'message' como sucesso (categoria padrão do Flask) */
+    .flash-message.success,
+    .flash-message.message {
       background-color: #d1fae5;
       color: #065f46;
       border: 1px solid #a7f3d0;
     }
+
     .flash-message.error,
     .flash-message.danger {
       background-color: #fee2e2;
       color: #b91c1c;
       border: 1px solid #fecaca;
     }
+
+    /* Evita margem padrão do <p> dentro do flash */
+    .flash-message p { margin: 0; }
 
     /* Rodapé */
     footer {

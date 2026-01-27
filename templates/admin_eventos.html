@@ -112,7 +112,6 @@
         width:100%;
         box-sizing:border-box;
         color:#fff;
-        /* antes era sticky (parecia fixo); agora rola normalmente */
         position:relative;
         box-shadow:0 2px 6px rgba(0,0,0,0.15);
         background-color:#007bff;
@@ -156,7 +155,7 @@
     .page-icon{
       width:46px; height:46px; border-radius: 999px;
       display:inline-flex; align-items:center; justify-content:center;
-      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
+      background: radial-gradient(circle at 30% 30%, #ffffff 0, #e0edff 60%, #c7d9ff 100%);
       box-shadow: 0 4px 12px rgba(37, 99, 235, 0.45);
       color:#2563eb; flex-shrink:0;
     }
@@ -200,7 +199,7 @@
     .panel-header h3 i{ color:#2563eb; }
     .panel-body{ padding: 14px 16px; }
 
-    /* ========= FORM (elegante e intuitivo) ========= */
+    /* ========= FORM ========= */
     .form-grid{
       display:grid;
       grid-template-columns: 1fr 1fr;
@@ -264,7 +263,7 @@
 
     .row-span-2{ grid-column: 1 / -1; }
 
-    /* Toggle (corrigido: clique funciona em toda área do controle) */
+    /* Toggle */
     .toggle-wrap{
       display:flex;
       align-items:center;
@@ -294,7 +293,7 @@
       inset:0;
       opacity:0;
       cursor:pointer;
-      z-index: 3;              /* garante que o clique vá no input */
+      z-index: 3;
     }
     .toggle-slider{
       position:absolute;
@@ -305,7 +304,7 @@
       transition: .18s;
       box-shadow: inset 0 2px 6px rgba(15,23,42,.12);
       z-index: 1;
-      pointer-events:none;     /* impede “roubo” de clique */
+      pointer-events:none;
     }
     .toggle-slider::after{
       content:"";
@@ -395,7 +394,20 @@
       font-family:'Montserrat',sans-serif;
     }
 
-    .table-wrap{ overflow:auto; -webkit-overflow-scrolling: touch; }
+    /* scroll interno da lista */
+    .table-wrap{
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      max-height: 70vh;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 14px;
+      box-shadow: var(--shadow-soft);
+      background: #fff;
+    }
+    @media (max-width: 768px){
+      .table-wrap{ max-height: 62vh; }
+    }
+
     table{
       width:100%;
       border-collapse:separate;
@@ -415,7 +427,7 @@
       color:#0f172a;
       position: sticky;
       top: 0;
-      z-index: 1;
+      z-index: 2;
     }
     tr:hover td{ background:#fafafa; }
     .muted{ color: var(--muted); font-weight: 800; }
@@ -445,6 +457,180 @@
     }
     .link-btn:hover{ text-decoration: underline; }
     .link-danger{ color:#b91c1c; }
+
+    /* ========= PAGINAÇÃO (reestilizada e alinhada) ========= */
+    .pager{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items:center;
+      margin: 10px 0 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: linear-gradient(to right, #eff6ff, #f9fafb);
+      box-shadow: var(--shadow-soft);
+    }
+    .pager-info{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      min-width: 240px;
+    }
+    .pager-info-main{
+      font-weight: 900;
+      color:#0f172a;
+      font-size: 0.9rem;
+      line-height: 1.15;
+    }
+    .pager-info-sub{
+      font-weight: 800;
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.15;
+    }
+
+    .pager-controls{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .pager-size{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background:#fff;
+      box-shadow: 0 6px 14px rgba(15,23,42,.06);
+      white-space:nowrap;
+    }
+    .pager-size span{
+      font-weight: 900;
+      font-size: 0.82rem;
+      color:#0f172a;
+    }
+    .pager-size select{
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background:#fff;
+      font-family:'Montserrat',sans-serif;
+      font-weight: 900;
+      font-size: 0.82rem;
+      outline:none;
+      min-width: 92px;
+    }
+
+    .pager-btn{
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background:#fff;
+      cursor:pointer;
+      font-family:'Montserrat',sans-serif;
+      font-weight: 900;
+      font-size: 0.85rem;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      box-shadow: 0 6px 14px rgba(15,23,42,.06);
+      transition: transform .12s, box-shadow .12s, background-color .12s;
+      white-space:nowrap;
+    }
+    .pager-btn:hover{ transform: translateY(-1px); box-shadow: 0 10px 18px rgba(15,23,42,.10); }
+    .pager-btn:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+
+    .page-buttons{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      flex-wrap:nowrap;
+      justify-content:center;
+      max-width: 320px;
+      overflow:hidden;
+    }
+    .page-btn{
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background:#fff;
+      cursor:pointer;
+      font-family:'Montserrat',sans-serif;
+      font-weight: 900;
+      font-size: 0.85rem;
+      box-shadow: 0 6px 14px rgba(15,23,42,.06);
+      transition: transform .12s, box-shadow .12s, background-color .12s;
+      min-width: 38px;
+      text-align:center;
+    }
+    .page-btn:hover{ transform: translateY(-1px); box-shadow: 0 10px 18px rgba(15,23,42,.10); }
+    .page-btn.active{
+      background: var(--primary);
+      border-color: rgba(0,0,0,.08);
+      color:#fff;
+      box-shadow: 0 10px 20px rgba(0,119,255,.25);
+    }
+    .page-ellipsis{
+      font-weight: 900;
+      color: var(--muted);
+      padding: 0 4px;
+      user-select:none;
+    }
+
+    .pager-jump{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background:#fff;
+      box-shadow: 0 6px 14px rgba(15,23,42,.06);
+      white-space:nowrap;
+    }
+    .pager-jump span{
+      font-weight: 900;
+      font-size: 0.82rem;
+      color:#0f172a;
+    }
+    .pager-jump input{
+      width: 84px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      outline:none;
+      font-family:'Montserrat',sans-serif;
+      font-weight: 900;
+      font-size: 0.82rem;
+      box-shadow: none;
+    }
+    .pager-jump .pager-btn{
+      padding: 7px 10px;
+      font-size: 0.82rem;
+      box-shadow:none;
+    }
+
+    @media (max-width: 980px){
+      .pager{
+        grid-template-columns: 1fr;
+      }
+      .pager-controls{
+        justify-content:flex-start;
+      }
+      .page-buttons{
+        max-width: 100%;
+      }
+    }
 
     /* ========= MODAL ========= */
     .modal-backdrop{
@@ -674,6 +860,44 @@
             <button type="button" class="btn-small btn-cancel" id="btnRecarregar" title="Recarregar">
               <i class="fas fa-arrows-rotate"></i> Atualizar
             </button>
+          </div>
+
+          <!-- PAGINAÇÃO -->
+          <div class="pager" id="pager" style="display:none;">
+            <div class="pager-info">
+              <div class="pager-info-main" id="pagerInfo">—</div>
+              <div class="pager-info-sub" id="pagerInfoSub">—</div>
+            </div>
+
+            <div class="pager-controls">
+              <div class="pager-size" title="Quantidade de linhas por página">
+                <span>Linhas</span>
+                <select id="pageSize" aria-label="Linhas por página">
+                  <option value="10" selected>10</option>
+                  <option value="20">20</option>
+                  <option value="30">30</option>
+                  <option value="40">40</option>
+                  <option value="50">50</option>
+                  <option value="60">60</option>
+                  <option value="70">70</option>
+                  <option value="80">80</option>
+                  <option value="90">90</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
+
+              <button type="button" class="pager-btn" id="btnPrev"><i class="fas fa-chevron-left"></i> Anterior</button>
+
+              <div class="page-buttons" id="pageButtons" aria-label="Páginas"></div>
+
+              <button type="button" class="pager-btn" id="btnNext">Próximo <i class="fas fa-chevron-right"></i></button>
+
+              <div class="pager-jump" title="Ir diretamente para uma página">
+                <span>Ir</span>
+                <input id="pageJump" type="number" min="1" step="1" placeholder="Página">
+                <button type="button" class="pager-btn" id="btnGo"><i class="fas fa-arrow-right-to-bracket"></i> OK</button>
+              </div>
+            </div>
           </div>
 
           <div class="table-wrap">
@@ -961,19 +1185,7 @@
     const btnRecarregar = document.getElementById('btnRecarregar');
     if (btnRecarregar) btnRecarregar.addEventListener('click', () => window.location.reload());
 
-    // Filtro de tabela
-    const filtro = document.getElementById('filtro');
-    const linhas = () => Array.from(document.querySelectorAll('#tabelaEventos tbody tr.row-evento'));
-    function aplicarFiltro(){
-      const q = (filtro.value || '').trim().toLowerCase();
-      linhas().forEach(tr => {
-        const hay = (tr.dataset.text || '');
-        tr.style.display = (!q || hay.includes(q)) ? '' : 'none';
-      });
-    }
-    if (filtro) filtro.addEventListener('input', aplicarFiltro);
-
-    // Utilitários
+    // ===== Utilitários =====
     function openModal(id){
       const m = document.getElementById(id);
       if (!m) return;
@@ -1009,7 +1221,24 @@
       return '—';
     }
 
-    // Fechar modais
+    // Data efetiva para ordenação:
+    // prioridade: data_inicio -> data_fim -> data_evento
+    function parseISOToTime(iso){
+      if (!iso) return Number.POSITIVE_INFINITY;
+      const t = Date.parse(iso + 'T00:00:00');
+      return Number.isFinite(t) ? t : Number.POSITIVE_INFINITY;
+    }
+    function getRowSortTime(tr){
+      const di = (tr.dataset.data_inicio || '').trim();
+      const df = (tr.dataset.data_fim || '').trim();
+      const de = (tr.dataset.data_evento || '').trim();
+      if (di) return parseISOToTime(di);
+      if (df) return parseISOToTime(df);
+      if (de) return parseISOToTime(de);
+      return Number.POSITIVE_INFINITY;
+    }
+
+    // ===== Fechar modais =====
     document.querySelectorAll('[data-close]').forEach(btn => {
       btn.addEventListener('click', () => closeModal(btn.getAttribute('data-close')));
     });
@@ -1030,15 +1259,59 @@
       });
     });
 
-    // Abrir Editar / Excluir / Detalhes
+    // =====================================================================================
+    // >>> Ordenação por data + filtro + paginação (reestilizados) <<<
+    // =====================================================================================
+    const filtro = document.getElementById('filtro');
+    const tabela = document.getElementById('tabelaEventos');
+    const tbody = tabela ? tabela.querySelector('tbody') : null;
+
+    const pager = document.getElementById('pager');
+    const pagerInfo = document.getElementById('pagerInfo');
+    const pagerInfoSub = document.getElementById('pagerInfoSub');
+    const pageSizeSel = document.getElementById('pageSize');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const pageButtons = document.getElementById('pageButtons');
+    const pageJump = document.getElementById('pageJump');
+    const btnGo = document.getElementById('btnGo');
+
+    let allRows = Array.from(document.querySelectorAll('#tabelaEventos tbody tr.row-evento'));
+    const totalAll = allRows.length;
+
+    // 1) ORDENA POR DATA (ASC)
+    if (tbody && allRows.length > 1){
+      allRows.sort((a, b) => {
+        const ta = getRowSortTime(a);
+        const tb = getRowSortTime(b);
+        if (ta !== tb) return ta - tb;
+
+        // desempate: nome (para estabilidade)
+        const na = (a.dataset.nome || '').toLowerCase();
+        const nb = (b.dataset.nome || '').toLowerCase();
+        if (na < nb) return -1;
+        if (na > nb) return 1;
+        return 0;
+      });
+
+      // reanexa no DOM na ordem correta
+      allRows.forEach(tr => tbody.appendChild(tr));
+    }
+
+    // Event delegation (mais robusto e leve)
     const formEditar = document.getElementById('formEditar');
     const formExcluir = document.getElementById('formExcluir');
 
-    document.querySelectorAll('.btnAbrirEditar').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tr = btn.closest('tr');
-        if (!tr) return;
+    function handleRowActionClick(e){
+      const btnEditar = e.target.closest('.btnAbrirEditar');
+      const btnExcluir = e.target.closest('.btnAbrirExcluir');
+      const btnDetalhes = e.target.closest('.btnAbrirDetalhes');
+      if (!btnEditar && !btnExcluir && !btnDetalhes) return;
 
+      const tr = e.target.closest('tr.row-evento');
+      if (!tr) return;
+
+      if (btnEditar){
         const id = tr.dataset.id;
         formEditar.setAttribute('action', `/admin/eventos/${id}/editar`);
 
@@ -1054,14 +1327,10 @@
         document.getElementById('edit_ativo').checked = ativo;
 
         openModal('modalEdit');
-      });
-    });
+        return;
+      }
 
-    document.querySelectorAll('.btnAbrirExcluir').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tr = btn.closest('tr');
-        if (!tr) return;
-
+      if (btnExcluir){
         const id = tr.dataset.id;
         formExcluir.setAttribute('action', `/admin/eventos/${id}/excluir`);
 
@@ -1074,14 +1343,10 @@
         document.getElementById('del_horas').textContent = `Horário: ${horario}`;
 
         openModal('modalDelete');
-      });
-    });
+        return;
+      }
 
-    document.querySelectorAll('.btnAbrirDetalhes').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tr = btn.closest('tr');
-        if (!tr) return;
-
+      if (btnDetalhes){
         const nome = tr.dataset.nome || '—';
         const desc = tr.dataset.descricao || '—';
         const data_evento = tr.dataset.data_evento || '';
@@ -1115,8 +1380,208 @@
           `ID: ${id}`;
 
         openModal('modalDetails');
+        return;
+      }
+    }
+
+    if (tbody){
+      tbody.addEventListener('click', handleRowActionClick);
+    }
+
+    // ===== Paginação =====
+    let filteredRows = [...allRows];
+    let currentPage = 1;
+
+    // default 10 e garante sincronismo com o select
+    let pageSize = 10;
+    if (pageSizeSel){
+      pageSizeSel.value = '10';
+      pageSize = parseInt(pageSizeSel.value, 10) || 10;
+    }
+
+    let noResultsRow = null;
+    function ensureNoResultsRow(){
+      if (!tbody) return;
+      if (!noResultsRow){
+        noResultsRow = document.createElement('tr');
+        noResultsRow.id = 'noResultsRow';
+        noResultsRow.innerHTML = `<td colspan="6" class="muted">Nenhum resultado encontrado.</td>`;
+        noResultsRow.style.display = 'none';
+        tbody.appendChild(noResultsRow);
+      }
+    }
+
+    function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+    function totalPages(){ return Math.max(1, Math.ceil(filteredRows.length / pageSize)); }
+
+    function setPagerVisibility(){
+      if (!pager) return;
+      pager.style.display = totalAll > 0 ? '' : 'none';
+    }
+
+    function updatePagerInfo(){
+      if (!pagerInfo || !pagerInfoSub) return;
+
+      const totalFiltered = filteredRows.length;
+      const tp = totalPages();
+
+      if (totalAll === 0){
+        pagerInfo.textContent = '—';
+        pagerInfoSub.textContent = '—';
+        return;
+      }
+
+      if (totalFiltered === 0){
+        pagerInfo.textContent = `0 resultados`;
+        pagerInfoSub.textContent = `Filtrado de ${totalAll} eventos • Página 0/0`;
+        return;
+      }
+
+      const startIdx = (currentPage - 1) * pageSize;
+      const endIdx = Math.min(startIdx + pageSize, totalFiltered);
+
+      pagerInfo.textContent = `Mostrando ${startIdx + 1}–${endIdx} de ${totalFiltered}`;
+      pagerInfoSub.textContent = `${totalFiltered !== totalAll ? `Filtrado de ${totalAll} eventos` : `Total ${totalAll} eventos`} • Página ${currentPage}/${tp}`;
+    }
+
+    function addPageButton(p, label = null, active = false){
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'page-btn' + (active ? ' active' : '');
+      b.textContent = label || String(p);
+      b.addEventListener('click', () => {
+        currentPage = p;
+        renderPage();
       });
-    });
+      pageButtons.appendChild(b);
+    }
+
+    function renderPageButtons(){
+      if (!pageButtons) return;
+      pageButtons.innerHTML = '';
+
+      const tp = totalPages();
+      if (filteredRows.length === 0) return;
+
+      const windowSize = 5;
+      const half = Math.floor(windowSize / 2);
+
+      let start = currentPage - half;
+      let end = currentPage + half;
+
+      if (start < 1){ start = 1; end = Math.min(tp, start + windowSize - 1); }
+      if (end > tp){ end = tp; start = Math.max(1, end - windowSize + 1); }
+
+      if (start > 1){
+        addPageButton(1, '1', currentPage === 1);
+        if (start > 2){
+          const ell = document.createElement('span');
+          ell.className = 'page-ellipsis';
+          ell.textContent = '…';
+          pageButtons.appendChild(ell);
+        }
+      }
+
+      for (let p = start; p <= end; p++){
+        addPageButton(p, null, p === currentPage);
+      }
+
+      if (end < tp){
+        if (end < tp - 1){
+          const ell = document.createElement('span');
+          ell.className = 'page-ellipsis';
+          ell.textContent = '…';
+          pageButtons.appendChild(ell);
+        }
+        addPageButton(tp, String(tp), currentPage === tp);
+      }
+    }
+
+    function renderPage(){
+      ensureNoResultsRow();
+      const tp = totalPages();
+      currentPage = clamp(currentPage, 1, tp);
+
+      // esconde tudo
+      allRows.forEach(tr => tr.style.display = 'none');
+
+      if (filteredRows.length > 0){
+        const startIdx = (currentPage - 1) * pageSize;
+        const endIdx = Math.min(startIdx + pageSize, filteredRows.length);
+        for (let i = startIdx; i < endIdx; i++){
+          filteredRows[i].style.display = '';
+        }
+        if (noResultsRow) noResultsRow.style.display = 'none';
+      } else {
+        if (noResultsRow) noResultsRow.style.display = '';
+      }
+
+      if (btnPrev) btnPrev.disabled = (currentPage <= 1) || (filteredRows.length === 0);
+      if (btnNext) btnNext.disabled = (currentPage >= tp) || (filteredRows.length === 0);
+
+      renderPageButtons();
+      updatePagerInfo();
+    }
+
+    function applyFilterAndPaginate(){
+      const q = (filtro?.value || '').trim().toLowerCase();
+      if (!q){
+        filteredRows = [...allRows];
+      } else {
+        filteredRows = allRows.filter(tr => (tr.dataset.text || '').includes(q));
+      }
+      currentPage = 1;
+      renderPage();
+    }
+
+    // Inicializa
+    setPagerVisibility();
+    if (totalAll > 0){
+      renderPage();
+    }
+
+    // Eventos do pager
+    if (pageSizeSel){
+      pageSizeSel.addEventListener('change', () => {
+        pageSize = parseInt(pageSizeSel.value, 10) || 10;
+        currentPage = 1;
+        renderPage();
+      });
+    }
+    if (btnPrev){
+      btnPrev.addEventListener('click', () => {
+        currentPage = Math.max(1, currentPage - 1);
+        renderPage();
+      });
+    }
+    if (btnNext){
+      btnNext.addEventListener('click', () => {
+        currentPage = Math.min(totalPages(), currentPage + 1);
+        renderPage();
+      });
+    }
+    if (btnGo){
+      btnGo.addEventListener('click', () => {
+        const tp = totalPages();
+        const v = parseInt(pageJump?.value || '0', 10);
+        if (!v || v < 1 || v > tp) return;
+        currentPage = v;
+        renderPage();
+      });
+    }
+    if (pageJump){
+      pageJump.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter'){
+          e.preventDefault();
+          btnGo?.click();
+        }
+      });
+    }
+
+    // Filtro integrado à paginação
+    if (filtro){
+      filtro.addEventListener('input', () => applyFilterAndPaginate());
+    }
   </script>
 </body>
 </html>

@@ -40,10 +40,79 @@
       display: flex;
       justify-content: center;
       align-items: flex-start;
+      flex-direction: column; /* para permitir flash acima do card sem "quebrar" o layout */
+      gap: 12px;
     }
 
     @media (min-width: 769px) {
       main { align-items: center; }
+    }
+
+    /* ===== FLASH MESSAGES (AJUSTE DO "VERDE") =====
+       Observação: se no backend você der flash() sem categoria,
+       o Flask usa a categoria padrão "message". Muitos templates
+       acabam renderizando como flash-message flash-message (ou alert-info),
+       e aí não fica verde. Aqui eu mapeio também "message" como sucesso.
+       Isso resolve o caso típico de "Cadastro realizado" não ficar verde.
+    */
+    .flash-wrapper{
+      width: 100%;
+      max-width: 720px;
+      box-sizing: border-box;
+    }
+    .flash-message{
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid rgba(148,163,184,0.45);
+      background: #fff;
+      box-shadow: 0 10px 20px rgba(15,23,42,0.10);
+      box-sizing: border-box;
+    }
+    .flash-message i{ font-size: 1rem; }
+
+    /* SUCESSO: cobre 'success', e também a categoria padrão do Flask 'message' */
+    .flash-success,
+    .flash-message.flash-success,
+    .flash-message.flash-message,
+    .alert-success{
+      background: #dcfce7 !important;
+      border-color: #bbf7d0 !important;
+      color: #065f46 !important;
+    }
+
+    /* ERRO */
+    .flash-danger,
+    .flash-error,
+    .flash-message.flash-danger,
+    .flash-message.flash-error,
+    .alert-danger{
+      background: #fee2e2 !important;
+      border-color: #fecaca !important;
+      color: #7f1d1d !important;
+    }
+
+    /* INFO */
+    .flash-info,
+    .flash-message.flash-info,
+    .alert-info{
+      background: #e0f2fe !important;
+      border-color: #bae6fd !important;
+      color: #075985 !important;
+    }
+
+    /* WARNING */
+    .flash-warning,
+    .flash-message.flash-warning,
+    .alert-warning{
+      background: #ffedd5 !important;
+      border-color: #fed7aa !important;
+      color: #7c2d12 !important;
     }
 
     /* ===== CABEÇALHO (PADRÃO PORTAL) ===== */
@@ -328,6 +397,28 @@
   </header>
 
   <main>
+    <!-- Flash messages (se houver) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-wrapper">
+          {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}">
+              {% if category == 'success' or category == 'message' %}
+                <i class="fas fa-check-circle"></i>
+              {% elif category in ['danger', 'error'] %}
+                <i class="fas fa-exclamation-triangle"></i>
+              {% elif category == 'warning' %}
+                <i class="fas fa-triangle-exclamation"></i>
+              {% else %}
+                <i class="fas fa-info-circle"></i>
+              {% endif %}
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     <div class="register-card">
       <div class="register-header">
         <div class="register-header-icon">
@@ -603,8 +694,7 @@
               }
             },
             error: function () {
-              // Silencioso para não interferir na UX; backend pode não exigir CSRF em GET
-              // e a rota pode estar protegida por outras validações.
+              // Silencioso para não interferir na UX
             },
           });
         }, 500);

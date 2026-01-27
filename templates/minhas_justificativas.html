@@ -94,8 +94,26 @@
     /* Status pill */
     .status-pill{ display:inline-flex; align-items:center; justify-content:center; padding:2px 10px; border-radius:999px; font-size:.8rem; font-weight:700; white-space:nowrap; }
     .status-pill.espera{ background:#fef3c7; color:#92400e; }
+    .status-pill.pendente{ background:#fef3c7; color:#92400e; }
     .status-pill.deferido{ background:#d1fae5; color:#065f46; }
     .status-pill.indeferido{ background:#fee2e2; color:#991b1b; }
+
+    /* Protocolo (PDF) */
+    .proto-link{
+      display:inline-flex; align-items:center; justify-content:center; gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid #dbeafe;
+      background:#eff6ff;
+      color:#1d4ed8;
+      font-weight:800;
+      font-size:.82rem;
+      text-decoration:none;
+      transition:.2s ease;
+      white-space:nowrap;
+    }
+    .proto-link i{ font-size:14px; }
+    .proto-link:hover{ background:#dbeafe; border-color:#bfdbfe; color:#1e40af; }
 
     /* Ações */
     .delete-btn{ font-size:1.1rem; color:#e74c3c; cursor:pointer; background:none; border:none; padding:0; margin:0; line-height:1; display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; transition:.2s; }
@@ -123,7 +141,7 @@
 
     /* Link voltar */
     .voltar-wrapper{ text-align:center; margin-top:4px; }
-    .voltar-link{ display:inline-flex; align-items:center; gap:6px; margin:0 auto; font-size:. nine0rem; color:#2563eb; text-decoration:none; font-weight:700; }
+    .voltar-link{ display:inline-flex; align-items:center; gap:6px; margin:0 auto; font-size:.90rem; color:#2563eb; text-decoration:none; font-weight:700; }
     .voltar-link:hover{ text-decoration:underline; }
 
     /* Rodapé */
@@ -207,6 +225,7 @@
             <select id="status" aria-label="Filtrar por status">
               <option value="">Todos os status</option>
               <option value="em_espera">Em Espera</option>
+              <option value="pendente">Pendente</option>
               <option value="deferido">Deferido</option>
               <option value="indeferido">Indeferido</option>
             </select>
@@ -230,23 +249,42 @@
                   <th>Data</th>
                   <th>Motivo</th>
                   <th>Status</th>
+                  <th>Protocolo</th>
                   <th>Opções</th>
                 </tr>
               </thead>
               <tbody>
-                {% set status_map = {'em_espera':'Em Espera','deferido':'Deferido','indeferido':'Indeferido'} %}
+                {% set status_map = {'em_espera':'Em Espera','pendente':'Pendente','deferido':'Deferido','indeferido':'Indeferido'} %}
                 {% for ag in agendamentos|sort(attribute='data', reverse=True) %}
-                <tr data-status="{{ (ag.status or '')|lower }}">
+                {% set s = (ag.status or '')|lower %}
+                <tr data-status="{{ s }}">
                   <td>{{ ag.data.strftime('%d/%m/%Y') }}</td>
                   <td>{{ ag.motivo | default('Não informado') }}</td>
                   <td>
-                    {% set s = (ag.status or '')|lower %}
-                    <span class="status-pill {% if s=='em_espera' %}espera{% elif s=='deferido' %}deferido{% elif s=='indeferido' %}indeferido{% endif %}">
-                      {{ status_map.get(ag.status, 'Status Desconhecido') }}
+                    <span class="status-pill
+                      {% if s == 'em_espera' %}espera
+                      {% elif s == 'pendente' %}pendente
+                      {% elif s == 'deferido' %}deferido
+                      {% elif s == 'indeferido' %}indeferido
+                      {% endif %}">
+                      {{ status_map.get(s, 'Status Desconhecido') }}
                     </span>
                   </td>
+
+                  <!-- ✅ Protocolo PDF -->
                   <td>
-                    {% if ag.status == 'em_espera' %}
+                    <a class="proto-link"
+                       href="{{ url_for('agendamento_protocolo', agendamento_id=ag.id) }}"
+                       target="_blank"
+                       rel="noopener"
+                       title="Abrir protocolo em PDF">
+                      <i class="fas fa-file-pdf" aria-hidden="true"></i>
+                      <span>Protocolo</span>
+                    </a>
+                  </td>
+
+                  <td>
+                    {% if s in ['em_espera', 'pendente'] %}
                       <a href="javascript:void(0);" class="delete-btn" onclick="confirmDelete({{ ag.id }})" title="Excluir agendamento">
                         <i class="fas fa-times"></i>
                       </a>
@@ -350,7 +388,6 @@
           return text.includes(qv);
         });
 
-        // reseta página se extrapolar
         const maxPage = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
         if (currentPage > maxPage) currentPage = 1;
 
@@ -358,7 +395,6 @@
       }
 
       function render(){
-        // Oculta todas
         allRows.forEach(r => r.style.display = 'none');
 
         const start = (currentPage - 1) * rowsPerPage;
@@ -404,7 +440,6 @@
         addBtn('»', currentPage === totalPages, () => { currentPage++; render(); });
       }
 
-      // Listeners
       q.addEventListener('input', () => { currentPage = 1; applyFilters(); });
       statusSel.addEventListener('change', () => { currentPage = 1; applyFilters(); });
       pageSizeSel.addEventListener('change', () => {
@@ -414,7 +449,6 @@
         render();
       });
 
-      // Inicial
       applyFilters();
     });
   </script>

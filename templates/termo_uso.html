@@ -42,13 +42,28 @@
         font-weight: 800; font-size: 1.9rem; letter-spacing: 5px; color: white; white-space: nowrap;
         text-shadow: 0 2px 5px rgba(0,0,0,0.3);
       }
-      .btn-home {
-        background-color: #0fb300; color: white; padding: 6px 14px; border-radius: 6px;
-        font-weight: 700; font-size: 1.5rem; display: flex; align-items: center; gap: 8px;
-        box-shadow: 0 2px 6px rgba(15,179,0,0.8); text-decoration: none; transition: background-color 0.3s ease;
-        position: absolute; right: 30px; top: 50%; transform: translateY(-50%);
+
+      /* Ações (Imprimir / Home) */
+      .header-actions {
+        position: absolute; right: 30px; top: 50%;
+        transform: translateY(-50%);
+        display: inline-flex; align-items: center; gap: 10px;
+        z-index: 2;
       }
-      .btn-home:hover { background-color: #0d8a00; }
+
+      .btn-home, .btn-print {
+        background-color: #0fb300; color: white; padding: 6px 14px; border-radius: 8px;
+        font-weight: 700; font-size: 1.05rem; display: inline-flex; align-items: center; gap: 8px;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8); text-decoration: none; transition: background-color 0.2s ease, transform .15s ease;
+        border: none; cursor: pointer;
+      }
+      .btn-home:hover, .btn-print:hover { background-color: #0d8a00; transform: translateY(-1px); }
+
+      .btn-print {
+        background-color: #111827;
+        box-shadow: 0 2px 6px rgba(17,24,39,0.35);
+      }
+      .btn-print:hover { background-color: #0b1220; }
     }
 
     @media (max-width: 768px) {
@@ -65,16 +80,26 @@
       .text-container { text-align: center; }
       .escola-nome { font-weight: 700; font-size: 1.3rem; margin: 0; }
       .escola-subtitulo { font-weight: 600; font-size: 1rem; margin-top: 2px; }
+
       .header-bottom {
-        background-color: #0056b3; padding: 12px 10px; text-align: center;
+        background-color: #0056b3; padding: 10px 10px; text-align: center;
         font-weight: 800; font-size: 1rem; letter-spacing: 4px; color: white;
-        display: flex; justify-content: center; align-items: center; gap: 12px;
+        display: flex; justify-content: center; align-items: center; gap: 10px;
+        flex-wrap: wrap;
       }
-      .btn-home-mobile {
-        background-color: #0fb300; color: white; padding: 6px 10px; border-radius: 6px; font-weight: 600; font-size: 1rem;
+      .btn-home-mobile, .btn-print-mobile {
+        background-color: #0fb300; color: white; padding: 6px 10px; border-radius: 8px; font-weight: 600; font-size: 0.95rem;
         text-decoration: none; box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        display: inline-flex; align-items: center; gap: 8px;
+        border: none; cursor: pointer;
       }
-      .btn-home-mobile:hover { background-color: #0d8a00; }
+      .btn-home-mobile:hover, .btn-print-mobile:hover { background-color: #0d8a00; }
+
+      .btn-print-mobile {
+        background-color: #111827;
+        box-shadow: 0 2px 6px rgba(17,24,39,0.35);
+      }
+      .btn-print-mobile:hover { background-color: #0b1220; }
     }
 
     .container {
@@ -103,6 +128,7 @@
     .termo-lista { margin: 8px 0 0 18px; padding: 0; }
     .termo-lista li { margin: 6px 0; }
 
+    /* Aceite (pode ser ocultado em modo visualização) */
     .aceite-bloco {
       margin-top: 24px; padding: 14px 16px; border: 1px dashed #cfe2ff; border-radius: 10px; background: #f8fbff;
     }
@@ -132,6 +158,44 @@
       .termo-texto { font-size: 0.96rem; }
       .btn-aceitar, .btn-recusar { width: 100%; min-width: unset; }
     }
+
+    /* =========================
+       IMPRESSÃO (documento oficial)
+       ========================= */
+    @media print {
+      @page { size: A4; margin: 14mm 12mm; }
+
+      html, body {
+        background: #ffffff !important;
+        color: #000 !important;
+        height: auto !important;
+        display: block !important;
+      }
+
+      .header-desktop, .header-mobile, footer { display: none !important; }
+      .container {
+        max-width: none !important;
+        width: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+      }
+
+      h1 { color: #000 !important; }
+      .callout {
+        border: 1px solid #000 !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+
+      /* Não imprimir bloco de aceite */
+      .aceite-bloco, form#form-termos { display: none !important; }
+
+      /* Melhorar quebra */
+      .termo-topico { page-break-inside: avoid; }
+      a, a:visited { color: #000 !important; text-decoration: none !important; }
+    }
   </style>
 </head>
 <body>
@@ -148,9 +212,18 @@
     <div class="header-center-text-container">
       <div class="header-center-text">PORTAL DO SERVIDOR</div>
     </div>
-    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
-      <i class="fas fa-home"></i>
-    </a>
+
+    <div class="header-actions">
+      <button type="button" class="btn-print" onclick="window.print()" title="Imprimir">
+        <i class="fas fa-print" aria-hidden="true"></i> Imprimir
+      </button>
+
+      <!-- Home só faz sentido no "gate" (quando o termo não está vigente).
+           Em modo visualização (footer), pode manter mesmo assim, não atrapalha. -->
+      <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+        <i class="fas fa-home" aria-hidden="true"></i>
+      </a>
+    </div>
   </header>
 
   <!-- Cabeçalho Mobile -->
@@ -164,8 +237,14 @@
     </div>
     <div class="header-bottom">
       <span>PORTAL DO SERVIDOR</span>
+
+      <button type="button" class="btn-print-mobile" onclick="window.print()" title="Imprimir">
+        <i class="fas fa-print" aria-hidden="true"></i>
+        Imprimir
+      </button>
+
       <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
-        <i class="fas fa-home"></i>
+        <i class="fas fa-home" aria-hidden="true"></i>
       </a>
     </div>
   </header>
@@ -173,10 +252,12 @@
   <!-- Conteúdo Principal -->
   <main class="container">
     <h1>Termos de Uso e Política de Privacidade</h1>
-    <small class="versao">Versão 1.0 — Última atualização em 13/01/2026</small>
+    <small class="versao">
+      Versão {{ termo_versao if termo_versao is defined else '1.0' }} — Última atualização em 13/01/2026
+    </small>
 
     <div class="callout">
-      <i class="fas fa-info-circle"></i>
+      <i class="fas fa-info-circle" aria-hidden="true"></i>
       &nbsp;Este sistema é de iniciativa e gestão exclusiva da <strong>E.M. José Padin Mouta</strong>, para uso interno da unidade escolar.
       <strong>Não possui vínculo institucional, autorização, integração, espelhamento ou endosso da Prefeitura Municipal, SED/SEDUC
       ou quaisquer sistemas oficiais</strong>. Todas as informações registradas são <strong>fornecidas pelos próprios usuários</strong>.
@@ -288,9 +369,9 @@
       </p>
     </div>
 
-    <!-- Aceite -->
+    <!-- Aceite: só aparece quando NÃO estiver em modo de visualização -->
+    {% if not (modo_visualizacao is defined and modo_visualizacao) %}
     <form method="POST" id="form-termos">
-      <!-- CSRF hidden (mantém compatibilidade com Flask-WTF ou middleware próprio) -->
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
       <div class="aceite-bloco">
@@ -301,14 +382,30 @@
 
         <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
           <button type="submit" name="acao" value="aceito" class="btn-aceitar" id="btn-aceitar" disabled>
-            <i class="fas fa-check"></i>&nbsp;Aceito os Termos
+            <i class="fas fa-check" aria-hidden="true"></i>&nbsp;Aceito os Termos
           </button>
           <button type="submit" name="acao" value="nao_aceito" class="btn-recusar">
-            <i class="fas fa-times"></i>&nbsp;Não Aceito
+            <i class="fas fa-times" aria-hidden="true"></i>&nbsp;Não Aceito
           </button>
         </div>
       </div>
     </form>
+    {% else %}
+    <!-- Visualização (footer): mantém apenas consulta + impressão -->
+    <div class="aceite-bloco" style="border-style: solid; border-color:#e5e7eb; background:#fff;">
+      <div style="display:flex; align-items:center; gap:10px; justify-content:space-between; flex-wrap:wrap;">
+        <div style="font-weight:700; color:#111827;">
+          <i class="fas fa-eye" aria-hidden="true"></i> Visualização do Termo
+        </div>
+        <button type="button" class="btn-aceitar" style="margin-top:0; min-width:unset;" onclick="window.print()">
+          <i class="fas fa-print" aria-hidden="true"></i>&nbsp;Imprimir
+        </button>
+      </div>
+      <p class="termo-texto" style="margin: 10px 0 0; color:#374151;">
+        Este acesso é apenas para consulta. O aceite é solicitado automaticamente quando necessário (primeiro acesso ou nova versão).
+      </p>
+    </div>
+    {% endif %}
   </main>
 
   <footer>
@@ -316,21 +413,11 @@
   </footer>
 
   <script>
-    // Habilita o botão "Aceito" apenas quando o usuário marcar a confirmação
     (function(){
       const chk = document.getElementById('chk-aceite');
       const btn = document.getElementById('btn-aceitar');
       if(chk && btn){
         chk.addEventListener('change', () => { btn.disabled = !chk.checked; });
-      }
-
-      // Opcional: reforça CSRF se houver submissões via fetch no futuro
-      const form = document.getElementById('form-termos');
-      if(form){
-        form.addEventListener('submit', function(e){
-          // Se no projeto existir um middleware que exija o header X-CSRFToken em POST comuns,
-          // você pode converter para fetch aqui. Para submissão padrão, o hidden input já cobre.
-        });
       }
     })();
   </script>
