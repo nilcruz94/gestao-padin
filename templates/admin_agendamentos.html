@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
   <!-- CSRF: disponibiliza o token para requisições JS -->
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -178,13 +179,37 @@
     .employee-details { display: none; padding: 10px 12px 12px; background: #f9fafb; }
 
     .employee-table-wrapper { overflow-x: auto; border-radius: 10px; background: #ffffff; box-shadow: inset 0 0 0 1px #e5e7eb; }
-    .employee-table { width: 100%; border-collapse: collapse; min-width: 520px; }
-    .employee-table th, .employee-table td { padding: 8px 10px; font-size: 0.86rem; border-bottom: 1px solid #e5e7eb; text-align: left; white-space: nowrap; }
-    .employee-table th {
-      background: #f3f4f6; font-weight: 700; color: #111827; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.06em;
+
+    /* ===== TABELA ===== */
+    .employee-table { width: 100%; border-collapse: collapse; min-width: 720px; }
+
+    /* CENTRALIZA TODO O CONTEÚDO */
+    .employee-table th,
+    .employee-table td {
+      padding: 8px 10px;
+      font-size: 0.86rem;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: center;
+      white-space: nowrap;
+      vertical-align: middle;
     }
-    .employee-table td:last-child { text-align: center; }
+
+    .employee-table th {
+      background: #f3f4f6;
+      font-weight: 700;
+      color: #111827;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+    }
+
     .employee-table tbody tr:nth-child(even) { background: #f9fafb; }
+
+    /* ✅ GARANTE ESPAÇO SUFICIENTE PRA A COLUNA AÇÕES (EVITA QUEBRAR EM 2 LINHAS) */
+    .employee-table td:last-child,
+    .employee-table th:last-child {
+      min-width: 280px;
+    }
 
     /* Status */
     .status-deferido, .status-em-espera, .status-indeferido {
@@ -196,14 +221,108 @@
     .status-indeferido { background: var(--danger-soft); color: #b91c1c; border-color: #fecaca; }
     .status-deferido i, .status-em-espera i, .status-indeferido i { font-size: 0.85rem; }
 
+    /* Substituição (badge) */
+    .sub-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.78rem;
+      border: 1px solid #dbeafe;
+      background: #eff6ff;
+      color: #1d4ed8;
+      max-width: 320px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin: 0 auto;
+    }
+    .sub-badge.muted {
+      background: #f3f4f6;
+      border-color: #e5e7eb;
+      color: #6b7280;
+      font-weight: 700;
+    }
+
+    /* ✅ AÇÕES: 2 BOTÕES LADO A LADO, MESMO TAMANHO, SEM "HAMBURGUER" */
+    .sub-actions {
+      display: flex;
+      flex-wrap: nowrap;          /* NÃO QUEBRA LINHA */
+      gap: 10px;
+      width: 100%;                /* ocupa a célula inteira */
+      justify-content: center;
+      align-items: stretch;
+    }
+
+    /* força os dois botões a terem o mesmo tamanho e ignorarem width:100% do CSS global */
+    .sub-actions .sub-btn,
+    .sub-actions .submit-btn {
+      flex: 1 1 0;
+      flex-basis: 0;              /* divide igualmente */
+      min-width: 0;               /* permite encolher */
+      width: 0 !important;        /* se o style.css setar width:100%, isso neutraliza */
+    }
+
+    .sub-actions .btn-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: inline-block;
+      max-width: 100%;
+    }
+
     /* Botão excluir */
     .submit-btn {
-      padding: 6px 11px; background-color: #ef4444; color: #fff; border: none; font-size: 0.8rem; cursor: pointer;
-      border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-      box-shadow: 0 4px 10px rgba(248,113,113,.35); transition: background-color .2s ease, transform .12s ease, box-shadow .18s ease; white-space: nowrap;
+      padding: 7px 12px;
+      background-color: #ef4444;
+      color: #fff;
+      border: none;
+      font-size: 0.82rem;
+      cursor: pointer;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 10px rgba(248,113,113,.35);
+      transition: background-color .2s ease, transform .12s ease, box-shadow .18s ease;
+      white-space: nowrap;
     }
     .submit-btn i { font-size: 0.85rem; }
     .submit-btn:hover { background-color: #dc2626; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(220,38,38,.45); }
+
+    /* botão de substituição */
+    .sub-btn {
+      padding: 7px 12px;
+      background-color: #2563eb;
+      color: #fff;
+      border: none;
+      font-size: 0.82rem;
+      cursor: pointer;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 10px rgba(37,99,235,.28);
+      transition: background-color .2s ease, transform .12s ease, box-shadow .18s ease;
+      white-space: nowrap;
+    }
+    .sub-btn i { font-size: 0.85rem; }
+    .sub-btn:hover { background-color: #1d4ed8; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(37,99,235,.36); }
+
+    /* Ajuste extra pra telas bem estreitas (continua lado a lado) */
+    @media (max-width: 420px) {
+      .employee-table td:last-child,
+      .employee-table th:last-child {
+        min-width: 240px;
+      }
+      .sub-actions { gap: 8px; }
+      .sub-btn, .submit-btn { padding: 7px 10px; font-size: 0.78rem; }
+    }
 
     /* Paginação */
     .pagination { text-align: center; margin-top: 16px; font-size: 0.86rem; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
@@ -213,6 +332,129 @@
     }
     .pagination a:hover { background: #2563eb; color: #ffffff; }
     .pagination span { font-weight: 600; color: var(--text-muted); }
+
+    /* ===== Modal de Substituição ===== */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: rgba(0,0,0,.55);
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+    .modal.open { display: flex; }
+    .modal-content {
+      width: 100%;
+      max-width: 420px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.25);
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+    }
+    .modal-header {
+      padding: 14px 16px;
+      background: linear-gradient(90deg,#f9fafb 0,#eef2ff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .modal-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .modal-close {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: #64748b;
+      font-size: 1.1rem;
+      padding: 6px 8px;
+      border-radius: 10px;
+      transition: background .15s ease, color .15s ease;
+    }
+    .modal-close:hover { background: rgba(100,116,139,.12); color: #0f172a; }
+
+    .modal-body {
+      padding: 14px 16px 16px;
+      background: #fff;
+    }
+    .modal-help {
+      margin: 0 0 10px;
+      color: #6b7280;
+      font-size: .86rem;
+      line-height: 1.25rem;
+    }
+    .modal-field {
+      display: grid;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .modal-label {
+      font-size: .78rem;
+      text-transform: uppercase;
+      color: #6b7280;
+      letter-spacing: .08em;
+    }
+    .modal-input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      font-size: .95rem;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .modal-input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(37,99,235,.45);
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn-secondary {
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background: #f3f4f6;
+      color: #111827;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-secondary:hover { background: #e5e7eb; }
+    .btn-primary {
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid #1d4ed8;
+      background: #2563eb;
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(37,99,235,.25);
+    }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-danger-soft {
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid #fecaca;
+      background: #fee2e2;
+      color: #b91c1c;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-danger-soft:hover { background: #fecaca; }
 
     /* Footer */
     footer {
@@ -224,6 +466,7 @@
     footer a:hover { color: #00aaff; }
   </style>
 </head>
+
 <body>
 
   <!-- Cabeçalho Desktop -->
@@ -352,15 +595,63 @@
     </div>
   </main>
 
+  <!-- Modal Substituição (Admin) -->
+  <div id="subModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="subModalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="subModalTitle">
+          <i class="fas fa-user-edit"></i>
+          Substituição (Agendamento)
+        </h3>
+        <button type="button" class="modal-close" aria-label="Fechar" onclick="closeSubModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-help" id="subModalHelp">
+          Informe o nome da substituta/substituto. Se deixar em branco, será removido e ficará como “-”.
+        </p>
+
+        <div class="modal-field">
+          <div class="modal-label">Nome do substituto</div>
+          <input id="subNomeInput" class="modal-input" type="text" maxlength="255" placeholder="Ex.: Maria da Silva">
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-danger-soft" onclick="clearSubNome()">
+            <i class="fas fa-eraser"></i>
+            Limpar
+          </button>
+          <button type="button" class="btn-secondary" onclick="closeSubModal()">
+            Cancelar
+          </button>
+          <button type="button" class="btn-primary" onclick="saveSubNome()">
+            <i class="fas fa-save"></i>
+            Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer>
     <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
   </footer>
 
   <script>
-    // Helper CSRF: lê o token do meta
     function getCSRFToken() {
       const el = document.querySelector('meta[name="csrf-token"]');
       return el ? el.getAttribute('content') : '';
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
     }
 
     let currentController = null;
@@ -374,7 +665,7 @@
       alertContainer.innerHTML = `
         <div class="alert ${type === "success" ? "alert-success" : "alert-error"}">
           <i class="fas fa-${icon}"></i>
-          <span>${message}</span>
+          <span>${escapeHtml(message)}</span>
         </div>`;
       setTimeout(() => { alertContainer.innerHTML = ""; }, 4000);
     }
@@ -390,36 +681,30 @@
       return `${nome}||${status}||${cargo}||${page}`;
     }
 
-    // ---------- NOVO: parsing robusto de datas ----------
     function parseDateToMillis(str) {
       if (!str) return 0;
       const s = String(str).trim();
 
-      // ISO: YYYY-MM-DD or YYYY-MM-DD HH:mm[:ss] or with 'T'
       let m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/);
       if (m) {
         const [, y, mo, d, hh = '00', mi = '00', ss = '00'] = m;
         return Date.UTC(+y, +mo - 1, +d, +hh, +mi, +ss);
       }
 
-      // BR: DD/MM/YYYY [HH:mm[:ss]]
       m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/);
       if (m) {
         const [, d, mo, y, hh = '00', mi = '00', ss = '00'] = m;
         return Date.UTC(+y, +mo - 1, +d, +hh, +mi, +ss);
       }
 
-      // Fallback para outros formatos parseáveis
       const ts = Date.parse(s);
       return isNaN(ts) ? 0 : ts;
     }
 
     function getItemDateMillis(ag) {
-      // usa o primeiro campo existente entre data_ordem, data_iso e data
       const candidate = ag.data_ordem || ag.data_iso || ag.data;
       return parseDateToMillis(candidate);
     }
-    // ----------------------------------------------------
 
     async function carregarAgendamentos(page = 1) {
       const { nome, status, cargo } = getFilters();
@@ -437,7 +722,7 @@
         const csrf = getCSRFToken();
         const res = await fetch(`/admin/agendamentos/ajax?${params.toString()}`, {
           signal: currentController.signal,
-          headers: { "X-CSRFToken": csrf } // CSRF (opcional em GET, mas inofensivo)
+          headers: { "X-CSRFToken": csrf }
         });
 
         if (!res.ok) {
@@ -455,24 +740,23 @@
           data.dados.forEach((f) => {
             const detailsId = `details-${f.id}`;
 
-            // ---------- NOVO: ordenar os agendamentos por data desc ----------
             const ags = (f.agendamentos || []).slice().sort((a, b) => {
               return getItemDateMillis(b) - getItemDateMillis(a);
             });
-            // -----------------------------------------------------------------
 
             html += `
               <article class="employee-card">
                 <button type="button" class="employee-header" onclick="toggleDetails('${detailsId}', this)">
                   <div class="employee-header-left">
                     <div class="employee-avatar"><i class="fas fa-user"></i></div>
-                    <p class="employee-name">${f.funcionario}</p>
+                    <p class="employee-name">${escapeHtml(f.funcionario)}</p>
                   </div>
                   <div class="employee-header-right">
-                    <span>${f.cargo || ""}</span>
+                    <span>${escapeHtml(f.cargo || "")}</span>
                     <i class="fas fa-chevron-down"></i>
                   </div>
                 </button>
+
                 <div id="${detailsId}" class="employee-details">
                   <div class="employee-table-wrapper">
                     <table class="employee-table">
@@ -481,6 +765,7 @@
                           <th>Data</th>
                           <th>Motivo</th>
                           <th>Status</th>
+                          <th>Substituição</th>
                           <th>Ações</th>
                         </tr>
                       </thead>
@@ -498,16 +783,30 @@
                 cls = "status-em-espera"; icon = '<i class="fas fa-hourglass-half"></i>'; label = "Em espera";
               }
 
+              const nomeSub = (ag.nome_substituto || "").trim();
+              const subHtml = nomeSub
+                ? `<span class="sub-badge" title="${escapeHtml(nomeSub)}"><i class="fas fa-user-friends"></i>${escapeHtml(nomeSub)}</span>`
+                : `<span class="sub-badge muted" title="Sem substituição">-</span>`;
+
+              const safeNomeSub = escapeHtml(nomeSub);
+
               html += `
-                <tr>
-                  <td>${ag.data}</td>
-                  <td>${ag.motivo || ""}</td>
-                  <td><span class="${cls}">${icon} ${label}</span></td>
+                <tr data-ag-id="${ag.id}" data-sub-nome="${safeNomeSub}">
+                  <td>${escapeHtml(ag.data || "")}</td>
+                  <td>${escapeHtml(ag.motivo || "")}</td>
+                  <td><span class="${cls}">${icon} ${escapeHtml(label)}</span></td>
+                  <td class="sub-cell">${subHtml}</td>
                   <td>
-                    <button type="button" class="submit-btn" onclick="excluirAgendamento(${ag.id})">
-                      <i class="fas fa-trash-alt"></i>
-                      Excluir
-                    </button>
+                    <div class="sub-actions">
+                      <button type="button" class="sub-btn" onclick="openSubModal(${ag.id})" title="Editar substituição">
+                        <i class="fas fa-pen"></i>
+                        <span class="btn-text">Substituição</span>
+                      </button>
+                      <button type="button" class="submit-btn" onclick="excluirAgendamento(${ag.id})" title="Excluir agendamento">
+                        <i class="fas fa-trash-alt"></i>
+                        <span class="btn-text">Excluir</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               `;
@@ -537,7 +836,7 @@
           const f = getFilters();
           let motivo = "Nenhum agendamento encontrado.";
           if (f.status || f.cargo || f.nome) motivo = "Nenhum agendamento encontrado para os filtros aplicados.";
-          html = `<p class="loading">${motivo}</p>`;
+          html = `<p class="loading">${escapeHtml(motivo)}</p>`;
         }
 
         container.innerHTML = html;
@@ -554,9 +853,7 @@
         const csrf = getCSRFToken();
         const res = await fetch(`/admin/delete_agendamento/${id}`, {
           method: "POST",
-          headers: {
-            "X-CSRFToken": csrf
-          }
+          headers: { "X-CSRFToken": csrf }
         });
         const data = await res.json();
 
@@ -593,6 +890,91 @@
       document.getElementById("filtroStatus").value = "";
       document.getElementById("filtroCargo").value  = "";
       scheduleLoad(1);
+    });
+
+    // ===== Modal / Substituição (Admin) =====
+    let subCurrentAgId = null;
+
+    function openSubModal(agId) {
+      subCurrentAgId = agId;
+
+      const row = document.querySelector(`tr[data-ag-id="${agId}"]`);
+      const current = row ? (row.getAttribute('data-sub-nome') || '') : '';
+
+      const modal = document.getElementById('subModal');
+      const input = document.getElementById('subNomeInput');
+
+      input.value = current || '';
+      modal.classList.add('open');
+      setTimeout(() => input.focus(), 50);
+    }
+
+    function closeSubModal() {
+      const modal = document.getElementById('subModal');
+      modal.classList.remove('open');
+      subCurrentAgId = null;
+    }
+
+    function clearSubNome() {
+      const input = document.getElementById('subNomeInput');
+      input.value = '';
+      input.focus();
+    }
+
+    async function saveSubNome() {
+      if (!subCurrentAgId) return;
+
+      const input = document.getElementById('subNomeInput');
+      const nome = (input.value || '').trim();
+      const csrf = getCSRFToken();
+
+      try {
+        const res = await fetch(`/admin/agendamento/${subCurrentAgId}/substituto`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrf
+          },
+          body: JSON.stringify({ nome_substituto: nome })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+          const msg = data.error || `Erro ao salvar (${res.status}).`;
+          showAlert(msg, "error");
+          return;
+        }
+
+        const row = document.querySelector(`tr[data-ag-id="${subCurrentAgId}"]`);
+        if (row) {
+          row.setAttribute('data-sub-nome', escapeHtml(nome));
+
+          const cell = row.querySelector('.sub-cell');
+          if (cell) {
+            if (nome) {
+              cell.innerHTML = `<span class="sub-badge" title="${escapeHtml(nome)}"><i class="fas fa-user-friends"></i>${escapeHtml(nome)}</span>`;
+            } else {
+              cell.innerHTML = `<span class="sub-badge muted" title="Sem substituição">-</span>`;
+            }
+          }
+        }
+
+        showAlert("Substituição atualizada com sucesso.", "success");
+        closeSubModal();
+      } catch (err) {
+        showAlert("Falha na conexão ao salvar substituição.", "error");
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      const modal = document.getElementById('subModal');
+      if (!modal.classList.contains('open')) return;
+      if (e.target === modal) closeSubModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeSubModal();
     });
 
     carregarAgendamentos(1);

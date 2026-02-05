@@ -10,6 +10,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
+  <!-- ✅ CSRF token para POST via fetch (corrige HTTP 400 quando CSRFProtect está ativo) -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
   <style>
     :root {
       --padin-primary:#0d6efd;
@@ -1484,6 +1487,9 @@
       const modalBtnCancel = document.getElementById('confirmModalCancel');
       const modalBtnConfirm = document.getElementById('confirmModalConfirm');
 
+      // ✅ pega CSRF do <meta> pra evitar 400 (CSRFProtect / Flask-WTF)
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
       let currentAction = null; // { userId, userNome, url, ativo }
 
       function showAlert(message, type = 'success') {
@@ -1586,12 +1592,21 @@
 
         modalBtnConfirm.disabled = true;
 
+        const headers = {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/json'
+        };
+
+        // ✅ Envia CSRF em header (padrão aceito pelo Flask-WTF)
+        if (csrfToken) {
+          headers['X-CSRFToken'] = csrfToken;
+          // Se no seu projeto estiver esperando outro nome, habilite também:
+          headers['X-CSRF-Token'] = csrfToken;
+        }
+
         fetch(currentAction.url, {
           method: 'POST',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Content-Type': 'application/json'
-          },
+          headers,
           credentials: 'same-origin',
           body: JSON.stringify({})
         })
@@ -1599,6 +1614,12 @@
           if (!resp.ok) {
             const text = await resp.text().catch(() => '');
             console.error('Erro HTTP ao alterar status:', resp.status, text);
+
+            // ✅ mensagem mais clara em caso de CSRF
+            if (resp.status === 400 && /csrf|token/i.test(text)) {
+              throw new Error('Falha de segurança (CSRF). Recarregue a página e tente novamente.');
+            }
+
             throw new Error('Erro ao comunicar com o servidor (HTTP ' + resp.status + ').');
           }
 

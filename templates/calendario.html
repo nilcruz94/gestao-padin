@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
@@ -7,6 +7,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, maximum-scale=3, minimum-scale=1">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
+  <!-- CSRF: token disponível para o JS -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
 
   <style>
     :root {
@@ -172,8 +175,6 @@
       background:#f9fafb; padding:8px 7px 6px; text-align:right; border-radius:14px; border:1px solid var(--border-soft);
       min-height:90px; font-size:13px; position:relative; display:flex; flex-direction:column; gap:4px;
       transition: border-color .16s, box-shadow .16s, transform .16s, background-color .16s;
-
-      /* Mantém conteúdo dentro do quadrado */
       overflow: hidden;
     }
     .calendar .day:not(.weekdays):hover{ border-color:var(--primary-soft); background:#fff; box-shadow:0 10px 25px rgba(15,23,42,.12); transform: translateY(-2px); }
@@ -191,6 +192,7 @@
     .agendamento{
       padding:6px 8px; margin-top:3px; border-radius:10px; font-size:13px; text-align:left; border:1px solid transparent;
       display:flex; flex-direction:column; align-items:flex-start; line-height:1.35; gap:2px; white-space:normal; word-break:normal; overflow-wrap: break-word;
+      user-select: none;
     }
     .agendamento + .agendamento { margin-top:4px; }
 
@@ -201,45 +203,37 @@
     .calendar .agenda-indeferido { background:#fecaca; color:#7f1d1d; border-color:var(--danger); font-weight:600; }
     .calendar .agenda-indeferido:hover { background:#fee2e2; }
 
-    /* ===========================
-       EVENTO (TOPO DO DIA)
-       Ajuste: NÃO quebrar palavra no meio (ex.: "Facultativ" + "o")
-       Mantém dentro do quadrado (overflow hidden do dia e do próprio evento)
-       =========================== */
+    /* Somente ADMIN: visual de "clicável" */
+    .agendamento.clickable { cursor: pointer; }
+    .agendamento.clickable:focus { outline: 2px solid rgba(37,99,235,.65); outline-offset: 2px; }
+    .agendamento.clickable:hover { box-shadow: 0 10px 20px rgba(15,23,42,.12); transform: translateY(-1px); }
+
+    /* EVENTO */
     .evento{
       padding:6px 8px; margin-top:3px; border-radius:10px; font-size:12px; text-align:left;
       border:1px solid var(--event-border);
       display:flex; flex-direction:column; align-items:flex-start; line-height:1.25; gap:2px;
       background: var(--event-soft); color: var(--event);
       font-weight:700;
-
-      /* Permite quebrar SOMENTE em espaços (não no meio da palavra) */
       white-space: normal;
       overflow-wrap: normal;
       word-break: keep-all;
       hyphens: none;
-
       width: 100%;
       max-width: 100%;
       min-width: 0;
       overflow: hidden;
     }
-
     .evento .evento-titulo{
       width: 100%;
       min-width: 0;
-
-      /* Texto simples (sem ícone), com quebra apenas entre palavras */
       display: block;
       text-align: left;
-
       white-space: normal;
       overflow-wrap: normal;
       word-break: keep-all;
       hyphens: none;
     }
-
-    /* Centraliza somente o horário (se existir) */
     .evento .evento-horario{
       width: 100%;
       text-align: center;
@@ -274,11 +268,124 @@
       .calendar .day.weekdays{ font-size:11px; height:34px; min-height:34px; }
       .calendar .day:not(.weekdays){ font-size:11px; min-height:80px; }
       .agendamento{ font-size:11px; padding:4px 6px; }
-
-      /* Evento no mobile: fonte um pouco menor para caber melhor, sem quebrar palavra no meio */
       .evento{ font-size:10.5px; padding:4px 6px; }
       .evento .evento-horario{ font-size:9px; }
     }
+
+    /* ===== MODAL (ADMIN) ===== */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 3000;
+      background: rgba(0,0,0,.55);
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+    .modal.open { display: flex; }
+    .modal-content {
+      width: 100%;
+      max-width: 420px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.25);
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+    }
+    .modal-header {
+      padding: 14px 16px;
+      background: linear-gradient(90deg,#f9fafb 0,#eef2ff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .modal-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .modal-close {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: #64748b;
+      font-size: 1.1rem;
+      padding: 6px 8px;
+      border-radius: 10px;
+      transition: background .15s ease, color .15s ease;
+    }
+    .modal-close:hover { background: rgba(100,116,139,.12); color: #0f172a; }
+    .modal-body { padding: 14px 16px 16px; background: #fff; }
+    .modal-help {
+      margin: 0 0 10px;
+      color: #6b7280;
+      font-size: .86rem;
+      line-height: 1.25rem;
+    }
+    .modal-field { display: grid; gap: 6px; margin-top: 10px; }
+    .modal-label {
+      font-size: .78rem;
+      text-transform: uppercase;
+      color: #6b7280;
+      letter-spacing: .08em;
+    }
+    .modal-input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      font-size: .95rem;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .modal-input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(37,99,235,.45);
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn-secondary {
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background: #f3f4f6;
+      color: #111827;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-secondary:hover { background: #e5e7eb; }
+    .btn-primary {
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid #1d4ed8;
+      background: #2563eb;
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(37,99,235,.25);
+    }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-danger-soft {
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid #fecaca;
+      background: #fee2e2;
+      color: #b91c1c;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-danger-soft:hover { background: #fecaca; }
 
     /* Footer */
     footer {
@@ -293,6 +400,8 @@
 </head>
 
 <body>
+
+  {% set can_edit_sub = (current_user.is_authenticated and (current_user.tipo|default('') == 'administrador')) %}
 
   <!-- Cabeçalho Desktop -->
   <header class="header-desktop">
@@ -416,7 +525,6 @@
                       {{ (ev.nome or 'Evento') }}
                     </div>
 
-                    {# HORÁRIO opcional #}
                     {% if ev.hora_inicio or ev.hora_fim %}
                       <div class="evento-horario">
                         {% if ev.hora_inicio and ev.hora_fim %}
@@ -433,7 +541,8 @@
               {% endif %}
 
               {# ==========================================================
-                 AGENDAMENTOS/FOLGAS (como já era)
+                 AGENDAMENTOS/FOLGAS
+                 (ADMIN: clicar abre modal de substituição)
                  ========================================================== #}
               {% if folgas %}
                 {% for folga in folgas %}
@@ -451,21 +560,36 @@
                   {% set is_bh = motivo_txt == 'BH' %}
                   {% set is_ajuste = 'ajuste' in texto_obs or 'recupera' in texto_obs or 'retroativ' in texto_obs or 'consumo' in texto_obs or rotina_txt == 'ajuste' %}
                   {% if not (is_bh and is_ajuste) %}
-                    {# Nome abreviado seguro: "Primeiro SOBRENOME_INICIAL." #}
                     {% set nome = (folga.funcionario.nome or '').split() %}
                     {% set abreviado = (nome[0] ~ ((' ' ~ nome[1][0] ~ '.') if nome|length > 1 else '')) %}
-                    <div class="agendamento
-                      {% if folga.status == 'em_espera' %}
-                        agenda-em-espera
-                      {% elif folga.status == 'deferido' %}
-                        agenda-deferido
-                      {% elif folga.status == 'indeferido' %}
-                        agenda-indeferido
-                      {% endif %}">
-                      {{ abreviado }} - {{ motivo_txt }}
-                      {% if folga.nome_substituto %}
-                        <span class="substituto">(Substituto: {{ folga.nome_substituto }})</span>
+                    {% set info_modal = abreviado ~ ' - ' ~ motivo_txt ~ ' (' ~ current_day.strftime('%d/%m/%Y') ~ ')' %}
+
+                    <div
+                      class="agendamento
+                        {% if folga.status == 'em_espera' %}
+                          agenda-em-espera
+                        {% elif folga.status == 'deferido' %}
+                          agenda-deferido
+                        {% elif folga.status == 'indeferido' %}
+                          agenda-indeferido
+                        {% endif %}
+                        {% if can_edit_sub %} clickable{% endif %}
+                      "
+                      data-ag-id="{{ folga.id }}"
+                      data-sub-nome="{{ (folga.nome_substituto or '')|e }}"
+                      data-info="{{ info_modal|e }}"
+                      {% if can_edit_sub %}
+                        role="button"
+                        tabindex="0"
+                        title="Clique para editar substituição"
+                        onclick="openSubModalFromEl(this)"
+                        onkeydown="handleAgKey(event, this)"
                       {% endif %}
+                    >
+                      {{ abreviado }} - {{ motivo_txt }}
+                      <span class="substituto" data-substituto-span="1" {% if not folga.nome_substituto %}style="display:none"{% endif %}>
+                        {% if folga.nome_substituto %}(Substituto: {{ folga.nome_substituto }}){% endif %}
+                      </span>
                     </div>
                   {% endif %}
                   {# ------------------------------------------------------------------ #}
@@ -487,12 +611,54 @@
     </div>
   </main>
 
+  {% if can_edit_sub %}
+  <!-- ===== MODAL Substituição (ADMIN) ===== -->
+  <div id="subModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="subModalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="subModalTitle">
+          <i class="fas fa-user-edit"></i>
+          Substituição (Agendamento)
+        </h3>
+        <button type="button" class="modal-close" aria-label="Fechar" onclick="closeSubModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-help" id="subModalHelp">
+          Informe o nome da substituta/substituto. Se deixar em branco, será removido e ficará como “-”.
+        </p>
+
+        <div class="modal-field">
+          <div class="modal-label">Nome do substituto</div>
+          <input id="subNomeInput" class="modal-input" type="text" maxlength="255" placeholder="Ex.: Maria da Silva">
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-danger-soft" onclick="clearSubNome()">
+            <i class="fas fa-eraser"></i>
+            Limpar
+          </button>
+          <button type="button" class="btn-secondary" onclick="closeSubModal()">
+            Cancelar
+          </button>
+          <button type="button" class="btn-primary" id="btnSaveSub" onclick="saveSubNome()">
+            <i class="fas fa-save"></i>
+            Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <footer>
     <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
   </footer>
 
   <script>
-    // Navegação por mês/ano
+    // ====== NAV (mês/ano) ======
     const selMes = document.getElementById('selectMes');
     const selAno = document.getElementById('selectAno');
     const btnHoje = document.getElementById('btnHoje');
@@ -513,6 +679,140 @@
         irPara(hoje.getFullYear(), hoje.getMonth() + 1);
       });
     }
+
+    // ====== ADMIN: Substituição via clique no agendamento ======
+    const CAN_EDIT_SUB = {{ 'true' if can_edit_sub else 'false' }};
+
+    function getCSRFToken() {
+      const el = document.querySelector('meta[name="csrf-token"]');
+      return el ? el.getAttribute('content') : '';
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    {% if can_edit_sub %}
+    let subCurrentAgId = null;
+    let subCurrentEl = null;
+
+    function openSubModalFromEl(el) {
+      if (!CAN_EDIT_SUB) return;
+
+      const agId = el?.getAttribute('data-ag-id');
+      if (!agId) return;
+
+      subCurrentAgId = agId;
+      subCurrentEl = el;
+
+      const current = (el.getAttribute('data-sub-nome') || '').trim();
+      const info = (el.getAttribute('data-info') || '').trim();
+
+      const modal = document.getElementById('subModal');
+      const input = document.getElementById('subNomeInput');
+      const help  = document.getElementById('subModalHelp');
+
+      if (help && info) {
+        help.textContent = `Agendamento: ${info}. Informe o nome da substituta/substituto (em branco remove).`;
+      }
+
+      input.value = current || '';
+      modal.classList.add('open');
+      setTimeout(() => input.focus(), 50);
+    }
+
+    function handleAgKey(e, el) {
+      if (!CAN_EDIT_SUB) return;
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openSubModalFromEl(el);
+      }
+    }
+
+    function closeSubModal() {
+      const modal = document.getElementById('subModal');
+      if (modal) modal.classList.remove('open');
+      subCurrentAgId = null;
+      subCurrentEl = null;
+    }
+
+    function clearSubNome() {
+      const input = document.getElementById('subNomeInput');
+      input.value = '';
+      input.focus();
+    }
+
+    async function saveSubNome() {
+      if (!CAN_EDIT_SUB || !subCurrentAgId) return;
+
+      const input = document.getElementById('subNomeInput');
+      const btn = document.getElementById('btnSaveSub');
+      const nome = (input.value || '').trim();
+      const csrf = getCSRFToken();
+
+      try {
+        if (btn) { btn.disabled = true; btn.style.opacity = '0.7'; }
+
+        // ✅ SOMENTE ROTA ADMIN (sem fallback)
+        const res = await fetch(`/admin/agendamento/${subCurrentAgId}/substituto`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrf
+          },
+          body: JSON.stringify({ nome_substituto: nome })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+          const msg = data.error || `Erro ao salvar (${res.status}).`;
+          alert(msg);
+          return;
+        }
+
+        // Atualiza DOM do "agendamento" clicado
+        if (subCurrentEl) {
+          subCurrentEl.setAttribute('data-sub-nome', escapeHtml(nome));
+
+          const span = subCurrentEl.querySelector('[data-substituto-span="1"]');
+          if (span) {
+            if (nome) {
+              span.style.display = 'block';
+              span.textContent = `(Substituto: ${nome})`;
+            } else {
+              span.style.display = 'none';
+              span.textContent = '';
+            }
+          }
+        }
+
+        alert("Substituição atualizada com sucesso.");
+        closeSubModal();
+      } catch (err) {
+        alert("Falha na conexão ao salvar substituição.");
+      } finally {
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+      }
+    }
+
+    // Fechar modal clicando fora
+    document.addEventListener('click', (e) => {
+      const modal = document.getElementById('subModal');
+      if (!modal || !modal.classList.contains('open')) return;
+      if (e.target === modal) closeSubModal();
+    });
+
+    // Fechar modal no ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeSubModal();
+    });
+    {% endif %}
   </script>
 </body>
 </html>

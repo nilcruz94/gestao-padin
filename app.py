@@ -861,7 +861,7 @@ def minhas_justificativas():
     query = Agendamento.query.filter(Agendamento.funcionario_id == current_user.id)
 
     # Filtro por status (opcional)
-    if status in ('em_espera', 'deferido', 'indeferido'):
+    if status in ('em_espera', 'pendente', 'deferido', 'indeferido'):
         query = query.filter(Agendamento.status == status)
 
     # Busca por texto (motivo) e/ou data (dd/mm/yyyy ou yyyy-mm-dd)
@@ -879,7 +879,7 @@ def minhas_justificativas():
         if parsed_date:
             query = query.filter(Agendamento.data == parsed_date)
         else:
-            # requer from sqlalchemy import or_
+            # requer: from sqlalchemy import or_
             query = query.filter(or_(Agendamento.motivo.ilike(like)))
 
     # Ordenação (mais recentes primeiro)
@@ -898,6 +898,9 @@ def minhas_justificativas():
                 "data": a.data.strftime("%Y-%m-%d"),
                 "motivo": a.motivo,
                 "status": a.status,
+                # (NOVO - útil para front-end, não atrapalha)
+                "substituicao": getattr(a, "substituicao", None),
+                "nome_substituto": getattr(a, "nome_substituto", None),
             }
         return jsonify({
             "page": page,
@@ -918,6 +921,52 @@ def minhas_justificativas():
         q=q,
         status=status
     )
+
+
+# ===========================================
+# (NOVA) ATUALIZAR SUBSTITUTO (usuário edita após agendar)
+# Endpoint chamado pelo HTML via fetch()
+# Retorna JSON: {success: true, nome_substituto: "..."}
+# ===========================================
+@app.route('/agendamento/<int:agendamento_id>/substituto', methods=['POST'])
+@login_required
+def atualizar_substituto_agendamento(agendamento_id):
+    """
+    Permite ao usuário (normal) preencher/alterar/remover o nome do substituto
+    em um agendamento que seja dele.
+
+    Payload JSON esperado:
+      { "nome_substituto": "Fulana de Tal" }
+    Para remover: enviar vazio ou null.
+    """
+    ag = Agendamento.query.get_or_404(agendamento_id)
+
+    # Segurança: só o dono do agendamento pode editar
+    if ag.funcionario_id != current_user.id:
+        return jsonify(success=False, error="Acesso negado."), 403
+
+    payload = request.get_json(silent=True) or {}
+    nome = (payload.get('nome_substituto') or '').strip()
+
+    # Regra: se preencher nome -> substituicao = "Sim"
+    #        se vazio        -> substituicao = "Não" e limpa nome
+    if nome:
+        ag.nome_substituto = nome
+        if hasattr(ag, 'substituicao'):
+            ag.substituicao = "Sim"
+    else:
+        ag.nome_substituto = None
+        if hasattr(ag, 'substituicao'):
+            ag.substituicao = "Não"
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("Erro ao atualizar substituto do agendamento %s: %s", agendamento_id, e)
+        return jsonify(success=False, error="Erro ao salvar no banco."), 500
+
+    return jsonify(success=True, nome_substituto=(ag.nome_substituto or "")), 200
 
 # ===========================================
 # PROTOCOLO DE AGENDAMENTOS (PDF)
@@ -1655,7 +1704,6 @@ def calendario(year=None, month=None):
                  (Evento.data_fim >= first_day_of_month) & (Evento.data_fim <= last_day_of_month))
             )
         )
-        # Melhor: ordena por data e, quando existir, por hora_inicio/hora_fim
         .order_by(
             Evento.data_evento.asc(),
             Evento.data_inicio.asc().nullsfirst(),
@@ -1673,7 +1721,6 @@ def calendario(year=None, month=None):
         return max(min_d, min(d, max_d))
 
     for ev in eventos:
-        # Define intervalo efetivo do evento (dentro do mês)
         if ev.data_inicio and ev.data_fim:
             start = _clamp_date(ev.data_inicio, first_day_of_month, last_day_of_month)
             end = _clamp_date(ev.data_fim, first_day_of_month, last_day_of_month)
@@ -1705,6 +1752,41 @@ def calendario(year=None, month=None):
         inicio_ano=inicio_ano,
         fim_ano=fim_ano
     )
+
+
+# ===========================================
+# NOVA ROTA (NECESSÁRIA PARA O MODAL)
+# SOMENTE ADMIN pode atualizar substituto
+# Endpoint usado no HTML:
+#   POST /admin/agendamento/<id>/substituto
+# ===========================================
+@app.route('/admin/agendamento/<int:ag_id>/substituto', methods=['POST'])
+@login_required
+def admin_set_substituto_agendamento(ag_id):
+    # ✅ trava no backend (mesmo que alguém force o JS)
+    if getattr(current_user, "tipo", "") != "administrador":
+        return jsonify({"success": False, "error": "Acesso negado."}), 403
+
+    ag = Agendamento.query.get(ag_id)
+    if not ag:
+        return jsonify({"success": False, "error": "Agendamento não encontrado."}), 404
+
+    payload = request.get_json(silent=True) or {}
+    nome = (payload.get("nome_substituto") or "").strip()
+
+    # opcional: limite defensivo
+    if len(nome) > 255:
+        return jsonify({"success": False, "error": "Nome do substituto muito longo (máx. 255)."}), 400
+
+    # vazio => remove
+    ag.nome_substituto = nome if nome else None
+
+    try:
+        db.session.commit()
+        return jsonify({"success": True}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"success": False, "error": "Erro ao salvar substituição."}), 500
 
 # ===========================================
 # COMPLETAR DADOS OBRIGATÓRIOS
@@ -2966,6 +3048,7 @@ def admin_agendamentos():
         return redirect(url_for('index'))
     return render_template("admin_agendamentos.html")
 
+
 @app.route('/admin/agendamentos/ajax', methods=['GET'])
 @login_required
 def admin_agendamentos_ajax():
@@ -3018,12 +3101,22 @@ def admin_agendamentos_ajax():
                         continue
 
                 ag_dt = _get_ag_datetime(ag)
+
+                # ✅ NOVO: incluir substituição no JSON para o HTML conseguir exibir/editar
+                nome_sub = (getattr(ag, "nome_substituto", None) or "").strip()
+                subs_flag = (getattr(ag, "substituicao", None) or "").strip()
+
                 ags_tmp.append({
                     "id": ag.id,
                     "data": _fmt_br(ag_dt),
                     "motivo": getattr(ag, "motivo", None),
                     "status": ag_status_raw.title() if ag_status_raw else "",
                     "delete_url": url_for('admin_delete_agendamento', id=ag.id),
+
+                    # ✅ enviados para o front
+                    "nome_substituto": nome_sub or None,
+                    "substituicao": subs_flag or None,
+
                     "_ord": _ord_key(ag_dt)
                 })
 
@@ -3057,6 +3150,7 @@ def admin_agendamentos_ajax():
         app.logger.exception("Erro em /admin/agendamentos/ajax")
         return jsonify({"error": "Erro interno ao carregar agendamentos."}), 500
 
+
 # Exempt + validação manual do header CSRF
 @csrf.exempt
 @app.route('/admin/delete_agendamento/<int:id>', methods=['POST'])
@@ -3077,6 +3171,50 @@ def admin_delete_agendamento(id):
         db.session.rollback()
         app.logger.exception("Erro ao excluir agendamento")
         return jsonify({"error": "Não foi possível excluir o agendamento."}), 500
+
+# ✅ NOVA ROTA (necessária para o HTML de admin_agendamentos conseguir salvar a substituição)
+# Endpoint usado pelo JS do HTML: POST /admin/agendamento/<id>/substituto
+# Body JSON: {"nome_substituto": "Fulana de Tal"}  (ou "" para limpar)
+@csrf.exempt
+@app.route('/admin/agendamento/<int:id>/substituto', methods=['POST'])
+@login_required
+def admin_agendamento_set_substituto(id):
+    if getattr(current_user, 'tipo', None) != 'administrador':
+        return jsonify({"success": False, "error": "Acesso negado"}), 403
+
+    if not _csrf_ok_from_header(request):
+        return jsonify({"success": False, "error": "CSRF inválido ou ausente."}), 400
+
+    ag = Agendamento.query.get_or_404(id)
+
+    payload = request.get_json(silent=True) or {}
+    nome = (payload.get("nome_substituto") or "").strip()
+
+    # validação simples de tamanho
+    if len(nome) > 255:
+        return jsonify({"success": False, "error": "Nome do substituto muito longo (máx. 255)."}), 400
+
+    try:
+        if nome:
+            ag.nome_substituto = nome
+            # mantém coerência com seu model (string "Sim"/"Não")
+            ag.substituicao = "Sim"
+        else:
+            ag.nome_substituto = None
+            ag.substituicao = "Não"
+
+        db.session.commit()
+        return jsonify({
+            "success": True,
+            "id": ag.id,
+            "nome_substituto": ag.nome_substituto,
+            "substituicao": ag.substituicao
+        }), 200
+
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Erro ao salvar substituição no agendamento %s", id)
+        return jsonify({"success": False, "error": "Não foi possível salvar a substituição."}), 500
 
 # ===========================================
 # RESUMO DE USUÁRIOS / SALDOS (ADMIN)
@@ -3105,6 +3243,7 @@ def user_info_all():
             user_q = user_q.filter(User.ativo.is_(True))
         elif status_filtro == 'inativos':
             user_q = user_q.filter(User.ativo.is_(False))
+        # status == 'todos' -> não filtra
 
     if q:
         user_q = user_q.filter(User.nome.ilike(f'%{q}%'))
@@ -3159,7 +3298,6 @@ def user_info_all():
         ag_tipoF = getattr(Ag, 'tipo_folga')
 
         status_cond = func.lower(ag_stat) == 'deferido'
-
         ab_filter = or_(func.upper(ag_tipoF) == 'AB', func.upper(ag_mot) == 'AB')
 
         rows = (
@@ -3246,6 +3384,26 @@ def user_info_all():
         status=status_filtro
     )
 
+
+# ===========================================
+# (RECOMENDADO) TRATAR ERRO DE CSRF EM AJAX
+# - Se você usa Flask-WTF / CSRFProtect, isso evita seu JS receber HTML/400
+# ===========================================
+try:
+    from flask_wtf.csrf import CSRFError
+except Exception:
+    CSRFError = None
+
+if CSRFError is not None:
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        # Se for requisição AJAX, devolve JSON (seu JS entende)
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify(success=False, error='Falha de segurança (CSRF). Recarregue a página e tente novamente.'), 400
+        # Caso contrário, mantém resposta padrão (você pode renderizar um template se quiser)
+        return "Falha de segurança (CSRF). Recarregue a página e tente novamente.", 400
+
+
 # ===========================================
 # TOGGLE ATIVO / INATIVO
 # ===========================================
@@ -3257,20 +3415,39 @@ def toggle_user_ativo(user_id):
 
     user = User.query.get_or_404(user_id)
 
+    # Se o model não tiver o campo ativo, evita quebrar
+    if not hasattr(user, 'ativo'):
+        return jsonify(success=False, error='Campo "ativo" não existe no usuário.'), 400
+
     current_app.logger.info("Alterando status do usuário %s (antes: %s)", user.id, user.ativo)
 
-    payload = request.get_json(silent=True) or {}
+    # Aceita JSON (fetch) ou form (caso alguém poste via form)
+    payload = request.get_json(silent=True)
+    if payload is None:
+        payload = request.form.to_dict(flat=True) or {}
+
     novo_ativo = payload.get('ativo', None)
 
     if novo_ativo is not None:
         try:
-            if isinstance(novo_ativo, (int, str)):
+            # suporta '0'/'1', 0/1, True/False
+            if isinstance(novo_ativo, str):
+                novo_ativo = novo_ativo.strip().lower()
+                if novo_ativo in ('1', 'true', 't', 'sim', 's', 'yes', 'y'):
+                    user.ativo = True
+                elif novo_ativo in ('0', 'false', 'f', 'nao', 'não', 'n', 'no'):
+                    user.ativo = False
+                else:
+                    # fallback: alterna
+                    user.ativo = not bool(user.ativo)
+            elif isinstance(novo_ativo, (int, float)):
                 user.ativo = bool(int(novo_ativo))
             else:
                 user.ativo = bool(novo_ativo)
         except Exception:
             user.ativo = not bool(user.ativo)
     else:
+        # se não veio "ativo", alterna
         user.ativo = not bool(user.ativo)
 
     try:
