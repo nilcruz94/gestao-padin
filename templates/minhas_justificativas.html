@@ -10,7 +10,7 @@
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
 
   <style>
     :root{
@@ -128,8 +128,10 @@
     .pagination button:disabled{ opacity:.5; cursor:default; }
     .pagination span{ font-size:.85rem; color:#555; }
 
-    /* Modal */
-    .modal{ display:none; position:fixed; z-index:1000; inset:0; background:rgba(0,0,0,.5); justify-content:center; align-items:center; padding:10px; }
+    /* Modal (base) */
+    .modal{ display:none; position:fixed; z-index:1000; inset:0; background:rgba(0,0,0,.55); justify-content:center; align-items:center; padding:10px; }
+
+    /* Confirmação excluir (mantém o layout atual) */
     .modal-content{ background:#fff; padding:20px; border-radius:14px; width:90%; max-width:320px; text-align:center; box-shadow:0 4px 18px rgba(0,0,0,.25); }
     .modal-content h2{ margin:0 0 8px 0; font-size:1.1rem; font-weight:800; color:#111827; }
     .modal-content p{ margin:0 0 14px 0; font-size:.9rem; color:#4b5563; }
@@ -148,18 +150,18 @@
     footer{ background:linear-gradient(to right,#222,#444); color:#ddd; text-align:center; padding:15px 0; font-size:14px; border-top:2px solid #555; box-shadow:0 -2px 10px rgba(0,0,0,.3); width:100%; }
     .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
-    /* ====== (NOVO) Substituição ====== */
+    /* ====== Substituição (célula) ====== */
     .sub-cell{
       display:flex;
       align-items:center;
       justify-content:center;
       gap:8px;
-      max-width:340px;
+      max-width:360px;
       margin:0 auto;
     }
     .sub-text{
       display:inline-block;
-      max-width:240px;
+      max-width:260px;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
@@ -192,20 +194,140 @@
     }
     .sub-edit-btn:active{ transform:translateY(0); }
 
-    /* Input do modal de substituição */
-    .sub-input{
+    /* ====== (NOVO) Modal de Substituição (igual calendário: M/I/T/N) ====== */
+    .sub-modal-content{
+      width:100%;
+      max-width:520px;
+      background:#fff;
+      border-radius:16px;
+      box-shadow:0 18px 60px rgba(0,0,0,.25);
+      overflow:hidden;
+      border:1px solid rgba(148,163,184,.35);
+      text-align:left;
+    }
+    .sub-modal-header{
+      padding:14px 16px;
+      background:linear-gradient(90deg,#f9fafb 0,#eef2ff 100%);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .sub-modal-title{
+      margin:0;
+      font-size:1rem;
+      font-weight:900;
+      color:#0f172a;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .sub-modal-close{
+      border:none;
+      background:transparent;
+      cursor:pointer;
+      color:#64748b;
+      font-size:1.1rem;
+      padding:6px 8px;
+      border-radius:10px;
+      transition:background .15s ease, color .15s ease;
+    }
+    .sub-modal-close:hover{ background:rgba(100,116,139,.12); color:#0f172a; }
+    .sub-modal-body{ padding:14px 16px 16px; background:#fff; }
+    .sub-modal-help{
+      margin:0 0 10px;
+      color:#6b7280;
+      font-size:.86rem;
+      line-height:1.25rem;
+    }
+
+    .sub-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:10px;
+    }
+    @media (max-width:520px){ .sub-grid{ grid-template-columns:1fr; } }
+
+    .sub-modal-field{ display:grid; gap:6px; }
+    .sub-modal-label{
+      font-size:.78rem;
+      text-transform:uppercase;
+      color:#6b7280;
+      letter-spacing:.08em;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:24px;
+      height:24px;
+      border-radius:999px;
+      font-size:.8rem;
+      font-weight:900;
+      background:#eef2ff;
+      color:#1d4ed8;
+      border:1px solid rgba(29,78,216,.25);
+      flex:0 0 auto;
+    }
+    .sub-modal-input{
       width:100%;
       padding:10px 12px;
       border-radius:12px;
       border:1px solid #e5e7eb;
+      font-size:.95rem;
       outline:none;
-      font-size:.92rem;
+      transition:border-color .15s ease, box-shadow .15s ease;
       font-weight:700;
     }
-    .sub-input:focus{
-      border-color:#93c5fd;
-      box-shadow:0 0 0 4px rgba(59,130,246,.12);
+    .sub-modal-input:focus{
+      border-color:#2563eb;
+      box-shadow:0 0 0 1px rgba(37,99,235,.45);
     }
+
+    .sub-modal-actions{
+      display:flex;
+      gap:10px;
+      margin-top:14px;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+    .sub-btn-secondary{
+      padding:9px 12px;
+      border-radius:999px;
+      border:1px solid #e5e7eb;
+      background:#f3f4f6;
+      color:#111827;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .sub-btn-secondary:hover{ background:#e5e7eb; }
+
+    .sub-btn-primary{
+      padding:9px 12px;
+      border-radius:999px;
+      border:1px solid #1d4ed8;
+      background:#2563eb;
+      color:#fff;
+      font-weight:900;
+      cursor:pointer;
+      box-shadow:0 6px 16px rgba(37,99,235,.25);
+    }
+    .sub-btn-primary:hover{ background:#1d4ed8; }
+
+    .sub-btn-danger-soft{
+      padding:9px 12px;
+      border-radius:999px;
+      border:1px solid #fecaca;
+      background:#fee2e2;
+      color:#b91c1c;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .sub-btn-danger-soft:hover{ background:#fecaca; }
   </style>
 </head>
 
@@ -308,7 +430,6 @@
                   <th>Data</th>
                   <th>Motivo</th>
                   <th>Status</th>
-                  <!-- (NOVO) -->
                   <th>Substituição</th>
                   <th>Protocolo</th>
                   <th>Opções</th>
@@ -329,11 +450,11 @@
                 {% set mraw = (ag.motivo or '') %}
                 {% set mkey = (mraw|string)|trim|upper %}
                 {% set sub_nome = (ag.nome_substituto or '')|string|trim %}
+                {% set motivo_label = motivo_map.get(mkey, ag.motivo | default('Não informado')) %}
                 <tr data-status="{{ s }}">
                   <td>{{ ag.data.strftime('%d/%m/%Y') }}</td>
 
-                  <!-- ✅ Motivo: exibe nome extenso quando vier sigla -->
-                  <td>{{ motivo_map.get(mkey, ag.motivo | default('Não informado')) }}</td>
+                  <td>{{ motivo_label }}</td>
 
                   <td>
                     <span class="status-pill
@@ -346,7 +467,7 @@
                     </span>
                   </td>
 
-                  <!-- ✅ (NOVO) Substituição: "-" quando vazio, nome quando preenchido -->
+                  <!-- Substituição -->
                   <td>
                     <div class="sub-cell">
                       <span class="sub-text {% if not sub_nome %}muted{% endif %}">
@@ -357,20 +478,20 @@
                         {% endif %}
                       </span>
 
-                      <!-- botão para editar manualmente depois -->
                       <button
                         type="button"
                         class="sub-edit-btn js-edit-sub"
-                        title="Editar substituição"
+                        title="Editar substituições (M/I/T/N)"
                         data-url="{{ url_for('atualizar_substituto_agendamento', agendamento_id=ag.id) }}"
                         data-current="{{ sub_nome|e }}"
+                        data-info="{{ (ag.data.strftime('%d/%m/%Y') ~ ' — ' ~ motivo_label)|e }}"
                       >
                         <i class="fas fa-pen"></i>
                       </button>
                     </div>
                   </td>
 
-                  <!-- ✅ Protocolo PDF -->
+                  <!-- Protocolo PDF -->
                   <td>
                     <a class="proto-link"
                        href="{{ url_for('agendamento_protocolo', agendamento_id=ag.id) }}"
@@ -423,28 +544,59 @@
     </div>
   </div>
 
-  <!-- (NOVO) Modal de Substituição -->
-  <div id="subModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="subTitle">
-    <div class="modal-content">
-      <h2 id="subTitle">Editar substituição</h2>
-      <p>Informe o nome da substituta. Para remover, deixe em branco e salve.</p>
-
-      <input
-        id="subInput"
-        class="sub-input"
-        type="text"
-        maxlength="255"
-        placeholder="Ex.: Maria Aparecida..."
-        autocomplete="off"
-      />
-
-      <div>
-        <button id="subSaveBtn" type="button" class="btn btn-danger" style="background:#0d6efd; box-shadow:0 6px 14px rgba(13,110,253,.35);">
-          Salvar
+  <!-- ✅ Modal de Substituição (IGUAL ao Calendário: M/I/T/N) -->
+  <div id="subModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="subModalTitle">
+    <div class="sub-modal-content">
+      <div class="sub-modal-header">
+        <h3 class="sub-modal-title" id="subModalTitle">
+          <i class="fas fa-user-edit"></i>
+          Substitutos por Turno (Agendamento)
+        </h3>
+        <button type="button" class="sub-modal-close" aria-label="Fechar" id="subCloseBtn">
+          <i class="fas fa-times"></i>
         </button>
-        <button id="subCancelBtn" type="button" class="btn btn-secondary">
-          Cancelar
-        </button>
+      </div>
+
+      <div class="sub-modal-body">
+        <p class="sub-modal-help" id="subModalHelp">
+          Preencha os turnos (M/I/T/N). Se deixar tudo em branco, remove substitutos.
+        </p>
+
+        <div class="sub-grid">
+          <div class="sub-modal-field">
+            <div class="sub-modal-label"><span class="pill">M</span> Manhã</div>
+            <input id="subM" class="sub-modal-input" type="text" maxlength="255" placeholder="Nome da substituta/substituto">
+          </div>
+
+          <div class="sub-modal-field">
+            <div class="sub-modal-label"><span class="pill">I</span> Intermediário</div>
+            <input id="subI" class="sub-modal-input" type="text" maxlength="255" placeholder="Nome da substituta/substituto">
+          </div>
+
+          <div class="sub-modal-field">
+            <div class="sub-modal-label"><span class="pill">T</span> Tarde</div>
+            <input id="subT" class="sub-modal-input" type="text" maxlength="255" placeholder="Nome da substituta/substituto">
+          </div>
+
+          <div class="sub-modal-field">
+            <div class="sub-modal-label"><span class="pill">N</span> Noite</div>
+            <input id="subN" class="sub-modal-input" type="text" maxlength="255" placeholder="Nome da substituta/substituto">
+          </div>
+        </div>
+
+        <div class="sub-modal-actions">
+          <button type="button" class="sub-btn-danger-soft" id="subClearBtn">
+            <i class="fas fa-eraser"></i>
+            Limpar
+          </button>
+          <button type="button" class="sub-btn-secondary" id="subCancelBtn">
+            Cancelar
+          </button>
+          <button type="button" class="sub-btn-primary" id="subSaveBtn">
+            <i class="fas fa-save"></i>
+            Salvar
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -460,7 +612,9 @@
       if (el) window.csrfToken = el.getAttribute('content');
     })();
 
+    // =========================
     // Modal de exclusão
+    // =========================
     document.addEventListener('DOMContentLoaded', () => {
       let agendamentoIdToDelete = null;
       const modal = document.getElementById('confirmModal');
@@ -481,33 +635,163 @@
       window.addEventListener('pageshow', () => { modal.style.display = 'none'; agendamentoIdToDelete = null; });
     });
 
-    // (NOVO) Modal + atualização de substituição via fetch
+    // =========================================================
+    // Substitutos (IGUAL ao calendário): parse / serialize
+    // =========================================================
+    const SHIFT_KEYS = ['M','I','T','N'];
+
+    function cleanSpaces(s) {
+      return String(s ?? '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function normalizeKey(raw) {
+      const t = cleanSpaces(raw).toUpperCase();
+      if (t === 'M' || t.startsWith('MANH')) return 'M';
+      if (t === 'I' || t.startsWith('INTER')) return 'I';
+      if (t === 'T' || t.startsWith('TAR')) return 'T';
+      if (t === 'N' || t.startsWith('NOI')) return 'N';
+      const c = t.charAt(0);
+      if (SHIFT_KEYS.includes(c)) return c;
+      return null;
+    }
+
+    function parseSubstitutoString(input) {
+      const out = { M:'', I:'', T:'', N:'' };
+
+      let s = String(input ?? '');
+      if (!s.trim()) return out;
+
+      s = s.replace(/^\s*\(?\s*substituto\s*:\s*/i, '');
+      s = s.replace(/\)?\s*$/,'');
+      s = s.replace(/\r\n/g, '\n');
+
+      const unified = s
+        .replace(/[|]/g, ';')
+        .replace(/\n+/g, ';')
+        .replace(/,+/g, ';')
+        .replace(/;+/, ';');
+
+      const re = /(^|[;])\s*(M|I|T|N|MANH[ÃA]?|INTERMEDI[ÁA]RIO|INTERMEDIARIO|TARDE|NOITE)\s*[:=\-]\s*([^;]+)\s*/ig;
+      let found = false;
+      let match;
+      while ((match = re.exec(unified)) !== null) {
+        found = true;
+        const k = normalizeKey(match[2]);
+        const v = cleanSpaces(match[3]);
+        if (!k || !v) continue;
+        if (!out[k]) out[k] = v;
+        else if (out[k].toLowerCase() !== v.toLowerCase()) out[k] = cleanSpaces(out[k] + ' / ' + v);
+      }
+      if (found) return out;
+
+      const parts = unified
+        .split(';')
+        .map(p => cleanSpaces(p))
+        .filter(Boolean);
+
+      if (parts.length === 0) return out;
+      if (parts.length === 1) { out.M = parts[0]; return out; }
+
+      for (let i=0; i<parts.length && i<4; i++) out[SHIFT_KEYS[i]] = parts[i];
+
+      if (parts.length > 4) {
+        const rest = parts.slice(4).join(' / ');
+        out.N = cleanSpaces([out.N, rest].filter(Boolean).join(' / '));
+      }
+
+      return out;
+    }
+
+    function serializeSubstituto(obj) {
+      const pieces = [];
+      for (const k of SHIFT_KEYS) {
+        const v = cleanSpaces(obj?.[k] ?? '');
+        if (!v) continue;
+
+        const normalizedPieces = [];
+        for (const part of v.split('/')) {
+          const c = cleanSpaces(part);
+          if (!c) continue;
+          const key = c.toLowerCase();
+          if (normalizedPieces.some(x => x.toLowerCase() === key)) continue;
+          normalizedPieces.push(c);
+        }
+        pieces.push(`${k}: ${normalizedPieces.join(' / ')}`);
+      }
+      return pieces.join('; ');
+    }
+
+    function setSubCellText(textEl, value) {
+      const v = cleanSpaces(value);
+      if (!textEl) return;
+      if (v) {
+        textEl.textContent = v;
+        textEl.classList.remove('muted');
+      } else {
+        textEl.textContent = '—';
+        textEl.classList.add('muted');
+      }
+    }
+
+    // =========================================================
+    // Modal de Substituição (M/I/T/N) + atualização via fetch
+    // =========================================================
     document.addEventListener('DOMContentLoaded', () => {
       const subModal = document.getElementById('subModal');
-      const subInput = document.getElementById('subInput');
-      const subSaveBtn = document.getElementById('subSaveBtn');
-      const subCancelBtn = document.getElementById('subCancelBtn');
+      const subHelp  = document.getElementById('subModalHelp');
 
-      let currentBtn = null; // botão clicado (tem data-url)
-      let currentTextEl = null; // span da linha
+      const subM = document.getElementById('subM');
+      const subI = document.getElementById('subI');
+      const subT = document.getElementById('subT');
+      const subN = document.getElementById('subN');
+
+      const subSaveBtn   = document.getElementById('subSaveBtn');
+      const subCancelBtn = document.getElementById('subCancelBtn');
+      const subClearBtn  = document.getElementById('subClearBtn');
+      const subCloseBtn  = document.getElementById('subCloseBtn');
+
+      let currentBtn = null;     // botão clicado (tem data-url)
+      let currentTextEl = null;  // span da célula
 
       function openSubModal(btn){
         currentBtn = btn;
         const tr = btn.closest('tr');
         currentTextEl = tr ? tr.querySelector('.sub-text') : null;
 
-        const current = btn.getAttribute('data-current') || '';
-        subInput.value = current;
+        const currentRaw = btn.getAttribute('data-current') || '';
+        const info = btn.getAttribute('data-info') || '';
+
+        if (subHelp) {
+          subHelp.textContent = info
+            ? `Agendamento: ${info}. Preencha M/I/T/N (em branco remove).`
+            : 'Preencha os turnos (M/I/T/N). Se deixar tudo em branco, remove substitutos.';
+        }
+
+        const parsed = parseSubstitutoString(currentRaw);
+        subM.value = parsed.M || '';
+        subI.value = parsed.I || '';
+        subT.value = parsed.T || '';
+        subN.value = parsed.N || '';
 
         subModal.style.display = 'flex';
-        setTimeout(() => subInput.focus(), 50);
+        setTimeout(() => subM.focus(), 50);
       }
 
       function closeSubModal(){
         subModal.style.display = 'none';
-        subSaveBtn.disabled = false;
+        if (subSaveBtn) subSaveBtn.disabled = false;
         currentBtn = null;
         currentTextEl = null;
+      }
+
+      function clearSubTurnos(){
+        subM.value = '';
+        subI.value = '';
+        subT.value = '';
+        subN.value = '';
+        subM.focus();
       }
 
       document.querySelectorAll('.js-edit-sub').forEach(btn => {
@@ -518,7 +802,10 @@
         });
       });
 
-      subCancelBtn?.addEventListener('click', () => closeSubModal());
+      subCancelBtn?.addEventListener('click', closeSubModal);
+      subCloseBtn?.addEventListener('click', closeSubModal);
+      subClearBtn?.addEventListener('click', clearSubTurnos);
+
       subModal?.addEventListener('click', (e) => { if (e.target === subModal) closeSubModal(); });
 
       document.addEventListener('keydown', (e) => {
@@ -533,7 +820,15 @@
         subSaveBtn.disabled = true;
 
         const url = currentBtn.getAttribute('data-url');
-        const nome = (subInput.value || '').trim();
+
+        const obj = {
+          M: subM.value,
+          I: subI.value,
+          T: subT.value,
+          N: subN.value,
+        };
+
+        const serialized = serializeSubstituto(obj); // ✅ igual calendário (M: ...; I: ...)
 
         try{
           const resp = await fetch(url, {
@@ -545,7 +840,7 @@
               'X-CSRF-Token': window.csrfToken || ''
             },
             credentials: 'same-origin',
-            body: JSON.stringify({ nome_substituto: nome })
+            body: JSON.stringify({ nome_substituto: serialized })
           });
 
           if (!resp.ok) {
@@ -565,16 +860,8 @@
           // Atualiza dataset do botão
           currentBtn.setAttribute('data-current', novoNome);
 
-          // Atualiza UI do texto na célula
-          if (currentTextEl) {
-            if (novoNome) {
-              currentTextEl.textContent = novoNome;
-              currentTextEl.classList.remove('muted');
-            } else {
-              currentTextEl.textContent = '—';
-              currentTextEl.classList.add('muted');
-            }
-          }
+          // Atualiza UI da célula
+          setSubCellText(currentTextEl, novoNome);
 
           closeSubModal();
         } catch (err) {
@@ -587,7 +874,9 @@
       window.addEventListener('pageshow', () => closeSubModal());
     });
 
+    // =========================
     // Paginação + filtros (front-end)
+    // =========================
     document.addEventListener('DOMContentLoaded', () => {
       const table = document.getElementById('agendamentosTable');
       if (!table) return;

@@ -8,7 +8,7 @@
   <!-- CSS global do projeto -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
 
   <!-- CSRF: disponibiliza o token para requisições JS -->
   <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -177,13 +177,11 @@
     .employee-header.open i { transform: rotate(180deg); }
 
     .employee-details { display: none; padding: 10px 12px 12px; background: #f9fafb; }
-
     .employee-table-wrapper { overflow-x: auto; border-radius: 10px; background: #ffffff; box-shadow: inset 0 0 0 1px #e5e7eb; }
 
     /* ===== TABELA ===== */
     .employee-table { width: 100%; border-collapse: collapse; min-width: 720px; }
 
-    /* CENTRALIZA TODO O CONTEÚDO */
     .employee-table th,
     .employee-table td {
       padding: 8px 10px;
@@ -205,7 +203,6 @@
 
     .employee-table tbody tr:nth-child(even) { background: #f9fafb; }
 
-    /* ✅ GARANTE ESPAÇO SUFICIENTE PRA A COLUNA AÇÕES (EVITA QUEBRAR EM 2 LINHAS) */
     .employee-table td:last-child,
     .employee-table th:last-child {
       min-width: 280px;
@@ -234,7 +231,7 @@
       border: 1px solid #dbeafe;
       background: #eff6ff;
       color: #1d4ed8;
-      max-width: 320px;
+      max-width: 360px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -247,23 +244,22 @@
       font-weight: 700;
     }
 
-    /* ✅ AÇÕES: 2 BOTÕES LADO A LADO, MESMO TAMANHO, SEM "HAMBURGUER" */
+    /* ✅ AÇÕES */
     .sub-actions {
       display: flex;
-      flex-wrap: nowrap;          /* NÃO QUEBRA LINHA */
+      flex-wrap: nowrap;
       gap: 10px;
-      width: 100%;                /* ocupa a célula inteira */
+      width: 100%;
       justify-content: center;
       align-items: stretch;
     }
 
-    /* força os dois botões a terem o mesmo tamanho e ignorarem width:100% do CSS global */
     .sub-actions .sub-btn,
     .sub-actions .submit-btn {
       flex: 1 1 0;
-      flex-basis: 0;              /* divide igualmente */
-      min-width: 0;               /* permite encolher */
-      width: 0 !important;        /* se o style.css setar width:100%, isso neutraliza */
+      flex-basis: 0;
+      min-width: 0;
+      width: 0 !important;
     }
 
     .sub-actions .btn-text {
@@ -274,7 +270,6 @@
       max-width: 100%;
     }
 
-    /* Botão excluir */
     .submit-btn {
       padding: 7px 12px;
       background-color: #ef4444;
@@ -294,7 +289,6 @@
     .submit-btn i { font-size: 0.85rem; }
     .submit-btn:hover { background-color: #dc2626; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(220,38,38,.45); }
 
-    /* botão de substituição */
     .sub-btn {
       padding: 7px 12px;
       background-color: #2563eb;
@@ -314,12 +308,9 @@
     .sub-btn i { font-size: 0.85rem; }
     .sub-btn:hover { background-color: #1d4ed8; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(37,99,235,.36); }
 
-    /* Ajuste extra pra telas bem estreitas (continua lado a lado) */
     @media (max-width: 420px) {
       .employee-table td:last-child,
-      .employee-table th:last-child {
-        min-width: 240px;
-      }
+      .employee-table th:last-child { min-width: 240px; }
       .sub-actions { gap: 8px; }
       .sub-btn, .submit-btn { padding: 7px 10px; font-size: 0.78rem; }
     }
@@ -333,7 +324,7 @@
     .pagination a:hover { background: #2563eb; color: #ffffff; }
     .pagination span { font-weight: 600; color: var(--text-muted); }
 
-    /* ===== Modal de Substituição ===== */
+    /* ===== Modal base ===== */
     .modal {
       display: none;
       position: fixed;
@@ -345,16 +336,19 @@
       padding: 12px;
     }
     .modal.open { display: flex; }
-    .modal-content {
+
+    /* ✅ (NOVO) Modal estilo calendário: M/I/T/N */
+    .sub-modal-content{
       width: 100%;
-      max-width: 420px;
+      max-width: 520px;
       background: #fff;
       border-radius: 16px;
       box-shadow: 0 18px 60px rgba(0,0,0,.25);
       overflow: hidden;
       border: 1px solid rgba(148, 163, 184, 0.35);
+      text-align: left;
     }
-    .modal-header {
+    .sub-modal-header{
       padding: 14px 16px;
       background: linear-gradient(90deg,#f9fafb 0,#eef2ff 100%);
       display: flex;
@@ -362,16 +356,16 @@
       justify-content: space-between;
       gap: 10px;
     }
-    .modal-title {
+    .sub-modal-title{
       margin: 0;
       font-size: 1rem;
-      font-weight: 800;
+      font-weight: 900;
       color: #0f172a;
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .modal-close {
+    .sub-modal-close{
       border: none;
       background: transparent;
       cursor: pointer;
@@ -381,30 +375,52 @@
       border-radius: 10px;
       transition: background .15s ease, color .15s ease;
     }
-    .modal-close:hover { background: rgba(100,116,139,.12); color: #0f172a; }
+    .sub-modal-close:hover{ background: rgba(100,116,139,.12); color: #0f172a; }
 
-    .modal-body {
+    .sub-modal-body{
       padding: 14px 16px 16px;
       background: #fff;
     }
-    .modal-help {
+    .sub-modal-help{
       margin: 0 0 10px;
       color: #6b7280;
       font-size: .86rem;
       line-height: 1.25rem;
     }
-    .modal-field {
+
+    .sub-grid{
       display: grid;
-      gap: 6px;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
       margin-top: 10px;
     }
-    .modal-label {
+    @media (max-width: 520px){ .sub-grid{ grid-template-columns: 1fr; } }
+
+    .sub-modal-field{ display: grid; gap: 6px; }
+    .sub-modal-label{
       font-size: .78rem;
       text-transform: uppercase;
       color: #6b7280;
       letter-spacing: .08em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    .modal-input {
+    .pill{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      font-size: .8rem;
+      font-weight: 900;
+      background: #eef2ff;
+      color: #1d4ed8;
+      border: 1px solid rgba(29,78,216,.25);
+      flex: 0 0 auto;
+    }
+    .sub-modal-input{
       width: 100%;
       padding: 10px 12px;
       border-radius: 12px;
@@ -412,49 +428,53 @@
       font-size: .95rem;
       outline: none;
       transition: border-color .15s ease, box-shadow .15s ease;
+      font-weight: 700;
     }
-    .modal-input:focus {
+    .sub-modal-input:focus{
       border-color: #2563eb;
       box-shadow: 0 0 0 1px rgba(37,99,235,.45);
     }
-    .modal-actions {
+
+    .sub-modal-actions{
       display: flex;
       gap: 10px;
       margin-top: 14px;
       flex-wrap: wrap;
       justify-content: center;
     }
-    .btn-secondary {
+    .sub-btn-secondary{
       padding: 9px 12px;
       border-radius: 999px;
       border: 1px solid #e5e7eb;
       background: #f3f4f6;
       color: #111827;
-      font-weight: 800;
+      font-weight: 900;
       cursor: pointer;
     }
-    .btn-secondary:hover { background: #e5e7eb; }
-    .btn-primary {
+    .sub-btn-secondary:hover{ background: #e5e7eb; }
+
+    .sub-btn-primary{
       padding: 9px 12px;
       border-radius: 999px;
       border: 1px solid #1d4ed8;
       background: #2563eb;
       color: #fff;
-      font-weight: 800;
+      font-weight: 900;
       cursor: pointer;
       box-shadow: 0 6px 16px rgba(37,99,235,.25);
     }
-    .btn-primary:hover { background: #1d4ed8; }
-    .btn-danger-soft {
+    .sub-btn-primary:hover{ background: #1d4ed8; }
+
+    .sub-btn-danger-soft{
       padding: 9px 12px;
       border-radius: 999px;
       border: 1px solid #fecaca;
       background: #fee2e2;
       color: #b91c1c;
-      font-weight: 800;
+      font-weight: 900;
       cursor: pointer;
     }
-    .btn-danger-soft:hover { background: #fecaca; }
+    .sub-btn-danger-soft:hover{ background: #fecaca; }
 
     /* Footer */
     footer {
@@ -595,38 +615,55 @@
     </div>
   </main>
 
-  <!-- Modal Substituição (Admin) -->
+  <!-- ✅ Modal Substituição (Admin) IGUAL ao calendário: M/I/T/N -->
   <div id="subModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="subModalTitle">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 class="modal-title" id="subModalTitle">
+    <div class="sub-modal-content">
+      <div class="sub-modal-header">
+        <h3 class="sub-modal-title" id="subModalTitle">
           <i class="fas fa-user-edit"></i>
-          Substituição (Agendamento)
+          Substitutos por Turno (Agendamento)
         </h3>
-        <button type="button" class="modal-close" aria-label="Fechar" onclick="closeSubModal()">
+        <button type="button" class="sub-modal-close" aria-label="Fechar" id="subCloseBtn">
           <i class="fas fa-times"></i>
         </button>
       </div>
 
-      <div class="modal-body">
-        <p class="modal-help" id="subModalHelp">
-          Informe o nome da substituta/substituto. Se deixar em branco, será removido e ficará como “-”.
+      <div class="sub-modal-body">
+        <p class="sub-modal-help" id="subModalHelp">
+          Preencha os turnos (M/I/T/N). Se deixar tudo em branco, remove substitutos.
         </p>
 
-        <div class="modal-field">
-          <div class="modal-label">Nome do substituto</div>
-          <input id="subNomeInput" class="modal-input" type="text" maxlength="255" placeholder="Ex.: Maria da Silva">
+        <div class="sub-grid">
+          <div class="sub-modal-field">
+            <div class="sub-modal-label"><span class="pill">M</span> Manhã</div>
+            <input id="subM" class="sub-modal-input" type="text" maxlength="255" placeholder="Nome da substituta/substituto">
+          </div>
+
+          <div class="sub-modal-field">
+            <div class="sub-modal-label"><span class="pill">I</span> Intermediário</div>
+            <input id="subI" class="sub-modal-input" type="text" maxlength="255" placeholder="Nome da substituta/substituto">
+          </div>
+
+          <div class="sub-modal-field">
+            <div class="sub-modal-label"><span class="pill">T</span> Tarde</div>
+            <input id="subT" class="sub-modal-input" type="text" maxlength="255" placeholder="Nome da substituta/substituto">
+          </div>
+
+          <div class="sub-modal-field">
+            <div class="sub-modal-label"><span class="pill">N</span> Noite</div>
+            <input id="subN" class="sub-modal-input" type="text" maxlength="255" placeholder="Nome da substituta/substituto">
+          </div>
         </div>
 
-        <div class="modal-actions">
-          <button type="button" class="btn-danger-soft" onclick="clearSubNome()">
+        <div class="sub-modal-actions">
+          <button type="button" class="sub-btn-danger-soft" id="subClearBtn">
             <i class="fas fa-eraser"></i>
             Limpar
           </button>
-          <button type="button" class="btn-secondary" onclick="closeSubModal()">
+          <button type="button" class="sub-btn-secondary" id="subCancelBtn">
             Cancelar
           </button>
-          <button type="button" class="btn-primary" onclick="saveSubNome()">
+          <button type="button" class="sub-btn-primary" id="subSaveBtn">
             <i class="fas fa-save"></i>
             Salvar
           </button>
@@ -704,6 +741,104 @@
     function getItemDateMillis(ag) {
       const candidate = ag.data_ordem || ag.data_iso || ag.data;
       return parseDateToMillis(candidate);
+    }
+
+    // =========================================================
+    // Substitutos (IGUAL ao calendário): parse / serialize
+    // =========================================================
+    const SHIFT_KEYS = ['M','I','T','N'];
+
+    function cleanSpaces(s) {
+      return String(s ?? '').replace(/\s+/g, ' ').trim();
+    }
+
+    function normalizeKey(raw) {
+      const t = cleanSpaces(raw).toUpperCase();
+      if (t === 'M' || t.startsWith('MANH')) return 'M';
+      if (t === 'I' || t.startsWith('INTER')) return 'I';
+      if (t === 'T' || t.startsWith('TAR')) return 'T';
+      if (t === 'N' || t.startsWith('NOI')) return 'N';
+      const c = t.charAt(0);
+      if (SHIFT_KEYS.includes(c)) return c;
+      return null;
+    }
+
+    function parseSubstitutoString(input) {
+      const out = { M:'', I:'', T:'', N:'' };
+
+      let s = String(input ?? '');
+      if (!s.trim()) return out;
+
+      s = s.replace(/^\s*\(?\s*substituto\s*:\s*/i, '');
+      s = s.replace(/\)?\s*$/,'');
+      s = s.replace(/\r\n/g, '\n');
+
+      const unified = s
+        .replace(/[|]/g, ';')
+        .replace(/\n+/g, ';')
+        .replace(/,+/g, ';')
+        .replace(/;+/, ';');
+
+      const re = /(^|[;])\s*(M|I|T|N|MANH[ÃA]?|INTERMEDI[ÁA]RIO|INTERMEDIARIO|TARDE|NOITE)\s*[:=\-]\s*([^;]+)\s*/ig;
+      let found = false;
+      let match;
+      while ((match = re.exec(unified)) !== null) {
+        found = true;
+        const k = normalizeKey(match[2]);
+        const v = cleanSpaces(match[3]);
+        if (!k || !v) continue;
+        if (!out[k]) out[k] = v;
+        else if (out[k].toLowerCase() !== v.toLowerCase()) out[k] = cleanSpaces(out[k] + ' / ' + v);
+      }
+      if (found) return out;
+
+      const parts = unified
+        .split(';')
+        .map(p => cleanSpaces(p))
+        .filter(Boolean);
+
+      if (parts.length === 0) return out;
+      if (parts.length === 1) { out.M = parts[0]; return out; }
+
+      for (let i=0; i<parts.length && i<4; i++) out[SHIFT_KEYS[i]] = parts[i];
+
+      if (parts.length > 4) {
+        const rest = parts.slice(4).join(' / ');
+        out.N = cleanSpaces([out.N, rest].filter(Boolean).join(' / '));
+      }
+
+      return out;
+    }
+
+    function serializeSubstituto(obj) {
+      const pieces = [];
+      for (const k of SHIFT_KEYS) {
+        const v = cleanSpaces(obj?.[k] ?? '');
+        if (!v) continue;
+
+        const normalizedPieces = [];
+        for (const part of v.split('/')) {
+          const c = cleanSpaces(part);
+          if (!c) continue;
+          const key = c.toLowerCase();
+          if (normalizedPieces.some(x => x.toLowerCase() === key)) continue;
+          normalizedPieces.push(c);
+        }
+        pieces.push(`${k}: ${normalizedPieces.join(' / ')}`);
+      }
+      return pieces.join('; ');
+    }
+
+    function setSubCellHTML(rowEl, nomeStr) {
+      const cell = rowEl ? rowEl.querySelector('.sub-cell') : null;
+      const v = cleanSpaces(nomeStr);
+      if (!cell) return;
+
+      if (v) {
+        cell.innerHTML = `<span class="sub-badge" title="${escapeHtml(v)}"><i class="fas fa-user-friends"></i>${escapeHtml(v)}</span>`;
+      } else {
+        cell.innerHTML = `<span class="sub-badge muted" title="Sem substituição">-</span>`;
+      }
     }
 
     async function carregarAgendamentos(page = 1) {
@@ -789,16 +924,17 @@
                 : `<span class="sub-badge muted" title="Sem substituição">-</span>`;
 
               const safeNomeSub = escapeHtml(nomeSub);
+              const info = `${ag.data || ""} — ${ag.motivo || ""}`;
 
               html += `
-                <tr data-ag-id="${ag.id}" data-sub-nome="${safeNomeSub}">
+                <tr data-ag-id="${ag.id}" data-sub-nome="${safeNomeSub}" data-info="${escapeHtml(info)}">
                   <td>${escapeHtml(ag.data || "")}</td>
                   <td>${escapeHtml(ag.motivo || "")}</td>
                   <td><span class="${cls}">${icon} ${escapeHtml(label)}</span></td>
                   <td class="sub-cell">${subHtml}</td>
                   <td>
                     <div class="sub-actions">
-                      <button type="button" class="sub-btn" onclick="openSubModal(${ag.id})" title="Editar substituição">
+                      <button type="button" class="sub-btn" onclick="openSubModal(${ag.id})" title="Editar substituições (M/I/T/N)">
                         <i class="fas fa-pen"></i>
                         <span class="btn-text">Substituição</span>
                       </button>
@@ -823,13 +959,9 @@
 
           if (data.pages && data.pages > 1) {
             html += `<div class="pagination">`;
-            if (data.has_prev) {
-              html += `<a onclick="carregarAgendamentos(${data.prev_num})">&laquo; Anterior</a>`;
-            }
+            if (data.has_prev) html += `<a onclick="carregarAgendamentos(${data.prev_num})">&laquo; Anterior</a>`;
             html += `<span>Página ${data.page} de ${data.pages}</span>`;
-            if (data.has_next) {
-              html += `<a onclick="carregarAgendamentos(${data.next_num})">Próxima &raquo;</a>`;
-            }
+            if (data.has_next) html += `<a onclick="carregarAgendamentos(${data.next_num})">Próxima &raquo;</a>`;
             html += `</div>`;
           }
         } else {
@@ -892,50 +1024,86 @@
       scheduleLoad(1);
     });
 
-    // ===== Modal / Substituição (Admin) =====
+    // =========================================================
+    // Modal Substituição (Admin) - M/I/T/N
+    // =========================================================
     let subCurrentAgId = null;
+
+    const modal = document.getElementById('subModal');
+    const helpEl = document.getElementById('subModalHelp');
+
+    const inpM = document.getElementById('subM');
+    const inpI = document.getElementById('subI');
+    const inpT = document.getElementById('subT');
+    const inpN = document.getElementById('subN');
+
+    const btnSave   = document.getElementById('subSaveBtn');
+    const btnCancel = document.getElementById('subCancelBtn');
+    const btnClear  = document.getElementById('subClearBtn');
+    const btnClose  = document.getElementById('subCloseBtn');
+
+    function closeSubModal() {
+      modal.classList.remove('open');
+      subCurrentAgId = null;
+      if (btnSave) btnSave.disabled = false;
+      inpM.value = inpI.value = inpT.value = inpN.value = '';
+      if (helpEl) helpEl.textContent = 'Preencha os turnos (M/I/T/N). Se deixar tudo em branco, remove substitutos.';
+    }
+
+    function clearSubTurnos() {
+      inpM.value = '';
+      inpI.value = '';
+      inpT.value = '';
+      inpN.value = '';
+      inpM.focus();
+    }
 
     function openSubModal(agId) {
       subCurrentAgId = agId;
 
       const row = document.querySelector(`tr[data-ag-id="${agId}"]`);
-      const current = row ? (row.getAttribute('data-sub-nome') || '') : '';
+      const currentRaw = row ? (row.getAttribute('data-sub-nome') || '') : '';
+      const info = row ? (row.getAttribute('data-info') || '') : '';
 
-      const modal = document.getElementById('subModal');
-      const input = document.getElementById('subNomeInput');
+      if (helpEl) {
+        helpEl.textContent = info
+          ? `Agendamento: ${info}. Preencha M/I/T/N (em branco remove).`
+          : 'Preencha os turnos (M/I/T/N). Se deixar tudo em branco, remove substitutos.';
+      }
 
-      input.value = current || '';
+      const parsed = parseSubstitutoString(currentRaw);
+      inpM.value = parsed.M || '';
+      inpI.value = parsed.I || '';
+      inpT.value = parsed.T || '';
+      inpN.value = parsed.N || '';
+
       modal.classList.add('open');
-      setTimeout(() => input.focus(), 50);
+      setTimeout(() => inpM.focus(), 50);
     }
 
-    function closeSubModal() {
-      const modal = document.getElementById('subModal');
-      modal.classList.remove('open');
-      subCurrentAgId = null;
-    }
-
-    function clearSubNome() {
-      const input = document.getElementById('subNomeInput');
-      input.value = '';
-      input.focus();
-    }
-
-    async function saveSubNome() {
+    async function saveSubTurnos() {
       if (!subCurrentAgId) return;
 
-      const input = document.getElementById('subNomeInput');
-      const nome = (input.value || '').trim();
-      const csrf = getCSRFToken();
+      btnSave.disabled = true;
+
+      const obj = {
+        M: inpM.value,
+        I: inpI.value,
+        T: inpT.value,
+        N: inpN.value,
+      };
+
+      const serialized = serializeSubstituto(obj); // ✅ "M: ...; I: ...; T: ...; N: ..."
 
       try {
+        const csrf = getCSRFToken();
         const res = await fetch(`/admin/agendamento/${subCurrentAgId}/substituto`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': csrf
           },
-          body: JSON.stringify({ nome_substituto: nome })
+          body: JSON.stringify({ nome_substituto: serialized })
         });
 
         const data = await res.json().catch(() => ({}));
@@ -943,32 +1111,30 @@
         if (!res.ok || !data.success) {
           const msg = data.error || `Erro ao salvar (${res.status}).`;
           showAlert(msg, "error");
+          btnSave.disabled = false;
           return;
         }
 
         const row = document.querySelector(`tr[data-ag-id="${subCurrentAgId}"]`);
         if (row) {
-          row.setAttribute('data-sub-nome', escapeHtml(nome));
-
-          const cell = row.querySelector('.sub-cell');
-          if (cell) {
-            if (nome) {
-              cell.innerHTML = `<span class="sub-badge" title="${escapeHtml(nome)}"><i class="fas fa-user-friends"></i>${escapeHtml(nome)}</span>`;
-            } else {
-              cell.innerHTML = `<span class="sub-badge muted" title="Sem substituição">-</span>`;
-            }
-          }
+          row.setAttribute('data-sub-nome', escapeHtml(serialized));
+          setSubCellHTML(row, serialized);
         }
 
         showAlert("Substituição atualizada com sucesso.", "success");
         closeSubModal();
       } catch (err) {
         showAlert("Falha na conexão ao salvar substituição.", "error");
+        btnSave.disabled = false;
       }
     }
 
+    btnCancel?.addEventListener('click', closeSubModal);
+    btnClose?.addEventListener('click', closeSubModal);
+    btnClear?.addEventListener('click', clearSubTurnos);
+    btnSave?.addEventListener('click', saveSubTurnos);
+
     document.addEventListener('click', (e) => {
-      const modal = document.getElementById('subModal');
       if (!modal.classList.contains('open')) return;
       if (e.target === modal) closeSubModal();
     });

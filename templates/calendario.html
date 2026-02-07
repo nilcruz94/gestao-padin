@@ -6,7 +6,9 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, maximum-scale=3, minimum-scale=1">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
+  <!-- ✅ Carrega TODOS os pesos usados no layout (evita “peso sintético” e variações) -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
   <!-- CSRF: token disponível para o JS -->
   <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -31,10 +33,21 @@
       --card-shadow: 0 14px 34px rgba(15,23,42,.1), 0 2px 4px rgba(15,23,42,.06);
       --radius: 18px;
 
-      /* NOVO: cores para eventos */
+      /* cores para eventos */
       --event: #1d4ed8;
       --event-soft: #e0edff;
       --event-border: rgba(29, 78, 216, .35);
+
+      /* escala desktop p/ títulos */
+      --ag-name-max: 14px;
+      --ag-name-min: 11px;
+      --ag-motivo-size: 12px;
+
+      --ag-title-gap: 6px;
+      --ag-badge-height: 18px;
+
+      /* ✅ Mobile: largura uniforme das colunas (JS ajusta para a maior necessária) */
+      --cal-col-w-mobile: 92px;
     }
 
     *, *::before, *::after { box-sizing: border-box; }
@@ -44,7 +57,15 @@
       font-family: 'Montserrat', sans-serif;
       background: radial-gradient(circle at top, #e0f2ff 0, #f9fafb 45%, #eef2ff 100%);
       color: var(--text-main);
+
+      /* ✅ evita variações por “bold sintético”/fallback */
+      font-synthesis: none;
+      -webkit-text-size-adjust: 100%;
+      text-rendering: geometricPrecision;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
+
     body { display: flex; flex-direction: column; min-height: 100vh; }
     main { flex: 1 0 auto; padding: 24px 12px 60px; box-sizing: border-box; }
     .shell { width: 100%; max-width: 980px; margin: 0 auto; }
@@ -121,7 +142,11 @@
     .page-header-content{ display:flex; flex-direction:column; gap:4px; }
     .page-header-title{ font-size:1.15rem; font-weight:800; margin:0; color:var(--text-main); }
     .page-header-subtitle{ font-size:0.9rem; margin:0; color:var(--text-muted); }
-    @media (max-width:600px){ .page-header-card{ padding:12px 14px; } .page-header-title{ font-size:1.05rem; } .page-header-subtitle{ font-size:0.82rem; } }
+    @media (max-width:600px){
+      .page-header-card{ padding:12px 14px; }
+      .page-header-title{ font-size:1.05rem; }
+      .page-header-subtitle{ font-size:0.82rem; }
+    }
 
     /* ===== BARRA DE NAVEGAÇÃO ===== */
     .calendar-toolbar { width: 100%; max-width: 980px; margin: 0 auto 14px; }
@@ -131,10 +156,11 @@
       background: linear-gradient(to right, #eff6ff, #f9fafb);
       border-radius: 16px; border: 1px solid var(--border-soft); box-shadow: 0 6px 16px rgba(15,23,42,.06);
     }
-    .navigation .button-container { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
+    .navigation .button-container { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; min-width:0; }
     .navigation .button-container:nth-child(1){ justify-content:flex-start; }
     .navigation .button-container:nth-child(2){
       justify-content:center; background:#fff; padding:6px 10px; border-radius:999px; box-shadow:0 4px 14px rgba(15,23,42,.12);
+      min-width:0;
     }
     .navigation .button-container:nth-child(3){ justify-content:flex-end; }
     .navigation a, .navigation button{
@@ -159,25 +185,53 @@
       width:100%; margin:0 auto 10px; background:#fff; border-radius:16px; box-shadow:0 18px 40px rgba(15,23,42,.12);
       padding:18px 18px 22px; border:1px solid rgba(148,163,184,.35); backdrop-filter: blur(10px);
       transition: transform .18s ease-out, box-shadow .18s ease-out, border-color .18s ease-out;
-      overflow-x:auto; -webkit-overflow-scrolling:touch;
+      overflow-x: hidden; /* desktop: não mostrar barra horizontal */
     }
     .calendar-container:hover{ transform: translateY(-2px); box-shadow:0 22px 55px rgba(15,23,42,.16); border-color:var(--primary-soft); }
-    .substituto{ color:#4b5563; font-weight:600; font-size:11px; opacity:.95; display:block; margin-top:2px; }
+    @media (max-width: 768px){
+      .calendar-container{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    }
 
     /* ===== CALENDÁRIO ===== */
-    .calendar{ margin-top:12px; display:grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap:6px; min-width:640px; }
+    .calendar{
+      margin-top:12px;
+      display:grid;
+      grid-template-columns: repeat(7, minmax(0,1fr));
+      gap:6px;
+      width:100%;
+      min-width:0;
+    }
+    @media (max-width: 768px){
+      /* ✅ Mobile: colunas UNIFORMES (todas acompanham a maior) */
+      .calendar{
+        margin-top:10px;
+        gap:5px;
+
+        width: max-content;      /* permite scroll horizontal */
+        min-width: 640px;        /* base mínima */
+
+        grid-template-columns: repeat(7, var(--cal-col-w-mobile));
+      }
+    }
+    .calendar > * { min-width:0; }
+    .calendar .day { min-width:0; }
+
     .calendar .day.weekdays{
       font-weight:600; background:linear-gradient(to bottom,#0ea5e9,#0369a1); color:#f9fafb; text-align:center; padding:6px 0;
       border-radius:10px; font-size:11px; height:34px; min-height:34px; display:flex; justify-content:center; align-items:center;
       text-transform:uppercase; letter-spacing:.06em; box-shadow:0 5px 12px rgba(3,105,161,.4);
     }
+
     .calendar .day:not(.weekdays){
       background:#f9fafb; padding:8px 7px 6px; text-align:right; border-radius:14px; border:1px solid var(--border-soft);
-      min-height:90px; font-size:13px; position:relative; display:flex; flex-direction:column; gap:4px;
+      min-height:90px; font-size:13px; position:relative;
+      display:flex; flex-direction:column; gap:6px;
       transition: border-color .16s, box-shadow .16s, transform .16s, background-color .16s;
-      overflow: hidden;
+      overflow: hidden; /* não vaza */
     }
-    .calendar .day:not(.weekdays):hover{ border-color:var(--primary-soft); background:#fff; box-shadow:0 10px 25px rgba(15,23,42,.12); transform: translateY(-2px); }
+    .calendar .day:not(.weekdays):hover{
+      border-color:var(--primary-soft); background:#fff; box-shadow:0 10px 25px rgba(15,23,42,.12); transform: translateY(-2px);
+    }
 
     .calendar .day.today{
       border:2px solid var(--primary); background:linear-gradient(135deg,#eef2ff,#e0f2fe);
@@ -189,88 +243,317 @@
       border:1px solid rgba(191,219,254,.85);
     }
 
+    /* ===== CARD AGENDAMENTO ===== */
     .agendamento{
-      padding:6px 8px; margin-top:3px; border-radius:10px; font-size:13px; text-align:left; border:1px solid transparent;
-      display:flex; flex-direction:column; align-items:flex-start; line-height:1.35; gap:2px; white-space:normal; word-break:normal; overflow-wrap: break-word;
-      user-select: none;
-    }
-    .agendamento + .agendamento { margin-top:4px; }
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      padding:6px 8px;
+      margin-top:3px;
+      border-radius:10px;
+      font-size:13px;
+      border:1px solid transparent;
+      display:flex;
+      flex-direction:column;
+      line-height:1.25;
+      gap:3px;
+      user-select:none;
+      overflow:hidden;
 
-    .calendar .agenda-em-espera { background:#fed7aa; color:#7c2d12; border-color:var(--warning); font-weight:600; }
+      /* ✅ DESKTOP/MOBILE: estrutura centralizada como no mobile */
+      text-align:center;
+      align-items:stretch;
+    }
+    .agendamento + .agendamento { margin-top:6px; }
+
+    .calendar .agenda-em-espera { background:#fed7aa; color:#7c2d12; border-color:var(--warning); font-weight:700; }
     .calendar .agenda-em-espera:hover { background:#ffedd5; }
-    .calendar .agenda-deferido { background:#a7f3d0; color:#065f46; border-color:var(--success); font-weight:600; }
+    .calendar .agenda-deferido { background:#a7f3d0; color:#065f46; border-color:var(--success); font-weight:700; }
     .calendar .agenda-deferido:hover { background:#d1fae5; }
-    .calendar .agenda-indeferido { background:#fecaca; color:#7f1d1d; border-color:var(--danger); font-weight:600; }
+    .calendar .agenda-indeferido { background:#fecaca; color:#7f1d1d; border-color:var(--danger); font-weight:700; }
     .calendar .agenda-indeferido:hover { background:#fee2e2; }
 
-    /* Somente ADMIN: visual de "clicável" */
     .agendamento.clickable { cursor: pointer; }
     .agendamento.clickable:focus { outline: 2px solid rgba(37,99,235,.65); outline-offset: 2px; }
     .agendamento.clickable:hover { box-shadow: 0 10px 20px rgba(15,23,42,.12); transform: translateY(-1px); }
 
-    /* EVENTO */
+    /* =========================================================
+       ✅ TÍTULO (DESKTOP) — IGUAL AO MOBILE
+       Nome em cima (centralizado)
+       Badge embaixo com largura proporcional ao NOME (ag-title shrink-wrap)
+       ========================================================= */
+    .ag-title{
+      display:inline-flex;
+      flex-direction:column;
+      align-items:stretch;
+      gap:4px;
+
+      /* ✅ faz o bloco "encolher" conforme o nome (até no máx 100%) */
+      width:fit-content;
+      max-width:100%;
+      margin:0 auto;
+
+      font-family:'Montserrat',sans-serif;
+      font-synthesis:none;
+      letter-spacing:0;
+      line-height:1.15;
+    }
+
+    .ag-name{
+      display:inline-block;
+      width:auto;
+      max-width:100%;
+      font-weight:800;
+      font-size: var(--ag-name-max);
+      line-height:1.15;
+
+      /* ✅ mantém 1 linha e corta se precisar */
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:clip;
+
+      text-align:center;
+      letter-spacing:0;
+    }
+
+    .ag-motivo{
+      width:100%;                 /* ✅ iguala ao "bloco do nome" (ag-title) */
+      max-width:100%;
+      font-weight:800;
+      font-size: var(--ag-motivo-size);
+      white-space:nowrap;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height: var(--ag-badge-height);
+      padding:0 10px;
+      border-radius:999px;
+      border:1px solid rgba(15,23,42,.14);
+      background: rgba(255,255,255,.35);
+      box-shadow: 0 1px 0 rgba(15,23,42,.06);
+      letter-spacing:.02em;
+      line-height:1;
+    }
+
+    /* ✅ Fallback desktop: se não couber, libera quebra em 2 linhas (centralizado) */
+    .ag-title.is-wrap{
+      width:100%;
+      max-width:100%;
+    }
+    .ag-title.is-wrap .ag-name{
+      display:block;
+      width:100%;
+      white-space:normal;
+      overflow:visible;
+      overflow-wrap: break-word;
+      text-align:center;
+    }
+    .ag-title.is-wrap .ag-motivo{
+      width:100%;
+    }
+
+    /* ===== SUBSTITUTOS (M/I/T/N) — CENTRALIZADOS NO DESKTOP TAMBÉM ===== */
+    .ag-sub-lines{
+      width:100%;
+      min-width:0;
+      display:grid;
+      gap:2px;
+      justify-items:center; /* ✅ centraliza cada linha */
+      margin-top:2px;
+    }
+
+    .ag-sub-line{
+      width:100%;
+      min-width:0;
+      display:flex;
+      align-items:baseline;
+      gap:4px;
+
+      font-size:11px;
+      font-weight:700;
+      color: rgba(15, 23, 42, .88);
+      line-height:1.15;
+
+      /* ✅ centraliza o conjunto "M: Nome" */
+      justify-content:center;
+      text-align:center;
+
+      white-space:normal;
+      word-break: normal;
+      overflow-wrap: normal;
+      hyphens: none;
+      letter-spacing:0;
+      flex-wrap:wrap;
+    }
+    .ag-sub-line .sub-k{
+      flex:0 0 auto;
+      font-weight:800;
+      white-space:nowrap;
+    }
+    .ag-sub-line .sub-v{
+      flex:0 0 auto;        /* ✅ permite centralizar (sem "esticar") */
+      min-width:0;
+      white-space:normal;
+      word-break: normal;
+      overflow-wrap: normal;
+      hyphens: none;
+      text-align:center;
+    }
+
+    /* ===== MOBILE ===== */
+    @media (max-width: 768px) {
+      .calendar-container { padding: 12px 10px 16px; }
+
+      .navigation { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; }
+      .navigation .button-container:nth-child(1){ grid-column:1; grid-row:1; justify-content:center; }
+      .navigation .button-container:nth-child(3){ grid-column:2; grid-row:1; justify-content:center; }
+      .navigation .button-container:nth-child(2){ grid-column:1 / span 2; grid-row:2; justify-content:center; padding:6px 8px; }
+
+      .navigation a, .navigation button { width:100%; justify-content:center; padding:6px 10px; font-size:11px; }
+      .navigation .button-container:nth-child(2) button { width:auto; }
+      .navigation select { min-width:96px; font-size:11px; padding:6px 30px 6px 12px; }
+
+      .calendar .day.weekdays{ font-size:10px; height:34px; min-height:34px; }
+      .calendar .day:not(.weekdays){
+        font-size:11px;
+        min-height:86px;
+        overflow:hidden;
+      }
+
+      /* ✅ Mobile: cards UNIFORMES (preenchem a coluna inteira) */
+      .agendamento{
+        font-size:12px;
+        padding:6px 8px;
+        width:100%;
+        max-width:100%;
+        align-self:stretch;
+        text-align:center;
+        align-items:stretch;
+      }
+
+      /* ✅ Mobile: Nome em cima, Motivo embaixo pegando 100% da largura */
+      .ag-title{
+        display:flex;
+        flex-direction:column;
+        align-items:stretch;
+        gap:4px;
+        flex-wrap:nowrap;
+        width:100%;
+        max-width:100%;
+        margin:0;
+      }
+
+      .ag-name{
+        width:100%;
+        text-align:center;
+        font-size:13px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:clip;
+        display:block;
+      }
+
+      .ag-motivo{
+        width:100%;
+        justify-content:center;
+        align-self:stretch;
+        font-size:12px;
+        height:20px;
+        padding:0 10px;
+        white-space:nowrap;
+      }
+
+      /* ✅ Centraliza o conteúdo das substituições (M/I/T/N) */
+      .ag-sub-lines{ width:100%; justify-items:center; }
+      .ag-sub-line{
+        width:100%;
+        justify-content:center;
+        flex-wrap:nowrap !important;
+        white-space:nowrap !important;
+        font-size:12px;
+      }
+      .ag-sub-line .sub-k,
+      .ag-sub-line .sub-v{
+        white-space:nowrap !important;
+      }
+      .ag-sub-line .sub-v{
+        flex:0 0 auto;
+        min-width:0;
+        text-align:center;
+      }
+
+      /* Fallback split: M: em cima / Nome embaixo (último recurso) */
+      .ag-sub-line.is-split{
+        flex-wrap:wrap !important;
+        white-space:normal !important;
+      }
+      .ag-sub-line.is-split .sub-k,
+      .ag-sub-line.is-split .sub-v{
+        flex:0 0 100%;
+        white-space:normal !important;
+        word-break: normal !important;
+        overflow-wrap: normal !important;
+        text-align:center;
+      }
+
+      /* ✅ Legenda acompanha a largura total do grid (JS seta min-width inline) */
+      .legenda{ min-width:640px; }
+    }
+
+    /* ===== EVENTO ===== */
     .evento{
       padding:6px 8px; margin-top:3px; border-radius:10px; font-size:12px; text-align:left;
       border:1px solid var(--event-border);
       display:flex; flex-direction:column; align-items:flex-start; line-height:1.25; gap:2px;
       background: var(--event-soft); color: var(--event);
-      font-weight:700;
-      white-space: normal;
-      overflow-wrap: normal;
-      word-break: keep-all;
-      hyphens: none;
+      font-weight:800;
       width: 100%;
       max-width: 100%;
       min-width: 0;
-      overflow: hidden;
+      overflow:hidden;
     }
     .evento .evento-titulo{
       width: 100%;
       min-width: 0;
       display: block;
       text-align: left;
-      white-space: normal;
-      overflow-wrap: normal;
-      word-break: keep-all;
-      hyphens: none;
+
+      white-space: normal !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+      hyphens: none !important;
+
+      line-height: 1.2;
+      font-size: 12px;
+    }
+    @media (max-width: 768px){
+      .evento .evento-titulo{ font-size: 12px; }
     }
     .evento .evento-horario{
       width: 100%;
       text-align: center;
       font-size:10px;
-      font-weight:600;
+      font-weight:700;
       color: rgba(29, 78, 216, .88);
       opacity:.95;
       line-height: 1.2;
+      white-space:nowrap;
     }
 
-    /* Legenda */
+    /* ===== LEGENDA ===== */
     .legenda{
       margin-top:20px; padding:14px 16px 10px; background:linear-gradient(135deg,#f9fafb,#eef2ff);
       border:1px solid var(--border-soft); border-radius:14px; box-shadow:0 10px 30px rgba(15,23,42,.08);
-      font-size:13px; min-width:640px;
+      font-size:13px;
+      width:100%;
+      min-width:0;
+    }
+    @media (max-width: 768px){
+      .legenda{ min-width:640px; }
     }
     .legenda h3{ text-align:left; margin:0 0 10px; color:var(--text-muted); font-size:13px; text-transform:uppercase; letter-spacing:.08em; }
     .legenda div{ display:flex; align-items:center; margin-bottom:6px; gap:10px; font-size:13px; color:var(--text-main); }
     .legenda .cor{ width:22px; height:22px; border-radius:999px; border:1px solid #cbd5f5; box-shadow:0 2px 6px rgba(15,23,42,.16); }
-
-    /* Responsivo */
-    @media (max-width: 768px) {
-      .calendar-container { padding: 12px 10px 16px; }
-      .navigation { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; }
-      .navigation .button-container:nth-child(1){ grid-column:1; grid-row:1; justify-content:center; }
-      .navigation .button-container:nth-child(3){ grid-column:2; grid-row:1; justify-content:center; }
-      .navigation .button-container:nth-child(2){ grid-column:1 / span 2; grid-row:2; justify-content:center; padding:6px 8px; }
-      .navigation a, .navigation button { width:100%; justify-content:center; padding:6px 10px; font-size:12px; }
-      .navigation .button-container:nth-child(2) button { width:auto; }
-      .navigation select { min-width:96px; font-size:12px; padding:6px 30px 6px 12px; }
-      .calendar { margin-top:10px; gap:5px; }
-      .calendar .day.weekdays{ font-size:11px; height:34px; min-height:34px; }
-      .calendar .day:not(.weekdays){ font-size:11px; min-height:80px; }
-      .agendamento{ font-size:11px; padding:4px 6px; }
-      .evento{ font-size:10.5px; padding:4px 6px; }
-      .evento .evento-horario{ font-size:9px; }
-    }
 
     /* ===== MODAL (ADMIN) ===== */
     .modal {
@@ -286,7 +569,7 @@
     .modal.open { display: flex; }
     .modal-content {
       width: 100%;
-      max-width: 420px;
+      max-width: 520px;
       background: #fff;
       border-radius: 16px;
       box-shadow: 0 18px 60px rgba(0,0,0,.25);
@@ -304,7 +587,7 @@
     .modal-title {
       margin: 0;
       font-size: 1rem;
-      font-weight: 800;
+      font-weight: 900;
       color: #0f172a;
       display: flex;
       align-items: center;
@@ -328,12 +611,40 @@
       font-size: .86rem;
       line-height: 1.25rem;
     }
-    .modal-field { display: grid; gap: 6px; margin-top: 10px; }
+
+    .sub-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:10px;
+    }
+    @media (max-width: 520px){
+      .sub-grid{ grid-template-columns: 1fr; }
+    }
+
+    .modal-field { display: grid; gap: 6px; }
     .modal-label {
       font-size: .78rem;
       text-transform: uppercase;
       color: #6b7280;
       letter-spacing: .08em;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:24px;
+      height:24px;
+      border-radius:999px;
+      font-size:.8rem;
+      font-weight:900;
+      background:#eef2ff;
+      color:#1d4ed8;
+      border:1px solid rgba(29,78,216,.25);
+      flex:0 0 auto;
     }
     .modal-input {
       width: 100%;
@@ -361,7 +672,7 @@
       border: 1px solid #e5e7eb;
       background: #f3f4f6;
       color: #111827;
-      font-weight: 800;
+      font-weight: 900;
       cursor: pointer;
     }
     .btn-secondary:hover { background: #e5e7eb; }
@@ -371,7 +682,7 @@
       border: 1px solid #1d4ed8;
       background: #2563eb;
       color: #fff;
-      font-weight: 800;
+      font-weight: 900;
       cursor: pointer;
       box-shadow: 0 6px 16px rgba(37,99,235,.25);
     }
@@ -382,7 +693,7 @@
       border: 1px solid #fecaca;
       background: #fee2e2;
       color: #b91c1c;
-      font-weight: 800;
+      font-weight: 900;
       cursor: pointer;
     }
     .btn-danger-soft:hover { background: #fecaca; }
@@ -400,7 +711,6 @@
 </head>
 
 <body>
-
   {% set can_edit_sub = (current_user.is_authenticated and (current_user.tipo|default('') == 'administrador')) %}
 
   <!-- Cabeçalho Desktop -->
@@ -515,15 +825,11 @@
             <div class="day {% if current_day == hoje %}today{% endif %}">
               {{ day }}
 
-              {# ==========================================================
-                 EVENTOS DA ESCOLA (sempre no topo do dia)
-                 ========================================================== #}
+              {# EVENTOS DA ESCOLA #}
               {% if eventos %}
                 {% for ev in eventos %}
                   <div class="evento" {% if ev.cor %}style="border-color: {{ ev.cor }}55; background: {{ ev.cor }}14; color: {{ ev.cor }};"{% endif %}>
-                    <div class="evento-titulo">
-                      {{ (ev.nome or 'Evento') }}
-                    </div>
+                    <div class="evento-titulo">{{ (ev.nome or 'Evento') }}</div>
 
                     {% if ev.hora_inicio or ev.hora_fim %}
                       <div class="evento-horario">
@@ -540,13 +846,9 @@
                 {% endfor %}
               {% endif %}
 
-              {# ==========================================================
-                 AGENDAMENTOS/FOLGAS
-                 (ADMIN: clicar abre modal de substituição)
-                 ========================================================== #}
+              {# AGENDAMENTOS/FOLGAS #}
               {% if folgas %}
                 {% for folga in folgas %}
-                  {# --------- FILTRO DEFENSIVO PARA ESCONDER AJUSTES DE BH --------- #}
                   {% set motivo_txt = (folga.motivo or folga.tipo or folga.tipo_folga or '')|upper %}
                   {% set texto_obs = (
                         folga.observacao
@@ -560,18 +862,17 @@
                   {% set is_bh = motivo_txt == 'BH' %}
                   {% set is_ajuste = 'ajuste' in texto_obs or 'recupera' in texto_obs or 'retroativ' in texto_obs or 'consumo' in texto_obs or rotina_txt == 'ajuste' %}
                   {% if not (is_bh and is_ajuste) %}
-                    {% set nome = (folga.funcionario.nome or '').split() %}
-                    {% set abreviado = (nome[0] ~ ((' ' ~ nome[1][0] ~ '.') if nome|length > 1 else '')) %}
-                    {% set info_modal = abreviado ~ ' - ' ~ motivo_txt ~ ' (' ~ current_day.strftime('%d/%m/%Y') ~ ')' %}
+
+                    {# ===== NOME NORMALIZADO (somente exibição) ===== #}
+                    {% set nome_full_disp = (folga.funcionario.nome or '')|pt_title %}
+                    {% set abreviado = (folga.funcionario.nome or '')|abbr_name %}
+                    {% set info_modal = nome_full_disp ~ ' — ' ~ motivo_txt ~ ' (' ~ current_day.strftime('%d/%m/%Y') ~ ')' %}
 
                     <div
                       class="agendamento
-                        {% if folga.status == 'em_espera' %}
-                          agenda-em-espera
-                        {% elif folga.status == 'deferido' %}
-                          agenda-deferido
-                        {% elif folga.status == 'indeferido' %}
-                          agenda-indeferido
+                        {% if folga.status == 'em_espera' %}agenda-em-espera
+                        {% elif folga.status == 'deferido' %}agenda-deferido
+                        {% elif folga.status == 'indeferido' %}agenda-indeferido
                         {% endif %}
                         {% if can_edit_sub %} clickable{% endif %}
                       "
@@ -586,13 +887,14 @@
                         onkeydown="handleAgKey(event, this)"
                       {% endif %}
                     >
-                      {{ abreviado }} - {{ motivo_txt }}
-                      <span class="substituto" data-substituto-span="1" {% if not folga.nome_substituto %}style="display:none"{% endif %}>
-                        {% if folga.nome_substituto %}(Substituto: {{ folga.nome_substituto }}){% endif %}
-                      </span>
+                      <div class="ag-title" data-ag-title="1">
+                        <span class="ag-name" data-ag-name="1">{{ abreviado }}</span>
+                        <span class="ag-motivo" data-ag-motivo="1">{{ motivo_txt }}</span>
+                      </div>
+
+                      <div class="ag-sub-lines" data-sub-lines="1"></div>
                     </div>
                   {% endif %}
-                  {# ------------------------------------------------------------------ #}
                 {% endfor %}
               {% endif %}
             </div>
@@ -612,13 +914,12 @@
   </main>
 
   {% if can_edit_sub %}
-  <!-- ===== MODAL Substituição (ADMIN) ===== -->
   <div id="subModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="subModalTitle">
     <div class="modal-content">
       <div class="modal-header">
         <h3 class="modal-title" id="subModalTitle">
           <i class="fas fa-user-edit"></i>
-          Substituição (Agendamento)
+          Substitutos por Turno (Agendamento)
         </h3>
         <button type="button" class="modal-close" aria-label="Fechar" onclick="closeSubModal()">
           <i class="fas fa-times"></i>
@@ -627,16 +928,33 @@
 
       <div class="modal-body">
         <p class="modal-help" id="subModalHelp">
-          Informe o nome da substituta/substituto. Se deixar em branco, será removido e ficará como “-”.
+          Preencha os turnos (M/I/T/N). Se deixar tudo em branco, remove substitutos.
         </p>
 
-        <div class="modal-field">
-          <div class="modal-label">Nome do substituto</div>
-          <input id="subNomeInput" class="modal-input" type="text" maxlength="255" placeholder="Ex.: Maria da Silva">
+        <div class="sub-grid">
+          <div class="modal-field">
+            <div class="modal-label"><span class="pill">M</span> Manhã</div>
+            <input id="subM" class="modal-input" type="text" maxlength="255" placeholder="Nome da substituta/substituto">
+          </div>
+
+          <div class="modal-field">
+            <div class="modal-label"><span class="pill">I</span> Intermediário</div>
+            <input id="subI" class="modal-input" type="text" maxlength="255" placeholder="Nome da substituta/substituto">
+          </div>
+
+          <div class="modal-field">
+            <div class="modal-label"><span class="pill">T</span> Tarde</div>
+            <input id="subT" class="modal-input" type="text" maxlength="255" placeholder="Nome da substituta/substituto">
+          </div>
+
+          <div class="modal-field">
+            <div class="modal-label"><span class="pill">N</span> Noite</div>
+            <input id="subN" class="modal-input" type="text" maxlength="255" placeholder="Nome da substituta/substituto">
+          </div>
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="btn-danger-soft" onclick="clearSubNome()">
+          <button type="button" class="btn-danger-soft" onclick="clearSubTurnos()">
             <i class="fas fa-eraser"></i>
             Limpar
           </button>
@@ -680,22 +998,294 @@
       });
     }
 
-    // ====== ADMIN: Substituição via clique no agendamento ======
-    const CAN_EDIT_SUB = {{ 'true' if can_edit_sub else 'false' }};
+    // ====== SUBSTITUTOS: parse/serialize/render ======
+    const SHIFT_KEYS = ['M','I','T','N'];
 
     function getCSRFToken() {
       const el = document.querySelector('meta[name="csrf-token"]');
       return el ? el.getAttribute('content') : '';
     }
 
-    function escapeHtml(value) {
-      return String(value ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
+    function cleanSpaces(s) {
+      return String(s ?? '')
+        .replace(/\s+/g, ' ')
+        .trim();
     }
+
+    function normalizeKey(raw) {
+      const t = cleanSpaces(raw).toUpperCase();
+      if (t === 'M' || t.startsWith('MANH')) return 'M';
+      if (t === 'I' || t.startsWith('INTER')) return 'I';
+      if (t === 'T' || t.startsWith('TAR')) return 'T';
+      if (t === 'N' || t.startsWith('NOI')) return 'N';
+      const c = t.charAt(0);
+      if (SHIFT_KEYS.includes(c)) return c;
+      return null;
+    }
+
+    function parseSubstitutoString(input) {
+      const out = { M:'', I:'', T:'', N:'' };
+
+      let s = String(input ?? '');
+      if (!s.trim()) return out;
+
+      s = s.replace(/^\s*\(?\s*substituto\s*:\s*/i, '');
+      s = s.replace(/\)?\s*$/,'');
+      s = s.replace(/\r\n/g, '\n');
+
+      const unified = s
+        .replace(/[|]/g, ';')
+        .replace(/\n+/g, ';')
+        .replace(/,+/g, ';')
+        .replace(/;+/, ';');
+
+      const re = /(^|[;])\s*(M|I|T|N|MANH[ÃA]?|INTERMEDI[ÁA]RIO|INTERMEDIARIO|TARDE|NOITE)\s*[:=\-]\s*([^;]+)\s*/ig;
+      let found = false;
+      let match;
+      while ((match = re.exec(unified)) !== null) {
+        found = true;
+        const k = normalizeKey(match[2]);
+        const v = cleanSpaces(match[3]);
+        if (!k || !v) continue;
+        if (!out[k]) out[k] = v;
+        else if (out[k].toLowerCase() !== v.toLowerCase()) out[k] = cleanSpaces(out[k] + ' / ' + v);
+      }
+      if (found) return out;
+
+      const parts = unified
+        .split(';')
+        .map(p => cleanSpaces(p))
+        .filter(Boolean);
+
+      if (parts.length === 0) return out;
+      if (parts.length === 1) { out.M = parts[0]; return out; }
+
+      for (let i=0; i<parts.length && i<4; i++) out[SHIFT_KEYS[i]] = parts[i];
+
+      if (parts.length > 4) {
+        const rest = parts.slice(4).join(' / ');
+        out.N = cleanSpaces([out.N, rest].filter(Boolean).join(' / '));
+      }
+
+      return out;
+    }
+
+    function serializeSubstituto(obj) {
+      const pieces = [];
+      for (const k of SHIFT_KEYS) {
+        const v = cleanSpaces(obj?.[k] ?? '');
+        if (!v) continue;
+
+        const normalizedPieces = [];
+        for (const part of v.split('/')) {
+          const c = cleanSpaces(part);
+          if (!c) continue;
+          const key = c.toLowerCase();
+          if (normalizedPieces.some(x => x.toLowerCase() === key)) continue;
+          normalizedPieces.push(c);
+        }
+        pieces.push(`${k}: ${normalizedPieces.join(' / ')}`);
+      }
+      return pieces.join('; ');
+    }
+
+    function renderSubLinesForEl(agEl) {
+      const box = agEl.querySelector('[data-sub-lines="1"]');
+      if (!box) return;
+
+      const raw = (agEl.getAttribute('data-sub-nome') || '').trim();
+      const parsed = parseSubstitutoString(raw);
+
+      box.innerHTML = '';
+      for (const k of SHIFT_KEYS) {
+        const v = cleanSpaces(parsed[k]);
+        if (!v) continue;
+
+        const div = document.createElement('div');
+        div.className = 'ag-sub-line';
+
+        const sK = document.createElement('span');
+        sK.className = 'sub-k';
+        sK.textContent = `${k}:`;
+
+        const sV = document.createElement('span');
+        sV.className = 'sub-v';
+        sV.textContent = v;
+
+        div.appendChild(sK);
+        div.appendChild(sV);
+        box.appendChild(div);
+      }
+    }
+
+    // ====== MOBILE: colunas uniformes (todas acompanham a MAIOR largura necessária) ======
+    function syncMobileColumnWidth() {
+      if (!window.matchMedia('(max-width: 768px)').matches) return;
+
+      const cal = document.querySelector('.calendar');
+      if (!cal) return;
+
+      let maxContent = 92;
+
+      cal.querySelectorAll('.ag-name, .ag-sub-line, .evento .evento-titulo').forEach((el) => {
+        maxContent = Math.max(maxContent, el.scrollWidth || 0);
+      });
+
+      const sampleDay = cal.querySelector('.day:not(.weekdays)');
+      const sampleAg  = cal.querySelector('.agendamento');
+      const sampleEv  = cal.querySelector('.evento');
+
+      const px = (v) => {
+        const n = parseFloat(String(v || '0').replace('px',''));
+        return Number.isFinite(n) ? n : 0;
+      };
+
+      const dayPad = sampleDay ? (px(getComputedStyle(sampleDay).paddingLeft) + px(getComputedStyle(sampleDay).paddingRight)) : 14;
+      const agPad  = sampleAg  ? (px(getComputedStyle(sampleAg).paddingLeft)  + px(getComputedStyle(sampleAg).paddingRight))  : 16;
+      const evPad  = sampleEv  ? (px(getComputedStyle(sampleEv).paddingLeft)  + px(getComputedStyle(sampleEv).paddingRight))  : 16;
+
+      const innerPad = Math.max(agPad, evPad);
+      const extra = 10;
+
+      const colW = Math.ceil(maxContent + dayPad + innerPad + extra);
+
+      cal.style.setProperty('--cal-col-w-mobile', `${colW}px`);
+
+      const legenda = document.querySelector('.legenda');
+      if (legenda) {
+        const gap = px(getComputedStyle(cal).gap) || 5;
+        const totalW = (colW * 7) + (gap * 6);
+        legenda.style.minWidth = `${Math.max(640, totalW)}px`;
+      }
+    }
+
+    // ====== MOBILE: substitutos 1 linha primeiro (reduz fonte; fallback split) ======
+    function fitSubLinesMobile() {
+      if (!window.matchMedia('(max-width: 768px)').matches) return;
+
+      const MAX_PX = 12;
+      const MIN_PX = 11;
+
+      document.querySelectorAll('.ag-sub-line').forEach((line) => {
+        line.classList.remove('is-split');
+        line.style.fontSize = `${MAX_PX}px`;
+
+        let fits = (line.scrollWidth <= line.clientWidth + 1);
+
+        if (!fits) {
+          for (let px = MAX_PX - 1; px >= MIN_PX; px--) {
+            line.style.fontSize = `${px}px`;
+            fits = (line.scrollWidth <= line.clientWidth + 1);
+            if (fits) break;
+          }
+        }
+
+        if (!fits) {
+          line.classList.add('is-split');
+          line.style.fontSize = '12px';
+        }
+      });
+    }
+
+    function getLineHeightPx(el) {
+      const cs = window.getComputedStyle(el);
+      const lh = parseFloat(cs.lineHeight);
+      if (!Number.isFinite(lh) || lh <= 0) {
+        const fs = parseFloat(cs.fontSize) || 12;
+        return fs * 1.2;
+      }
+      return lh;
+    }
+
+    function countLines(el) {
+      const lh = getLineHeightPx(el);
+      const h = el.scrollHeight;
+      return Math.max(1, Math.round(h / lh));
+    }
+
+    function fitEventoTitlesMobile() {
+      if (!window.matchMedia('(max-width: 768px)').matches) return;
+
+      const MAX_PX = 13;
+      const MIN_PX = 11;
+
+      document.querySelectorAll('.evento .evento-titulo').forEach((t) => {
+        t.style.fontSize = `${MAX_PX}px`;
+
+        const okNow = () => (countLines(t) <= 2) && (t.scrollWidth <= t.clientWidth + 1);
+
+        if (okNow()) return;
+
+        for (let px = MAX_PX - 1; px >= MIN_PX; px--) {
+          t.style.fontSize = `${px}px`;
+          if (okNow()) break;
+        }
+      });
+    }
+
+    // ====== DESKTOP: shrink controlado + fallback ======
+    function fitAgendamentoTitlesDesktop() {
+      if (window.matchMedia('(max-width: 768px)').matches) return;
+
+      const titles = document.querySelectorAll('.agendamento [data-ag-title="1"]');
+      if (!titles.length) return;
+
+      const rootStyles = getComputedStyle(document.documentElement);
+      const MAX_PX = parseInt(rootStyles.getPropertyValue('--ag-name-max')) || 14;
+      const MIN_PX = parseInt(rootStyles.getPropertyValue('--ag-name-min')) || 11;
+      const EPS = 2;
+
+      const setFont = (el, px) => el.style.setProperty('font-size', `${px}px`);
+      const isOverflowing = (el) => (el.scrollWidth > (el.clientWidth + EPS));
+
+      for (const title of titles) {
+        const nameEl = title.querySelector('[data-ag-name="1"]');
+        const badgeEl = title.querySelector('[data-ag-motivo="1"]');
+        if (!nameEl || !badgeEl) continue;
+
+        title.classList.remove('is-wrap');
+        nameEl.style.whiteSpace = 'nowrap';
+        nameEl.style.overflow = 'hidden';
+        setFont(nameEl, MAX_PX);
+
+        if (!isOverflowing(nameEl)) continue;
+
+        let fitted = false;
+        for (let px = MAX_PX - 1; px >= MIN_PX; px--) {
+          setFont(nameEl, px);
+          if (!isOverflowing(nameEl)) { fitted = true; break; }
+        }
+        if (fitted) continue;
+
+        title.classList.add('is-wrap');
+        setFont(nameEl, MAX_PX);
+        nameEl.style.whiteSpace = 'normal';
+        nameEl.style.overflow = 'visible';
+      }
+    }
+
+    function scheduleRefitAll() {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          syncMobileColumnWidth();
+          fitAgendamentoTitlesDesktop();
+          fitSubLinesMobile();
+          fitEventoTitlesMobile();
+        });
+      });
+
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => {
+          syncMobileColumnWidth();
+          fitAgendamentoTitlesDesktop();
+          fitSubLinesMobile();
+          fitEventoTitlesMobile();
+        });
+      }
+    }
+
+    // ====== ADMIN: Modal M/I/T/N ======
+    const CAN_EDIT_SUB = {{ 'true' if can_edit_sub else 'false' }};
 
     {% if can_edit_sub %}
     let subCurrentAgId = null;
@@ -710,20 +1300,24 @@
       subCurrentAgId = agId;
       subCurrentEl = el;
 
-      const current = (el.getAttribute('data-sub-nome') || '').trim();
+      const raw = (el.getAttribute('data-sub-nome') || '').trim();
       const info = (el.getAttribute('data-info') || '').trim();
+      const parsed = parseSubstitutoString(raw);
 
       const modal = document.getElementById('subModal');
-      const input = document.getElementById('subNomeInput');
       const help  = document.getElementById('subModalHelp');
 
       if (help && info) {
-        help.textContent = `Agendamento: ${info}. Informe o nome da substituta/substituto (em branco remove).`;
+        help.textContent = `Agendamento: ${info}. Preencha M/I/T/N (em branco remove).`;
       }
 
-      input.value = current || '';
+      document.getElementById('subM').value = parsed.M || '';
+      document.getElementById('subI').value = parsed.I || '';
+      document.getElementById('subT').value = parsed.T || '';
+      document.getElementById('subN').value = parsed.N || '';
+
       modal.classList.add('open');
-      setTimeout(() => input.focus(), 50);
+      setTimeout(() => document.getElementById('subM').focus(), 50);
     }
 
     function handleAgKey(e, el) {
@@ -741,31 +1335,39 @@
       subCurrentEl = null;
     }
 
-    function clearSubNome() {
-      const input = document.getElementById('subNomeInput');
-      input.value = '';
-      input.focus();
+    function clearSubTurnos() {
+      document.getElementById('subM').value = '';
+      document.getElementById('subI').value = '';
+      document.getElementById('subT').value = '';
+      document.getElementById('subN').value = '';
+      document.getElementById('subM').focus();
     }
 
     async function saveSubNome() {
       if (!CAN_EDIT_SUB || !subCurrentAgId) return;
 
-      const input = document.getElementById('subNomeInput');
       const btn = document.getElementById('btnSaveSub');
-      const nome = (input.value || '').trim();
       const csrf = getCSRFToken();
+
+      const obj = {
+        M: document.getElementById('subM').value,
+        I: document.getElementById('subI').value,
+        T: document.getElementById('subT').value,
+        N: document.getElementById('subN').value,
+      };
+
+      const serialized = serializeSubstituto(obj);
 
       try {
         if (btn) { btn.disabled = true; btn.style.opacity = '0.7'; }
 
-        // ✅ SOMENTE ROTA ADMIN (sem fallback)
         const res = await fetch(`/admin/agendamento/${subCurrentAgId}/substituto`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': csrf
           },
-          body: JSON.stringify({ nome_substituto: nome })
+          body: JSON.stringify({ nome_substituto: serialized })
         });
 
         const data = await res.json().catch(() => ({}));
@@ -776,43 +1378,49 @@
           return;
         }
 
-        // Atualiza DOM do "agendamento" clicado
         if (subCurrentEl) {
-          subCurrentEl.setAttribute('data-sub-nome', escapeHtml(nome));
-
-          const span = subCurrentEl.querySelector('[data-substituto-span="1"]');
-          if (span) {
-            if (nome) {
-              span.style.display = 'block';
-              span.textContent = `(Substituto: ${nome})`;
-            } else {
-              span.style.display = 'none';
-              span.textContent = '';
-            }
-          }
+          subCurrentEl.setAttribute('data-sub-nome', serialized);
+          renderSubLinesForEl(subCurrentEl);
+          scheduleRefitAll();
         }
 
-        alert("Substituição atualizada com sucesso.");
+        alert("Substitutos atualizados com sucesso.");
         closeSubModal();
       } catch (err) {
-        alert("Falha na conexão ao salvar substituição.");
+        alert("Falha na conexão ao salvar substitutos.");
       } finally {
         if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
       }
     }
 
-    // Fechar modal clicando fora
     document.addEventListener('click', (e) => {
       const modal = document.getElementById('subModal');
       if (!modal || !modal.classList.contains('open')) return;
       if (e.target === modal) closeSubModal();
     });
 
-    // Fechar modal no ESC
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeSubModal();
     });
     {% endif %}
+
+    // ====== INIT ======
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.agendamento').forEach(el => renderSubLinesForEl(el));
+      scheduleRefitAll();
+
+      let t = null;
+      window.addEventListener('resize', () => {
+        clearTimeout(t);
+        t = setTimeout(() => {
+          scheduleRefitAll();
+        }, 160);
+      });
+
+      window.addEventListener('load', () => {
+        scheduleRefitAll();
+      });
+    });
   </script>
 </body>
 </html>

@@ -142,7 +142,7 @@
     .flash {
       padding: 12px 18px;
       margin: 8px auto;
-      border-radius: 14px; /* melhor para textos multilinha (eventos) */
+      border-radius: 14px;
       width: min(920px, calc(100% - 12px));
       font-weight: 700;
       font-size: 0.9rem;
@@ -245,20 +245,16 @@
     }
     .card:hover::before { opacity: 1; }
 
-    /* Títulos e descrições nos cards */
     .card-title { font-size: 0.98rem; font-weight: 800; z-index: 1; }
-
     .card-subtitle {
       margin-top: 6px; font-size: 0.82rem; font-weight: 600; color: #6b7280; z-index: 1;
       line-height: 1.3; max-width: 90%;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
 
-    /* Versões de texto responsivas */
     .desktop-only { display: inline; }
     .mobile-only  { display: none; }
 
-    /* Logout especial */
     .logout-btn {
       background: #fef2f2; color: #b91c1c; border-color: #fecaca; box-shadow: 0 4px 12px rgba(185, 28, 28, 0.35);
     }
@@ -272,10 +268,8 @@
     }
     .logout-btn:hover i { color: #7f1d1d; }
 
-    /* Fazer o botão de logout virar o "card" na grid */
     .cards-grid form.logout-form { display: contents; }
 
-    /* Responsivo das grids + textos curtos no mobile sem ellipsis */
     @media (max-width: 992px) {
       .cards-grid { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
     }
@@ -286,7 +280,6 @@
       .card i { font-size: 22px; margin-bottom: 8px; padding: 9px; }
       .access-services { font-size: 0.9rem; margin-bottom: 10px; }
 
-      /* Mobile: mostrar versão curta e remover clamp (sem …) */
       .desktop-only { display: none; }
       .mobile-only  { display: inline; }
       .card-subtitle {
@@ -308,6 +301,151 @@
       flex-shrink: 0; width: 100%;
     }
     footer p { margin: 5px 0; font-size: 0.9rem; }
+
+    /* =========================================================
+       PATCH NOTES MODAL (novo) - sem depender do style.css global
+       ========================================================= */
+    .patch-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 3000;
+      background: rgba(0,0,0,.55);
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+    .patch-modal.open { display: flex; }
+
+    .patch-modal-content {
+      width: 100%;
+      max-width: 560px;
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      box-shadow: 0 18px 60px rgba(0,0,0,.25);
+      overflow: hidden;
+    }
+    .patch-modal-header {
+      padding: 14px 16px;
+      background: linear-gradient(90deg,#f9fafb 0,#eef2ff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .patch-modal-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .patch-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: .75rem;
+      border: 1px solid #e5e7eb;
+      background: #f3f4f6;
+      color: #111827;
+      white-space: nowrap;
+    }
+    .patch-badge.info { background:#dbeafe; border-color:#bfdbfe; color:#1e3a8a; }
+    .patch-badge.improvement { background:#dcfce7; border-color:#bbf7d0; color:#166534; }
+    .patch-badge.fix { background:#fff7ed; border-color:#fed7aa; color:#7c2d12; }
+    .patch-badge.breaking { background:#fee2e2; border-color:#fecaca; color:#b91c1c; }
+
+    .patch-close {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: #64748b;
+      font-size: 1.1rem;
+      padding: 6px 8px;
+      border-radius: 10px;
+      transition: background .15s ease, color .15s ease;
+    }
+    .patch-close:hover { background: rgba(100,116,139,.12); color: #0f172a; }
+
+    .patch-modal-body {
+      padding: 14px 16px 16px;
+      background: #fff;
+    }
+    .patch-meta {
+      font-size: .86rem;
+      color: #6b7280;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 10px;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .patch-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      border: 1px solid #e5e7eb;
+      font-size: .8rem;
+      color: #111827;
+      font-weight: 800;
+    }
+    .patch-body {
+      text-align: left;
+      font-size: .92rem;
+      color: #111827;
+      line-height: 1.35rem;
+      max-height: 360px;
+      overflow: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+      background: #f9fafb;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    .patch-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .patch-btn {
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-weight: 800;
+      cursor: pointer;
+      border: 1px solid #e5e7eb;
+      background: #f3f4f6;
+      color: #111827;
+      transition: transform .12s ease, background-color .18s ease, box-shadow .18s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .patch-btn:hover { transform: translateY(-1px); background: #e5e7eb; }
+    .patch-btn-primary {
+      border-color: #1d4ed8;
+      background: #2563eb;
+      color: #fff;
+      box-shadow: 0 6px 16px rgba(37,99,235,.25);
+    }
+    .patch-btn-primary:hover { background: #1d4ed8; }
+    .patch-btn-soft {
+      background: #ffffff;
+      border-color: #e5e7eb;
+    }
   </style>
 </head>
 <body>
@@ -604,6 +742,47 @@
     </div>
   </main>
 
+  <!-- =====================================================
+       PATCH NOTES MODAL (novo) - só abre pra admin via JS
+       ===================================================== -->
+  <div id="patchModal" class="patch-modal" role="dialog" aria-modal="true" aria-labelledby="patchModalTitle">
+    <div class="patch-modal-content">
+      <div class="patch-modal-header">
+        <div class="patch-modal-title">
+          <i class="fas fa-wrench"></i>
+          <span id="patchModalTitle">Atualizações do Sistema</span>
+          <span id="patchBadge" class="patch-badge info" title="Tipo da atualização">Info</span>
+        </div>
+
+        <button type="button" class="patch-close" aria-label="Fechar" id="patchCloseBtn">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="patch-modal-body">
+        <div class="patch-meta" id="patchMeta"></div>
+        <div class="patch-body" id="patchBody"></div>
+
+        <div class="patch-actions">
+          <button id="patchReadBtn" type="button" class="patch-btn patch-btn-primary">
+            <i class="fas fa-check"></i>
+            Entendi
+          </button>
+
+          <button id="patchReadAllBtn" type="button" class="patch-btn patch-btn-soft">
+            <i class="fas fa-layer-group"></i>
+            Marcar todas como lidas
+          </button>
+
+          <button id="patchLaterBtn" type="button" class="patch-btn">
+            <i class="fas fa-clock"></i>
+            Ver depois
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer>
     <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
   </footer>
@@ -619,6 +798,154 @@
         const targetEl = document.getElementById(target);
         if (targetEl) targetEl.classList.add('active');
       });
+    });
+  </script>
+
+  <!-- =====================================================
+       PATCH NOTES (novo) - fluxo 8
+       Requer endpoints:
+         GET  /admin/patch-notes/unread
+         POST /admin/patch-notes/<id>/read
+         POST /admin/patch-notes/read-all
+       ===================================================== -->
+  <script>
+    window.IS_ADMIN = {{ 'true' if current_user.tipo == 'administrador' else 'false' }};
+
+    function getCSRFToken() {
+      const el = document.querySelector('meta[name="csrf-token"]');
+      return el ? el.getAttribute('content') : '';
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function nl2brSafe(text) {
+      return escapeHtml(text).replaceAll('\n', '<br>');
+    }
+
+    function fmtDateTime(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      try {
+        return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+      } catch {
+        return '';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!window.IS_ADMIN) return;
+
+      const modal   = document.getElementById('patchModal');
+      const titleEl = document.getElementById('patchModalTitle');
+      const badgeEl = document.getElementById('patchBadge');
+      const metaEl  = document.getElementById('patchMeta');
+      const bodyEl  = document.getElementById('patchBody');
+
+      const btnRead    = document.getElementById('patchReadBtn');
+      const btnReadAll = document.getElementById('patchReadAllBtn');
+      const btnClose   = document.getElementById('patchCloseBtn');
+      const btnLater   = document.getElementById('patchLaterBtn');
+
+      let currentReleaseId = null;
+
+      const sevMap = {
+        info:        { label: 'Info',           cls: 'info',        icon: 'fa-circle-info' },
+        improvement: { label: 'Melhoria',       cls: 'improvement', icon: 'fa-arrow-up-right-dots' },
+        fix:         { label: 'Correção',       cls: 'fix',         icon: 'fa-screwdriver-wrench' },
+        breaking:    { label: 'Mudança crítica',cls: 'breaking',    icon: 'fa-triangle-exclamation' },
+      };
+
+      function openModal() { modal.classList.add('open'); }
+      function closeModal() { modal.classList.remove('open'); currentReleaseId = null; }
+
+      function setBadge(severity) {
+        const s = sevMap[severity] || sevMap.info;
+        badgeEl.className = `patch-badge ${s.cls}`;
+        badgeEl.textContent = s.label;
+        badgeEl.title = s.label;
+      }
+
+      function setMeta(version, severity, count, createdAtIso) {
+        const s = sevMap[severity] || sevMap.info;
+        const dt = fmtDateTime(createdAtIso);
+        const parts = [];
+        if (version) parts.push(`<span><i class="fas fa-code-branch"></i> Versão: ${escapeHtml(version)}</span>`);
+        parts.push(`<span><i class="fas ${s.icon}"></i> Tipo: ${escapeHtml(s.label)}</span>`);
+        if (dt) parts.push(`<span><i class="fas fa-clock"></i> ${escapeHtml(dt)}</span>`);
+        if (typeof count === 'number') parts.push(`<span><i class="fas fa-inbox"></i> Pendentes: ${count}</span>`);
+        metaEl.innerHTML = parts.join('');
+      }
+
+      async function loadUnread() {
+        try {
+          const res = await fetch('/admin/patch-notes/unread', { credentials: 'same-origin' });
+          if (!res.ok) return;
+          const data = await res.json().catch(() => ({}));
+          if (!data.success || !data.latest || !data.count) return;
+
+          const r = data.latest;
+          currentReleaseId = r.id;
+
+          titleEl.textContent = r.title || 'Atualizações do Sistema';
+          setBadge(r.severity || 'info');
+          setMeta(r.version || '', r.severity || 'info', data.count || 0, r.created_at || null);
+          bodyEl.innerHTML = nl2brSafe(r.body || '');
+
+          openModal();
+        } catch (e) {
+          console.error('Falha ao carregar patch notes:', e);
+        }
+      }
+
+      btnRead?.addEventListener('click', async () => {
+        if (!currentReleaseId) return;
+        btnRead.disabled = true;
+        try {
+          const csrf = getCSRFToken();
+          const res = await fetch(`/admin/patch-notes/${currentReleaseId}/read`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': csrf }
+          });
+          await res.json().catch(() => null);
+          closeModal();
+        } finally {
+          btnRead.disabled = false;
+        }
+      });
+
+      btnReadAll?.addEventListener('click', async () => {
+        btnReadAll.disabled = true;
+        try {
+          const csrf = getCSRFToken();
+          const res = await fetch('/admin/patch-notes/read-all', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': csrf }
+          });
+          await res.json().catch(() => null);
+          closeModal();
+        } finally {
+          btnReadAll.disabled = false;
+        }
+      });
+
+      btnClose?.addEventListener('click', () => closeModal());
+      btnLater?.addEventListener('click', () => closeModal());
+
+      modal?.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+      // dispara ao abrir a tela
+      loadUnread();
     });
   </script>
 </body>

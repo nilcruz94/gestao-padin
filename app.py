@@ -54,6 +54,108 @@ from markupsafe import Markup
 # ===========================================
 app = Flask(__name__)
 
+# ===========================================
+# Configuração Calendario
+# ===========================================
+
+import re
+
+PT_SMALL_WORDS = {
+    "da", "de", "do", "das", "dos", "e", "d", "del", "della", "di", "du"
+}
+
+ROMAN = {"i","ii","iii","iv","v","vi","vii","viii","ix","x","xi","xii","xiii","xiv","xv"}
+
+def pt_title(s: str) -> str:
+    """
+    Title Case PT-BR (somente exibição):
+    - Mantém preposições/partículas em minúsculo (exceto 1ª palavra)
+    - Mantém acentos
+    - Suporta hífen e apóstrofo (D'Ávila)
+    """
+    s = (s or "").strip()
+    if not s:
+        return ""
+
+    s = re.sub(r"\s+", " ", s)
+    words = s.split(" ")
+
+    out = []
+    for i, w in enumerate(words):
+        if not w:
+            continue
+
+        wl = w.lower()
+
+        # Romanos
+        if wl.strip(".") in ROMAN:
+            out.append(w.upper())
+            continue
+
+        # Palavra toda como "S." ou iniciais: mantém primeira letra maiúscula
+        def cap_basic(tok: str) -> str:
+            if not tok:
+                return tok
+            t = tok.lower()
+            if i != 0 and t in PT_SMALL_WORDS:
+                return t
+            return t[0].upper() + t[1:]
+
+        # Hífens: "ana-maria"
+        hy_parts = w.split("-")
+        hy_done = []
+        for part in hy_parts:
+            # Apóstrofo: "d'almeida"
+            if "'" in part:
+                ap = part.split("'")
+                ap_done = []
+                for j, seg in enumerate(ap):
+                    if not seg:
+                        ap_done.append(seg)
+                        continue
+                    seg_l = seg.lower()
+                    if (i != 0) and (j == 0) and (seg_l in PT_SMALL_WORDS):
+                        ap_done.append(seg_l)
+                    else:
+                        ap_done.append(seg_l[0].upper() + seg_l[1:])
+                hy_done.append("'".join(ap_done))
+            else:
+                hy_done.append(cap_basic(part))
+        out.append("-".join(hy_done))
+
+    return " ".join(out)
+
+def abbr_name(s: str) -> str:
+    """
+    Abrevia para: 'Primeiro N.' (pula partículas tipo 'da/de/do').
+    Mantém Title Case.
+    """
+    full = pt_title(s)
+    parts = [p for p in full.split() if p]
+    if not parts:
+        return ""
+
+    first = parts[0]
+    initial = ""
+
+    for w in parts[1:]:
+        w_clean = w.lower().strip(".")
+        if w_clean in PT_SMALL_WORDS:
+            continue
+        initial = w[0].upper() + "."
+        break
+
+    return f"{first} {initial}".strip()
+
+# ====== registra filtros Jinja ======
+@app.template_filter("pt_title")
+def _pt_title_filter(value):
+    return pt_title(value)
+
+@app.template_filter("abbr_name")
+def _abbr_name_filter(value):
+    return abbr_name(value)
+
 # Config Banco PostgreSQL
 app.config['SQLALCHEMY_DATABASE_URI'] = (
     'postgresql://folgas_user:BLS6AMWRXX0vuFBM6q7oHKKwJChaK8dk@'
@@ -158,12 +260,6 @@ import datetime
 from sqlalchemy import CheckConstraint, Index
 from flask_login import UserMixin
 
-# Observação:
-# - Mantive sua tabela/FK como 'user.id' para não quebrar o que você já tem.
-# - Incluí o model Evento (como você já tinha) e AGORA o model EventoVisto (Opção B).
-# - Adicionei relacionamentos (User <-> EventoVisto) e (Evento <-> EventoVisto) para facilitar consultas.
-# - Mantive defaults, indexes e constraints sem alterar comportamento existente.
-
 class User(UserMixin, db.Model):
     __tablename__ = "user"  # mantém compatibilidade com FKs existentes (ex.: 'user.id')
 
@@ -179,8 +275,8 @@ class User(UserMixin, db.Model):
     ativo = db.Column(db.Boolean, nullable=False, default=True, index=True)
 
     # Campos para TRE
-    tre_total = db.Column(db.Integer, default=0, nullable=False)         # Total de dias de TRE deferidos (créditos)
-    tre_usufruidas = db.Column(db.Integer, default=0, nullable=False)    # Dias de TRE já utilizados (agendamentos deferidos)
+    tre_total = db.Column(db.Integer, default=0, nullable=False)
+    tre_usufruidas = db.Column(db.Integer, default=0, nullable=False)
     cargo = db.Column(db.String(100), nullable=True)
 
     # Banco de horas em minutos
@@ -219,12 +315,23 @@ class User(UserMixin, db.Model):
         foreign_keys='Evento.criado_por_id'
     )
 
-    # NOVO (Opção B): registros de "evento visto" por este usuário
+    # Evento visto
     eventos_vistos = db.relationship(
         'EventoVisto',
         backref=db.backref('usuario', lazy=True),
         lazy=True,
         foreign_keys='EventoVisto.user_id',
+        cascade="all, delete-orphan"
+    )
+
+    # ==============================
+    # NOVO: Patch Notes lidos
+    # ==============================
+    release_reads = db.relationship(
+        'ReleaseNoteRead',
+        backref=db.backref('usuario', lazy=True),
+        lazy=True,
+        foreign_keys='ReleaseNoteRead.user_id',
         cascade="all, delete-orphan"
     )
 
@@ -245,7 +352,6 @@ class Agendamento(db.Model):
     nome_substituto = db.Column(db.String(255), nullable=True)
     conferido = db.Column(db.Boolean, default=False, nullable=False)
 
-    # Mantido por compatibilidade (caso você use agendamento.funcionario em algum lugar)
     funcionario = db.relationship(
         'User',
         backref=db.backref('agendamentos_funcionario', lazy=True),
@@ -309,13 +415,11 @@ class TRE(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
 
-    # enviado pelo usuário
     dias_folga = db.Column(db.Integer, nullable=False)
     arquivo_pdf = db.Column(db.String(255), nullable=False)
     data_envio = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
 
-    # workflow de aprovação
-    status = db.Column(db.String(20), default='pendente', nullable=False, index=True)  # 'pendente' | 'deferida' | 'indeferida'
+    status = db.Column(db.String(20), default='pendente', nullable=False, index=True)
     dias_validados = db.Column(db.Integer, nullable=True)
     parecer_admin = db.Column(db.Text, nullable=True)
     validado_em = db.Column(db.DateTime, nullable=True)
@@ -339,15 +443,6 @@ class TRE(db.Model):
 # EVENTOS DA ESCOLA (ADMIN)
 # ===========================================
 class Evento(db.Model):
-    """
-    Eventos institucionais (criados por administrador) para aparecerem no calendário.
-
-    Campos:
-      - nome: obrigatório
-      - data_evento: obrigatória (data principal do evento)
-      - data_inicio / data_fim: opcionais (período do evento, se existir)
-      - hora_inicio / hora_fim: opcionais (horário do evento, se existir)
-    """
     __tablename__ = 'evento'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -355,28 +450,21 @@ class Evento(db.Model):
     nome = db.Column(db.String(150), nullable=False)
     descricao = db.Column(db.Text, nullable=True)
 
-    # Data principal (sempre presente)
     data_evento = db.Column(db.Date, nullable=False, index=True)
 
-    # Período (opcional)
     data_inicio = db.Column(db.Date, nullable=True, index=True)
     data_fim = db.Column(db.Date, nullable=True, index=True)
 
-    # Horário (opcional)
     hora_inicio = db.Column(db.Time, nullable=True)
     hora_fim = db.Column(db.Time, nullable=True)
 
-    # Auditoria/controle
     criado_por_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
     ativo = db.Column(db.Boolean, nullable=False, default=True, index=True)
-
-    # Opcional (para pintar no calendário)
-    cor = db.Column(db.String(20), nullable=True)  # ex.: "#1f2937"
+    cor = db.Column(db.String(20), nullable=True)
 
     criado_em = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
     atualizado_em = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
 
-    # NOVO (Opção B): registros de "visto" deste evento por usuários
     vistos = db.relationship(
         'EventoVisto',
         backref=db.backref('evento', lazy=True),
@@ -386,12 +474,10 @@ class Evento(db.Model):
     )
 
     __table_args__ = (
-        # Período válido (se os dois existirem)
         CheckConstraint(
             "(data_inicio IS NULL OR data_fim IS NULL) OR (data_fim >= data_inicio)",
             name="ck_evento_periodo_valido"
         ),
-        # Horário válido (se os dois existirem)
         CheckConstraint(
             "(hora_inicio IS NULL OR hora_fim IS NULL) OR (hora_fim >= hora_inicio)",
             name="ck_evento_horario_valido"
@@ -400,17 +486,7 @@ class Evento(db.Model):
     )
 
 
-# ===========================================
-# NOVO (Opção B): EVENTO VISTO (por usuário)
-# ===========================================
 class EventoVisto(db.Model):
-    """
-    Controle de "notificação lida" por evento e por usuário.
-
-    - Um usuário vê um evento no index (notificação).
-    - Ao clicar "Entendi", gravamos um registro aqui.
-    - Nunca mais aparece para o mesmo usuário (para o mesmo evento).
-    """
     __tablename__ = "evento_visto"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -433,6 +509,76 @@ class EventoVisto(db.Model):
     __table_args__ = (
         db.UniqueConstraint("user_id", "evento_id", name="uq_evento_visto_user_evento"),
         Index("ix_evento_visto_user_evento", "user_id", "evento_id"),
+    )
+
+
+# ===========================================
+# NOVO: PATCH NOTES / RELEASE NOTES
+# ===========================================
+class ReleaseNote(db.Model):
+    """
+    Patch notes / release notes do sistema.
+
+    - Somente admins visualizam no login.
+    - Só aparece se is_published = True e o admin ainda não marcou como lido.
+    """
+    __tablename__ = "release_note"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    version = db.Column(db.String(40), nullable=False, index=True)     # ex: 2026.02.07.1
+    title = db.Column(db.String(180), nullable=False)
+    body = db.Column(db.Text, nullable=False)                          # texto puro (render no front com \n -> <br>)
+    severity = db.Column(db.String(20), nullable=False, default="info")# info|improvement|fix|breaking
+
+    is_published = db.Column(db.Boolean, nullable=False, default=False, index=True)
+
+    created_by_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False, index=True)
+
+    reads = db.relationship(
+        "ReleaseNoteRead",
+        backref=db.backref("release", lazy=True),
+        lazy=True,
+        foreign_keys="ReleaseNoteRead.release_id",
+        cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "severity IN ('info','improvement','fix','breaking')",
+            name="ck_release_note_severity"
+        ),
+        Index("ix_release_note_pub_created", "is_published", "created_at"),
+    )
+
+
+class ReleaseNoteRead(db.Model):
+    """
+    Controle de leitura do patch note por usuário (admin).
+    """
+    __tablename__ = "release_note_read"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    release_id = db.Column(
+        db.Integer,
+        db.ForeignKey("release_note.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    read_at = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "release_id", name="uq_release_note_read_user_release"),
+        Index("ix_release_note_read_user_release", "user_id", "release_id"),
     )
 
 # ===========================================
@@ -1787,6 +1933,7 @@ def admin_set_substituto_agendamento(ag_id):
     except Exception:
         db.session.rollback()
         return jsonify({"success": False, "error": "Erro ao salvar substituição."}), 500
+    
 
 # ===========================================
 # COMPLETAR DADOS OBRIGATÓRIOS
@@ -4419,6 +4566,165 @@ def tre_menu():
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+# ===========================================
+# MAIN
+# ===========================================
+
+from functools import wraps
+from flask import abort, jsonify, request, render_template, redirect, url_for, flash
+from flask_login import login_required, current_user
+
+# IMPORTANTE:
+# Este trecho assume que você já tem:
+# - db (SQLAlchemy)
+# - models ReleaseNote e ReleaseNoteRead
+# Ex.: from yourapp import db
+#      from yourapp.models import ReleaseNote, ReleaseNoteRead
+
+
+def admin_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not current_user.is_authenticated:
+            abort(401)
+        if current_user.tipo != "administrador" or current_user.status != "aprovado" or not current_user.ativo:
+            abort(403)
+        return fn(*args, **kwargs)
+    return wrapper
+
+
+def _unread_release_query_for_user(user_id: int):
+    # Subquery IDs já lidos
+    subq = db.session.query(ReleaseNoteRead.release_id).filter(
+        ReleaseNoteRead.user_id == user_id
+    ).subquery()
+
+    # Notes publicadas e não lidas
+    q = (ReleaseNote.query
+         .filter(ReleaseNote.is_published.is_(True))
+         .filter(~ReleaseNote.id.in_(subq))
+         .order_by(ReleaseNote.created_at.desc()))
+    return q
+
+
+@app.route("/admin/patch-notes/unread", methods=["GET"])
+@login_required
+@admin_required
+def admin_patch_notes_unread():
+    q = _unread_release_query_for_user(current_user.id)
+    latest = q.first()
+    count = q.count()
+
+    if not latest:
+        return jsonify({"success": True, "count": 0, "latest": None})
+
+    return jsonify({
+        "success": True,
+        "count": count,
+        "latest": {
+            "id": latest.id,
+            "version": latest.version,
+            "title": latest.title,
+            "body": latest.body,
+            "severity": latest.severity,
+            "created_at": latest.created_at.isoformat() if latest.created_at else None
+        }
+    })
+
+
+@app.route("/admin/patch-notes/<int:release_id>/read", methods=["POST"])
+@login_required
+@admin_required
+def admin_patch_notes_mark_read(release_id):
+    # idempotente: se já existe, não cria de novo
+    exists = ReleaseNoteRead.query.filter_by(
+        user_id=current_user.id,
+        release_id=release_id
+    ).first()
+
+    if not exists:
+        db.session.add(ReleaseNoteRead(user_id=current_user.id, release_id=release_id))
+        db.session.commit()
+
+    return jsonify({"success": True})
+
+
+@app.route("/admin/patch-notes/read-all", methods=["POST"])
+@login_required
+@admin_required
+def admin_patch_notes_mark_all_read():
+    q = _unread_release_query_for_user(current_user.id).all()
+    if q:
+        for r in q:
+            db.session.add(ReleaseNoteRead(user_id=current_user.id, release_id=r.id))
+        db.session.commit()
+    return jsonify({"success": True})
+
+
+# Página de admin para criar/publicar
+@app.route("/admin/patch-notes", methods=["GET", "POST"])
+@login_required
+@admin_required
+def admin_patch_notes_page():
+    if request.method == "POST":
+        version = (request.form.get("version") or "").strip()
+        title = (request.form.get("title") or "").strip()
+        body = (request.form.get("body") or "").strip()
+        severity = (request.form.get("severity") or "info").strip()
+        is_published = True if request.form.get("is_published") == "on" else False
+
+        if not version or not title or not body:
+            flash("Preencha versão, título e descrição.", "warning")
+            return redirect(url_for("admin_patch_notes_page"))
+
+        if severity not in ("info", "improvement", "fix", "breaking"):
+            severity = "info"
+
+        note = ReleaseNote(
+            version=version,
+            title=title,
+            body=body,
+            severity=severity,
+            is_published=is_published,
+            created_by_id=current_user.id
+        )
+        db.session.add(note)
+        db.session.commit()
+
+        flash("Patch note criado com sucesso.", "success")
+        return redirect(url_for("admin_patch_notes_page"))
+
+    notes = (ReleaseNote.query
+             .order_by(ReleaseNote.created_at.desc())
+             .limit(50)
+             .all())
+
+    # ✅ AQUI: template singular, como você pediu
+    return render_template("admin_patch_note.html", notes=notes)
+
+
+@app.route("/admin/patch-notes/<int:release_id>/toggle", methods=["POST"])
+@login_required
+@admin_required
+def admin_patch_notes_toggle_publish(release_id):
+    note = ReleaseNote.query.get_or_404(release_id)
+    note.is_published = not bool(note.is_published)
+    db.session.commit()
+    flash("Publicação atualizada.", "success")
+    return redirect(url_for("admin_patch_notes_page"))
+
+
+@app.route("/admin/patch-notes/<int:release_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def admin_patch_notes_delete(release_id):
+    note = ReleaseNote.query.get_or_404(release_id)
+    db.session.delete(note)
+    db.session.commit()
+    flash("Patch note removido.", "success")
+    return redirect(url_for("admin_patch_notes_page"))
+
 
 # ===========================================
 # MAIN

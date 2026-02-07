@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastrar Patch Notes - Administração</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- CSS global do projeto -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
+  <!-- CSRF: disponibiliza o token para requisições JS -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  <style>
+    :root{
+      --primary:#0077ff;
+      --primary-dark:#0051ff;
+      --primary-soft:#e0edff;
+      --bg:#f3f4f6;
+      --surface:#ffffff;
+      --border-soft:#e5e7eb;
+      --text-main:#111827;
+      --text-muted:#6b7280;
+      --success:#16a34a;
+      --success-soft:#dcfce7;
+      --danger:#dc2626;
+      --danger-soft:#fee2e2;
+      --warning:#f59e0b;
+      --warning-soft:#ffedd5;
+      --card-shadow:0 14px 34px rgba(15,23,42,.1),0 2px 4px rgba(15,23,42,.06);
+      --radius:18px;
+    }
+
+    *,*::before,*::after{box-sizing:border-box}
+
+    html,body{
+      margin:0;padding:0;height:100%;
+      font-family:'Montserrat',sans-serif;
+      background: radial-gradient(circle at top, #e0f2ff 0, #f9fafb 45%, #eef2ff 100%);
+      background-attachment: fixed;
+      color:var(--text-main);
+    }
+
+    body{display:flex;flex-direction:column;min-height:100vh;}
+    main{flex:1 0 auto;padding:24px 12px 60px;}
+    .shell{width:100%;max-width:1100px;margin:0 auto;}
+    @media (min-width:769px){main{padding:30px 24px 80px;}}
+
+    /* ===== Cabeçalhos padrão ===== */
+    .header-desktop,.header-mobile{display:none;flex-shrink:0;}
+
+    /* Desktop */
+    @media (min-width:769px){
+      .header-desktop{
+        display:flex;
+        background-color:#007bff;
+        padding:15px 30px;
+        width:100%;
+        align-items:center;
+        justify-content:space-between;
+        min-height:110px;
+        position:relative;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);
+        color:white;
+      }
+      .left-section{display:flex;align-items:center;gap:20px;}
+      .logo{
+        width:80px;height:80px;object-fit:contain;border-radius:10px;
+        background-color:white;padding:6px;
+      }
+      .text-container{display:flex;flex-direction:column;color:white;}
+      .escola-nome{font-weight:700;font-size:1.6rem;margin:0;line-height:1.1;}
+      .escola-subtitulo{font-weight:600;font-size:1.1rem;margin-top:4px;}
+      .header-center-text-container{
+        position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+        font-weight:800;font-size:1.9rem;color:white;letter-spacing:5px;
+        user-select:none;white-space:nowrap;z-index:1;
+        text-shadow:0 2px 5px rgba(0,0,0,0.3);
+      }
+      .header-center-text{font-family:'Montserrat',sans-serif;}
+      .btn-home{
+        background-color:#0fb300;color:white;padding:6px 14px;border-radius:6px;
+        font-weight:700;font-size:1.5rem;text-decoration:none;display:flex;align-items:center;gap:8px;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);transition:background-color 0.3s ease;
+        position:absolute;right:30px;top:50%;transform:translateY(-50%);z-index:2;
+      }
+      .btn-home:hover{background-color:#0d8a00;}
+    }
+
+    /* Mobile */
+    @media (max-width:768px){
+      .header-mobile{
+        display:block;width:100%;color:white;position:sticky;top:0;z-index:1000;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);background-color:#007bff;
+      }
+      .header-top{
+        display:flex;align-items:center;justify-content:center;gap:15px;
+        padding:10px 15px;background-color:#007bff;
+      }
+      .logo{
+        width:48px;height:48px;object-fit:contain;border-radius:10px;
+        background-color:white;padding:6px;
+      }
+      .text-container{display:flex;flex-direction:column;color:white;text-align:center;}
+      .escola-nome{font-weight:700;font-size:1.3rem;margin:0;line-height:1.1;}
+      .escola-subtitulo{font-weight:600;font-size:1rem;margin-top:2px;}
+      .header-bottom{
+        background-color:#0056b3;text-align:center;padding:12px 10px;font-weight:800;font-size:1rem;
+        letter-spacing:4px;color:white;display:flex;justify-content:center;align-items:center;gap:12px;white-space:nowrap;
+      }
+      .btn-home-mobile{
+        background-color:#0fb300;color:white;padding:6px 10px;border-radius:6px;font-weight:600;font-size:1rem;
+        text-decoration:none;display:flex;align-items:center;justify-content:center;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);transition:background-color 0.3s ease;
+      }
+      .btn-home-mobile:hover{background-color:#0d8a00;}
+    }
+
+    /* ===== Header card ===== */
+    .page-header-card{
+      background:#ffffff;border-radius:var(--radius);padding:16px 18px;margin:0 auto 18px;
+      display:flex;align-items:center;gap:16px;box-shadow:var(--card-shadow);border-left:5px solid var(--primary);
+    }
+    .page-header-icon{
+      display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:999px;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
+      box-shadow:0 4px 12px rgba(37,99,235,.45);color:#2563eb;flex-shrink:0;
+    }
+    .page-header-icon i{font-size:22px;}
+    .page-header-content{display:flex;flex-direction:column;gap:4px;}
+    .page-header-title{font-size:1.15rem;font-weight:800;margin:0;color:var(--text-main);}
+    .page-header-subtitle{font-size:0.9rem;margin:0;color:var(--text-muted);}
+    @media (max-width:600px){
+      .page-header-card{padding:12px 14px}
+      .page-header-title{font-size:1.05rem}
+      .page-header-subtitle{font-size:.82rem}
+    }
+
+    /* ===== Cards ===== */
+    .content-card{
+      width:100%;margin:0 auto 24px;background:var(--surface);
+      border-radius:16px;box-shadow:var(--card-shadow);padding:18px 18px 20px;
+      border:1px solid rgba(148,163,184,0.35);backdrop-filter: blur(8px);
+    }
+    .content-title{
+      font-size:1.05rem;font-weight:800;margin:0 0 6px;color:var(--text-main);
+      display:flex;align-items:center;gap:8px;
+    }
+    .content-title i{color:var(--primary);}
+    .content-subtitle{font-size:0.88rem;color:var(--text-muted);margin:0 0 14px;}
+
+    /* ===== Form ===== */
+    .form-grid{
+      display:grid;
+      grid-template-columns: minmax(220px,1.1fr) minmax(220px,1fr);
+      gap:12px;
+      align-items:end;
+    }
+    @media (max-width:860px){ .form-grid{grid-template-columns:1fr;} }
+
+    .field{display:grid;gap:6px;}
+    .label{
+      font-size:.78rem;text-transform:uppercase;color:var(--text-muted);
+      letter-spacing:.08em;margin-bottom:2px;
+    }
+    .input, .select, .textarea{
+      width:100%;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--border-soft);
+      font-size:.95rem;
+      outline:none;
+      transition:border-color .15s ease, box-shadow .15s ease;
+      background:#fff;
+    }
+    .textarea{min-height:160px;resize:vertical;line-height:1.35rem;}
+    .input:focus, .select:focus, .textarea:focus{
+      border-color:var(--primary);
+      box-shadow:0 0 0 1px rgba(59,130,246,.55);
+    }
+
+    .helper{
+      font-size:.82rem;
+      color:var(--text-muted);
+      margin-top:8px;
+      line-height:1.25rem;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
+    .btn{
+      padding:10px 14px;
+      border-radius:999px;
+      font-weight:800;
+      cursor:pointer;
+      border:1px solid #e5e7eb;
+      background:#f3f4f6;
+      color:#111827;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      transition:transform .12s ease, background-color .18s ease, box-shadow .18s ease;
+    }
+    .btn:hover{transform:translateY(-1px);background:#e5e7eb;}
+    .btn-primary{
+      border-color:#1d4ed8;
+      background:#2563eb;
+      color:#fff;
+      box-shadow:0 6px 16px rgba(37,99,235,.25);
+    }
+    .btn-primary:hover{background:#1d4ed8;}
+    .btn-danger{
+      border-color:#fecaca;
+      background:#fee2e2;
+      color:#b91c1c;
+    }
+    .btn-danger:hover{background:#fecaca;}
+    .btn-soft{
+      background:#ffffff;
+      border-color:#e5e7eb;
+    }
+
+    /* ===== Alerts ===== */
+    .alert-wrapper{margin:0 auto 14px;max-width:1100px;}
+    .alert{
+      margin:0;padding:10px 14px;border-radius:10px;font-size:0.88rem;text-align:center;
+      display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid transparent;
+    }
+    .alert-success{background:var(--success-soft);color:#166534;border:1px solid #bbf7d0;}
+    .alert-error{background:var(--danger-soft);color:#b91c1c;border:1px solid #fecaca;}
+    .alert-info{background:#dbeafe;color:#1e3a8a;border:1px solid #bfdbfe;}
+    .alert i{font-size:0.95rem;}
+
+    /* Footer */
+    footer{
+      background: linear-gradient(to right, #222, #444);
+      color:#ddd;text-align:center;padding:15px 0;font-size:14px;border-top:2px solid #555;
+      box-shadow:0px -2px 10px rgba(0,0,0,0.3);
+      flex-shrink:0;width:100%;
+    }
+    footer p{margin:5px 0;font-size:15px;font-weight:300;}
+    footer a{color:#fff;text-decoration:none;font-weight:500;transition:color 0.3s ease-in-out;}
+    footer a:hover{color:#00aaff;}
+  </style>
+</head>
+
+<body>
+
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
+    </a>
+  </header>
+
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <div class="shell">
+
+      <!-- Header card da página -->
+      <div class="page-header-card">
+        <div class="page-header-icon">
+          <i class="fas fa-wrench"></i>
+        </div>
+        <div class="page-header-content">
+          <p class="page-header-title">Cadastrar Patch Notes</p>
+          <p class="page-header-subtitle">
+            Registre uma nova atualização para aparecer automaticamente aos administradores no login.
+          </p>
+        </div>
+      </div>
+
+      <!-- Alertas dinâmicos (JS) -->
+      <div id="alertContainer" class="alert-wrapper"></div>
+
+      <!-- Card do formulário -->
+      <section class="content-card">
+        <h2 class="content-title">
+          <i class="fas fa-pen-to-square"></i>
+          Nova atualização
+        </h2>
+        <p class="content-subtitle">
+          Preencha os campos abaixo. O texto aceita múltiplas linhas (use tópicos, listas e quebras de linha).
+        </p>
+
+        <!--
+          IMPORTANTE:
+          - Esse form está pronto para você plugar na sua rota, ex:
+              POST /admin/patch-notes
+          - Eu mantive sem "action" rígido: você pode setar no backend
+            e/ou usar JS (fetch) como preferir.
+        -->
+        <form id="patchForm" method="POST" action="{{ url_for('admin_patch_notes_create') if 'admin_patch_notes_create' in globals() else '' }}">
+          {% if csrf_token is defined %}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {% endif %}
+
+          <div class="form-grid">
+            <div class="field">
+              <div class="label">Título</div>
+              <input class="input" type="text" id="title" name="title" maxlength="120" required
+                     placeholder="Ex.: Ajustes no calendário e correções de agendamento">
+            </div>
+
+            <div class="field">
+              <div class="label">Versão</div>
+              <input class="input" type="text" id="version" name="version" maxlength="30"
+                     placeholder="Ex.: v1.6.2 (opcional)">
+            </div>
+
+            <div class="field">
+              <div class="label">Tipo (Severidade)</div>
+              <select class="select" id="severity" name="severity" required>
+                <option value="info">Info</option>
+                <option value="improvement">Melhoria</option>
+                <option value="fix" selected>Correção</option>
+                <option value="breaking">Mudança crítica</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <div class="label">Ativo</div>
+              <select class="select" id="active" name="active">
+                <option value="true" selected>Sim (exibir)</option>
+                <option value="false">Não (rascunho)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:12px;">
+            <div class="label">Descrição (corpo)</div>
+            <textarea class="textarea" id="body" name="body" required
+              placeholder="- O que mudou&#10;- O que foi corrigido&#10;- Observações importantes"></textarea>
+
+            <div class="helper">
+              Dica: escreva em formato de lista para ficar mais legível no modal (ex.: “- item 1”, “- item 2”).
+              O sistema exibirá com quebras de linha.
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="btn btn-soft" onclick="history.back()">
+              <i class="fas fa-arrow-left"></i>
+              Voltar
+            </button>
+
+            <button type="button" class="btn btn-danger" id="btnClear">
+              <i class="fas fa-eraser"></i>
+              Limpar
+            </button>
+
+            <button type="submit" class="btn btn-primary" id="btnSubmit">
+              <i class="fas fa-save"></i>
+              Salvar Patch Notes
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Card de ajuda rápida -->
+      <section class="content-card">
+        <h2 class="content-title">
+          <i class="fas fa-circle-info"></i>
+          Boas práticas
+        </h2>
+        <p class="content-subtitle" style="margin-bottom:0;">
+          • Use “Correção” para bugs e “Melhoria” para ajustes de UX/fluxo.<br>
+          • “Mudança crítica” apenas quando exigir atenção imediata (mudança de regra, impacto no uso, etc.).<br>
+          • Se quiser apenas preparar e publicar depois, salve como “Rascunho” (Ativo = Não).
+        </p>
+      </section>
+
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
+
+  <script>
+    function getCSRFToken() {
+      const el = document.querySelector('meta[name="csrf-token"]');
+      return el ? el.getAttribute('content') : '';
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function showAlert(message, type="success") {
+      const alertContainer = document.getElementById("alertContainer");
+      const icon = type === "success" ? "check-circle" : (type === "info" ? "circle-info" : "exclamation-triangle");
+      const cls = type === "success" ? "alert-success" : (type === "info" ? "alert-info" : "alert-error");
+      alertContainer.innerHTML = `
+        <div class="alert ${cls}">
+          <i class="fas fa-${icon}"></i>
+          <span>${escapeHtml(message)}</span>
+        </div>`;
+      setTimeout(() => { alertContainer.innerHTML = ""; }, 4500);
+    }
+
+    // Limpar formulário
+    document.getElementById('btnClear').addEventListener('click', () => {
+      document.getElementById('title').value = '';
+      document.getElementById('version').value = '';
+      document.getElementById('severity').value = 'fix';
+      document.getElementById('active').value = 'true';
+      document.getElementById('body').value = '';
+      showAlert('Campos limpos.', 'info');
+      document.getElementById('title').focus();
+    });
+
+    // Opcional: submit via fetch (se você preferir AJAX).
+    // Se você já tem rota POST normal, pode remover esse bloco e deixar o form postar.
+    document.getElementById('patchForm').addEventListener('submit', async (e) => {
+      const action = e.target.getAttribute('action') || '';
+      if (!action) return; // sem action: deixa o submit normal (ou você define depois)
+
+      // Se tiver action definido, aqui eu faço AJAX para você ter feedback bonito
+      e.preventDefault();
+
+      const btn = document.getElementById('btnSubmit');
+      btn.disabled = true;
+
+      try {
+        const payload = {
+          title: document.getElementById('title').value.trim(),
+          version: document.getElementById('version').value.trim(),
+          severity: document.getElementById('severity').value,
+          active: document.getElementById('active').value === 'true',
+          body: document.getElementById('body').value.trim(),
+        };
+
+        const csrf = getCSRFToken();
+        const res = await fetch(action, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrf
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          showAlert(data.error || `Erro ao salvar (${res.status}).`, 'error');
+          return;
+        }
+
+        showAlert('Patch Notes salvo com sucesso.', 'success');
+
+        // opcional: limpa após salvar
+        // document.getElementById('btnClear').click();
+      } catch (err) {
+        showAlert('Falha na conexão ao salvar.', 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
