@@ -4568,19 +4568,17 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # ===========================================
-# MAIN
+# PATCH NOTES CONFIGS
 # ===========================================
 
 from functools import wraps
 from flask import abort, jsonify, request, render_template, redirect, url_for, flash
 from flask_login import login_required, current_user
 
-# IMPORTANTE:
 # Este trecho assume que você já tem:
+# - app (Flask)
 # - db (SQLAlchemy)
 # - models ReleaseNote e ReleaseNoteRead
-# Ex.: from yourapp import db
-#      from yourapp.models import ReleaseNote, ReleaseNoteRead
 
 
 def admin_required(fn):
@@ -4588,22 +4586,32 @@ def admin_required(fn):
     def wrapper(*args, **kwargs):
         if not current_user.is_authenticated:
             abort(401)
-        if current_user.tipo != "administrador" or current_user.status != "aprovado" or not current_user.ativo:
+
+        tipo = (getattr(current_user, "tipo", "") or "").strip().lower()
+        status = (getattr(current_user, "status", "") or "").strip().lower()
+        ativo_val = getattr(current_user, "ativo", True)
+
+        # Se ativo vier NULL por algum motivo, tratamos como True para não bloquear admin antigo.
+        ativo = True if ativo_val is None else bool(ativo_val)
+
+        if tipo != "administrador" or status != "aprovado" or not ativo:
             abort(403)
+
         return fn(*args, **kwargs)
     return wrapper
 
 
 def _unread_release_query_for_user(user_id: int):
-    # Subquery IDs já lidos
-    subq = db.session.query(ReleaseNoteRead.release_id).filter(
-        ReleaseNoteRead.user_id == user_id
-    ).subquery()
+    # EXISTS: existe leitura para (user_id, release_id=ReleaseNote.id)?
+    read_exists = db.session.query(ReleaseNoteRead.id).filter(
+        ReleaseNoteRead.user_id == user_id,
+        ReleaseNoteRead.release_id == ReleaseNote.id
+    ).exists()
 
-    # Notes publicadas e não lidas
+    # Notes publicadas e NÃO lidas
     q = (ReleaseNote.query
          .filter(ReleaseNote.is_published.is_(True))
-         .filter(~ReleaseNote.id.in_(subq))
+         .filter(~read_exists)
          .order_by(ReleaseNote.created_at.desc()))
     return q
 
@@ -4700,7 +4708,7 @@ def admin_patch_notes_page():
              .limit(50)
              .all())
 
-    # ✅ AQUI: template singular, como você pediu
+    # ✅ Template singular, como você pediu:
     return render_template("admin_patch_note.html", notes=notes)
 
 

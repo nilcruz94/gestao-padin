@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Patch Notes - Administração</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- CSS global do projeto -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  <style>
+    :root{
+      --primary:#0077ff;
+      --primary-dark:#0051ff;
+      --primary-soft:#e0edff;
+      --bg:#f3f4f6;
+      --surface:#ffffff;
+      --border-soft:#e5e7eb;
+      --text-main:#111827;
+      --text-muted:#6b7280;
+      --success:#16a34a;
+      --success-soft:#dcfce7;
+      --danger:#dc2626;
+      --danger-soft:#fee2e2;
+      --warning:#f59e0b;
+      --warning-soft:#ffedd5;
+      --info:#2563eb;
+      --info-soft:#dbeafe;
+      --card-shadow:0 14px 34px rgba(15,23,42,.1),0 2px 4px rgba(15,23,42,.06);
+      --radius:18px;
+      --btn-h:44px;
+    }
+
+    *,*::before,*::after{box-sizing:border-box}
+
+    html,body{
+      margin:0;padding:0;height:100%;
+      font-family:'Montserrat',sans-serif;
+      background: radial-gradient(circle at top, #e0f2ff 0, #f9fafb 45%, #eef2ff 100%);
+      background-attachment: fixed;
+      color:var(--text-main);
+    }
+
+    body{display:flex;flex-direction:column;min-height:100vh;}
+    main{flex:1 0 auto;padding:24px 12px 60px;}
+    .shell{width:100%;max-width:1100px;margin:0 auto;}
+    @media (min-width:769px){main{padding:30px 24px 80px;}}
+
+    /* ===== Cabeçalhos padrão ===== */
+    .header-desktop,.header-mobile{display:none;flex-shrink:0;}
+
+    @media (min-width:769px){
+      .header-desktop{
+        display:flex;background-color:#007bff;padding:15px 30px;width:100%;
+        align-items:center;justify-content:space-between;min-height:110px;position:relative;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);color:white;
+      }
+      .left-section{display:flex;align-items:center;gap:20px;}
+      .logo{width:80px;height:80px;object-fit:contain;border-radius:10px;background-color:white;padding:6px;}
+      .text-container{display:flex;flex-direction:column;color:white;}
+      .escola-nome{font-weight:700;font-size:1.6rem;margin:0;line-height:1.1;}
+      .escola-subtitulo{font-weight:600;font-size:1.1rem;margin-top:4px;}
+      .header-center-text-container{
+        position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+        font-weight:800;font-size:1.9rem;color:white;letter-spacing:5px;
+        user-select:none;white-space:nowrap;z-index:1;text-shadow:0 2px 5px rgba(0,0,0,0.3);
+      }
+      .btn-home{
+        background-color:#0fb300;color:white;padding:6px 14px;border-radius:6px;
+        font-weight:700;font-size:1.5rem;text-decoration:none;display:flex;align-items:center;gap:8px;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);transition:background-color 0.3s ease;
+        position:absolute;right:30px;top:50%;transform:translateY(-50%);z-index:2;
+      }
+      .btn-home:hover{background-color:#0d8a00;}
+    }
+
+    @media (max-width:768px){
+      .header-mobile{
+        display:block;width:100%;color:white;position:sticky;top:0;z-index:1000;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);background-color:#007bff;
+      }
+      .header-top{display:flex;align-items:center;justify-content:center;gap:15px;padding:10px 15px;background-color:#007bff;}
+      .logo{width:48px;height:48px;object-fit:contain;border-radius:10px;background-color:white;padding:6px;}
+      .text-container{display:flex;flex-direction:column;color:white;text-align:center;}
+      .escola-nome{font-weight:700;font-size:1.3rem;margin:0;line-height:1.1;}
+      .escola-subtitulo{font-weight:600;font-size:1rem;margin-top:2px;}
+      .header-bottom{
+        background-color:#0056b3;text-align:center;padding:12px 10px;font-weight:800;font-size:1rem;
+        letter-spacing:4px;color:white;display:flex;justify-content:center;align-items:center;gap:12px;white-space:nowrap;
+      }
+      .btn-home-mobile{
+        background-color:#0fb300;color:white;padding:6px 10px;border-radius:6px;font-weight:600;font-size:1rem;
+        text-decoration:none;display:flex;align-items:center;justify-content:center;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);transition:background-color 0.3s ease;
+      }
+      .btn-home-mobile:hover{background-color:#0d8a00;}
+    }
+
+    /* ===== Header da página ===== */
+    .page-header-card{
+      background:#ffffff;border-radius:var(--radius);padding:16px 18px;margin:0 auto 18px;
+      display:flex;align-items:center;gap:16px;box-shadow:var(--card-shadow);border-left:5px solid var(--primary);
+    }
+    .page-header-icon{
+      display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:999px;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
+      box-shadow:0 4px 12px rgba(37,99,235,.45);color:#2563eb;flex-shrink:0;
+    }
+    .page-header-icon i{font-size:22px;}
+    .page-header-content{display:flex;flex-direction:column;gap:4px;min-width:0;}
+    .page-header-title{font-size:1.15rem;font-weight:800;margin:0;color:var(--text-main);}
+    .page-header-subtitle{font-size:0.9rem;margin:0;color:var(--text-muted);}
+
+    /* ===== Cards ===== */
+    .content-card{
+      width:100%;margin:0 auto 18px;background:var(--surface);
+      border-radius:16px;box-shadow:var(--card-shadow);padding:18px 18px 20px;
+      border:1px solid rgba(148,163,184,0.35);
+    }
+    .content-title{
+      font-size:1.05rem;font-weight:800;margin:0 0 6px;color:var(--text-main);
+      display:flex;align-items:center;gap:8px;
+    }
+    .content-title i{color:var(--primary);}
+    .content-subtitle{font-size:0.88rem;color:var(--text-muted);margin:0 0 14px;}
+
+    /* Flash messages */
+    .flash-container { margin: 0 auto 14px; }
+    .flash{
+      padding:10px 14px;border-radius:12px;font-size:.88rem;font-weight:800;
+      text-align:center;border:1px solid transparent;
+      box-shadow:0 0 8px rgba(15, 23, 42, 0.08);
+    }
+    .flash.success{background:var(--success-soft);color:#166534;border-color:#bbf7d0;}
+    .flash.warning{background:var(--warning-soft);color:#7c2d12;border-color:#fed7aa;}
+    .flash.error,.flash.danger{background:var(--danger-soft);color:#b91c1c;border-color:#fecaca;}
+    .flash.info{background:var(--info-soft);color:#1e3a8a;border-color:#bfdbfe;}
+
+    /* Form */
+    .form-grid{
+      display:grid;
+      grid-template-columns: minmax(240px,1.2fr) minmax(200px,0.9fr);
+      gap:12px;
+      align-items:end;
+    }
+    @media (max-width:860px){ .form-grid{grid-template-columns:1fr;} }
+    .field{display:grid;gap:6px;}
+    .label{font-size:.78rem;text-transform:uppercase;color:var(--text-muted);letter-spacing:.08em;}
+    .input, .select, .textarea{
+      width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border-soft);
+      font-size:.95rem;outline:none;transition:border-color .15s ease, box-shadow .15s ease;background:#fff;
+    }
+    .textarea{min-height:160px;resize:vertical;line-height:1.35rem;}
+    .input:focus, .select:focus, .textarea:focus{
+      border-color:var(--primary);
+      box-shadow:0 0 0 1px rgba(59,130,246,.55);
+    }
+
+    /* ===== Ações do formulário (corrige quebra de linha) ===== */
+    .form-actions{
+      margin-top:12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .actions-left, .actions-right{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    /* Checkbox “Publicar agora” */
+    .check{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:8px 12px;
+      border:1px solid var(--border-soft);
+      border-radius:999px;
+      background:#fff;
+      font-size:.9rem;
+      font-weight:900;
+      color:#0f172a;
+      white-space:nowrap;          /* ✅ evita quebra */
+      line-height:1;
+      min-height: var(--btn-h);
+    }
+    .check input{
+      width:18px;
+      height:18px;
+      accent-color: var(--primary);
+      margin:0;
+    }
+
+    /* Botões (corrige quebra e padroniza) */
+    .btn{
+      padding:10px 14px;
+      border-radius:999px;
+      font-weight:900;
+      cursor:pointer;
+      border:1px solid #e5e7eb;
+      background:#f3f4f6;
+      color:#111827;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      transition:transform .12s ease, background-color .18s ease, box-shadow .18s ease;
+      text-decoration:none;
+      min-height: var(--btn-h);
+      white-space:nowrap;          /* ✅ evita quebra */
+      line-height:1;
+    }
+    .btn i{font-size:0.95rem;}
+    .btn:hover{transform:translateY(-1px);background:#e5e7eb;}
+    .btn-primary{
+      border-color:#1d4ed8;background:#2563eb;color:#fff;box-shadow:0 6px 16px rgba(37,99,235,.25);
+    }
+    .btn-primary:hover{background:#1d4ed8;}
+    .btn-danger{border-color:#fecaca;background:#fee2e2;color:#b91c1c;}
+    .btn-danger:hover{background:#fecaca;}
+    .btn-soft{background:#fff;border-color:#e5e7eb;}
+    .btn-soft:hover{background:#f8fafc;}
+
+    /* Mobile: ações viram coluna e botões ocupam largura total */
+    @media (max-width:520px){
+      .form-actions{
+        flex-direction:column;
+        align-items:stretch;
+      }
+      .actions-left, .actions-right{
+        width:100%;
+        justify-content:space-between;
+      }
+      .check{justify-content:center;}
+      .btn{width:100%;}
+      .actions-right{flex-direction:column;}
+    }
+
+    /* Listagem */
+    .table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border-soft);background:#fff;}
+    table{width:100%;border-collapse:collapse;min-width:820px;}
+    th,td{padding:10px 12px;border-bottom:1px solid var(--border-soft);text-align:left;vertical-align:top;font-size:.9rem;}
+    th{background:#f3f4f6;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;}
+    tr:nth-child(even){background:#fafafa;}
+
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
+      font-weight:900;font-size:.78rem;border:1px solid transparent;
+      white-space:nowrap;
+    }
+    .b-info{background:var(--info-soft);color:#1e3a8a;border-color:#bfdbfe;}
+    .b-improvement{background:#ecfdf5;color:#065f46;border-color:#bbf7d0;}
+    .b-fix{background:var(--warning-soft);color:#7c2d12;border-color:#fed7aa;}
+    .b-breaking{background:var(--danger-soft);color:#b91c1c;border-color:#fecaca;}
+    .b-draft{background:#f3f4f6;color:#374151;border-color:#e5e7eb;}
+
+    /* Ações da tabela: evita quebra feia e deixa compacto */
+    .table-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .table-actions form{margin:0;}
+    .btn-sm{
+      min-height: 40px;
+      padding:9px 12px;
+      font-size:.9rem;
+    }
+
+    footer{
+      background: linear-gradient(to right, #222, #444);
+      color:#ddd;text-align:center;padding:15px 0;font-size:14px;border-top:2px solid #555;
+      box-shadow:0px -2px 10px rgba(0,0,0,0.3);
+      flex-shrink:0;width:100%;
+    }
+    footer p{margin:5px 0;font-size:15px;font-weight:300;}
+  </style>
+</head>
+
+<body>
+
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
+    </a>
+  </header>
+
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <div class="shell">
+
+      <div class="page-header-card">
+        <div class="page-header-icon"><i class="fas fa-wrench"></i></div>
+        <div class="page-header-content">
+          <p class="page-header-title">Patch Notes</p>
+          <p class="page-header-subtitle">Crie e publique atualizações visíveis somente para administradores.</p>
+        </div>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-container">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message|safe }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <section class="content-card">
+        <h2 class="content-title"><i class="fas fa-pen-to-square"></i> Nova atualização</h2>
+        <p class="content-subtitle">Preencha os campos abaixo e clique em salvar.</p>
+
+        <form method="POST" action="{{ url_for('admin_patch_notes_page') }}">
+          {% if csrf_token is defined %}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {% endif %}
+
+          <div class="form-grid">
+            <div class="field">
+              <div class="label">Versão</div>
+              <input class="input" type="text" name="version" maxlength="30" required
+                     placeholder="Ex.: v1.6.2">
+            </div>
+
+            <div class="field">
+              <div class="label">Tipo (Severidade)</div>
+              <select class="select" name="severity" required>
+                <option value="info">Info</option>
+                <option value="improvement">Melhoria</option>
+                <option value="fix" selected>Correção</option>
+                <option value="breaking">Mudança crítica</option>
+              </select>
+            </div>
+
+            <div class="field" style="grid-column: 1 / -1;">
+              <div class="label">Título</div>
+              <input class="input" type="text" name="title" maxlength="120" required
+                     placeholder="Ex.: Ajustes no calendário e correções de agendamento">
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:12px;">
+            <div class="label">Descrição (corpo)</div>
+            <textarea class="textarea" name="body" required
+              placeholder="- O que mudou&#10;- O que foi corrigido&#10;- Observações importantes"></textarea>
+
+            <!-- ✅ Ações redesenhadas (sem quebra de linha) -->
+            <div class="form-actions">
+              <div class="actions-left">
+                <label class="check" title="Se desmarcar, salva como rascunho (não aparece no modal)">
+                  <input type="checkbox" name="is_published" checked>
+                  <span>Publicar agora</span>
+                </label>
+              </div>
+
+              <div class="actions-right">
+                <a class="btn btn-soft" href="{{ url_for('index') }}">
+                  <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-save"></i> Salvar
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <section class="content-card">
+        <h2 class="content-title"><i class="fas fa-list"></i> Últimos Patch Notes</h2>
+        <p class="content-subtitle">Gerencie as últimas 50 entradas (publicar/despublicar e excluir).</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Versão</th>
+                <th>Título</th>
+                <th>Tipo</th>
+                <th>Publicado</th>
+                <th style="min-width: 280px;">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if notes and notes|length > 0 %}
+                {% for n in notes %}
+                  <tr>
+                    <td>{{ n.created_at.strftime("%d/%m/%Y %H:%M") if n.created_at else "-" }}</td>
+                    <td><strong>{{ n.version }}</strong></td>
+                    <td>{{ n.title }}</td>
+                    <td>
+                      {% set sev = (n.severity or 'info') %}
+                      <span class="badge
+                        {% if sev == 'info' %}b-info{% elif sev == 'improvement' %}b-improvement{% elif sev == 'fix' %}b-fix{% else %}b-breaking{% endif %}">
+                        {% if sev == 'info' %}<i class="fas fa-circle-info"></i>Info{% endif %}
+                        {% if sev == 'improvement' %}<i class="fas fa-arrow-up-right-dots"></i>Melhoria{% endif %}
+                        {% if sev == 'fix' %}<i class="fas fa-screwdriver-wrench"></i>Correção{% endif %}
+                        {% if sev == 'breaking' %}<i class="fas fa-triangle-exclamation"></i>Crítica{% endif %}
+                      </span>
+                    </td>
+                    <td>
+                      {% if n.is_published %}
+                        <span class="badge b-improvement"><i class="fas fa-eye"></i>Sim</span>
+                      {% else %}
+                        <span class="badge b-draft"><i class="fas fa-eye-slash"></i>Não</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <div class="table-actions">
+                        <form method="POST" action="{{ url_for('admin_patch_notes_toggle_publish', release_id=n.id) }}">
+                          {% if csrf_token is defined %}
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          {% endif %}
+                          <button class="btn btn-soft btn-sm" type="submit" title="Alternar publicação">
+                            <i class="fas fa-toggle-on"></i>
+                            {% if n.is_published %}Despublicar{% else %}Publicar{% endif %}
+                          </button>
+                        </form>
+
+                        <form method="POST" action="{{ url_for('admin_patch_notes_delete', release_id=n.id) }}"
+                              onsubmit="return confirm('Excluir este patch note?');">
+                          {% if csrf_token is defined %}
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          {% endif %}
+                          <button class="btn btn-danger btn-sm" type="submit" title="Excluir">
+                            <i class="fas fa-trash"></i> Excluir
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr><td colspan="6">Nenhum patch note cadastrado.</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
+
+</body>
+</html>
