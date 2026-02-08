@@ -279,20 +279,15 @@
 
     /* =========================================================
        ✅ TÍTULO (DESKTOP) — IGUAL AO MOBILE
-       Nome em cima (centralizado)
-       Badge embaixo com largura proporcional ao NOME (ag-title shrink-wrap)
        ========================================================= */
     .ag-title{
       display:inline-flex;
       flex-direction:column;
       align-items:stretch;
       gap:4px;
-
-      /* ✅ faz o bloco "encolher" conforme o nome (até no máx 100%) */
       width:fit-content;
       max-width:100%;
       margin:0 auto;
-
       font-family:'Montserrat',sans-serif;
       font-synthesis:none;
       letter-spacing:0;
@@ -306,18 +301,15 @@
       font-weight:800;
       font-size: var(--ag-name-max);
       line-height:1.15;
-
-      /* ✅ mantém 1 linha e corta se precisar */
       white-space:nowrap;
       overflow:hidden;
       text-overflow:clip;
-
       text-align:center;
       letter-spacing:0;
     }
 
     .ag-motivo{
-      width:100%;                 /* ✅ iguala ao "bloco do nome" (ag-title) */
+      width:100%;
       max-width:100%;
       font-weight:800;
       font-size: var(--ag-motivo-size);
@@ -335,7 +327,6 @@
       line-height:1;
     }
 
-    /* ✅ Fallback desktop: se não couber, libera quebra em 2 linhas (centralizado) */
     .ag-title.is-wrap{
       width:100%;
       max-width:100%;
@@ -352,13 +343,13 @@
       width:100%;
     }
 
-    /* ===== SUBSTITUTOS (M/I/T/N) — CENTRALIZADOS NO DESKTOP TAMBÉM ===== */
+    /* ===== SUBSTITUTOS ===== */
     .ag-sub-lines{
       width:100%;
       min-width:0;
       display:grid;
       gap:2px;
-      justify-items:center; /* ✅ centraliza cada linha */
+      justify-items:center;
       margin-top:2px;
     }
 
@@ -368,16 +359,12 @@
       display:flex;
       align-items:baseline;
       gap:4px;
-
       font-size:11px;
       font-weight:700;
       color: rgba(15, 23, 42, .88);
       line-height:1.15;
-
-      /* ✅ centraliza o conjunto "M: Nome" */
       justify-content:center;
       text-align:center;
-
       white-space:normal;
       word-break: normal;
       overflow-wrap: normal;
@@ -391,7 +378,7 @@
       white-space:nowrap;
     }
     .ag-sub-line .sub-v{
-      flex:0 0 auto;        /* ✅ permite centralizar (sem "esticar") */
+      flex:0 0 auto;
       min-width:0;
       white-space:normal;
       word-break: normal;
@@ -420,7 +407,6 @@
         overflow:hidden;
       }
 
-      /* ✅ Mobile: cards UNIFORMES (preenchem a coluna inteira) */
       .agendamento{
         font-size:12px;
         padding:6px 8px;
@@ -431,7 +417,6 @@
         align-items:stretch;
       }
 
-      /* ✅ Mobile: Nome em cima, Motivo embaixo pegando 100% da largura */
       .ag-title{
         display:flex;
         flex-direction:column;
@@ -463,7 +448,6 @@
         white-space:nowrap;
       }
 
-      /* ✅ Centraliza o conteúdo das substituições (M/I/T/N) */
       .ag-sub-lines{ width:100%; justify-items:center; }
       .ag-sub-line{
         width:100%;
@@ -482,7 +466,6 @@
         text-align:center;
       }
 
-      /* Fallback split: M: em cima / Nome embaixo (último recurso) */
       .ag-sub-line.is-split{
         flex-wrap:wrap !important;
         white-space:normal !important;
@@ -496,7 +479,6 @@
         text-align:center;
       }
 
-      /* ✅ Legenda acompanha a largura total do grid (JS seta min-width inline) */
       .legenda{ min-width:640px; }
     }
 
@@ -517,12 +499,10 @@
       min-width: 0;
       display: block;
       text-align: left;
-
       white-space: normal !important;
       word-break: normal !important;
       overflow-wrap: normal !important;
       hyphens: none !important;
-
       line-height: 1.2;
       font-size: 12px;
     }
@@ -1118,42 +1098,92 @@
       }
     }
 
-    // ====== MOBILE: colunas uniformes (todas acompanham a MAIOR largura necessária) ======
+    // ==========================================================
+    // ✅ FIX: MOBILE colunas uniformes SEM “crescimento infinito”
+    // - iOS/Android disparam "resize" ao scroll (barra de endereço)
+    // - scrollWidth em elementos 100% vira feedback positivo
+    // Solução: medir texto real via canvas.measureText (intrínseco)
+    // ==========================================================
+    let __lastMobileColW = 0;
+
+    const __measureCanvas = document.createElement('canvas');
+    const __measureCtx = __measureCanvas.getContext('2d');
+
+    function _px(v){
+      const n = parseFloat(String(v || '0').replace('px',''));
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function _fontForEl(el){
+      const cs = getComputedStyle(el);
+      // Canvas entende bem esse formato
+      const style = cs.fontStyle || 'normal';
+      const variant = cs.fontVariant || 'normal';
+      const weight = cs.fontWeight || '400';
+      const size = cs.fontSize || '12px';
+      const family = cs.fontFamily || 'sans-serif';
+      return `${style} ${variant} ${weight} ${size} ${family}`;
+    }
+
+    function _measureTextEl(el){
+      const text = (el.textContent || '').trim();
+      if (!text) return 0;
+
+      __measureCtx.font = _fontForEl(el);
+      let w = __measureCtx.measureText(text).width || 0;
+
+      // aproxima letter-spacing (se existir)
+      const cs = getComputedStyle(el);
+      const ls = cs.letterSpacing;
+      if (ls && ls !== 'normal') {
+        const lsPx = _px(ls);
+        if (lsPx && text.length > 1) w += (text.length - 1) * lsPx;
+      }
+
+      return Math.ceil(w);
+    }
+
     function syncMobileColumnWidth() {
       if (!window.matchMedia('(max-width: 768px)').matches) return;
 
       const cal = document.querySelector('.calendar');
       if (!cal) return;
 
-      let maxContent = 92;
+      // Base mínima
+      let maxText = 92;
 
-      cal.querySelectorAll('.ag-name, .ag-sub-line, .evento .evento-titulo').forEach((el) => {
-        maxContent = Math.max(maxContent, el.scrollWidth || 0);
+      // Medir texto REAL, não largura da caixa (evita loop)
+      cal.querySelectorAll('.ag-name, .ag-motivo, .ag-sub-line, .evento .evento-titulo').forEach((el) => {
+        maxText = Math.max(maxText, _measureTextEl(el));
       });
 
       const sampleDay = cal.querySelector('.day:not(.weekdays)');
       const sampleAg  = cal.querySelector('.agendamento');
       const sampleEv  = cal.querySelector('.evento');
 
-      const px = (v) => {
-        const n = parseFloat(String(v || '0').replace('px',''));
-        return Number.isFinite(n) ? n : 0;
-      };
-
-      const dayPad = sampleDay ? (px(getComputedStyle(sampleDay).paddingLeft) + px(getComputedStyle(sampleDay).paddingRight)) : 14;
-      const agPad  = sampleAg  ? (px(getComputedStyle(sampleAg).paddingLeft)  + px(getComputedStyle(sampleAg).paddingRight))  : 16;
-      const evPad  = sampleEv  ? (px(getComputedStyle(sampleEv).paddingLeft)  + px(getComputedStyle(sampleEv).paddingRight))  : 16;
+      const dayPad = sampleDay ? (_px(getComputedStyle(sampleDay).paddingLeft) + _px(getComputedStyle(sampleDay).paddingRight)) : 14;
+      const agPad  = sampleAg  ? (_px(getComputedStyle(sampleAg).paddingLeft)  + _px(getComputedStyle(sampleAg).paddingRight))  : 16;
+      const evPad  = sampleEv  ? (_px(getComputedStyle(sampleEv).paddingLeft)  + _px(getComputedStyle(sampleEv).paddingRight))  : 16;
 
       const innerPad = Math.max(agPad, evPad);
-      const extra = 10;
+      const extra = 12;
 
-      const colW = Math.ceil(maxContent + dayPad + innerPad + extra);
+      // Resultado final (com cap para não explodir por algum texto fora da curva)
+      let colW = Math.ceil(maxText + dayPad + innerPad + extra);
+
+      // Cap "seguro" (ajuste se quiser mais largo)
+      colW = Math.max(92, Math.min(colW, 220));
+
+      // Evita qualquer micro-variação ficar “dançando”
+      if (!__lastMobileColW) __lastMobileColW = colW;
+      if (Math.abs(colW - __lastMobileColW) <= 1) colW = __lastMobileColW;
+      else __lastMobileColW = colW;
 
       cal.style.setProperty('--cal-col-w-mobile', `${colW}px`);
 
       const legenda = document.querySelector('.legenda');
       if (legenda) {
-        const gap = px(getComputedStyle(cal).gap) || 5;
+        const gap = _px(getComputedStyle(cal).gap) || 5;
         const totalW = (colW * 7) + (gap * 6);
         legenda.style.minWidth = `${Math.max(640, totalW)}px`;
       }
@@ -1409,13 +1439,21 @@
       document.querySelectorAll('.agendamento').forEach(el => renderSubLinesForEl(el));
       scheduleRefitAll();
 
+      // ✅ iOS/Android: resize ao scroll (barra de endereço). Só refaz se WIDTH mudar.
       let t = null;
+      let lastW = window.innerWidth;
+
       window.addEventListener('resize', () => {
+        const w = window.innerWidth;
+        if (Math.abs(w - lastW) <= 2) return; // ignora resize “fake” por scroll
+        lastW = w;
+
         clearTimeout(t);
         t = setTimeout(() => {
+          __lastMobileColW = 0; // recalcula do zero quando realmente muda a largura (ex.: rotação)
           scheduleRefitAll();
         }, 160);
-      });
+      }, { passive: true });
 
       window.addEventListener('load', () => {
         scheduleRefitAll();
