@@ -274,18 +274,39 @@
               </div>
             </div>
 
+            {# ============================================================
+               ✅ FIX: manter graduação selecionada após salvar
+               - marca selected com base em usuario.graduacao
+               - fallback: se o valor do banco não bater com nenhuma opção,
+                 exibe "Atual: ..." já selecionado
+               ============================================================ #}
+            {% set graduacao_atual = (usuario.graduacao or '')|trim %}
+            {% set graduacoes_opcoes = [
+              'Ensino Fundamental',
+              'Ensino Médio',
+              'Técnico',
+              'Tecnólogo',
+              'Bacharelado',
+              'Licenciatura',
+              'Pós Graduação Latu Sensu',
+              'Mestrado',
+              'Doutorado',
+              'Pós Doutorado'
+            ] %}
+
             <div class="editable-field">
               <label for="graduacao"><i class="fas fa-graduation-cap"></i> Graduação</label>
               <div class="input-edit">
                 <select id="graduacao" name="graduacao">
                   <option value="">Selecione sua graduação</option>
-                  <option value="Técnico" {% if usuario.graduacao == 'Técnico' %}selected{% endif %}>Técnico</option>
-                  <option value="Tecnólogo" {% if usuario.graduacao == 'Tecnólogo' %}selected{% endif %}>Tecnólogo</option>
-                  <option value="Licenciatura" {% if usuario.graduacao == 'Licenciatura' %}selected{% endif %}>Licenciatura</option>
-                  <option value="Pós Graduação Latu Sensu" {% if usuario.graduacao == 'Pós Graduação Latu Sensu' %}selected{% endif %}>Pós Graduação Latu Sensu</option>
-                  <option value="Pós Graduação Stricto Sensu" {% if usuario.graduacao == 'Pós Graduação Stricto Sensu' %}selected{% endif %}>Pós Graduação Stricto Sensu</option>
-                  <option value="Mestrado" {% if usuario.graduacao == 'Mestrado' %}selected{% endif %}>Mestrado</option>
-                  <option value="Doutorado" {% if usuario.graduacao == 'Doutorado' %}selected{% endif %}>Doutorado</option>
+
+                  {% if graduacao_atual and (graduacao_atual not in graduacoes_opcoes) %}
+                    <option value="{{ graduacao_atual }}" selected>Atual: {{ graduacao_atual }}</option>
+                  {% endif %}
+
+                  {% for g in graduacoes_opcoes %}
+                    <option value="{{ g }}" {% if graduacao_atual == g %}selected{% endif %}>{{ g }}</option>
+                  {% endfor %}
                 </select>
               </div>
             </div>

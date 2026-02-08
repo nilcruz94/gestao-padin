@@ -260,6 +260,9 @@
       user-select:none;
       overflow:hidden;
 
+      /* ✅ para marcador/contorno */
+      position: relative;
+
       /* ✅ DESKTOP/MOBILE: estrutura centralizada como no mobile */
       text-align:center;
       align-items:stretch;
@@ -276,6 +279,75 @@
     .agendamento.clickable { cursor: pointer; }
     .agendamento.clickable:focus { outline: 2px solid rgba(37,99,235,.65); outline-offset: 2px; }
     .agendamento.clickable:hover { box-shadow: 0 10px 20px rgba(15,23,42,.12); transform: translateY(-1px); }
+
+    /* =========================================================
+       ✅ DESTAQUE: PROFESSOR SEM SUBSTITUIÇÃO
+       - Contorno vermelho pulsante (elegante)
+       - Ponto vermelho piscando no canto
+       ========================================================= */
+    .agendamento.ag-no-sub {
+      /* mantém as cores do status (fundo/texto), só adiciona destaque */
+      box-shadow:
+        inset 0 0 0 2px rgba(239, 68, 68, .88),
+        0 0 0 0 rgba(239, 68, 68, .22);
+      animation: agNoSubPulse 1.55s ease-in-out infinite;
+    }
+
+    .agendamento.ag-no-sub::after{
+      content:"";
+      position:absolute;
+      top:6px;
+      right:6px;
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background: rgba(239,68,68,1);
+      box-shadow:
+        0 0 0 2px rgba(255,255,255,.78),
+        0 0 0 0 rgba(239,68,68,.35);
+      animation: agNoSubDot 1.15s ease-in-out infinite;
+      pointer-events:none;
+    }
+
+    @keyframes agNoSubPulse{
+      0%{
+        box-shadow:
+          inset 0 0 0 2px rgba(239, 68, 68, .88),
+          0 0 0 0 rgba(239, 68, 68, .22);
+      }
+      70%{
+        box-shadow:
+          inset 0 0 0 2px rgba(239, 68, 68, .88),
+          0 0 0 9px rgba(239, 68, 68, 0);
+      }
+      100%{
+        box-shadow:
+          inset 0 0 0 2px rgba(239, 68, 68, .88),
+          0 0 0 0 rgba(239, 68, 68, 0);
+      }
+    }
+
+    @keyframes agNoSubDot{
+      0%, 100%{
+        transform: scale(1);
+        opacity: 1;
+        box-shadow:
+          0 0 0 2px rgba(255,255,255,.78),
+          0 0 0 0 rgba(239,68,68,.35);
+      }
+      50%{
+        transform: scale(.85);
+        opacity: .45;
+        box-shadow:
+          0 0 0 2px rgba(255,255,255,.78),
+          0 0 0 5px rgba(239,68,68,0);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .agendamento.ag-no-sub { animation: none; }
+      .agendamento.ag-no-sub::after { animation: none; }
+    }
 
     /* =========================================================
        ✅ TÍTULO (DESKTOP) — IGUAL AO MOBILE
@@ -534,6 +606,27 @@
     .legenda h3{ text-align:left; margin:0 0 10px; color:var(--text-muted); font-size:13px; text-transform:uppercase; letter-spacing:.08em; }
     .legenda div{ display:flex; align-items:center; margin-bottom:6px; gap:10px; font-size:13px; color:var(--text-main); }
     .legenda .cor{ width:22px; height:22px; border-radius:999px; border:1px solid #cbd5f5; box-shadow:0 2px 6px rgba(15,23,42,.16); }
+
+    /* ✅ amostra do “professor sem substituição” na legenda */
+    .legenda .cor-no-sub{
+      background: rgba(255,255,255,.9);
+      border: 2px solid rgba(239,68,68,.88);
+      position: relative;
+      box-shadow:
+        0 2px 6px rgba(15,23,42,.16),
+        inset 0 0 0 1px rgba(239,68,68,.25);
+    }
+    .legenda .cor-no-sub::after{
+      content:"";
+      position:absolute;
+      inset:6px;
+      border-radius:999px;
+      background: rgba(239,68,68,1);
+      animation: agNoSubDot 1.15s ease-in-out infinite;
+    }
+    @media (prefers-reduced-motion: reduce){
+      .legenda .cor-no-sub::after{ animation:none; }
+    }
 
     /* ===== MODAL (ADMIN) ===== */
     .modal {
@@ -848,6 +941,25 @@
                     {% set abreviado = (folga.funcionario.nome or '')|abbr_name %}
                     {% set info_modal = nome_full_disp ~ ' — ' ~ motivo_txt ~ ' (' ~ current_day.strftime('%d/%m/%Y') ~ ')' %}
 
+                    {# ===== PROFESSOR? (cargos informados: Prof. Adjunto, I, II, III, IV) ===== #}
+                    {% set cargo_blob = (
+                        (folga.funcionario.cargo|default(''))
+                        ~ ' ' ~ (folga.funcionario.funcao|default(''))
+                        ~ ' ' ~ (folga.funcionario.categoria|default(''))
+                        ~ ' ' ~ (folga.funcionario.tipo|default(''))
+                      )|lower %}
+                    {% set is_professor = (
+                        ('professor adjunto' in cargo_blob)
+                        or ('professor i' in cargo_blob)
+                        or ('professor ii' in cargo_blob)
+                        or ('professor iii' in cargo_blob)
+                        or ('professor iv' in cargo_blob)
+                        or ('professor 1' in cargo_blob)
+                        or ('professor 2' in cargo_blob)
+                        or ('professor 3' in cargo_blob)
+                        or ('professor 4' in cargo_blob)
+                      ) %}
+
                     <div
                       class="agendamento
                         {% if folga.status == 'em_espera' %}agenda-em-espera
@@ -859,6 +971,7 @@
                       data-ag-id="{{ folga.id }}"
                       data-sub-nome="{{ (folga.nome_substituto or '')|e }}"
                       data-info="{{ info_modal|e }}"
+                      data-is-prof="{{ '1' if is_professor else '0' }}"
                       {% if can_edit_sub %}
                         role="button"
                         tabindex="0"
@@ -887,6 +1000,7 @@
           <div><span class="cor" style="background-color:#fed7aa;"></span><strong>Folga em espera</strong></div>
           <div><span class="cor" style="background-color:#a7f3d0;"></span><strong>Folga deferida</strong></div>
           <div><span class="cor" style="background-color:#fecaca;"></span><strong>Folga indeferida</strong></div>
+          <div><span class="cor cor-no-sub"></span><strong>Professor sem substituição</strong></div>
           <div><span class="cor" style="background-color:#e9f2ff; border: 2px solid #007bff;"></span><strong>Dia atual</strong></div>
         </div>
       </div>
@@ -1096,6 +1210,16 @@
         div.appendChild(sV);
         box.appendChild(div);
       }
+
+      // ==========================================================
+      // ✅ Marcação: PROFESSOR sem substituto
+      // - só aplica se data-is-prof="1"
+      // - substituto “vazio” = nenhum turno preenchido após parse
+      // ==========================================================
+      const isProf = (agEl.getAttribute('data-is-prof') === '1');
+      const hasAnySub = SHIFT_KEYS.some(k => !!cleanSpaces(parsed[k]));
+      if (isProf && !hasAnySub) agEl.classList.add('ag-no-sub');
+      else agEl.classList.remove('ag-no-sub');
     }
 
     // ==========================================================
@@ -1116,7 +1240,6 @@
 
     function _fontForEl(el){
       const cs = getComputedStyle(el);
-      // Canvas entende bem esse formato
       const style = cs.fontStyle || 'normal';
       const variant = cs.fontVariant || 'normal';
       const weight = cs.fontWeight || '400';
@@ -1132,7 +1255,6 @@
       __measureCtx.font = _fontForEl(el);
       let w = __measureCtx.measureText(text).width || 0;
 
-      // aproxima letter-spacing (se existir)
       const cs = getComputedStyle(el);
       const ls = cs.letterSpacing;
       if (ls && ls !== 'normal') {
@@ -1149,10 +1271,8 @@
       const cal = document.querySelector('.calendar');
       if (!cal) return;
 
-      // Base mínima
       let maxText = 92;
 
-      // Medir texto REAL, não largura da caixa (evita loop)
       cal.querySelectorAll('.ag-name, .ag-motivo, .ag-sub-line, .evento .evento-titulo').forEach((el) => {
         maxText = Math.max(maxText, _measureTextEl(el));
       });
@@ -1168,13 +1288,9 @@
       const innerPad = Math.max(agPad, evPad);
       const extra = 12;
 
-      // Resultado final (com cap para não explodir por algum texto fora da curva)
       let colW = Math.ceil(maxText + dayPad + innerPad + extra);
-
-      // Cap "seguro" (ajuste se quiser mais largo)
       colW = Math.max(92, Math.min(colW, 220));
 
-      // Evita qualquer micro-variação ficar “dançando”
       if (!__lastMobileColW) __lastMobileColW = colW;
       if (Math.abs(colW - __lastMobileColW) <= 1) colW = __lastMobileColW;
       else __lastMobileColW = colW;
@@ -1410,7 +1526,7 @@
 
         if (subCurrentEl) {
           subCurrentEl.setAttribute('data-sub-nome', serialized);
-          renderSubLinesForEl(subCurrentEl);
+          renderSubLinesForEl(subCurrentEl); // ✅ já recalcula o destaque ag-no-sub
           scheduleRefitAll();
         }
 
@@ -1436,7 +1552,7 @@
 
     // ====== INIT ======
     document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('.agendamento').forEach(el => renderSubLinesForEl(el));
+      document.querySelectorAll('.agendamento').forEach(el => renderSubLinesForEl(el)); // ✅ aplica também o ag-no-sub
       scheduleRefitAll();
 
       // ✅ iOS/Android: resize ao scroll (barra de endereço). Só refaz se WIDTH mudar.
