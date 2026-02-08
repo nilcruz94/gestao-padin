@@ -443,7 +443,8 @@
                   'DS':'Doação de Sangue',
                   'TRE':'TRE',
                   'LM':'Licença Médica',
-                  'FS':'Falta Simples'
+                  'FS':'Falta Simples',
+                  'DL':'Dispensa Legal'
                 } %}
                 {% for ag in agendamentos|sort(attribute='data', reverse=True) %}
                 {% set s = (ag.status or '')|lower %}

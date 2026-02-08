@@ -1521,18 +1521,28 @@ def agendar():
         sync_tre_user(current_user.id)
 
         # Valores do formulário
-        tipo_folga = request.form.get('tipo_folga')      # ex.: 'AB', 'BH', 'DS', 'TRE', 'LM', 'FS'
+        tipo_folga = request.form.get('tipo_folga')      # ex.: 'AB', 'BH', 'DS', 'TRE', 'LM', 'FS', 'DL'
         data_folga = request.form.get('data')
         motivo = request.form.get('motivo')              # deve espelhar o select
         data_referencia = request.form.get('data_referencia')
 
         substituicao = request.form.get("havera_substituicao")
         nome_substituto = request.form.get("nome_substituto")
-        if substituicao == "Não":
-            nome_substituto = None
+
+        # ✅ Normaliza textos
+        tipo_folga = (tipo_folga or "").strip().upper()
+        motivo = (motivo or "").strip().upper()
 
         # 🔸 Mantém motivo/tipo_folga sincronizados (o select é a fonte da verdade)
         tipo_folga = motivo or tipo_folga
+
+        # ✅ Normaliza substituição e limpa substituto
+        substituicao = (substituicao or "").strip()
+        nome_substituto = (nome_substituto or "").strip()
+        if substituicao.lower() in ("não", "nao", "n", "false", "0", ""):
+            nome_substituto = None
+        elif not nome_substituto:
+            nome_substituto = None
 
         # ---- Validação específica para TRE ----
         if tipo_folga == 'TRE':
@@ -1564,6 +1574,7 @@ def agendar():
             'TRE': 'TRE',
             'LM':  'Licença Médica',
             'FS':  'Falta Simples',
+            'DL':  'Dispensa Legal',
         }.get(tipo_folga, 'Agendamento')
 
         # ---- Validação e parsing da data da folga ----
@@ -1642,7 +1653,7 @@ def agendar():
             funcionario_id=current_user.id,
             status='em_espera',
             data=data_folga,
-            motivo=tipo_folga,            # usa o valor já sincronizado
+            motivo=tipo_folga,
             tipo_folga=tipo_folga,
             data_referencia=data_referencia,
             horas=horas,
@@ -1655,17 +1666,17 @@ def agendar():
             db.session.add(novo_agendamento)
             db.session.commit()
 
-            # ✅ NOVO: gera/salva protocolo PDF (status inicial: EM ESPERA)
+            # ✅ gera/salva protocolo PDF (status inicial: EM ESPERA)
             try:
                 gerar_protocolo_agendamento_pdf(novo_agendamento, current_user)
-            except Exception as pdf_err:
+            except Exception:
                 current_app.logger.exception("Falha ao gerar protocolo PDF do agendamento %s", novo_agendamento.id)
                 flash("Agendamento registrado, mas não foi possível gerar o protocolo em PDF neste momento.", "warning")
 
             nome = current_user.nome
             data_str = novo_agendamento.data.strftime('%d/%m/%Y')
 
-            # ==== E-MAIL ESPECÍFICO PARA LM ====
+            # ==== E-MAIL ESPECÍFICO PARA LM (COMUNICAÇÃO) ====
             if tipo_folga == 'LM':
                 assunto = "E.M José Padin Mouta – Comunicação de Licença Médica registrada"
                 mensagem_html = f"""
@@ -1681,11 +1692,6 @@ def agendar():
                       <strong>Importante:</strong> a <u>concessão</u>, <u>homologação</u> e eventual <u>indeferimento</u> de Licença Médica
                       são de responsabilidade da <strong>Prefeitura/órgão central</strong>, conforme as normas municipais vigentes.
                       A escola <strong>não defere nem indefere</strong> licenças médicas.
-                    </p>
-                    <p>
-                      Caso ainda não o tenha feito, siga o procedimento oficial do município para apresentação do
-                      <strong>atestado/laudo</strong> e abertura do processo correspondente. Este e-mail é apenas a confirmação de que a
-                      escola foi notificada.
                     </p>
                     <p>
                       No sistema, o status aparecerá como <strong style="color:#FFA500;">EM ESPERA</strong> apenas para fins administrativos
@@ -1706,11 +1712,10 @@ def agendar():
 Registramos sua COMUNICAÇÃO DE LICENÇA MÉDICA (LM) para o dia {data_str}.
 Este registro é para CIÊNCIA da direção e organização interna (cobertura), não sendo um pedido de autorização.
 
-Importante: a concessão/homologação/indeferimento de LM é de responsabilidade da Prefeitura/órgão central, conforme normas municipais.
+Importante: a concessão/homologação/indeferimento de LM é de responsabilidade da Prefeitura/órgão central.
 A escola não defere nem indefere licenças médicas.
 
-Caso ainda não tenha feito, siga o procedimento oficial do município para apresentação do atestado/laudo e abertura do processo.
-No sistema, o status “EM ESPERA” é apenas administrativo (ciência/organização), não se trata de fila de aprovação.
+No sistema, o status “EM ESPERA” é apenas administrativo (ciência/organização). Não é fila de aprovação.
 
 Atenciosamente,
 
@@ -1718,6 +1723,55 @@ Nilson Cruz
 Secretário da Unidade Escolar
 E.M José Padin Mouta
 """
+
+            # ==== ✅ NOVO: E-MAIL ESPECÍFICO PARA DL (COMUNICAÇÃO) ====
+            elif tipo_folga == 'DL':
+                assunto = "E.M José Padin Mouta – Comunicação de Dispensa Legal registrada"
+                mensagem_html = f"""
+                <html>
+                  <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
+                    <p>Prezado(a) Senhor(a) <strong>{nome}</strong>,</p>
+                    <p>
+                      Registramos sua <strong>comunicação de Dispensa Legal (DL)</strong> para o dia
+                      <strong>{data_str}</strong>. Este registro serve para <strong>ciência da direção e organização interna</strong>
+                      (organização de serviço/cobertura), não sendo um pedido de deferimento.
+                    </p>
+                    <p>
+                      <strong>Importante:</strong> a Dispensa Legal (DL) é uma medida prevista em norma e, quando aplicável,
+                      <strong>não depende de deferimento/indeferimento pela escola</strong>. O sistema registra apenas para
+                      <strong>sinalização aos gestores</strong>.
+                    </p>
+                    <p>
+                      No sistema, o status aparecerá como <strong style="color:#FFA500;">EM ESPERA</strong> apenas para fins administrativos
+                      (ciência/organização). Não se trata de fila de aprovação.
+                    </p>
+                    <br>
+                    <p>Atenciosamente,</p>
+                    <p>
+                      Nilson Cruz<br>
+                      Secretário da Unidade Escolar<br>
+                      E.M José Padin Mouta
+                    </p>
+                  </body>
+                </html>
+                """
+                mensagem_texto = f"""Prezado(a) Senhor(a) {nome},
+
+Registramos sua COMUNICAÇÃO DE DISPENSA LEGAL (DL) para o dia {data_str}.
+Este registro é para CIÊNCIA da direção e organização interna (cobertura/serviço), não sendo um pedido de deferimento.
+
+Importante: a Dispensa Legal (DL), quando aplicável, não depende de deferimento/indeferimento pela escola.
+O sistema registra apenas para sinalização aos gestores.
+
+No sistema, o status “EM ESPERA” é apenas administrativo (ciência/organização). Não é fila de aprovação.
+
+Atenciosamente,
+
+Nilson Cruz
+Secretário da Unidade Escolar
+E.M José Padin Mouta
+"""
+
             else:
                 # ==== E-MAIL PADRÃO (demais motivos) ====
                 assunto = "E.M José Padin Mouta – Confirmação de Agendamento"
