@@ -1509,7 +1509,6 @@ def agendamento_protocolo(agendamento_id):
     resp.headers["Pragma"] = "no-cache"
     return resp
 
-
 # ===========================================
 # AGENDAR FOLGA
 # ===========================================
@@ -3927,6 +3926,113 @@ def admin_tre_excluir(tre_id: int):
         current_app.logger.exception("Erro ao excluir TRE id=%s: %s", tre_id, e)
         db.session.rollback()
         return jsonify({"error": "Falha ao excluir a TRE."}), 500
+    
+@app.route("/admin/tre/lancar", methods=["GET", "POST"])
+@login_required
+def admin_tre_lancar():
+    # Permissão
+    if getattr(current_user, "tipo", "") != "administrador":
+        flash("Acesso negado.", "danger")
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        # 1) dados
+        try:
+            funcionario_id = int(request.form.get("funcionario_id", "0") or 0)
+        except ValueError:
+            funcionario_id = 0
+
+        dias = request.form.get("dias_folga", type=int)
+        parecer = (request.form.get("parecer_admin") or "").strip() or None
+        arquivo = request.files.get("arquivo_pdf")  # obrigatório nessa abordagem
+
+        # 2) validações
+        if not funcionario_id:
+            flash("Selecione um servidor.", "warning")
+            return redirect(url_for("admin_tre_lancar"))
+
+        user = User.query.get(funcionario_id)
+        if not user or (hasattr(user, "ativo") and not bool(user.ativo)):
+            flash("Servidor inválido ou inativo.", "warning")
+            return redirect(url_for("admin_tre_lancar"))
+
+        if not dias or dias < 1:
+            flash("Informe uma quantidade válida de dias (>= 1).", "warning")
+            return redirect(url_for("admin_tre_lancar"))
+
+        if not arquivo or not arquivo.filename:
+            flash("Anexe o PDF comprobatório para registrar a TRE.", "warning")
+            return redirect(url_for("admin_tre_lancar"))
+
+        if not allowed_file(arquivo.filename):
+            flash("Somente PDF é permitido.", "danger")
+            return redirect(url_for("admin_tre_lancar"))
+
+        # 3) salva PDF
+        filename = secure_filename(
+            f"ADMIN_{current_user.id}_U{user.id}_{datetime.datetime.now():%Y%m%d%H%M%S}_{arquivo.filename}"
+        )
+        save_dir = _ensure_upload_dir()
+        arquivo.save(str(save_dir / filename))
+
+        # 4) cria TRE já deferida (crédito administrativo)
+        nova = TRE(
+            funcionario_id=user.id,
+            dias_folga=dias,
+            arquivo_pdf=filename,
+            status="deferida",
+            dias_validados=dias,
+            parecer_admin=parecer,
+            validado_em=datetime.datetime.utcnow(),
+            validado_por_id=current_user.id,
+        )
+
+        try:
+            db.session.add(nova)
+            db.session.commit()
+            sync_tre_user(user.id)
+
+            # opcional: notificar o usuário por e-mail
+            try:
+                assunto = "E.M José Padin Mouta – TRE registrada (crédito administrativo)"
+                msg_html = f"""
+                <html><body style="font-family: Arial, sans-serif; color:#333; line-height:1.5;">
+                  <p>Prezado(a) Senhor(a) <strong>{user.nome}</strong>,</p>
+                  <p>Registramos <strong>{dias} dia(s) de TRE</strong> no seu saldo (crédito administrativo).</p>
+                  <p><strong>Observação:</strong> {parecer or "—"}</p>
+                  <p>Você já pode utilizar o saldo no Portal do Servidor.</p>
+                  <br>
+                  <p>Atenciosamente,<br>Nilson Cruz<br>E.M José Padin Mouta</p>
+                </body></html>
+                """
+                msg_txt = (
+                    f"Prezado(a) {user.nome},\n\n"
+                    f"Registramos {dias} dia(s) de TRE no seu saldo (crédito administrativo).\n"
+                    f"Observação: {parecer or '—'}\n\n"
+                    "Você já pode utilizar o saldo no Portal do Servidor.\n\n"
+                    "Atenciosamente,\nNilson Cruz\nE.M José Padin Mouta\n"
+                )
+                enviar_email(user.email, assunto, msg_html, msg_txt)
+            except Exception:
+                current_app.logger.exception("Falha ao enviar e-mail de TRE admin para user_id=%s", user.id)
+
+            flash(f"TRE lançada para {user.nome} (+{dias} dia(s)).", "success")
+            return redirect(url_for("admin_tres_list", status="deferida"))
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.exception("Erro ao lançar TRE admin: %s", e)
+            flash("Erro ao lançar TRE. Verifique logs.", "danger")
+            return redirect(url_for("admin_tre_lancar"))
+
+    # GET: lista usuários ativos para o select
+    usuarios = (
+        User.query
+        .filter(User.ativo.is_(True))
+        .order_by(User.nome.asc())
+        .all()
+    )
+    return render_template("admin_tre_lancar.html", usuarios=usuarios, hoje=date.today())
 
 # ===========================================
 # RELATÓRIO PDF (ADMIN)
