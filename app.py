@@ -1576,14 +1576,14 @@ def agendar():
                 flash("Você não possui TREs disponíveis para agendar no momento.", "danger")
                 return render_template('agendar.html')
 
-        # Descrição amigável para o e-mail/notificações
+        # Descrição amigável
         descricao_motivo = {
             'AB':  'Abonada',
             'BH':  'Banco de Horas',
             'DS':  'Doação de Sangue',
             'TRE': 'TRE',
             'LM':  'Licença Médica',
-            'FS':  'Falta Simples',
+            'FS':  'Falta Simples (FS)',
             'DL':  'Dispensa Legal',
         }.get(tipo_folga, 'Agendamento')
 
@@ -1617,7 +1617,7 @@ def agendar():
                 flash("Você já atingiu o limite de 6 folgas 'AB' deferidas neste ano.", "danger")
                 return render_template('agendar.html')
 
-        # ---- Banco de Horas: validação de data de referência e tempo ----
+        # ---- Banco de Horas: validação de data de referência ----
         if tipo_folga == 'BH' and data_referencia:
             try:
                 data_referencia = datetime.datetime.strptime(data_referencia, '%Y-%m-%d').date()
@@ -1683,143 +1683,326 @@ def agendar():
                 current_app.logger.exception("Falha ao gerar protocolo PDF do agendamento %s", novo_agendamento.id)
                 flash("Agendamento registrado, mas não foi possível gerar o protocolo em PDF neste momento.", "warning")
 
-            nome = current_user.nome
+            # =========================
+            # E-MAILS PERSONALIZADOS
+            # =========================
+            nome = (current_user.nome or "").strip() or "Servidor(a)"
             data_str = novo_agendamento.data.strftime('%d/%m/%Y')
+            status_label = "EM ESPERA"
 
-            # ==== E-MAIL ESPECÍFICO PARA LM (COMUNICAÇÃO) ====
-            if tipo_folga == 'LM':
+            def _format_tempo_bh(h, m):
+                h = int(h or 0)
+                m = int(m or 0)
+                parts = []
+                if h > 0:
+                    parts.append(f"{h}h")
+                if m > 0:
+                    parts.append(f"{m}min")
+                return " ".join(parts) if parts else "0min"
+
+            tempo_bh = _format_tempo_bh(novo_agendamento.horas, novo_agendamento.minutos)
+            data_ref_str = novo_agendamento.data_referencia.strftime('%d/%m/%Y') if novo_agendamento.data_referencia else None
+
+            def _escape(s):
+                if s is None:
+                    return ""
+                return (str(s)
+                        .replace("&", "&amp;")
+                        .replace("<", "&lt;")
+                        .replace(">", "&gt;")
+                        .replace('"', "&quot;")
+                        .replace("'", "&#39;"))
+
+            def build_email_html(title, greeting_name, lead, paragraphs, summary_rows, note_lines=None):
+                """
+                Layout compatível com a maioria dos clientes de e-mail (table-based).
+                """
+                greeting_name = _escape(greeting_name)
+                title = _escape(title)
+                # ✅ CORREÇÃO: NÃO ESCAPAR O LEAD (ele contém HTML <strong> etc. "controlado" por você)
+                # lead = _escape(lead)  <-- removido propositalmente
+                note_lines = note_lines or []
+
+                # Monta parágrafos (já são HTML controlado)
+                p_html = ""
+                for p in paragraphs:
+                    if not p:
+                        continue
+                    p_html += f'<p style="margin:0 0 12px 0;">{p}</p>'
+
+                # Monta linhas do resumo (tabela)
+                rows_html = ""
+                for k, v in summary_rows:
+                    if v is None or v == "":
+                        continue
+                    rows_html += f"""
+                      <tr>
+                        <td style="padding:10px 12px;border-top:1px solid #EAEAEA;color:#555;font-weight:600;white-space:nowrap;">
+                          {_escape(k)}
+                        </td>
+                        <td style="padding:10px 12px;border-top:1px solid #EAEAEA;color:#222;">
+                          {v}
+                        </td>
+                      </tr>
+                    """
+
+                # Notas finais
+                notes_html = ""
+                if note_lines:
+                    li = "".join([f"<li style='margin:0 0 6px 0;'>{x}</li>" for x in note_lines if x])
+                    notes_html = f"""
+                      <div style="margin-top:14px;padding:12px 12px;border:1px dashed #D7D7D7;border-radius:10px;background:#FAFAFA;">
+                        <div style="font-weight:700;color:#333;margin-bottom:8px;">Observações</div>
+                        <ul style="margin:0 0 0 18px;padding:0;color:#444;">
+                          {li}
+                        </ul>
+                      </div>
+                    """
+
+                html = f"""
+                <html>
+                  <body style="margin:0;padding:0;background:#F4F6F8;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F4F6F8;padding:24px 0;">
+                      <tr>
+                        <td align="center" style="padding:0 12px;">
+                          <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="width:100%;max-width:640px;background:#FFFFFF;border-radius:14px;overflow:hidden;border:1px solid #E6E6E6;">
+                            <tr>
+                              <td style="padding:18px 20px;background:#0F172A;color:#FFFFFF;">
+                                <div style="font-size:14px;opacity:.9;">E.M José Padin Mouta</div>
+                                <div style="font-size:20px;font-weight:800;margin-top:6px;letter-spacing:0.2px;">{title}</div>
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <td style="padding:20px 20px 6px 20px;color:#111827;font-family:Arial,sans-serif;line-height:1.6;">
+                                <p style="margin:0 0 12px 0;">Prezado(a) Senhor(a) <strong>{greeting_name}</strong>,</p>
+                                <p style="margin:0 0 14px 0;color:#111827;">
+                                  {lead}
+                                </p>
+
+                                {p_html}
+
+                                <div style="margin:16px 0 10px 0;font-weight:800;color:#111827;">Resumo do registro</div>
+
+                                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #EAEAEA;border-radius:12px;overflow:hidden;">
+                                  {rows_html}
+                                </table>
+
+                                {notes_html}
+
+                                <div style="margin-top:18px;border-top:1px solid #EEEEEE;padding-top:14px;color:#374151;">
+                                  <p style="margin:0 0 4px 0;">Atenciosamente,</p>
+                                  <p style="margin:0;font-weight:700;">Nilson Cruz</p>
+                                  <p style="margin:0;">Secretário da Unidade Escolar</p>
+                                  <p style="margin:0;">E.M José Padin Mouta</p>
+                                </div>
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <td style="padding:12px 20px;background:#FAFAFA;color:#6B7280;font-size:12px;font-family:Arial,sans-serif;">
+                                Este e-mail é uma confirmação automática do sistema para fins administrativos da unidade.
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </body>
+                </html>
+                """
+                return html
+
+            def build_email_text(subject_title, greeting_name, lead, paragraphs, summary_rows, note_lines=None):
+                note_lines = note_lines or []
+                lines = []
+                lines.append(f"E.M José Padin Mouta – {subject_title}")
+                lines.append("")
+                lines.append(f"Prezado(a) Senhor(a) {greeting_name},")
+                lines.append("")
+                lines.append(lead)
+                lines.append("")
+                for p in paragraphs:
+                    if p:
+                        txt = (p.replace("<strong>", "").replace("</strong>", "")
+                                 .replace("<u>", "").replace("</u>", ""))
+                        lines.append(txt)
+                        lines.append("")
+                lines.append("Resumo do registro:")
+                for k, v in summary_rows:
+                    if v is None or v == "":
+                        continue
+                    vv = (str(v).replace("<strong>", "").replace("</strong>", "")
+                               .replace("<span", "").replace("</span>", ""))
+                    lines.append(f"- {k}: {vv}")
+                if note_lines:
+                    lines.append("")
+                    lines.append("Observações:")
+                    for n in note_lines:
+                        if n:
+                            lines.append(f"- {n}")
+                lines.append("")
+                lines.append("Atenciosamente,")
+                lines.append("Nilson Cruz")
+                lines.append("Secretário da Unidade Escolar")
+                lines.append("E.M José Padin Mouta")
+                return "\n".join(lines)
+
+            # Itens comuns do resumo
+            resumo = [
+                ("Motivo", f"<strong>{_escape(descricao_motivo)}</strong>"),
+                ("Data", f"<strong>{_escape(data_str)}</strong>"),
+                ("Status no sistema", f"<span style='font-weight:800;color:#D97706;'>{_escape(status_label)}</span>"),
+            ]
+
+            if tipo_folga == "BH":
+                resumo.append(("Tempo lançado", f"<strong>{_escape(tempo_bh)}</strong>"))
+                if data_ref_str:
+                    resumo.append(("Data de referência", _escape(data_ref_str)))
+
+            if nome_substituto:
+                resumo.append(("Haverá substituição", "Sim"))
+                resumo.append(("Substituto", f"<strong>{_escape(nome_substituto)}</strong>"))
+            else:
+                resumo.append(("Haverá substituição", "Não"))
+
+            # ==== Conteúdo por motivo ====
+            if tipo_folga == "LM":
                 assunto = "E.M José Padin Mouta – Comunicação de Licença Médica registrada"
-                mensagem_html = f"""
-                <html>
-                  <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
-                    <p>Prezado(a) Senhor(a) <strong>{nome}</strong>,</p>
-                    <p>
-                      Registramos sua <strong>comunicação de Licença Médica (LM)</strong> para o dia
-                      <strong>{data_str}</strong>. Este registro serve para <strong>ciência da direção e organização interna</strong>
-                      (cobertura/substituição), não sendo um pedido de autorização.
-                    </p>
-                    <p>
-                      <strong>Importante:</strong> a <u>concessão</u>, <u>homologação</u> e eventual <u>indeferimento</u> de Licença Médica
-                      são de responsabilidade da <strong>Prefeitura/órgão central</strong>, conforme as normas municipais vigentes.
-                      A escola <strong>não defere nem indefere</strong> licenças médicas.
-                    </p>
-                    <p>
-                      No sistema, o status aparecerá como <strong style="color:#FFA500;">EM ESPERA</strong> apenas para fins administrativos
-                      (ciência/organização). Não se trata de fila de aprovação.
-                    </p>
-                    <br>
-                    <p>Atenciosamente,</p>
-                    <p>
-                      Nilson Cruz<br>
-                      Secretário da Unidade Escolar<br>
-                      E.M José Padin Mouta
-                    </p>
-                  </body>
-                </html>
-                """
-                mensagem_texto = f"""Prezado(a) Senhor(a) {nome},
+                title = "Comunicação de Licença Médica (LM)"
+                lead = f"Registramos sua comunicação de <strong>Licença Médica (LM)</strong> para <strong>{_escape(data_str)}</strong>."
+                paragraphs = [
+                    "Este registro serve para <strong>ciência da direção e organização interna</strong> (cobertura/substituição), <strong>não sendo um pedido de autorização</strong>.",
+                    "<strong>Importante:</strong> a concessão, homologação e eventual indeferimento de Licença Médica são de responsabilidade da <strong>Prefeitura/órgão central</strong>. A escola <strong>não defere nem indefere</strong> licenças médicas.",
+                    f"No sistema, o status <strong style='color:#D97706;'>EM ESPERA</strong> aparece apenas para fins administrativos (ciência/organização). <strong>Não se trata de fila de aprovação</strong>.",
+                ]
+                notes = []
 
-Registramos sua COMUNICAÇÃO DE LICENÇA MÉDICA (LM) para o dia {data_str}.
-Este registro é para CIÊNCIA da direção e organização interna (cobertura), não sendo um pedido de autorização.
-
-Importante: a concessão/homologação/indeferimento de LM é de responsabilidade da Prefeitura/órgão central.
-A escola não defere nem indefere licenças médicas.
-
-No sistema, o status “EM ESPERA” é apenas administrativo (ciência/organização). Não é fila de aprovação.
-
-Atenciosamente,
-
-Nilson Cruz
-Secretário da Unidade Escolar
-E.M José Padin Mouta
-"""
-
-            # ==== ✅ NOVO: E-MAIL ESPECÍFICO PARA DL (COMUNICAÇÃO) ====
-            elif tipo_folga == 'DL':
+            elif tipo_folga == "DL":
                 assunto = "E.M José Padin Mouta – Comunicação de Dispensa Legal registrada"
-                mensagem_html = f"""
-                <html>
-                  <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
-                    <p>Prezado(a) Senhor(a) <strong>{nome}</strong>,</p>
-                    <p>
-                      Registramos sua <strong>comunicação de Dispensa Legal (DL)</strong> para o dia
-                      <strong>{data_str}</strong>. Este registro serve para <strong>ciência da direção e organização interna</strong>
-                      (organização de serviço/cobertura), não sendo um pedido de deferimento.
-                    </p>
-                    <p>
-                      <strong>Importante:</strong> a Dispensa Legal (DL) é uma medida prevista em norma e, quando aplicável,
-                      <strong>não depende de deferimento/indeferimento pela escola</strong>. O sistema registra apenas para
-                      <strong>sinalização aos gestores</strong>.
-                    </p>
-                    <p>
-                      No sistema, o status aparecerá como <strong style="color:#FFA500;">EM ESPERA</strong> apenas para fins administrativos
-                      (ciência/organização). Não se trata de fila de aprovação.
-                    </p>
-                    <br>
-                    <p>Atenciosamente,</p>
-                    <p>
-                      Nilson Cruz<br>
-                      Secretário da Unidade Escolar<br>
-                      E.M José Padin Mouta
-                    </p>
-                  </body>
-                </html>
-                """
-                mensagem_texto = f"""Prezado(a) Senhor(a) {nome},
+                title = "Comunicação de Dispensa Legal (DL)"
+                lead = f"Registramos sua comunicação de <strong>Dispensa Legal (DL)</strong> para <strong>{_escape(data_str)}</strong>."
+                paragraphs = [
+                    "Este registro serve para <strong>ciência da direção e organização interna</strong> (organização de serviço/cobertura), <strong>não sendo um pedido de deferimento</strong>.",
+                    "<strong>Importante:</strong> quando aplicável, a Dispensa Legal decorre de norma e <strong>não depende de deferimento/indeferimento pela escola</strong>. O sistema registra apenas para <strong>sinalização aos gestores</strong>.",
+                    f"No sistema, o status <strong style='color:#D97706;'>EM ESPERA</strong> aparece apenas para fins administrativos (ciência/organização). <strong>Não se trata de fila de aprovação</strong>.",
+                ]
+                notes = []
 
-Registramos sua COMUNICAÇÃO DE DISPENSA LEGAL (DL) para o dia {data_str}.
-Este registro é para CIÊNCIA da direção e organização interna (cobertura/serviço), não sendo um pedido de deferimento.
+            elif tipo_folga == "DS":
+                assunto = "E.M José Padin Mouta – Comunicação de Doação de Sangue registrada"
+                title = "Comunicação de Doação de Sangue (DS)"
+                lead = f"Registramos sua comunicação de <strong>Doação de Sangue (DS)</strong> para <strong>{_escape(data_str)}</strong>."
+                paragraphs = [
+                    "Este registro serve para <strong>ciência da direção e organização interna</strong> (cobertura/substituição), <strong>não sendo um pedido de deferimento</strong>.",
+                    f"No sistema, o status <strong style='color:#D97706;'>EM ESPERA</strong> aparece apenas para fins administrativos (ciência/organização). <strong>O deferimento, quando existir no fluxo, serve apenas como sinalização</strong>.",
+                ]
+                notes = []
 
-Importante: a Dispensa Legal (DL), quando aplicável, não depende de deferimento/indeferimento pela escola.
-O sistema registra apenas para sinalização aos gestores.
+            elif tipo_folga == "FS":
+                assunto = "E.M José Padin Mouta – Comunicação de Falta Simples registrada"
+                title = "Comunicação de Falta Simples (FS)"
+                lead = f"Registramos sua comunicação de <strong>Falta Simples (FS)</strong> para <strong>{_escape(data_str)}</strong>."
+                paragraphs = [
+                    "A unidade escolar fica <strong>notificada</strong> de que o(a) servidor(a) não comparecerá nesta data, para fins de <strong>organização interna</strong> (cobertura/rotina).",
+                    f"No sistema, o status <strong style='color:#D97706;'>EM ESPERA</strong> aparece apenas para fins administrativos (ciência/organização). <strong>O deferimento, quando existir no fluxo, serve apenas como sinalização</strong>.",
+                ]
+                notes = []
 
-No sistema, o status “EM ESPERA” é apenas administrativo (ciência/organização). Não é fila de aprovação.
+            elif tipo_folga == "AB":
+                assunto = "E.M José Padin Mouta – Abonada agendada"
+                title = "Abonada (AB) registrada"
+                lead = f"Sua <strong>Abonada (AB)</strong> para <strong>{_escape(data_str)}</strong> foi registrada com sucesso."
+                paragraphs = [
+                    f"O registro consta como <strong style='color:#D97706;'>EM ESPERA</strong>, aguardando análise da direção conforme o fluxo administrativo da unidade.",
+                    "Você será notificado(a) assim que houver uma decisão no sistema.",
+                ]
+                notes = []
 
-Atenciosamente,
+            elif tipo_folga == "BH":
+                assunto = "E.M José Padin Mouta – Banco de Horas agendado"
+                title = "Banco de Horas (BH) registrado"
+                lead = f"Seu <strong>Banco de Horas (BH)</strong> para <strong>{_escape(data_str)}</strong> foi registrado com sucesso."
+                paragraphs = [
+                    f"O registro consta como <strong style='color:#D97706;'>EM ESPERA</strong>, aguardando análise da direção conforme o fluxo administrativo da unidade.",
+                    "Você será notificado(a) assim que houver uma decisão no sistema.",
+                ]
+                notes = []
+                if data_ref_str:
+                    notes.append(f"Data de referência informada: <strong>{_escape(data_ref_str)}</strong>.")
 
-Nilson Cruz
-Secretário da Unidade Escolar
-E.M José Padin Mouta
-"""
+            elif tipo_folga == "TRE":
+                assunto = "E.M José Padin Mouta – TRE agendada"
+                title = "TRE registrada"
+                lead = f"Sua <strong>TRE</strong> para <strong>{_escape(data_str)}</strong> foi registrada com sucesso."
+                paragraphs = [
+                    f"O registro consta como <strong style='color:#D97706;'>EM ESPERA</strong>, aguardando análise da direção conforme o fluxo administrativo da unidade.",
+                    "Você será notificado(a) assim que houver uma decisão no sistema.",
+                ]
+                notes = []
 
             else:
-                # ==== E-MAIL PADRÃO (demais motivos) ====
                 assunto = "E.M José Padin Mouta – Confirmação de Agendamento"
-                mensagem_html = f"""
-                <html>
-                  <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
-                    <p>Prezado(a) Senhor(a) <strong>{nome}</strong>,</p>
-                    <p>
-                      Sua solicitação de <strong>{descricao_motivo}</strong> para o dia
-                      <strong>{data_str}</strong> foi registrada com sucesso e encontra-se
-                      em <strong style="color: #FFA500;">EM ESPERA</strong>, aguardando análise da direção.
-                    </p>
-                    <p>Você será notificado assim que houver uma decisão.</p>
-                    <br>
-                    <p>Atenciosamente,</p>
-                    <p>
-                      Nilson Cruz<br>
-                      Secretário da Unidade Escolar<br>
-                      E.M José Padin Mouta
-                    </p>
-                  </body>
-                </html>
-                """
-                mensagem_texto = f"""Prezado(a) Senhor(a) {nome},
+                title = "Agendamento registrado"
+                lead = f"Sua solicitação de <strong>{_escape(descricao_motivo)}</strong> para <strong>{_escape(data_str)}</strong> foi registrada com sucesso."
+                paragraphs = [
+                    f"O registro consta como <strong style='color:#D97706;'>EM ESPERA</strong>, aguardando análise da direção.",
+                    "Você será notificado(a) assim que houver uma decisão no sistema.",
+                ]
+                notes = []
 
-Sua solicitação de {descricao_motivo} para o dia {data_str} foi registrada com sucesso e encontra-se EM ESPERA, aguardando análise da direção.
+            if nome_substituto:
+                notes.append(f"Haverá substituição por: <strong>{_escape(nome_substituto)}</strong>.")
 
-Você será notificado assim que houver uma decisão.
+            mensagem_html = build_email_html(
+                title=title,
+                greeting_name=nome,
+                lead=lead,
+                paragraphs=paragraphs,
+                summary_rows=resumo,
+                note_lines=notes
+            )
 
-Atenciosamente,
+            mensagem_texto = build_email_text(
+                subject_title=title,
+                greeting_name=nome,
+                lead=f"{descricao_motivo} registrado(a) para {data_str}.",
+                paragraphs=[
+                    "Este e-mail confirma o registro no sistema para fins administrativos.",
+                    "Consulte o status no sistema para acompanhar o andamento.",
+                    ("LM/DL/DS/FS são comunicações e o status EM ESPERA é apenas administrativo."
+                     if tipo_folga in ("LM", "DL", "DS", "FS") else
+                     "O status EM ESPERA indica que o registro aguarda análise conforme o fluxo administrativo.")
+                ],
+                summary_rows=[
+                    ("Motivo", descricao_motivo),
+                    ("Data", data_str),
+                    ("Status no sistema", status_label),
+                    ("Tempo lançado", tempo_bh if tipo_folga == "BH" else ""),
+                    ("Data de referência", data_ref_str if tipo_folga == "BH" else ""),
+                    ("Haverá substituição", "Sim" if nome_substituto else "Não"),
+                    ("Substituto", nome_substituto or ""),
+                ],
+                note_lines=[
+                    ("A escola não defere nem indefere Licença Médica; é responsabilidade do órgão central."
+                     if tipo_folga == "LM" else None),
+                    ("DL/DS/FS: quando existir deferimento no fluxo, é apenas sinalização."
+                     if tipo_folga in ("DL", "DS", "FS") else None),
+                ]
+            )
 
-Nilson Cruz
-Secretário da Unidade Escolar
-E.M José Padin Mouta
-"""
-
-            enviar_email(current_user.email, assunto, mensagem_html, mensagem_texto)
-            flash("Agendamento realizado com sucesso. Você receberá um e-mail de confirmação.", "success")
+            # ✅ Envia e-mail (sem derrubar o agendamento se o e-mail falhar)
+            try:
+                enviar_email(current_user.email, assunto, mensagem_html, mensagem_texto)
+                flash("Agendamento realizado com sucesso. Você receberá um e-mail de confirmação.", "success")
+            except Exception:
+                current_app.logger.exception(
+                    "Falha ao enviar e-mail de confirmação para o agendamento %s", novo_agendamento.id
+                )
+                flash(
+                    "Agendamento realizado com sucesso, mas não foi possível enviar o e-mail de confirmação neste momento.",
+                    "warning"
+                )
 
         except Exception as e:
             db.session.rollback()
@@ -2482,11 +2665,15 @@ def deferir_folgas():
 
     if request.method == 'POST':
         folga_id = request.form.get('folga_id')
-        novo_status = request.form.get('status')
+        novo_status = (request.form.get('status') or "").strip().lower()
         folga = Agendamento.query.get(folga_id)
 
         if not folga:
             flash("Agendamento não encontrado.", "danger")
+            return redirect(url_for('deferir_folgas'))
+
+        if novo_status not in ("deferido", "indeferido"):
+            flash("Status inválido.", "danger")
             return redirect(url_for('deferir_folgas'))
 
         usuario = User.query.get(folga.funcionario_id)
@@ -2494,7 +2681,7 @@ def deferir_folgas():
         # Banco de horas: ao deferir, debita saldo e registra movimento
         if folga.motivo == 'BH' and novo_status == 'deferido':
             total_minutos = (folga.horas or 0) * 60 + (folga.minutos or 0)
-            if usuario.banco_horas >= total_minutos:
+            if (usuario.banco_horas or 0) >= total_minutos:
                 usuario.banco_horas -= total_minutos
                 novo_banco_horas = BancoDeHoras(
                     funcionario_id=usuario.id,
@@ -2517,7 +2704,7 @@ def deferir_folgas():
         try:
             db.session.commit()
 
-            # ✅ NOVO: após mudar o status, REGERA/SOBRESCREVE o protocolo PDF com o status atualizado
+            # ✅ Após mudar o status, REGERA/SOBRESCREVE o protocolo PDF com o status atualizado
             try:
                 gerar_protocolo_agendamento_pdf(folga, usuario)
             except Exception:
@@ -2533,130 +2720,343 @@ def deferir_folgas():
             )
 
             # =========================
-            # E-mails de notificação
+            # E-mails de notificação (PADRÃO PREMIUM)
             # =========================
-            if novo_status == 'deferido':
-                if folga.motivo == 'LM':
-                    # E-mail específico para Licença Médica (ciência)
-                    assunto = "E.M José Padin Mouta – Ciência de Licença Médica registrada"
-                    mensagem_html = f"""
-                    <html>
-                      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
-                        <p>Prezado(a) Senhor(a) <strong>{usuario.nome}</strong>,</p>
-                        <p>
-                          Informamos que a sua <strong>comunicação de Licença Médica (LM)</strong> para o dia
-                          <strong style="color:#007bff;">{folga.data.strftime('%d/%m/%Y')}</strong> foi registrada e a direção
-                          <strong>tomou ciência</strong>.
-                        </p>
-                        <p>
-                          Esclarecemos que a <u>concessão/homologação</u> de Licença Médica é de responsabilidade da
-                          <strong>Prefeitura/órgão central</strong>. A escola <strong>não defere nem indefere</strong> LM.
-                        </p>
-                        <p>
-                          No sistema, o status <strong style="color:#28a745;">DEFERIDO</strong> indica apenas a <strong>ciência administrativa</strong>
-                          e a organização interna (cobertura/substituição), não sendo uma autorização médica.
-                        </p>
-                        <br>
-                        <p>Atenciosamente,</p>
-                        <p>
-                          Nilson Cruz<br>
-                          Secretário da Unidade Escolar<br>
-                          3496-5321<br>
-                          E.M José Padin Mouta
-                        </p>
-                      </body>
-                    </html>
+            def _escape(s):
+                if s is None:
+                    return ""
+                return (str(s)
+                        .replace("&", "&amp;")
+                        .replace("<", "&lt;")
+                        .replace(">", "&gt;")
+                        .replace('"', "&quot;")
+                        .replace("'", "&#39;"))
+
+            def _format_tempo_bh(h, m):
+                h = int(h or 0)
+                m = int(m or 0)
+                parts = []
+                if h > 0:
+                    parts.append(f"{h}h")
+                if m > 0:
+                    parts.append(f"{m}min")
+                return " ".join(parts) if parts else "0min"
+
+            def build_email_html(title, greeting_name, lead, paragraphs, summary_rows, note_lines=None):
+                greeting_name = _escape(greeting_name)
+                title = _escape(title)
+                note_lines = note_lines or []
+
+                p_html = ""
+                for p in paragraphs:
+                    if p:
+                        p_html += f'<p style="margin:0 0 12px 0;">{p}</p>'
+
+                rows_html = ""
+                for k, v in summary_rows:
+                    if v is None or v == "":
+                        continue
+                    rows_html += f"""
+                      <tr>
+                        <td style="padding:10px 12px;border-top:1px solid #EAEAEA;color:#555;font-weight:600;white-space:nowrap;">
+                          {_escape(k)}
+                        </td>
+                        <td style="padding:10px 12px;border-top:1px solid #EAEAEA;color:#222;">
+                          {v}
+                        </td>
+                      </tr>
                     """
-                    mensagem_texto = f"""Prezado(a) Senhor(a) {usuario.nome},
 
-Sua COMUNICAÇÃO DE LICENÇA MÉDICA (LM) para o dia {folga.data.strftime('%d/%m/%Y')} foi registrada e a direção tomou ciência.
-
-A concessão/homologação de LM é de responsabilidade da Prefeitura/órgão central; a escola não defere nem indefere LM.
-O status "DEFERIDO" no sistema indica somente ciência administrativa e organização interna (cobertura/substituição).
-
-Atenciosamente,
-
-Nilson Cruz
-Secretário da Unidade Escolar
-3496-5321
-E.M José Padin Mouta
-"""
-                else:
-                    # E-mail padrão de deferimento (demais motivos)
-                    assunto = "E.M José Padin Mouta - Deferimento de Folga"
-                    mensagem_html = f"""
-                    <html>
-                      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
-                        <p>Prezado(a) Senhor(a) <strong>{usuario.nome}</strong>,</p>
-                        <p>
-                          Cumprimentando-o(a), informamos que a sua solicitação de 
-                          <strong style="color: #007bff;">FOLGA</strong> para o dia 
-                          <strong style="color: #007bff;">{folga.data.strftime('%d/%m/%Y')}</strong> foi 
-                          <strong style="color: #5cb85c;">DEFERIDA</strong> pela direção da unidade escolar.
-                        </p>
-                        <p>Agradecemos a colaboração e estamos à disposição para quaisquer esclarecimentos adicionais.</p>
-                        <br>
-                        <p>Atenciosamente,</p>
-                        <p>
-                          Nilson Cruz<br>
-                          Secretário da Unidade Escolar<br>
-                          3496-5321<br>
-                          E.M José Padin Mouta
-                        </p>
-                      </body>
-                    </html>
+                notes_html = ""
+                if note_lines:
+                    li = "".join([f"<li style='margin:0 0 6px 0;'>{x}</li>" for x in note_lines if x])
+                    notes_html = f"""
+                      <div style="margin-top:14px;padding:12px 12px;border:1px dashed #D7D7D7;border-radius:10px;background:#FAFAFA;">
+                        <div style="font-weight:700;color:#333;margin-bottom:8px;">Observações</div>
+                        <ul style="margin:0 0 0 18px;padding:0;color:#444;">
+                          {li}
+                        </ul>
+                      </div>
                     """
-                    mensagem_texto = f"""Prezado(a) Senhor(a) {usuario.nome},
 
-Informamos que a sua solicitação de FOLGA para o dia {folga.data.strftime('%d/%m/%Y')} foi DEFERIDA pela direção da unidade escolar.
-
-Atenciosamente,
-
-Nilson Cruz
-Secretário da Unidade Escolar
-3496-5321
-E.M José Padin Mouta
-"""
-            else:
-                # E-mail de indeferimento (mantido como está)
-                assunto = "E.M José Padin Mouta - Indeferimento de Folga"
-                mensagem_html = f"""
+                return f"""
                 <html>
-                  <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5%;">
-                    <p>Prezado(a) Senhor(a) <strong>{usuario.nome}</strong>,</p>
-                    <p>
-                      Após análise criteriosa, a sua solicitação de 
-                      <strong style="color: #007bff;">FOLGA</strong> para o dia 
-                      <strong style="color: #007bff;">{folga.data.strftime('%d/%m/%Y')}</strong> não pôde ser 
-                      <strong style="color: #d9534f;">DEFERIDA</strong>.
-                    </p>
-                    <p>Estamos à disposição para eventuais esclarecimentos.</p>
-                    <br>
-                    <p>Atenciosamente,</p>
-                    <p>
-                      Nilson Cruz<br>
-                      Secretário da Unidade Escolar<br>
-                      3496-5321<br>
-                      E.M José Padin Mouta
-                    </p>
+                  <body style="margin:0;padding:0;background:#F4F6F8;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F4F6F8;padding:24px 0;">
+                      <tr>
+                        <td align="center" style="padding:0 12px;">
+                          <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="width:100%;max-width:640px;background:#FFFFFF;border-radius:14px;overflow:hidden;border:1px solid #E6E6E6;">
+                            <tr>
+                              <td style="padding:18px 20px;background:#0F172A;color:#FFFFFF;">
+                                <div style="font-size:14px;opacity:.9;">E.M José Padin Mouta</div>
+                                <div style="font-size:20px;font-weight:800;margin-top:6px;letter-spacing:0.2px;">{title}</div>
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <td style="padding:20px 20px 6px 20px;color:#111827;font-family:Arial,sans-serif;line-height:1.6;">
+                                <p style="margin:0 0 12px 0;">Prezado(a) Senhor(a) <strong>{greeting_name}</strong>,</p>
+                                <p style="margin:0 0 14px 0;color:#111827;">
+                                  {lead}
+                                </p>
+
+                                {p_html}
+
+                                <div style="margin:16px 0 10px 0;font-weight:800;color:#111827;">Resumo</div>
+
+                                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #EAEAEA;border-radius:12px;overflow:hidden;">
+                                  {rows_html}
+                                </table>
+
+                                {notes_html}
+
+                                <div style="margin-top:18px;border-top:1px solid #EEEEEE;padding-top:14px;color:#374151;">
+                                  <p style="margin:0 0 4px 0;">Atenciosamente,</p>
+                                  <p style="margin:0;font-weight:700;">Nilson Cruz</p>
+                                  <p style="margin:0;">Secretário da Unidade Escolar</p>
+                                  <p style="margin:0;">3496-5321</p>
+                                  <p style="margin:0;">E.M José Padin Mouta</p>
+                                </div>
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <td style="padding:12px 20px;background:#FAFAFA;color:#6B7280;font-size:12px;font-family:Arial,sans-serif;">
+                                Mensagem automática do sistema para fins administrativos.
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
                   </body>
                 </html>
                 """
-                mensagem_texto = f"""Prezado(a) Senhor(a) {usuario.nome},
 
-Após análise criteriosa, a sua solicitação de FOLGA para o dia {folga.data.strftime('%d/%m/%Y')} não pôde ser DEFERIDA.
+            def build_email_text(subject_title, greeting_name, lead, paragraphs, summary_rows, note_lines=None):
+                note_lines = note_lines or []
+                lines = []
+                lines.append(f"E.M José Padin Mouta – {subject_title}")
+                lines.append("")
+                lines.append(f"Prezado(a) Senhor(a) {greeting_name},")
+                lines.append("")
+                lines.append(lead)
+                lines.append("")
+                for p in paragraphs:
+                    if p:
+                        txt = (p.replace("<strong>", "").replace("</strong>", "")
+                                 .replace("<u>", "").replace("</u>", ""))
+                        lines.append(txt)
+                        lines.append("")
+                lines.append("Resumo:")
+                for k, v in summary_rows:
+                    if v is None or v == "":
+                        continue
+                    vv = (str(v).replace("<strong>", "").replace("</strong>", "")
+                               .replace("<span", "").replace("</span>", ""))
+                    lines.append(f"- {k}: {vv}")
+                if note_lines:
+                    lines.append("")
+                    lines.append("Observações:")
+                    for n in note_lines:
+                        if n:
+                            lines.append(f"- {n}")
+                lines.append("")
+                lines.append("Atenciosamente,")
+                lines.append("Nilson Cruz")
+                lines.append("Secretário da Unidade Escolar")
+                lines.append("3496-5321")
+                lines.append("E.M José Padin Mouta")
+                return "\n".join(lines)
 
-Estamos à disposição para eventuais esclarecimentos.
+            # Mapeamento amigável
+            descricao_motivo = {
+                'AB':  'Abonada (AB)',
+                'BH':  'Banco de Horas (BH)',
+                'DS':  'Doação de Sangue (DS)',
+                'TRE': 'TRE',
+                'LM':  'Licença Médica (LM)',
+                'FS':  'Falta Simples (FS)',
+                'DL':  'Dispensa Legal (DL)',
+            }.get(folga.motivo, 'Agendamento')
 
-Atenciosamente,
+            data_str = folga.data.strftime('%d/%m/%Y')
+            tempo_bh = _format_tempo_bh(folga.horas, folga.minutos)
+            data_ref_str = folga.data_referencia.strftime('%d/%m/%Y') if getattr(folga, "data_referencia", None) else None
+            nome_substituto = getattr(folga, "nome_substituto", None)
+            cargo_usuario = getattr(usuario, "cargo", None) or "—"
+            decisao = "DEFERIDO" if novo_status == "deferido" else "INDEFERIDO"
 
-Nilson Cruz
-Secretário da Unidade Escolar
-3496-5321
-E.M José Padin Mouta
-"""
+            badge_decisao = (
+                "<span style='font-weight:800;color:#16A34A;'>DEFERIDO</span>"
+                if novo_status == "deferido"
+                else "<span style='font-weight:800;color:#DC2626;'>INDEFERIDO</span>"
+            )
 
-            enviar_email(usuario.email, assunto, mensagem_html, mensagem_texto)
+            resumo = [
+                ("Protocolo", f"<strong>#{_escape(folga.id)}</strong>"),
+                ("Servidor(a)", f"<strong>{_escape(usuario.nome)}</strong>"),
+                ("Cargo", _escape(cargo_usuario)),
+                ("Motivo", f"<strong>{_escape(descricao_motivo)}</strong>"),
+                ("Data", f"<strong>{_escape(data_str)}</strong>"),
+                ("Decisão", badge_decisao),
+            ]
+
+            if folga.motivo == "BH":
+                resumo.append(("Tempo (BH)", f"<strong>{_escape(tempo_bh)}</strong>"))
+                if data_ref_str:
+                    resumo.append(("Data de referência", _escape(data_ref_str)))
+
+            if nome_substituto:
+                resumo.append(("Substituição", "Sim"))
+                resumo.append(("Substituto", f"<strong>{_escape(nome_substituto)}</strong>"))
+            else:
+                resumo.append(("Substituição", "Não"))
+
+            # Conteúdo por motivo + decisão
+            notes = []
+
+            # Motivos “comunicação / ciência / sinalização”
+            motivo_comunicacao = folga.motivo in ("LM", "DL", "DS", "FS")
+
+            if novo_status == "deferido":
+                if folga.motivo == "LM":
+                    assunto = "E.M José Padin Mouta – Ciência de Licença Médica (LM) registrada"
+                    title = "Ciência administrativa – Licença Médica (LM)"
+                    lead = (
+                        f"A direção <strong>tomou ciência</strong> da sua comunicação de "
+                        f"<strong>Licença Médica (LM)</strong> para <strong>{_escape(data_str)}</strong>."
+                    )
+                    paragraphs = [
+                        "Este retorno é <strong>administrativo</strong>, para organização interna (cobertura/substituição).",
+                        "<strong>Importante:</strong> concessão/homologação/indeferimento de LM é responsabilidade da <strong>Prefeitura/órgão central</strong>. "
+                        "A escola <strong>não defere nem indefere</strong> Licença Médica.",
+                        "No sistema, o status <strong style='color:#16A34A;'>DEFERIDO</strong> indica apenas <strong>ciência administrativa</strong>."
+                    ]
+
+                elif folga.motivo == "DL":
+                    assunto = "E.M José Padin Mouta – Ciência de Dispensa Legal (DL) registrada"
+                    title = "Ciência administrativa – Dispensa Legal (DL)"
+                    lead = (
+                        f"A direção <strong>tomou ciência</strong> da sua comunicação de "
+                        f"<strong>Dispensa Legal (DL)</strong> para <strong>{_escape(data_str)}</strong>."
+                    )
+                    paragraphs = [
+                        "Este retorno é <strong>administrativo</strong>, para organização interna (cobertura/serviço).",
+                        "<strong>Importante:</strong> quando aplicável, DL decorre de norma e "
+                        "<strong>não depende de deferimento/indeferimento pela escola</strong>. "
+                        "O status no sistema serve como <strong>sinalização</strong>.",
+                    ]
+
+                elif folga.motivo == "DS":
+                    assunto = "E.M José Padin Mouta – Ciência de Doação de Sangue (DS) registrada"
+                    title = "Ciência administrativa – Doação de Sangue (DS)"
+                    lead = (
+                        f"A direção <strong>tomou ciência</strong> da sua comunicação de "
+                        f"<strong>Doação de Sangue (DS)</strong> para <strong>{_escape(data_str)}</strong>."
+                    )
+                    paragraphs = [
+                        "Este retorno é <strong>administrativo</strong>, para organização interna (cobertura/substituição).",
+                        "O status <strong style='color:#16A34A;'>DEFERIDO</strong>, quando aplicado no fluxo, "
+                        "serve como <strong>sinalização</strong> no sistema.",
+                    ]
+
+                elif folga.motivo == "FS":
+                    assunto = "E.M José Padin Mouta – Ciência de Falta Simples (FS) registrada"
+                    title = "Ciência administrativa – Falta Simples (FS)"
+                    lead = (
+                        f"A unidade escolar foi <strong>notificada</strong> da sua "
+                        f"<strong>Falta Simples (FS)</strong> no dia <strong>{_escape(data_str)}</strong>."
+                    )
+                    paragraphs = [
+                        "Este retorno é <strong>administrativo</strong>, para organização interna (cobertura/rotina).",
+                        "O status <strong style='color:#16A34A;'>DEFERIDO</strong>, quando aplicado no fluxo, "
+                        "serve como <strong>sinalização</strong> no sistema.",
+                    ]
+
+                else:
+                    # Motivos “solicitação” (AB/BH/TRE etc.)
+                    assunto = "E.M José Padin Mouta – Solicitação deferida"
+                    title = "Solicitação deferida"
+                    lead = (
+                        f"Sua solicitação de <strong>{_escape(descricao_motivo)}</strong> "
+                        f"para <strong>{_escape(data_str)}</strong> foi <strong style='color:#16A34A;'>DEFERIDA</strong>."
+                    )
+                    paragraphs = [
+                        "Caso precise de ajustes, procure a secretaria da unidade.",
+                    ]
+
+                if nome_substituto:
+                    notes.append(f"Substituição registrada: <strong>{_escape(nome_substituto)}</strong>.")
+
+            else:
+                # INDEFERIDO
+                if motivo_comunicacao:
+                    assunto = "E.M José Padin Mouta – Atualização de registro (indeferido)"
+                    title = "Atualização de registro – Indeferido"
+                    lead = (
+                        f"Seu registro de <strong>{_escape(descricao_motivo)}</strong> para "
+                        f"<strong>{_escape(data_str)}</strong> foi marcado como <strong style='color:#DC2626;'>INDEFERIDO</strong> no sistema."
+                    )
+                    paragraphs = [
+                        "Este retorno é administrativo. Se houver necessidade de correção/reenvio de informação, "
+                        "favor entrar em contato com a secretaria da unidade.",
+                    ]
+                    if folga.motivo == "LM":
+                        notes.append("Licença Médica: concessão/homologação é responsabilidade do órgão central. A escola não concede LM.")
+                    if folga.motivo in ("DL", "DS", "FS"):
+                        notes.append("Quando aplicável, o status no sistema é apenas sinalização/organização interna.")
+                else:
+                    assunto = "E.M José Padin Mouta – Solicitação indeferida"
+                    title = "Solicitação indeferida"
+                    lead = (
+                        f"Sua solicitação de <strong>{_escape(descricao_motivo)}</strong> para "
+                        f"<strong>{_escape(data_str)}</strong> foi <strong style='color:#DC2626;'>INDEFERIDA</strong>."
+                    )
+                    paragraphs = [
+                        "Para esclarecimentos, procure a direção/secretaria da unidade."
+                    ]
+
+            mensagem_html = build_email_html(
+                title=title,
+                greeting_name=usuario.nome,
+                lead=lead,
+                paragraphs=paragraphs,
+                summary_rows=resumo,
+                note_lines=notes
+            )
+
+            mensagem_texto = build_email_text(
+                subject_title=title,
+                greeting_name=usuario.nome,
+                lead=f"Atualização do seu registro: {descricao_motivo} em {data_str} – {decisao}.",
+                paragraphs=[
+                    "Este e-mail é uma notificação automática do sistema.",
+                    ("LM/DL/DS/FS: o fluxo no sistema é administrativo (ciência/sinalização)."
+                     if motivo_comunicacao else
+                     "Solicitações: o status indica decisão administrativa no sistema.")
+                ],
+                summary_rows=[
+                    ("Protocolo", f"#{folga.id}"),
+                    ("Motivo", descricao_motivo),
+                    ("Data", data_str),
+                    ("Decisão", decisao),
+                    ("Tempo (BH)", tempo_bh if folga.motivo == "BH" else ""),
+                    ("Data de referência", data_ref_str if folga.motivo == "BH" else ""),
+                    ("Substituição", "Sim" if nome_substituto else "Não"),
+                    ("Substituto", nome_substituto or ""),
+                ],
+                note_lines=[
+                    ("Licença Médica: concessão/homologação é responsabilidade do órgão central." if folga.motivo == "LM" else None),
+                ]
+            )
+
+            # ✅ Envia e-mail (sem desfazer decisão se falhar)
+            try:
+                enviar_email(usuario.email, assunto, mensagem_html, mensagem_texto)
+            except Exception:
+                current_app.logger.exception("Falha ao enviar e-mail de decisão do agendamento %s", folga.id)
+                flash("Status atualizado, mas não foi possível enviar o e-mail de notificação neste momento.", "warning")
 
         except Exception as e:
             db.session.rollback()
@@ -2776,13 +3176,171 @@ def historico():
 @app.route('/banco_horas/cadastrar', methods=['GET', 'POST'])
 @login_required
 def cadastrar_horas():
+    def _escape(s):
+        if s is None:
+            return ""
+        return (str(s)
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace('"', "&quot;")
+                .replace("'", "&#39;"))
+
+    def _format_hm(h, m):
+        h = int(h or 0)
+        m = int(m or 0)
+        if h <= 0 and m <= 0:
+            return "0min"
+        if h > 0 and m > 0:
+            return f"{h}h {m:02d}min"
+        if h > 0:
+            return f"{h}h"
+        return f"{m}min"
+
+    def _format_hm_from_minutes(total_min):
+        total_min = int(total_min or 0)
+        h = total_min // 60
+        m = total_min % 60
+        return f"{h}h {m:02d}min"
+
+    def build_email_html(title, greeting_name, lead, paragraphs, summary_rows, note_lines=None):
+        greeting_name = _escape(greeting_name)
+        title = _escape(title)
+        note_lines = note_lines or []
+
+        # Parágrafos (HTML controlado)
+        p_html = ""
+        for p in paragraphs:
+            if p:
+                p_html += f'<p style="margin:0 0 12px 0;">{p}</p>'
+
+        # Tabela de resumo
+        rows_html = ""
+        for k, v in summary_rows:
+            if v is None or v == "":
+                continue
+            rows_html += f"""
+              <tr>
+                <td style="padding:10px 12px;border-top:1px solid #EAEAEA;color:#555;font-weight:600;white-space:nowrap;">
+                  {_escape(k)}
+                </td>
+                <td style="padding:10px 12px;border-top:1px solid #EAEAEA;color:#222;">
+                  {v}
+                </td>
+              </tr>
+            """
+
+        # Observações
+        notes_html = ""
+        if note_lines:
+            li = "".join([f"<li style='margin:0 0 6px 0;'>{x}</li>" for x in note_lines if x])
+            notes_html = f"""
+              <div style="margin-top:14px;padding:12px 12px;border:1px dashed #D7D7D7;border-radius:10px;background:#FAFAFA;">
+                <div style="font-weight:700;color:#333;margin-bottom:8px;">Observações</div>
+                <ul style="margin:0 0 0 18px;padding:0;color:#444;">
+                  {li}
+                </ul>
+              </div>
+            """
+
+        return f"""
+        <html>
+          <body style="margin:0;padding:0;background:#F4F6F8;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F4F6F8;padding:24px 0;">
+              <tr>
+                <td align="center" style="padding:0 12px;">
+                  <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="width:100%;max-width:640px;background:#FFFFFF;border-radius:14px;overflow:hidden;border:1px solid #E6E6E6;">
+                    <tr>
+                      <td style="padding:18px 20px;background:#0F172A;color:#FFFFFF;">
+                        <div style="font-size:14px;opacity:.9;">E.M José Padin Mouta</div>
+                        <div style="font-size:20px;font-weight:800;margin-top:6px;letter-spacing:0.2px;">{title}</div>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td style="padding:20px 20px 6px 20px;color:#111827;font-family:Arial,sans-serif;line-height:1.6;">
+                        <p style="margin:0 0 12px 0;">Prezado(a) Senhor(a) <strong>{greeting_name}</strong>,</p>
+                        <p style="margin:0 0 14px 0;color:#111827;">
+                          {lead}
+                        </p>
+
+                        {p_html}
+
+                        <div style="margin:16px 0 10px 0;font-weight:800;color:#111827;">Resumo do lançamento</div>
+
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #EAEAEA;border-radius:12px;overflow:hidden;">
+                          {rows_html}
+                        </table>
+
+                        {notes_html}
+
+                        <div style="margin-top:18px;border-top:1px solid #EEEEEE;padding-top:14px;color:#374151;">
+                          <p style="margin:0 0 4px 0;">Atenciosamente,</p>
+                          <p style="margin:0;font-weight:700;">Nilson Cruz</p>
+                          <p style="margin:0;">Secretário da Unidade Escolar</p>
+                          <p style="margin:0;">3496-5321</p>
+                          <p style="margin:0;">E.M José Padin Mouta</p>
+                        </div>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td style="padding:12px 20px;background:#FAFAFA;color:#6B7280;font-size:12px;font-family:Arial,sans-serif;">
+                        Mensagem automática do sistema para fins administrativos.
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>
+        """
+
+    def build_email_text(subject_title, greeting_name, lead, summary_rows, note_lines=None):
+        note_lines = note_lines or []
+        lines = []
+        lines.append(f"E.M José Padin Mouta – {subject_title}")
+        lines.append("")
+        lines.append(f"Prezado(a) Senhor(a) {greeting_name},")
+        lines.append("")
+        lines.append(lead)
+        lines.append("")
+        lines.append("Resumo do lançamento:")
+        for k, v in summary_rows:
+            if v is None or v == "":
+                continue
+            vv = (str(v).replace("<strong>", "").replace("</strong>", "")
+                       .replace("<span", "").replace("</span>", ""))
+            lines.append(f"- {k}: {vv}")
+        if note_lines:
+            lines.append("")
+            lines.append("Observações:")
+            for n in note_lines:
+                if n:
+                    lines.append(f"- {n}")
+        lines.append("")
+        lines.append("Atenciosamente,")
+        lines.append("Nilson Cruz")
+        lines.append("Secretário da Unidade Escolar")
+        lines.append("3496-5321")
+        lines.append("E.M José Padin Mouta")
+        return "\n".join(lines)
+
     if request.method == 'POST':
-        nome = request.form['nome']
-        registro = request.form['registro']
-        quantidade_horas = int(request.form['quantidade_horas'])
-        quantidade_minutos = int(request.form['quantidade_minutos'])
-        data_realizacao = request.form['data_realizacao']
-        motivo = request.form['motivo']
+        # Mantém compatibilidade com seu form (mas usamos current_user como fonte confiável)
+        nome = request.form.get('nome', current_user.nome)
+        registro = request.form.get('registro', current_user.registro)
+
+        try:
+            quantidade_horas = int(request.form.get('quantidade_horas', '0') or 0)
+            quantidade_minutos = int(request.form.get('quantidade_minutos', '0') or 0)
+        except ValueError:
+            flash("Informe horas e minutos válidos.", "danger")
+            return redirect(url_for('cadastrar_horas'))
+
+        data_realizacao = request.form.get('data_realizacao', '')
+        motivo = (request.form.get('motivo', '') or '').strip()
 
         try:
             data_realizacao = datetime.datetime.strptime(data_realizacao, '%Y-%m-%d').date()
@@ -2790,7 +3348,14 @@ def cadastrar_horas():
             flash("Data inválida.", "danger")
             return redirect(url_for('cadastrar_horas'))
 
+        if quantidade_minutos < 0 or quantidade_minutos > 59 or quantidade_horas < 0:
+            flash("Minutos devem estar entre 0 e 59 e horas não podem ser negativas.", "danger")
+            return redirect(url_for('cadastrar_horas'))
+
         total_minutos = (quantidade_horas * 60) + quantidade_minutos
+        if total_minutos <= 0:
+            flash("Informe uma quantidade de tempo maior que zero.", "danger")
+            return redirect(url_for('cadastrar_horas'))
 
         novo_banco_horas = BancoDeHoras(
             funcionario_id=current_user.id,
@@ -2805,8 +3370,129 @@ def cadastrar_horas():
         try:
             db.session.add(novo_banco_horas)
             db.session.commit()
+
+            # =========================
+            # E-mail premium: cadastrado e aguardando deferimento
+            # =========================
+            try:
+                usuario = User.query.get(current_user.id)
+
+                # Saldo atual a usufruir (minutos) — NÃO muda no cadastro, só após deferimento
+                saldo_atual_min = int(getattr(usuario, "banco_horas", 0) or 0)
+
+                # Em espera (minutos e quantidade) — inclui este lançamento recém-commitado
+                pendentes_min = (
+                    db.session.query(func.coalesce(func.sum(BancoDeHoras.total_minutos), 0))
+                    .filter(
+                        BancoDeHoras.funcionario_id == current_user.id,
+                        BancoDeHoras.status == 'Horas a Serem Deferidas'
+                    )
+                    .scalar()
+                ) or 0
+                pendentes_min = int(pendentes_min)
+
+                pendentes_qtd = (
+                    db.session.query(func.count(BancoDeHoras.id))
+                    .filter(
+                        BancoDeHoras.funcionario_id == current_user.id,
+                        BancoDeHoras.status == 'Horas a Serem Deferidas'
+                    )
+                    .scalar()
+                ) or 0
+                pendentes_qtd = int(pendentes_qtd)
+
+                # Créditos deferidos (min) — mesmo critério do seu recalculo: status deferid% e motivo != 'BH'
+                creditos_min = (
+                    db.session.query(func.coalesce(func.sum(BancoDeHoras.horas * 60 + BancoDeHoras.minutos), 0))
+                    .filter(BancoDeHoras.funcionario_id == current_user.id)
+                    .filter(func.lower(BancoDeHoras.status).like('deferid%'))
+                    .filter(func.upper(BancoDeHoras.motivo) != 'BH')
+                    .scalar()
+                ) or 0
+                creditos_min = int(creditos_min)
+
+                # Consumos deferidos (min) — Agendamento BH deferido
+                consumos_min = (
+                    db.session.query(func.coalesce(func.sum(Agendamento.horas * 60 + Agendamento.minutos), 0))
+                    .filter(Agendamento.funcionario_id == current_user.id)
+                    .filter(func.lower(Agendamento.status).like('deferid%'))
+                    .filter(func.lower(Agendamento.motivo) == 'bh')
+                    .scalar()
+                ) or 0
+                consumos_min = int(consumos_min)
+
+                data_str = data_realizacao.strftime('%d/%m/%Y')
+                lancado_str = _format_hm(quantidade_horas, quantidade_minutos)
+
+                assunto = "E.M José Padin Mouta – Banco de Horas cadastrado (aguardando deferimento)"
+                title = "Banco de Horas cadastrado"
+                lead = (
+                    f"Seu lançamento de <strong>crédito</strong> de <strong>Banco de Horas</strong> foi registrado com sucesso e está "
+                    f"<strong style='color:#D97706;'>AGUARDANDO DEFERIMENTO</strong>."
+                )
+
+                paragraphs = [
+                    "Assim que houver análise/decisão no sistema, você será notificado(a).",
+                ]
+
+                resumo = [
+                    ("Protocolo", f"<strong>#{_escape(novo_banco_horas.id)}</strong>"),
+                    ("Servidor(a)", f"<strong>{_escape(usuario.nome)}</strong>"),
+                    ("Registro", f"<strong>{_escape(usuario.registro)}</strong>"),
+                    ("Data de realização", f"<strong>{_escape(data_str)}</strong>"),
+                    ("Motivo informado", f"<strong>{_escape(motivo)}</strong>"),
+                    ("Quantidade cadastrada", f"<strong>{_escape(lancado_str)}</strong>"),
+                    ("Status", "<span style='font-weight:800;color:#D97706;'>HORAS A SEREM DEFERIDAS</span>"),
+                    ("Saldo atual a usufruir (BH)", f"<strong>{_escape(_format_hm_from_minutes(saldo_atual_min))}</strong>"),
+                    ("Em espera (BH)", f"<strong>{_escape(_format_hm_from_minutes(pendentes_min))}</strong> <span style='color:#6B7280;'>(em {pendentes_qtd} lançamento(s))</span>"),
+                    ("Créditos deferidos (BH)", f"<strong>{_escape(_format_hm_from_minutes(creditos_min))}</strong>"),
+                    ("Consumos deferidos (BH)", f"<strong>{_escape(_format_hm_from_minutes(consumos_min))}</strong>"),
+                ]
+
+                notes = [
+                    "<strong>Importante:</strong> o <u>saldo a usufruir</u> só é atualizado após o deferimento do crédito pelo administrador.",
+                    "O campo <strong>Em espera</strong> considera lançamentos ainda pendentes no sistema (incluindo este).",
+                ]
+
+                mensagem_html = build_email_html(
+                    title=title,
+                    greeting_name=usuario.nome,
+                    lead=lead,
+                    paragraphs=paragraphs,
+                    summary_rows=resumo,
+                    note_lines=notes
+                )
+
+                mensagem_texto = build_email_text(
+                    subject_title=title,
+                    greeting_name=usuario.nome,
+                    lead="Seu lançamento de crédito de Banco de Horas foi registrado e está aguardando deferimento.",
+                    summary_rows=[
+                        ("Protocolo", f"#{novo_banco_horas.id}"),
+                        ("Data de realização", data_str),
+                        ("Motivo informado", motivo),
+                        ("Quantidade cadastrada", lancado_str),
+                        ("Status", "HORAS A SEREM DEFERIDAS"),
+                        ("Saldo atual a usufruir (BH)", _format_hm_from_minutes(saldo_atual_min)),
+                        ("Em espera (BH)", f"{_format_hm_from_minutes(pendentes_min)} (em {pendentes_qtd} lançamento(s))"),
+                        ("Créditos deferidos (BH)", _format_hm_from_minutes(creditos_min)),
+                        ("Consumos deferidos (BH)", _format_hm_from_minutes(consumos_min)),
+                    ],
+                    note_lines=[
+                        "O saldo a usufruir só é atualizado após deferimento do crédito pelo administrador.",
+                        "Em espera considera lançamentos pendentes (incluindo este).",
+                    ]
+                )
+
+                enviar_email(usuario.email, assunto, mensagem_html, mensagem_texto)
+
+            except Exception:
+                current_app.logger.exception("Falha ao enviar e-mail de confirmação do Banco de Horas (/banco_horas/cadastrar)")
+                flash("Banco de horas cadastrado, mas não foi possível enviar o e-mail de confirmação.", "warning")
+
             flash("Banco de horas cadastrado com sucesso! Aguardando deferimento.", "success")
             return redirect(url_for('consultar_horas'))
+
         except Exception as e:
             db.session.rollback()
             flash(f"Erro ao cadastrar banco de horas: {str(e)}", "danger")
@@ -3015,33 +3701,303 @@ def inserir_bh_admin():
 @app.route('/banco_horas/deferir', methods=['GET', 'POST'])
 @login_required
 def deferir_horas():
+    # Se você quiser restringir só admin, descomente:
+    # if current_user.tipo != 'administrador':
+    #     flash("Acesso negado.", "danger")
+    #     return redirect(url_for('banco_horas'))
+
+    def _escape(s):
+        if s is None:
+            return ""
+        return (str(s)
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace('"', "&quot;")
+                .replace("'", "&#39;"))
+
+    def _format_hm(h, m):
+        h = int(h or 0)
+        m = int(m or 0)
+        if h <= 0 and m <= 0:
+            return "0min"
+        if h > 0 and m > 0:
+            return f"{h}h {m:02d}min"
+        if h > 0:
+            return f"{h}h"
+        return f"{m}min"
+
+    def _format_hm_from_minutes(total_min):
+        total_min = int(total_min or 0)
+        h = total_min // 60
+        m = total_min % 60
+        return f"{h}h {m:02d}min"
+
+    def build_email_html(title, greeting_name, lead, paragraphs, summary_rows, note_lines=None):
+        greeting_name = _escape(greeting_name)
+        title = _escape(title)
+        note_lines = note_lines or []
+
+        # Parágrafos (HTML controlado)
+        p_html = ""
+        for p in paragraphs:
+            if p:
+                p_html += f'<p style="margin:0 0 12px 0;">{p}</p>'
+
+        # Tabela resumo
+        rows_html = ""
+        for k, v in summary_rows:
+            if v is None or v == "":
+                continue
+            rows_html += f"""
+              <tr>
+                <td style="padding:10px 12px;border-top:1px solid #EAEAEA;color:#555;font-weight:600;white-space:nowrap;">
+                  {_escape(k)}
+                </td>
+                <td style="padding:10px 12px;border-top:1px solid #EAEAEA;color:#222;">
+                  {v}
+                </td>
+              </tr>
+            """
+
+        # Observações
+        notes_html = ""
+        if note_lines:
+            li = "".join([f"<li style='margin:0 0 6px 0;'>{x}</li>" for x in note_lines if x])
+            notes_html = f"""
+              <div style="margin-top:14px;padding:12px 12px;border:1px dashed #D7D7D7;border-radius:10px;background:#FAFAFA;">
+                <div style="font-weight:700;color:#333;margin-bottom:8px;">Observações</div>
+                <ul style="margin:0 0 0 18px;padding:0;color:#444;">
+                  {li}
+                </ul>
+              </div>
+            """
+
+        return f"""
+        <html>
+          <body style="margin:0;padding:0;background:#F4F6F8;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F4F6F8;padding:24px 0;">
+              <tr>
+                <td align="center" style="padding:0 12px;">
+                  <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="width:100%;max-width:640px;background:#FFFFFF;border-radius:14px;overflow:hidden;border:1px solid #E6E6E6;">
+                    <tr>
+                      <td style="padding:18px 20px;background:#0F172A;color:#FFFFFF;">
+                        <div style="font-size:14px;opacity:.9;">E.M José Padin Mouta</div>
+                        <div style="font-size:20px;font-weight:800;margin-top:6px;letter-spacing:0.2px;">{title}</div>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td style="padding:20px 20px 6px 20px;color:#111827;font-family:Arial,sans-serif;line-height:1.6;">
+                        <p style="margin:0 0 12px 0;">Prezado(a) Senhor(a) <strong>{greeting_name}</strong>,</p>
+                        <p style="margin:0 0 14px 0;color:#111827;">
+                          {lead}
+                        </p>
+
+                        {p_html}
+
+                        <div style="margin:16px 0 10px 0;font-weight:800;color:#111827;">Resumo</div>
+
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #EAEAEA;border-radius:12px;overflow:hidden;">
+                          {rows_html}
+                        </table>
+
+                        {notes_html}
+
+                        <div style="margin-top:18px;border-top:1px solid #EEEEEE;padding-top:14px;color:#374151;">
+                          <p style="margin:0 0 4px 0;">Atenciosamente,</p>
+                          <p style="margin:0;font-weight:700;">Nilson Cruz</p>
+                          <p style="margin:0;">Secretário da Unidade Escolar</p>
+                          <p style="margin:0;">3496-5321</p>
+                          <p style="margin:0;">E.M José Padin Mouta</p>
+                        </div>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td style="padding:12px 20px;background:#FAFAFA;color:#6B7280;font-size:12px;font-family:Arial,sans-serif;">
+                        Mensagem automática do sistema para fins administrativos.
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>
+        """
+
+    def build_email_text(subject_title, greeting_name, lead, summary_rows, note_lines=None):
+        note_lines = note_lines or []
+        lines = []
+        lines.append(f"E.M José Padin Mouta – {subject_title}")
+        lines.append("")
+        lines.append(f"Prezado(a) Senhor(a) {greeting_name},")
+        lines.append("")
+        lines.append(lead)
+        lines.append("")
+        lines.append("Resumo:")
+        for k, v in summary_rows:
+            if v is None or v == "":
+                continue
+            vv = (str(v).replace("<strong>", "").replace("</strong>", "")
+                       .replace("<span", "").replace("</span>", ""))
+            lines.append(f"- {k}: {vv}")
+        if note_lines:
+            lines.append("")
+            lines.append("Observações:")
+            for n in note_lines:
+                if n:
+                    lines.append(f"- {n}")
+        lines.append("")
+        lines.append("Atenciosamente,")
+        lines.append("Nilson Cruz")
+        lines.append("Secretário da Unidade Escolar")
+        lines.append("3496-5321")
+        lines.append("E.M José Padin Mouta")
+        return "\n".join(lines)
+
     registros = BancoDeHoras.query.filter_by(status='Horas a Serem Deferidas').all()
 
     if request.method == 'POST':
         registro_id = request.form.get('registro_id')
-        action = request.form.get('action')
+        action = (request.form.get('action') or '').strip().lower()
 
         banco_horas = BancoDeHoras.query.filter_by(id=registro_id).first()
-
         if not banco_horas:
             flash("Registro não encontrado.", "danger")
             return redirect(url_for('deferir_horas'))
 
+        funcionario = User.query.get(banco_horas.funcionario_id)
+        if not funcionario:
+            flash("Servidor não encontrado.", "danger")
+            return redirect(url_for('deferir_horas'))
+
+        # Dados para e-mail
+        data_str = banco_horas.data_realizacao.strftime('%d/%m/%Y')
+        qtd_str = _format_hm(banco_horas.horas, banco_horas.minutos)
+        motivo = (banco_horas.motivo or "").strip()
+        protocolo = banco_horas.id
+
+        # Status/decisão
         if action == 'deferir':
             banco_horas.status = 'Deferido'
-            funcionario = User.query.get(banco_horas.funcionario_id)
-            if funcionario:
-                funcionario.banco_horas += banco_horas.total_minutos
+            funcionario.banco_horas = int(funcionario.banco_horas or 0) + int(banco_horas.total_minutos or 0)
+            decisao = "DEFERIDO"
+            badge = "<span style='font-weight:800;color:#16A34A;'>DEFERIDO</span>"
             flash(f"Banco de horas de {banco_horas.funcionario.nome} deferido com sucesso!", "success")
-
         elif action == 'indeferir':
             banco_horas.status = 'Indeferido'
+            decisao = "INDEFERIDO"
+            badge = "<span style='font-weight:800;color:#DC2626;'>INDEFERIDO</span>"
             flash(f"Banco de horas de {banco_horas.funcionario.nome} indeferido.", "danger")
+        else:
+            flash("Ação inválida.", "danger")
+            return redirect(url_for('deferir_horas'))
 
         try:
             db.session.commit()
+
+            # Após commit, calcula dados atuais para o e-mail (saldo e pendências)
+            try:
+                saldo_atual_min = int(funcionario.banco_horas or 0)
+
+                pendentes_min = (
+                    db.session.query(func.coalesce(func.sum(BancoDeHoras.total_minutos), 0))
+                    .filter(
+                        BancoDeHoras.funcionario_id == funcionario.id,
+                        BancoDeHoras.status == 'Horas a Serem Deferidas'
+                    )
+                    .scalar()
+                ) or 0
+                pendentes_min = int(pendentes_min)
+
+                pendentes_qtd = (
+                    db.session.query(func.count(BancoDeHoras.id))
+                    .filter(
+                        BancoDeHoras.funcionario_id == funcionario.id,
+                        BancoDeHoras.status == 'Horas a Serem Deferidas'
+                    )
+                    .scalar()
+                ) or 0
+                pendentes_qtd = int(pendentes_qtd)
+
+                assunto = f"E.M José Padin Mouta – Banco de Horas {decisao.lower()}"
+                title = f"Banco de Horas {decisao}"
+
+                if decisao == "DEFERIDO":
+                    lead = (
+                        f"Seu lançamento de <strong>Banco de Horas</strong> (crédito) do dia <strong>{_escape(data_str)}</strong> "
+                        f"foi <strong style='color:#16A34A;'>DEFERIDO</strong>."
+                    )
+                    paragraphs = [
+                        "O saldo de Banco de Horas disponível para usufruir foi atualizado no sistema.",
+                    ]
+                    notes = []
+                else:
+                    lead = (
+                        f"Seu lançamento de <strong>Banco de Horas</strong> (crédito) do dia <strong>{_escape(data_str)}</strong> "
+                        f"foi <strong style='color:#DC2626;'>INDEFERIDO</strong>."
+                    )
+                    paragraphs = [
+                        "Caso seja necessário corrigir informações (data, motivo ou quantidade), realize um novo lançamento no sistema.",
+                    ]
+                    notes = []
+
+                resumo = [
+                    ("Protocolo", f"<strong>#{_escape(protocolo)}</strong>"),
+                    ("Servidor(a)", f"<strong>{_escape(funcionario.nome)}</strong>"),
+                    ("Registro", f"<strong>{_escape(funcionario.registro)}</strong>"),
+                    ("Data de realização", f"<strong>{_escape(data_str)}</strong>"),
+                    ("Motivo informado", f"<strong>{_escape(motivo)}</strong>"),
+                    ("Quantidade", f"<strong>{_escape(qtd_str)}</strong>"),
+                    ("Decisão", badge),
+                    ("Saldo atual a usufruir (BH)", f"<strong>{_escape(_format_hm_from_minutes(saldo_atual_min))}</strong>"),
+                    ("Em espera (BH)", f"<strong>{_escape(_format_hm_from_minutes(pendentes_min))}</strong> <span style='color:#6B7280;'>(em {pendentes_qtd} lançamento(s))</span>"),
+                ]
+
+                mensagem_html = build_email_html(
+                    title=title,
+                    greeting_name=funcionario.nome,
+                    lead=lead,
+                    paragraphs=paragraphs,
+                    summary_rows=resumo,
+                    note_lines=notes
+                )
+
+                mensagem_texto = build_email_text(
+                    subject_title=title,
+                    greeting_name=funcionario.nome,
+                    lead=f"Seu lançamento de Banco de Horas em {data_str} foi {decisao}.",
+                    summary_rows=[
+                        ("Protocolo", f"#{protocolo}"),
+                        ("Data de realização", data_str),
+                        ("Motivo informado", motivo),
+                        ("Quantidade", qtd_str),
+                        ("Decisão", decisao),
+                        ("Saldo atual a usufruir (BH)", _format_hm_from_minutes(saldo_atual_min)),
+                        ("Em espera (BH)", f"{_format_hm_from_minutes(pendentes_min)} (em {pendentes_qtd} lançamento(s))"),
+                    ],
+                    note_lines=[
+                        ("Saldo atualizado no sistema (após deferimento)." if decisao == "DEFERIDO" else
+                         "Se necessário, realize um novo lançamento com os dados corrigidos.")
+                    ]
+                )
+
+                # Envio (não derruba a decisão se falhar)
+                try:
+                    enviar_email(funcionario.email, assunto, mensagem_html, mensagem_texto)
+                except Exception:
+                    current_app.logger.exception("Falha ao enviar e-mail de decisão do BH (registro %s)", banco_horas.id)
+                    flash("Status atualizado, mas não foi possível enviar o e-mail de notificação neste momento.", "warning")
+
+            except Exception:
+                current_app.logger.exception("Falha ao montar e-mail de decisão do BH (registro %s)", banco_horas.id)
+                flash("Status atualizado, mas houve um problema ao preparar o e-mail de notificação.", "warning")
+
             registros = BancoDeHoras.query.filter_by(status='Horas a Serem Deferidas').all()
             return render_template('deferir_horas.html', registros=registros)
+
         except Exception as e:
             db.session.rollback()
             flash(f"Erro ao atualizar status: {str(e)}", "danger")
