@@ -415,15 +415,26 @@ class TRE(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
 
+    # ✅ pode ser positivo (crédito) ou negativo (débito) em ajustes admin
     dias_folga = db.Column(db.Integer, nullable=False)
-    arquivo_pdf = db.Column(db.String(255), nullable=False)
+
+    # ✅ agora pode ser NULL para ajustes administrativos (sem PDF)
+    arquivo_pdf = db.Column(db.String(255), nullable=True)
+
     data_envio = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
 
     status = db.Column(db.String(20), default='pendente', nullable=False, index=True)
+    # ✅ em ajustes admin, você pode gravar aqui o valor final (inclusive negativo)
     dias_validados = db.Column(db.Integer, nullable=True)
     parecer_admin = db.Column(db.Text, nullable=True)
     validado_em = db.Column(db.DateTime, nullable=True)
     validado_por_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+
+    # ✅ novo: origem do registro (upload do servidor x ajuste do admin)
+    origem = db.Column(db.String(20), nullable=False, default='upload', index=True)  # upload|admin_ajuste
+
+    # ✅ opcional: descrição curta do ajuste
+    descricao = db.Column(db.String(255), nullable=True)
 
     funcionario = db.relationship(
         'User',
@@ -3678,9 +3689,26 @@ def check_unique():
         exists = User.query.filter_by(rg=valor).first() is not None
     return jsonify({'exists': exists})
 
-# ===========================================
-# AUXILIARES TRE / UPLOAD
-# ===========================================
+# ==========================================
+# AUXILIARES TRE / UPLOAD  (CORRIGIDO)
+# - sync_tre_user mais robusto (motivo OU tipo_folga, status case-insensitive)
+# - suporta TRE admin sem PDF (arquivo_pdf pode ser NULL)
+# - suporta ajuste admin negativo (remover dias) via dias_folga negativo
+# ==========================================
+
+from pathlib import Path
+import os
+import datetime
+from datetime import date
+
+from flask import current_app, flash, redirect, url_for, request, send_file, render_template, jsonify
+from flask_login import login_required, current_user
+from werkzeug.utils import secure_filename
+from sqlalchemy import func, case, or_
+
+# ------------------------------------------
+# Helpers de arquivo
+# ------------------------------------------
 def allowed_file(filename: str) -> bool:
     return bool(filename) and "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -3693,10 +3721,14 @@ def _candidate_dirs_for_download() -> list[Path]:
     dirs = []
     cfg = Path(current_app.config.get("UPLOAD_FOLDER", "uploads/tre")).resolve()
     dirs.append(cfg)
+
     legacy_app = Path(current_app.root_path, "uploads", "tre").resolve()
     dirs.append(legacy_app)
+
     legacy_rel = Path("uploads/tre").resolve()
     dirs.append(legacy_rel)
+
+    # Render disk (se você usa)
     dirs.append(Path("/var/data/tre"))
 
     seen = set()
@@ -3708,7 +3740,9 @@ def _candidate_dirs_for_download() -> list[Path]:
             seen.add(rp)
     return uniq
 
-def _resolve_pdf_path(filename: str) -> Path | None:
+def _resolve_pdf_path(filename: str | None) -> Path | None:
+    if not filename:
+        return None
     safe_name = os.path.basename(filename)
     for base in _candidate_dirs_for_download():
         candidate = (base / safe_name)
@@ -3716,43 +3750,72 @@ def _resolve_pdf_path(filename: str) -> Path | None:
             return candidate.resolve()
     return None
 
+
+# ------------------------------------------
+# ✅ SYNC TRE (CORRIGIDO)
+# - soma TRE.deferida usando dias_validados (se houver) senão dias_folga
+# - aceita ajustes negativos (dias_folga/dias_validados negativos)
+# - clamp para não ficar total negativo
+# - tre_usufruidas: conta agendamentos deferidos de TRE por motivo OU tipo_folga
+# ------------------------------------------
 def sync_tre_user(usuario_id: int):
     usuario = User.query.get(usuario_id)
     if not usuario:
         return 0, 0, 0
 
-    tre_total = db.session.query(
-        func.coalesce(func.sum(
-            case(
-                (TRE.status == "deferida",
-                 case(
-                     (TRE.dias_validados != None, TRE.dias_validados),
-                     else_=TRE.dias_folga
-                 )),
-                else_=0
+    # Total de dias de TRE creditados (inclui ajustes admin negativos, se existirem)
+    tre_total = (
+        db.session.query(
+            func.coalesce(
+                func.sum(
+                    case(
+                        (TRE.status == "deferida", func.coalesce(TRE.dias_validados, TRE.dias_folga)),
+                        else_=0
+                    )
+                ),
+                0
             )
-        ), 0)
-    ).filter(TRE.funcionario_id == usuario_id).scalar()
+        )
+        .filter(TRE.funcionario_id == usuario_id)
+        .scalar()
+    )
 
-    tre_usufruidas = db.session.query(
-        func.count(Agendamento.id)
-    ).filter(
-        Agendamento.funcionario_id == usuario_id,
-        Agendamento.motivo == "TRE",
-        Agendamento.status == "deferido"
-    ).scalar()
+    # Evita total negativo (por segurança)
+    tre_total = int(tre_total or 0)
+    if tre_total < 0:
+        tre_total = 0
 
-    tre_restantes = max((tre_total or 0) - (tre_usufruidas or 0), 0)
+    # Quantidade de TRE já usufruídas (agendamentos deferidos)
+    tre_usufruidas = (
+        db.session.query(func.coalesce(func.count(Agendamento.id), 0))
+        .filter(Agendamento.funcionario_id == usuario_id)
+        .filter(func.lower(func.trim(Agendamento.status)) == "deferido")
+        .filter(
+            or_(
+                func.upper(func.trim(Agendamento.motivo)) == "TRE",
+                func.upper(func.trim(Agendamento.tipo_folga)) == "TRE"
+            )
+        )
+        .scalar()
+    )
 
-    usuario.tre_total = tre_total or 0
-    usuario.tre_usufruidas = tre_usufruidas or 0
+    tre_usufruidas = int(tre_usufruidas or 0)
+
+    tre_restantes = tre_total - tre_usufruidas
+    if tre_restantes < 0:
+        tre_restantes = 0
+
+    usuario.tre_total = tre_total
+    usuario.tre_usufruidas = tre_usufruidas
     db.session.commit()
 
     return usuario.tre_total, usuario.tre_usufruidas, tre_restantes
 
-# ===========================================
+
+# ==========================================
 # TRE - USUÁRIO
-# ===========================================
+# (mantém upload com PDF obrigatório)
+# ==========================================
 @app.route("/adicionar_tre", methods=["GET", "POST"])
 @login_required
 def adicionar_tre():
@@ -3777,31 +3840,48 @@ def adicionar_tre():
 
         nova = TRE(
             funcionario_id=current_user.id,
-            dias_folga=dias_folga,
+            dias_folga=int(dias_folga),
             arquivo_pdf=filename,
             status="pendente",
+            # novas colunas (se existirem no seu model/banco)
+            origem=getattr(TRE, "origem", None) and "upload" or None,
+            descricao=None,
         )
-        db.session.add(nova)
-        db.session.commit()
 
-        sync_tre_user(current_user.id)
-        flash("TRE enviada para análise do administrador.", "success")
-        return redirect(url_for("historico"))
+        try:
+            db.session.add(nova)
+            db.session.commit()
+            sync_tre_user(current_user.id)
+            flash("TRE enviada para análise do administrador.", "success")
+            return redirect(url_for("historico"))
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.exception("Erro ao salvar TRE (upload): %s", e)
+            flash("Erro ao enviar TRE. Tente novamente.", "danger")
+            return redirect(url_for("adicionar_tre"))
 
-    tres_ultimas = (TRE.query.filter_by(funcionario_id=current_user.id)
-                    .order_by(TRE.data_envio.desc()).limit(3).all())
+    tres_ultimas = (
+        TRE.query
+        .filter_by(funcionario_id=current_user.id)
+        .order_by(TRE.data_envio.desc())
+        .limit(3)
+        .all()
+    )
     return render_template("adicionar_tre.html", user=current_user, tres=tres_ultimas)
+
 
 @app.route("/minhas_tres", methods=["GET"])
 @login_required
 def minhas_tres():
-    minhas_tres = (TRE.query
-                   .filter_by(funcionario_id=current_user.id)
-                   .order_by(TRE.data_envio.desc())
-                   .all())
-
+    minhas = (
+        TRE.query
+        .filter_by(funcionario_id=current_user.id)
+        .order_by(TRE.data_envio.desc())
+        .all()
+    )
     sync_tre_user(current_user.id)
-    return render_template("minhas_tres.html", tres=minhas_tres, user=current_user)
+    return render_template("minhas_tres.html", tres=minhas, user=current_user)
+
 
 @app.route("/download_tre/<int:tre_id>", methods=["GET"])
 @login_required
@@ -3812,8 +3892,10 @@ def download_tre(tre_id: int):
         flash("Você não tem permissão para acessar este arquivo.", "danger")
         return redirect(url_for("minhas_tres"))
 
-    current_app.logger.warning("UPLOAD_FOLDER=%s", current_app.config.get("UPLOAD_FOLDER"))
-    current_app.logger.warning("CANDIDATES=%s", [str(p) for p in _candidate_dirs_for_download()])
+    # ✅ agora pode não existir PDF (admin ajuste)
+    if not getattr(tre, "arquivo_pdf", None):
+        flash("Esta TRE não possui arquivo PDF anexado (registro/ajuste administrativo).", "info")
+        return redirect(url_for("minhas_tres" if tre.funcionario_id == current_user.id else "admin_tres_list"))
 
     pdf_path = _resolve_pdf_path(tre.arquivo_pdf)
 
@@ -3838,9 +3920,10 @@ def download_tre(tre_id: int):
         max_age=0
     )
 
-# ===========================================
-# TRE - ADMIN
-# ===========================================
+
+# ==========================================
+# TRE - ADMIN (lista / decidir / excluir)
+# ==========================================
 @app.route("/admin/tres", methods=["GET"])
 @login_required
 def admin_tres_list():
@@ -3864,8 +3947,9 @@ def admin_tres_list():
         like = f"%{busca}%"
         q = q.filter(or_(User.nome.ilike(like), User.registro.ilike(like)))
 
-    tres = q.order_by(TRE.data_envio.desc()).all()
+    tres = q.order_by(TRE.data_envio.desc(), TRE.id.desc()).all()
     return render_template("admin_tres.html", tres=tres, status=status)
+
 
 @app.route("/admin/tre/<int:tre_id>/decidir", methods=["POST"])
 @login_required
@@ -3887,7 +3971,8 @@ def admin_tre_decidir(tre_id: int):
         return jsonify({"error": "Esta TRE já foi analisada."}), 400
 
     if acao == "aprovar":
-        dias_aprovados = dias_validados if (dias_validados and dias_validados > 0) else tre.dias_folga
+        dias_aprovados = int(dias_validados) if (dias_validados and dias_validados > 0) else int(tre.dias_folga or 0)
+
         tre.status = "deferida"
         tre.dias_validados = dias_aprovados
         tre.parecer_admin = parecer or None
@@ -3899,7 +3984,7 @@ def admin_tre_decidir(tre_id: int):
         return jsonify({"success": True, "message": f"TRE deferida (+{dias_aprovados} dia(s))."})
 
     tre.status = "indeferida"
-    tre.dias_validados = dias_validados if (dias_validados and dias_validados > 0) else None
+    tre.dias_validados = int(dias_validados) if (dias_validados and dias_validados > 0) else None
     tre.parecer_admin = parecer or None
     tre.validado_em = datetime.datetime.utcnow()
     tre.validado_por_id = current_user.id
@@ -3907,6 +3992,7 @@ def admin_tre_decidir(tre_id: int):
     db.session.commit()
     sync_tre_user(user.id)
     return jsonify({"success": True, "message": "TRE indeferida."})
+
 
 @app.route("/admin/tre/<int:tre_id>/excluir", methods=["POST"])
 @login_required
@@ -3926,11 +4012,17 @@ def admin_tre_excluir(tre_id: int):
         current_app.logger.exception("Erro ao excluir TRE id=%s: %s", tre_id, e)
         db.session.rollback()
         return jsonify({"error": "Falha ao excluir a TRE."}), 500
-    
+
+
+# ==========================================
+# ✅ ADMIN: LANÇAR / REMOVER TRE (MESMA PÁGINA)
+# - acao=adicionar: cria crédito positivo
+# - acao=remover: cria ajuste negativo (dias_folga negativo)
+# - PDF opcional (conforme seu patch: arquivo_pdf pode ser NULL)
+# ==========================================
 @app.route("/admin/tre/lancar", methods=["GET", "POST"])
 @login_required
 def admin_tre_lancar():
-    # Permissão
     if getattr(current_user, "tipo", "") != "administrador":
         flash("Acesso negado.", "danger")
         return redirect(url_for("index"))
@@ -3942,11 +4034,12 @@ def admin_tre_lancar():
         except ValueError:
             funcionario_id = 0
 
-        dias = request.form.get("dias_folga", type=int)
+        acao = (request.form.get("acao") or "adicionar").strip().lower()  # adicionar|remover
+        dias_in = request.form.get("dias_folga", type=int)
+        descricao = (request.form.get("descricao") or "").strip() or None
         parecer = (request.form.get("parecer_admin") or "").strip() or None
-        arquivo = request.files.get("arquivo_pdf")  # obrigatório nessa abordagem
+        arquivo = request.files.get("arquivo_pdf")  # opcional agora
 
-        # 2) validações
         if not funcionario_id:
             flash("Selecione um servidor.", "warning")
             return redirect(url_for("admin_tre_lancar"))
@@ -3956,35 +4049,46 @@ def admin_tre_lancar():
             flash("Servidor inválido ou inativo.", "warning")
             return redirect(url_for("admin_tre_lancar"))
 
-        if not dias or dias < 1:
+        if acao not in ("adicionar", "remover"):
+            flash("Ação inválida.", "warning")
+            return redirect(url_for("admin_tre_lancar"))
+
+        if not dias_in or dias_in < 1:
             flash("Informe uma quantidade válida de dias (>= 1).", "warning")
             return redirect(url_for("admin_tre_lancar"))
 
-        if not arquivo or not arquivo.filename:
-            flash("Anexe o PDF comprobatório para registrar a TRE.", "warning")
-            return redirect(url_for("admin_tre_lancar"))
+        # 2) PDF: valida somente se veio arquivo
+        filename = None
+        if arquivo and arquivo.filename:
+            if not allowed_file(arquivo.filename):
+                flash("Somente PDF é permitido.", "danger")
+                return redirect(url_for("admin_tre_lancar"))
 
-        if not allowed_file(arquivo.filename):
-            flash("Somente PDF é permitido.", "danger")
-            return redirect(url_for("admin_tre_lancar"))
+            filename = secure_filename(
+                f"ADMIN_{current_user.id}_U{user.id}_{datetime.datetime.now():%Y%m%d%H%M%S}_{arquivo.filename}"
+            )
+            save_dir = _ensure_upload_dir()
+            arquivo.save(str(save_dir / filename))
 
-        # 3) salva PDF
-        filename = secure_filename(
-            f"ADMIN_{current_user.id}_U{user.id}_{datetime.datetime.now():%Y%m%d%H%M%S}_{arquivo.filename}"
-        )
-        save_dir = _ensure_upload_dir()
-        arquivo.save(str(save_dir / filename))
+        # 3) valor (positivo para adicionar, negativo para remover)
+        dias_final = abs(int(dias_in))
+        if acao == "remover":
+            dias_final = -dias_final
 
-        # 4) cria TRE já deferida (crédito administrativo)
+        # 4) cria TRE já deferida (ajuste administrativo)
         nova = TRE(
             funcionario_id=user.id,
-            dias_folga=dias,
-            arquivo_pdf=filename,
+            dias_folga=dias_final,
+            arquivo_pdf=filename,  # pode ser None
             status="deferida",
-            dias_validados=dias,
+            dias_validados=dias_final,
             parecer_admin=parecer,
             validado_em=datetime.datetime.utcnow(),
             validado_por_id=current_user.id,
+
+            # novas colunas (se existirem)
+            origem=getattr(TRE, "origem", None) and "admin_ajuste" or None,
+            descricao=descricao,
         )
 
         try:
@@ -3992,40 +4096,16 @@ def admin_tre_lancar():
             db.session.commit()
             sync_tre_user(user.id)
 
-            # opcional: notificar o usuário por e-mail
-            try:
-                assunto = "E.M José Padin Mouta – TRE registrada (crédito administrativo)"
-                msg_html = f"""
-                <html><body style="font-family: Arial, sans-serif; color:#333; line-height:1.5;">
-                  <p>Prezado(a) Senhor(a) <strong>{user.nome}</strong>,</p>
-                  <p>Registramos <strong>{dias} dia(s) de TRE</strong> no seu saldo (crédito administrativo).</p>
-                  <p><strong>Observação:</strong> {parecer or "—"}</p>
-                  <p>Você já pode utilizar o saldo no Portal do Servidor.</p>
-                  <br>
-                  <p>Atenciosamente,<br>Nilson Cruz<br>E.M José Padin Mouta</p>
-                </body></html>
-                """
-                msg_txt = (
-                    f"Prezado(a) {user.nome},\n\n"
-                    f"Registramos {dias} dia(s) de TRE no seu saldo (crédito administrativo).\n"
-                    f"Observação: {parecer or '—'}\n\n"
-                    "Você já pode utilizar o saldo no Portal do Servidor.\n\n"
-                    "Atenciosamente,\nNilson Cruz\nE.M José Padin Mouta\n"
-                )
-                enviar_email(user.email, assunto, msg_html, msg_txt)
-            except Exception:
-                current_app.logger.exception("Falha ao enviar e-mail de TRE admin para user_id=%s", user.id)
-
-            flash(f"TRE lançada para {user.nome} (+{dias} dia(s)).", "success")
+            sinal = "+" if dias_final > 0 else ""
+            flash(f"TRE ajustada para {user.nome} ({sinal}{dias_final} dia(s)).", "success")
             return redirect(url_for("admin_tres_list", status="deferida"))
 
         except Exception as e:
             db.session.rollback()
-            current_app.logger.exception("Erro ao lançar TRE admin: %s", e)
-            flash("Erro ao lançar TRE. Verifique logs.", "danger")
+            current_app.logger.exception("Erro ao lançar/remover TRE admin: %s", e)
+            flash("Erro ao lançar/remover TRE. Verifique logs.", "danger")
             return redirect(url_for("admin_tre_lancar"))
 
-    # GET: lista usuários ativos para o select
     usuarios = (
         User.query
         .filter(User.ativo.is_(True))

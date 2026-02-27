@@ -22,8 +22,16 @@
       --text-main: #111827;
       --text-muted: #6b7280;
 
-      --card-shadow: 0 14px 34px rgba(15,23,42,.1), 0 2px 4px rgba(15,23,42,.06);
+      --card-shadow: 0 14px 34px rgba(15,23,42,.10), 0 2px 4px rgba(15,23,42,.06);
       --radius: 18px;
+
+      --danger: #ef4444;
+      --danger-dark: #dc2626;
+      --danger-soft: #ffe4e6;
+      --warning-soft: #fef3c7;
+      --warning: #f59e0b;
+      --success: #0fb300;
+      --success-dark: #0d8a00;
     }
 
     *, *::before, *::after { box-sizing: border-box; }
@@ -33,6 +41,8 @@
       font-family: 'Montserrat', sans-serif;
       background: radial-gradient(circle at top, #e0f2ff 0, #f9fafb 45%, #eef2ff 100%);
       color: var(--text-main);
+      max-width: 100%;
+      overflow-x: hidden;
     }
 
     body { display: flex; flex-direction: column; min-height: 100vh; }
@@ -80,12 +90,17 @@
       .escola-nome { font-weight: 700; font-size: 1.3rem; margin: 0; line-height: 1.1; }
       .escola-subtitulo { font-weight: 600; font-size: 1rem; margin-top: 2px; }
       .header-bottom {
-        background-color: #0056b3; text-align: center; padding: 12px 10px; font-weight: 800; font-size: 1rem; letter-spacing: 4px; user-select: none;
-        color: white; box-shadow: inset 0 -2px 5px rgba(0,0,0,.2); display: flex; justify-content: center; align-items: center; gap: 12px; white-space: nowrap;
+        background-color: #0056b3; text-align: center; padding: 12px 10px; font-weight: 800; font-size: 1rem; letter-spacing: 3px;
+        user-select: none; color: white; box-shadow: inset 0 -2px 5px rgba(0,0,0,.2);
+        display: flex; justify-content: center; align-items: center; gap: 12px;
+        white-space: nowrap;
+        max-width: 100%;
+        overflow: hidden;
       }
       .btn-home-mobile {
         background-color: #0fb300; color: white; padding: 6px 10px; border-radius: 6px; font-weight: 600; font-size: 1rem; text-decoration: none;
         display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(15,179,0,.8); transition: background-color .3s ease;
+        flex-shrink: 0;
       }
       .btn-home-mobile:hover { background-color: #0d8a00; }
     }
@@ -97,7 +112,8 @@
     }
     .page-header-icon {
       display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 999px;
-      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%); box-shadow: 0 4px 12px rgba(37,99,235,.45); color: #2563eb; flex-shrink: 0;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
+      box-shadow: 0 4px 12px rgba(37,99,235,.45); color: #2563eb; flex-shrink: 0;
     }
     .page-header-icon i { font-size: 22px; }
     .page-header-title { font-size: 1.15rem; font-weight: 800; margin: 0; color: var(--text-main); }
@@ -110,18 +126,32 @@
 
     /* ===== Card do formulário ===== */
     .form-card {
-      width: 100%; margin: 0 auto 30px; background: var(--surface); border-radius: 16px;
-      box-shadow: 0 18px 40px rgba(15,23,42,.12); padding: 20px 22px 24px;
-      border: 1px solid rgba(148,163,184,.35); backdrop-filter: blur(8px); box-sizing: border-box;
+      width: 100%;
+      margin: 0 auto 30px;
+      background: var(--surface);
+      border-radius: 16px;
+      box-shadow: 0 18px 40px rgba(15,23,42,.12);
+      padding: 20px 22px 24px;
+      border: 1px solid rgba(148,163,184,.35);
+      backdrop-filter: blur(8px);
+      box-sizing: border-box;
+      max-width: 100%;
+      overflow: hidden;
     }
+
+    .card-top {
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      margin-bottom: 10px;
+    }
+
     .form-card h1 {
-      font-size: 1.3rem; margin: 0 0 16px; color: var(--text-main); display: flex; align-items: center; gap: 10px;
+      font-size: 1.3rem; margin: 0; color: var(--text-main); display: flex; align-items: center; gap: 10px;
     }
     .form-card h1 i { color: var(--primary); font-size: 1.4rem; }
-    .form-description { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 18px; line-height: 1.5; }
+    .form-description { font-size: 0.9rem; color: var(--text-muted); margin: 0; line-height: 1.5; }
 
-    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; }
-    .input-group { display: flex; flex-direction: column; gap: 6px; font-size: 0.9rem; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; margin-top: 14px; }
+    .input-group { display: flex; flex-direction: column; gap: 6px; font-size: 0.9rem; min-width: 0; }
     .input-group.full-width { grid-column: 1 / -1; }
     label { font-size: 0.86rem; color: var(--text-main); font-weight: 600; display: flex; align-items: center; gap: 6px; }
     label i { color: var(--primary); font-size: 0.9rem; }
@@ -130,32 +160,108 @@
       width: 100%; padding: 9px 10px; font-size: 0.93rem; border-radius: 10px; border: 1px solid var(--border-soft);
       box-sizing: border-box; font-family: 'Montserrat', sans-serif; background-color: #f9fafb; outline: none;
       transition: border-color .12s ease-out, box-shadow .12s ease-out, background-color .12s ease-out;
+      min-width: 0;
     }
     textarea { resize: vertical; min-height: 96px; }
     input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37,99,235,.18); background-color: #ffffff; }
 
+    /* ===== Switch Adicionar/Remover ===== */
+    .mode {
+      display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+      background: linear-gradient(180deg, #ffffff, #f8fafc);
+      border: 1px solid rgba(148,163,184,.35);
+      border-radius: 999px;
+      padding: 6px;
+      box-shadow: 0 10px 24px rgba(15,23,42,.06);
+      max-width: 100%;
+    }
+    .mode button {
+      border: 1px solid transparent;
+      background: transparent;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-weight: 900;
+      cursor: pointer;
+      display:inline-flex; align-items:center; gap:8px;
+      color: #0f172a;
+      transition: background-color .12s ease, border-color .12s ease, box-shadow .12s ease, transform .12s ease;
+      font-size: .86rem;
+      min-width: 0;
+      white-space: nowrap;
+    }
+    .mode button:active { transform: translateY(0); }
+    .mode button.is-active {
+      background: rgba(37,99,235,.10);
+      border-color: rgba(37,99,235,.20);
+      box-shadow: 0 10px 20px rgba(37,99,235,.12);
+      color: #1d4ed8;
+    }
+    .mode button.is-danger.is-active{
+      background: rgba(239,68,68,.10);
+      border-color: rgba(239,68,68,.22);
+      box-shadow: 0 10px 20px rgba(239,68,68,.10);
+      color: #b91c1c;
+    }
+    .mode button i{ font-size: .95rem; }
+
+    .mode-hint{
+      width:100%;
+      font-size:.82rem;
+      color: var(--text-muted);
+      line-height:1.35;
+      margin-top:6px;
+    }
+
+    /* ===== Submit ===== */
     .submit-btn {
-      margin-top: 18px; width: 100%; padding: 11px 14px; background-color: #0fb300; color: white; border: none; font-size: 0.98rem;
-      cursor: pointer; border-radius: 999px; font-weight: 700; transition: background-color .18s, box-shadow .18s, transform .12s;
-      display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 6px 14px rgba(15,179,0,.7);
+      margin-top: 18px; width: 100%; padding: 11px 14px; color: white; border: none; font-size: 0.98rem;
+      cursor: pointer; border-radius: 999px; font-weight: 800; transition: background-color .18s, box-shadow .18s, transform .12s;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     }
     .submit-btn i { font-size: 1rem; }
-    .submit-btn:hover { background-color: #0d8a00; box-shadow: 0 10px 22px rgba(15,179,0,0.85); transform: translateY(-1px); }
-    .submit-btn:active { transform: translateY(0); box-shadow: 0 4px 10px rgba(15,179,0,.6); }
+
+    .btn-add{
+      background-color: var(--success);
+      box-shadow: 0 6px 14px rgba(15,179,0,.7);
+    }
+    .btn-add:hover { background-color: var(--success-dark); box-shadow: 0 10px 22px rgba(15,179,0,0.85); transform: translateY(-1px); }
+    .btn-add:active { transform: translateY(0); box-shadow: 0 4px 10px rgba(15,179,0,.6); }
+
+    .btn-remove{
+      background-color: var(--danger);
+      box-shadow: 0 6px 14px rgba(239,68,68,.35);
+    }
+    .btn-remove:hover { background-color: var(--danger-dark); box-shadow: 0 10px 22px rgba(239,68,68,.40); transform: translateY(-1px); }
+    .btn-remove:active { transform: translateY(0); box-shadow: 0 4px 10px rgba(239,68,68,.28); }
 
     .saldo-badge {
-      display: inline-block; padding: 6px 10px; border-radius: 999px; font-weight: 700; font-size: .82rem; border: 1px solid var(--border-soft);
-      background: #f1f5ff; color: #1e3a8a;
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: .82rem;
+      border: 1px solid var(--border-soft);
+      background: #f1f5ff;
+      color: #1e3a8a;
+      white-space: normal;
+      line-height: 1.25;
+      max-width: 100%;
     }
     .hint {
       font-size: 0.82rem;
       color: var(--text-muted);
       line-height: 1.35;
+      max-width: 100%;
     }
 
     @media (max-width: 640px) {
       .form-card { padding: 16px 14px 20px; margin-bottom: 24px; }
       .form-grid { grid-template-columns: 1fr; }
+      .mode{ width:100%; justify-content:space-between; gap: 8px; }
+      .mode button{ flex:1; justify-content:center; padding: 8px 10px; }
+    }
+    @media (max-width: 360px){
+      .mode button{ font-size: .82rem; padding: 8px 8px; gap: 6px; }
     }
 
     /* ===== Rodapé ===== */
@@ -167,16 +273,14 @@
     footer a { color: #fff; text-decoration: none; font-weight: 500; transition: color .3s ease-in-out; }
     footer a:hover { color: #00aaff; }
 
-    /* Flash (opcional) */
+    /* Flash */
     .flash { margin-bottom: 12px; padding: 10px 12px; border-radius: 12px; font-weight: 600; }
     .flash-success { background:#dcfce7; color:#166534; border:1px solid #bbf7d0; }
     .flash-warning { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
     .flash-danger  { background:#fee2e2; color:#b91c1c; border:1px solid #fecaca; }
     .flash-info    { background:#e0edff; color:#1d4ed8; border:1px solid #c7d2fe; }
 
-    /* ==============================
-       Readonly com aparência bloqueada
-       ============================== */
+    /* Readonly */
     .input-readonly[readonly]{
       background: linear-gradient(180deg, #f1f5f9, #eef2f7);
       border-color: #d8dee9;
@@ -201,10 +305,14 @@
       opacity: .85;
     }
 
-    /* ==============================
-       Upload PDF moderno (dropzone)
-       ============================== */
-    .file-uploader{ display: grid; gap: 10px; }
+    /* ===============================
+       Upload PDF moderno (CORRIGIDO)
+       - grid no .file-drop (ícone + texto + ação)
+       - texto sem ellipsis/truncamento
+       - quebra de linha segura (overflow-wrap)
+       - ação vai para baixo no mobile
+       =============================== */
+    .file-uploader{ display: grid; gap: 10px; min-width: 0; }
     .file-input-hidden{
       position: absolute;
       left: -9999px;
@@ -212,10 +320,15 @@
       height: 1px;
       opacity: 0;
     }
+
     .file-drop{
-      display: flex;
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) auto;
+      grid-template-areas: "icon text action";
       align-items: center;
-      gap: 14px;
+      column-gap: 14px;
+      row-gap: 10px;
+
       padding: 14px 14px;
       border-radius: 14px;
       border: 1px dashed #cbd5e1;
@@ -224,6 +337,11 @@
       cursor: pointer;
       transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background-color .12s ease;
       user-select: none;
+
+      width: 100%;
+      max-width: 100%;
+      overflow: visible; /* ✅ não cortar texto */
+      min-width: 0;
     }
     .file-drop:hover{
       border-color: rgba(37,99,235,.55);
@@ -236,7 +354,9 @@
       background: linear-gradient(180deg, #ffffff, #eef6ff);
       box-shadow: 0 18px 44px rgba(37,99,235,.18);
     }
+
     .file-drop-icon{
+      grid-area: icon;
       width: 44px;
       height: 44px;
       border-radius: 999px;
@@ -249,26 +369,43 @@
       flex-shrink: 0;
     }
     .file-drop-icon i{ font-size: 20px; }
+
     .file-drop-text{
-      min-width: 0;
-      flex: 1;
+      grid-area: text;
+      min-width: 0;            /* ✅ permite encolher sem sumir */
       display: grid;
       gap: 2px;
+      align-content: start;
     }
+
     .file-drop-title{
       font-weight: 800;
       font-size: .93rem;
       color: #0f172a;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+
+      /* ✅ remover truncamento */
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+
+      /* ✅ quebra segura */
+      overflow-wrap: anywhere;
+      line-height: 1.25;
     }
+
     .file-drop-sub{
       font-size: .82rem;
       color: #64748b;
       line-height: 1.2;
+
+      white-space: normal;     /* ✅ mantém “PDF opcional (recomendado)” sempre visível */
+      overflow-wrap: anywhere;
     }
+
     .file-drop-action{
+      grid-area: action;
+      justify-self: end;
+
       padding: 8px 12px;
       border-radius: 999px;
       background: rgba(37,99,235,.1);
@@ -276,15 +413,45 @@
       font-weight: 800;
       font-size: .82rem;
       border: 1px solid rgba(37,99,235,.18);
+
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      white-space: nowrap;
       flex-shrink: 0;
     }
 
+    /* ✅ Mobile: botão “Selecionar” vai para baixo e ocupa a largura */
+    @media (max-width: 640px){
+      .file-drop{
+        grid-template-columns: 44px minmax(0, 1fr);
+        grid-template-areas:
+          "icon text"
+          "action action";
+        align-items: start;
+        padding: 12px;
+      }
+      .file-drop-action{
+        justify-self: stretch;
+        width: 100%;
+        margin-top: 2px;
+      }
+    }
+    @media (max-width: 360px){
+      .file-drop{ column-gap: 10px; }
+      .file-drop-action{ padding: 8px 10px; }
+    }
+
+    /* File meta */
     .file-meta{
       display: flex;
       gap: 10px;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
+      max-width: 100%;
+      min-width: 0;
     }
     .file-pill{
       display: inline-flex;
@@ -298,6 +465,9 @@
       font-size: .85rem;
       color: #0f172a;
       max-width: 100%;
+      min-width: 0;
+      flex: 1 1 260px;
+      overflow: hidden; /* ok aqui (nome do arquivo pode elipsar) */
     }
     .file-pill i{
       color: #dc2626;
@@ -305,11 +475,13 @@
       flex-shrink: 0;
     }
     #pdfName{
-      white-space: nowrap;
+      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 52vw;
+      white-space: nowrap;
       display: inline-block;
+      flex: 1 1 auto;
+      max-width: 100%;
       vertical-align: bottom;
     }
     .file-pill .file-size{
@@ -317,6 +489,7 @@
       font-weight: 700;
       font-size: .82rem;
       flex-shrink: 0;
+      white-space: nowrap;
     }
     .file-clear{
       border: 1px solid #e2e8f0;
@@ -330,6 +503,8 @@
       align-items: center;
       gap: 8px;
       transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+      flex: 0 0 auto;
+      white-space: nowrap;
     }
     .file-clear:hover{
       border-color: #cbd5e1;
@@ -338,11 +513,68 @@
     }
     .file-clear:active{ transform: translateY(0); }
 
-    @media (max-width: 640px){
-      .file-drop{ padding: 12px; }
-      .file-drop-action{ display:none; }
-      #pdfName{ max-width: 64vw; }
+    @media (max-width: 420px){
+      .file-meta{ flex-direction: column; align-items: stretch; }
+      .file-clear{ width: 100%; justify-content: center; }
+      .file-pill{ width: 100%; }
     }
+
+    /* ===============================
+       Aviso laranja (CORRIGIDO)
+       - sem justificativa / sem corte
+       - quebra de linha natural
+       =============================== */
+    #pdfOptional.pdf-optional-note{
+      justify-self: stretch;
+      align-self: start;
+
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+
+      width: 100%;
+      max-width: 100%;
+
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(245,158,11,.28);
+      background: rgba(245,158,11,.10);
+
+      color: #92400e;
+      font-size: .82rem;
+      font-weight: 800;
+      line-height: 1.25;
+
+      /* ✅ mata “texto distribuído/justificado” do style.css */
+      text-align: left !important;
+      text-align-last: left !important;
+      text-justify: none !important;
+      word-spacing: 0 !important;
+      letter-spacing: normal !important;
+      white-space: normal !important;
+
+      overflow-wrap: anywhere;
+    }
+    #pdfOptional.pdf-optional-note i{
+      color:#b45309;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .pdf-optional-note-text{
+      flex: 1;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    #pdfOptional.pdf-optional-note *{
+      text-align: left !important;
+      text-align-last: left !important;
+      text-justify: none !important;
+      word-spacing: 0 !important;
+      letter-spacing: normal !important;
+      white-space: normal !important;
+    }
+
+    .is-hidden{ display:none !important; }
   </style>
 </head>
 
@@ -389,9 +621,9 @@
           <i class="fas fa-calendar-check"></i>
         </div>
         <div class="page-header-content">
-          <p class="page-header-title">Inserir TRE (Admin)</p>
+          <p class="page-header-title">Ajuste de TRE (Admin)</p>
           <p class="page-header-subtitle">
-            Lance créditos de TRE para um servidor. Recomendado anexar PDF comprobatório para auditoria.
+            Adicione ou remova dias de TRE do saldo do servidor. Recomendado anexar PDF comprobatório para auditoria.
           </p>
         </div>
       </div>
@@ -410,13 +642,33 @@
       {% endwith %}
 
       <div class="form-card">
-        <h1><i class="fas fa-edit"></i> Novo crédito de TRE</h1>
-        <p class="form-description">
-          Selecione o servidor e informe a quantidade de dias. Você pode enviar um PDF (portaria/declaração) para manter registro.
-        </p>
+        <div class="card-top">
+          <div>
+            <h1 id="cardTitle"><i class="fas fa-plus-circle"></i> Adicionar TRE</h1>
+            <p class="form-description" id="cardDesc">
+              Selecione o servidor e informe a quantidade de dias a <strong>adicionar</strong>. O lançamento será registrado como TRE deferida (ajuste administrativo).
+            </p>
+          </div>
+
+          <!-- Toggle de modo -->
+          <div>
+            <div class="mode" role="tablist" aria-label="Modo de ajuste TRE">
+              <button type="button" id="btnAdd" class="is-active" aria-pressed="true" title="Adicionar dias de TRE">
+                <i class="fas fa-plus"></i> Adicionar
+              </button>
+              <button type="button" id="btnRemove" class="is-danger" aria-pressed="false" title="Remover dias de TRE">
+                <i class="fas fa-minus"></i> Remover
+              </button>
+            </div>
+            <div class="mode-hint" id="modeHint">
+              Dica: use <strong>Remover</strong> para correções (lançamento indevido / ajuste de auditoria). O sistema cria um registro deferido com dias negativos.
+            </div>
+          </div>
+        </div>
 
         <form action="{{ url_for('admin_tre_lancar') }}" method="POST" id="formInserirTRE" autocomplete="on" enctype="multipart/form-data">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="acao" id="acao" value="adicionar">
 
           <div class="form-grid">
 
@@ -445,12 +697,12 @@
                 {% endfor %}
               </select>
 
-              <small class="page-header-subtitle" id="treInfo" style="display:inline-block;margin-top:8px;">
+              <small class="page-header-subtitle" id="treInfo" style="display:inline-block;margin-top:8px;max-width:100%;">
                 <span class="saldo-badge">TRE atual: 0 total • 0 usadas • 0 a usufruir</span>
               </small>
             </div>
 
-            <!-- Registro / Email (readonly bloqueado) -->
+            <!-- Registro / Email -->
             <div class="input-group">
               <label for="registro"><i class="fas fa-id-card"></i> Registro</label>
               <div class="readonly-wrap">
@@ -469,12 +721,17 @@
 
             <!-- Dias -->
             <div class="input-group">
-              <label for="dias_folga"><i class="fas fa-hashtag"></i> Dias de TRE (crédito)</label>
+              <label for="dias_folga" id="diasLabel"><i class="fas fa-hashtag"></i> Dias de TRE (adicionar)</label>
               <input type="number" id="dias_folga" name="dias_folga" min="1" step="1" required placeholder="Ex.: 1, 2, 3..." inputmode="numeric" />
-              <small class="hint">Será lançado como TRE <strong>deferida</strong> e entrará no saldo do servidor.</small>
+              <small class="hint" id="diasHint">
+                Será lançado como TRE <strong>deferida</strong> e entrará no saldo do servidor.
+              </small>
+              <small class="hint is-hidden" id="removeGuardHint">
+                ⚠️ Atenção: ao remover, o sistema não impede você de exceder o “saldo a usufruir”. Faça a conferência antes.
+              </small>
             </div>
 
-            <!-- PDF (uploader moderno) -->
+            <!-- PDF -->
             <div class="input-group">
               <label for="arquivo_pdf"><i class="fas fa-file-pdf"></i> PDF comprobatório</label>
 
@@ -492,13 +749,12 @@
 
                   <span class="file-drop-text">
                     <span class="file-drop-title">Solte o PDF aqui ou clique para selecionar</span>
-                    <span class="file-drop-sub">Apenas PDF</span>
+                    <span class="file-drop-sub" id="pdfSub">Apenas PDF</span>
                   </span>
 
                   <span class="file-drop-action">Selecionar</span>
                 </label>
 
-                <!-- começa escondido: só aparece após anexar -->
                 <div class="file-meta" id="pdfMeta" style="display:none;">
                   <div class="file-pill">
                     <i class="fas fa-file-pdf"></i>
@@ -510,9 +766,24 @@
                     <i class="fas fa-times"></i> Remover
                   </button>
                 </div>
+
+                <!-- Nota: no modo remover, PDF é opcional -->
+                <div class="pdf-optional-note is-hidden" id="pdfOptional">
+                  <i class="fas fa-info-circle" aria-hidden="true"></i>
+                  <span class="pdf-optional-note-text">
+                    No modo <strong>Remover</strong>, o PDF é <strong>opcional</strong> — recomendado para auditoria.
+                  </span>
+                </div>
               </div>
 
               <small class="hint">O PDF fica salvo junto ao lançamento para auditoria.</small>
+            </div>
+
+            <!-- Descrição -->
+            <div class="input-group full-width">
+              <label for="descricao"><i class="fas fa-tag"></i> Descrição (opcional)</label>
+              <input type="text" id="descricao" name="descricao" maxlength="180" placeholder="Ex.: Ajuste administrativo, correção de lançamento, auditoria..." />
+              <small class="hint">Ajuda a identificar rapidamente o motivo do ajuste na lista de TREs.</small>
             </div>
 
             <!-- Observação -->
@@ -524,7 +795,7 @@
 
           </div>
 
-          <button type="submit" class="submit-btn">
+          <button type="submit" class="submit-btn btn-add" id="submitBtn">
             <i class="fas fa-save"></i>
             Inserir TRE
           </button>
@@ -539,6 +810,66 @@
   </footer>
 
   <script>
+    const btnAdd = document.getElementById('btnAdd');
+    const btnRemove = document.getElementById('btnRemove');
+    const acao = document.getElementById('acao');
+
+    const cardTitle = document.getElementById('cardTitle');
+    const cardDesc  = document.getElementById('cardDesc');
+    const submitBtn = document.getElementById('submitBtn');
+
+    const diasLabel = document.getElementById('diasLabel');
+    const diasHint  = document.getElementById('diasHint');
+    const removeGuardHint = document.getElementById('removeGuardHint');
+
+    const pdfOptional = document.getElementById('pdfOptional');
+    const pdfSub = document.getElementById('pdfSub');
+
+    function setMode(mode) {
+      const isRemove = (mode === 'remover');
+
+      acao.value = isRemove ? 'remover' : 'adicionar';
+
+      btnAdd.classList.toggle('is-active', !isRemove);
+      btnAdd.setAttribute('aria-pressed', (!isRemove).toString());
+
+      btnRemove.classList.toggle('is-active', isRemove);
+      btnRemove.setAttribute('aria-pressed', (isRemove).toString());
+
+      if (isRemove) {
+        cardTitle.innerHTML = '<i class="fas fa-minus-circle"></i> Remover TRE';
+        cardTitle.querySelector('i').style.color = 'var(--danger)';
+        cardDesc.innerHTML = 'Selecione o servidor e informe a quantidade de dias a <strong>remover</strong>. O sistema registra um ajuste deferido com dias negativos.';
+        diasLabel.innerHTML = '<i class="fas fa-hashtag"></i> Dias de TRE (remover)';
+        diasHint.innerHTML = 'Será registrado como ajuste administrativo <strong>(dias negativos)</strong>.';
+        removeGuardHint.classList.remove('is-hidden');
+
+        submitBtn.classList.remove('btn-add');
+        submitBtn.classList.add('btn-remove');
+        submitBtn.innerHTML = '<i class="fas fa-save"></i> Remover TRE';
+
+        pdfOptional.classList.remove('is-hidden');
+        pdfSub.textContent = 'PDF opcional (recomendado)';
+      } else {
+        cardTitle.innerHTML = '<i class="fas fa-plus-circle"></i> Adicionar TRE';
+        cardTitle.querySelector('i').style.color = 'var(--primary)';
+        cardDesc.innerHTML = 'Selecione o servidor e informe a quantidade de dias a <strong>adicionar</strong>. O lançamento será registrado como TRE deferida (ajuste administrativo).';
+        diasLabel.innerHTML = '<i class="fas fa-hashtag"></i> Dias de TRE (adicionar)';
+        diasHint.innerHTML = 'Será lançado como TRE <strong>deferida</strong> e entrará no saldo do servidor.';
+        removeGuardHint.classList.add('is-hidden');
+
+        submitBtn.classList.remove('btn-remove');
+        submitBtn.classList.add('btn-add');
+        submitBtn.innerHTML = '<i class="fas fa-save"></i> Inserir TRE';
+
+        pdfOptional.classList.add('is-hidden');
+        pdfSub.textContent = 'Apenas PDF';
+      }
+    }
+
+    btnAdd.addEventListener('click', () => setMode('adicionar'));
+    btnRemove.addEventListener('click', () => setMode('remover'));
+
     const sel = document.getElementById('funcionario_id');
     const reg = document.getElementById('registro');
     const eml = document.getElementById('email');
@@ -557,6 +888,7 @@
       usadas = clampInt(usadas);
       const restante = Math.max(total - usadas, 0);
       treInfo.innerHTML = `<span class="saldo-badge">TRE atual: ${total} total • ${usadas} usadas • ${restante} a usufruir</span>`;
+      return { total, usadas, restante };
     }
 
     sel.addEventListener('change', () => {
@@ -571,7 +903,6 @@
       renderTreBadge(tt, tu);
     });
 
-    // Validação simples (dias >= 1)
     form.addEventListener('submit', (ev) => {
       const d = clampInt(dias.value);
       if (d < 1) {
@@ -579,9 +910,26 @@
         alert('Informe uma quantidade de dias válida (>= 1).');
         return;
       }
+
+      if (acao.value === 'remover') {
+        const opt = sel.options[sel.selectedIndex];
+        const tt = opt ? opt.getAttribute('data-tre-total') : '0';
+        const tu = opt ? opt.getAttribute('data-tre-usadas') : '0';
+        const { restante } = renderTreBadge(tt, tu);
+
+        if (d > restante) {
+          const ok = confirm(
+            `Você está removendo ${d} dia(s), mas o servidor tem apenas ${restante} a usufruir.\n\n` +
+            `Isso pode "zerar" o total e impactar auditoria. Deseja continuar?`
+          );
+          if (!ok) {
+            ev.preventDefault();
+            return;
+          }
+        }
+      }
     });
 
-    // ===== Uploader PDF moderno (sem mostrar nada quando vazio + remover robusto) =====
     let pdfInput = document.getElementById('arquivo_pdf');
     const pdfDrop  = document.getElementById('pdfDrop');
     const pdfMeta  = document.getElementById('pdfMeta');
@@ -634,7 +982,6 @@
       });
     }
 
-    // Limpa input de arquivo de forma robusta (clone se necessário)
     function forceClearPdfInput() {
       if (!pdfInput) return;
 
@@ -695,6 +1042,8 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
+      setMode('adicionar');
+
       if (sel.value) {
         const opt = sel.options[sel.selectedIndex];
         reg.value = opt.getAttribute('data-registro') || '';
