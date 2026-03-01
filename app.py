@@ -795,18 +795,42 @@ def aceitar_termo():
 
 # ======================================================
 # RECUPERAÇÃO / REDEFINIÇÃO DE SENHA POR E-MAIL (Gmail)
+# (E-mail padronizado no mesmo estilo "premium" do BH/Agendamentos)
 # ======================================================
+import os
+import smtplib
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from flask import request, redirect, url_for, render_template, flash, current_app
+from werkzeug.security import generate_password_hash
 
+# ✅ Branding (mesmo padrão do sistema)
+BRAND_SCHOOL = "E.M José Padin Mouta"
+BRAND_SYSTEM = "Portal do Servidor"
 RESET_TOKEN_MAX_AGE = int(os.getenv("RESET_TOKEN_MAX_AGE", "3600"))  # 1 hora
+
+
+def _escape_html(s) -> str:
+    if s is None:
+        return ""
+    s = str(s)
+    return (
+        s.replace("&", "&amp;")
+         .replace("<", "&lt;")
+         .replace(">", "&gt;")
+         .replace('"', "&quot;")
+         .replace("'", "&#39;")
+    )
+
 
 def _get_serializer() -> URLSafeTimedSerializer:
     secret_key = app.config["SECRET_KEY"]
     return URLSafeTimedSerializer(secret_key)
 
+
 def generate_reset_token(user_id: int) -> str:
     s = _get_serializer()
     return s.dumps({"uid": user_id}, salt=app.config["SECURITY_PASSWORD_SALT"])
+
 
 def verify_reset_token(token: str) -> int | None:
     s = _get_serializer()
@@ -827,33 +851,108 @@ def verify_reset_token(token: str) -> int | None:
         flash("Não foi possível validar o link de redefinição.", "danger")
         return None
 
+
+def _build_reset_email_html(nome: str, reset_url: str, minutos: int) -> str:
+    nome = _escape_html(nome or "Servidor(a)")
+    reset_url_safe = _escape_html(reset_url)
+
+    # ✅ Card premium (bem consistente com seus e-mails de Agendamento/BH)
+    return f"""
+    <html>
+      <body style="margin:0;padding:0;background:#F4F6F8;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F4F6F8;padding:24px 0;">
+          <tr>
+            <td align="center" style="padding:0 12px;">
+              <table role="presentation" width="640" cellspacing="0" cellpadding="0"
+                     style="width:100%;max-width:640px;background:#FFFFFF;border-radius:14px;overflow:hidden;border:1px solid #E6E6E6;">
+                <!-- Header -->
+                <tr>
+                  <td style="padding:18px 20px;background:#0F172A;color:#FFFFFF;">
+                    <div style="font-size:13px;opacity:.92;">{_escape_html(BRAND_SCHOOL)} • {_escape_html(BRAND_SYSTEM)}</div>
+                    <div style="font-size:20px;font-weight:800;margin-top:6px;letter-spacing:.2px;">
+                      Redefinição de senha
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Body -->
+                <tr>
+                  <td style="padding:20px 20px 10px 20px;color:#111827;font-family:Arial,sans-serif;line-height:1.6;">
+                    <p style="margin:0 0 12px 0;">Prezado(a) Senhor(a) <strong>{nome}</strong>,</p>
+
+                    <p style="margin:0 0 12px 0;">
+                      Recebemos um pedido para <strong>redefinir sua senha</strong> no <strong>{_escape_html(BRAND_SYSTEM)}</strong>.
+                    </p>
+
+                    <p style="margin:0 0 14px 0;">
+                      Para continuar, clique no botão abaixo (válido por <strong>{minutos} minuto(s)</strong>):
+                    </p>
+
+                    <p style="margin:0 0 16px 0;">
+                      <a href="{reset_url_safe}"
+                         style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;
+                                padding:10px 16px;border-radius:10px;font-weight:800;">
+                        Redefinir senha
+                      </a>
+                    </p>
+
+                    <div style="padding:12px;border:1px dashed #D7D7D7;border-radius:12px;background:#FAFAFA;margin:0 0 12px 0;">
+                      <div style="font-weight:800;color:#111827;margin-bottom:6px;">Se não abrir pelo botão</div>
+                      <div style="color:#374151;margin-bottom:8px;">Copie e cole esta URL no navegador:</div>
+                      <div style="word-break:break-all;">
+                        <a href="{reset_url_safe}">{reset_url_safe}</a>
+                      </div>
+                    </div>
+
+                    <p style="margin:0;color:#6B7280;font-size:13px;">
+                      <strong>Não foi você?</strong> Se você não solicitou, ignore este e-mail.
+                    </p>
+
+                    <div style="margin-top:18px;border-top:1px solid #EEEEEE;padding-top:14px;color:#374151;">
+                      <p style="margin:0 0 4px 0;">Atenciosamente,</p>
+                      <p style="margin:0;font-weight:800;">{_escape_html(BRAND_SCHOOL)}</p>
+                      <p style="margin:0;">{_escape_html(BRAND_SYSTEM)}</p>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                  <td style="padding:12px 20px;background:#FAFAFA;color:#6B7280;font-size:12px;font-family:Arial,sans-serif;">
+                    Mensagem automática do sistema • Não responder
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+    """
+
+
 def send_password_reset_email(user) -> None:
     token = generate_reset_token(user.id)
     reset_url = url_for("redefinir_senha", token=token, _external=True)
 
-    subject = "Redefinição de Senha — Portal do Servidor"
+    minutos = max(1, int(RESET_TOKEN_MAX_AGE // 60))
+
+    # ✅ Assunto padronizado (branding)
+    subject = f"{BRAND_SCHOOL} — Redefinição de senha ({BRAND_SYSTEM})"
+
     text_body = (
-        "Você solicitou a redefinição de senha.\n\n"
-        f"Acesse o link abaixo para criar uma nova senha (válido por {RESET_TOKEN_MAX_AGE//60} minutos):\n"
+        f"{BRAND_SCHOOL} — {BRAND_SYSTEM}\n"
+        "Redefinição de senha\n\n"
+        f"Prezado(a) Senhor(a) {user.nome or 'Servidor(a)'},\n\n"
+        "Recebemos um pedido para redefinir sua senha.\n\n"
+        f"Acesse o link abaixo para criar uma nova senha (válido por {minutos} minuto(s)):\n"
         f"{reset_url}\n\n"
-        "Se você não solicitou, ignore este e-mail."
+        "Se você não solicitou, ignore este e-mail.\n"
     )
-    html_body = f"""
-      <p>Olá, <strong>{user.nome or 'Servidor(a)'}</strong>.</p>
-      <p>Recebemos um pedido para redefinir sua senha do <strong>Portal do Servidor</strong>.</p>
-      <p>Use o botão/link abaixo (válido por <strong>{RESET_TOKEN_MAX_AGE//60} minutos</strong>):</p>
-      <p>
-        <a href="{reset_url}" style="display:inline-block;background:#2563eb;color:#fff;
-           text-decoration:none;padding:10px 16px;border-radius:8px;font-weight:700">
-          Redefinir senha
-        </a>
-      </p>
-      <p>Se preferir, copie e cole esta URL no navegador:</p>
-      <p style="word-break:break-all;"><a href="{reset_url}">{reset_url}</a></p>
-      <hr>
-      <p style="color:#6b7280;font-size:12px">Mensagem automática • Não responder</p>
-    """
+
+    html_body = _build_reset_email_html(user.nome or "Servidor(a)", reset_url, minutos)
     enviar_email(user.email, subject, html_body, text_body)
+
 
 @app.route('/recuperar_senha', methods=['GET', 'POST'])
 def recuperar_senha():
@@ -873,8 +972,10 @@ def recuperar_senha():
         try:
             if usuario and usuario.email:
                 send_password_reset_email(usuario)
+
             flash("Se os dados conferirem, enviaremos um e-mail com instruções.", "info")
             return redirect(url_for('login'))
+
         except smtplib.SMTPAuthenticationError:
             current_app.logger.exception("SMTPAuthenticationError ao enviar e-mail de redefinição")
             flash("Não foi possível enviar o e-mail no momento. Verifique as credenciais SMTP.", "danger")
@@ -883,6 +984,7 @@ def recuperar_senha():
             flash("Não foi possível enviar o e-mail no momento. Tente novamente.", "danger")
 
     return render_template('recuperar_senha.html')
+
 
 @app.route('/redefinir_senha/<token>', methods=['GET', 'POST'])
 def redefinir_senha(token):
@@ -4006,7 +4108,198 @@ def deferir_horas():
     return render_template('deferir_horas.html', registros=registros)
 
 # ===========================================
-# PERFIL
+# PERFIL + ALTERAÇÃO DE E-MAIL (CONFIRMAÇÃO)
+# ===========================================
+import os
+import datetime
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
+from flask import request, redirect, url_for, render_template, flash, current_app
+from flask_login import login_required, current_user
+from werkzeug.security import check_password_hash
+
+EMAIL_CHANGE_MAX_AGE = int(os.getenv("EMAIL_CHANGE_MAX_AGE", "3600"))  # 1 hora
+
+
+def _email_serializer() -> URLSafeTimedSerializer:
+    # Usa o mesmo SECRET_KEY do app
+    secret_key = current_app.config.get("SECRET_KEY")
+    return URLSafeTimedSerializer(secret_key)
+
+
+def _digits_only(s: str) -> str:
+    return "".join(ch for ch in (s or "") if ch.isdigit())
+
+
+def _parse_date_yyyy_mm_dd(raw: str):
+    raw = (raw or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.datetime.strptime(raw, "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+
+def generate_email_change_token(user_id: int, new_email: str, old_email: str) -> str:
+    s = _email_serializer()
+    payload = {"uid": int(user_id), "new": new_email, "old": old_email}
+    # Reaproveita o mesmo salt de segurança já usado no reset de senha
+    return s.dumps(payload, salt=current_app.config["SECURITY_PASSWORD_SALT"])
+
+
+def verify_email_change_token(token: str):
+    s = _email_serializer()
+    try:
+        data = s.loads(
+            token,
+            salt=current_app.config["SECURITY_PASSWORD_SALT"],
+            max_age=EMAIL_CHANGE_MAX_AGE
+        )
+        if not isinstance(data, dict):
+            return None
+        return data
+    except SignatureExpired:
+        flash("O link de confirmação de e-mail expirou. Solicite novamente pelo perfil.", "warning")
+        return None
+    except BadSignature:
+        flash("Link de confirmação de e-mail inválido. Solicite novamente pelo perfil.", "danger")
+        return None
+    except Exception:
+        flash("Não foi possível validar o link de confirmação.", "danger")
+        return None
+
+
+def send_email_change_confirmation(user, new_email: str) -> None:
+    token = generate_email_change_token(
+        user_id=user.id,
+        new_email=new_email,
+        old_email=(user.email or "").strip().lower()
+    )
+    confirm_url = url_for("confirmar_email", token=token, _external=True)
+
+    subject = "Confirmação de e-mail — Portal do Servidor"
+    text_body = (
+        f"Olá, {user.nome or 'Servidor(a)'}.\n\n"
+        "Recebemos um pedido para alterar seu e-mail no Portal do Servidor.\n\n"
+        f"Confirme no link (válido por {EMAIL_CHANGE_MAX_AGE//60} minutos):\n{confirm_url}\n\n"
+        "Se você não solicitou, ignore este e-mail."
+    )
+
+    html_body = f"""
+    <html>
+      <body style="margin:0;padding:0;background:#F4F6F8;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F4F6F8;padding:24px 0;">
+          <tr>
+            <td align="center" style="padding:0 12px;">
+              <table role="presentation" width="640" cellspacing="0" cellpadding="0"
+                     style="width:100%;max-width:640px;background:#FFFFFF;border-radius:14px;overflow:hidden;border:1px solid #E6E6E6;">
+                <tr>
+                  <td style="padding:18px 20px;background:#0F172A;color:#FFFFFF;">
+                    <div style="font-size:14px;opacity:.9;">Portal do Servidor</div>
+                    <div style="font-size:20px;font-weight:800;margin-top:6px;">Confirmação de e-mail</div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:20px 20px 6px 20px;color:#111827;font-family:Arial,sans-serif;line-height:1.6;">
+                    <p style="margin:0 0 12px 0;">Olá, <strong>{(user.nome or 'Servidor(a)')}</strong>.</p>
+
+                    <p style="margin:0 0 12px 0;">
+                      Recebemos um pedido para alterar seu e-mail para:
+                      <strong>{new_email}</strong>
+                    </p>
+
+                    <p style="margin:0 0 14px 0;">
+                      Para confirmar, clique no botão abaixo (válido por <strong>{EMAIL_CHANGE_MAX_AGE//60} minutos</strong>):
+                    </p>
+
+                    <p style="margin:0 0 16px 0;">
+                      <a href="{confirm_url}"
+                         style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:10px 16px;border-radius:10px;font-weight:800;">
+                        Confirmar novo e-mail
+                      </a>
+                    </p>
+
+                    <p style="margin:0 0 8px 0;color:#6B7280;">Se preferir, copie e cole a URL no navegador:</p>
+                    <p style="margin:0;word-break:break-all;"><a href="{confirm_url}">{confirm_url}</a></p>
+
+                    <div style="margin-top:18px;border-top:1px solid #EEEEEE;padding-top:14px;color:#374151;">
+                      <p style="margin:0 0 4px 0;">Atenciosamente,</p>
+                      <p style="margin:0;font-weight:700;">E.M José Padin Mouta</p>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:12px 20px;background:#FAFAFA;color:#6B7280;font-size:12px;font-family:Arial,sans-serif;">
+                    Mensagem automática • Não responder
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+    """
+
+    # Envia para o NOVO e-mail (isso é o que valida a posse)
+    enviar_email(new_email, subject, html_body, text_body)
+
+
+@app.route("/confirmar_email/<token>", methods=["GET"])
+def confirmar_email(token):
+    data = verify_email_change_token(token)
+    if not data:
+        return redirect(url_for("perfil") if current_user.is_authenticated else url_for("login"))
+
+    try:
+        user_id = int(data.get("uid", 0))
+    except Exception:
+        flash("Link inválido.", "danger")
+        return redirect(url_for("login"))
+
+    new_email = (data.get("new") or "").strip().lower()
+    old_email = (data.get("old") or "").strip().lower()
+
+    if not user_id or not new_email or "@" not in new_email:
+        flash("Link inválido.", "danger")
+        return redirect(url_for("login"))
+
+    usuario = User.query.get(user_id)
+    if not usuario:
+        flash("Usuário não encontrado.", "danger")
+        return redirect(url_for("login"))
+
+    # Garante que o token foi gerado para o e-mail atual na época do pedido
+    if (usuario.email or "").strip().lower() != old_email:
+        flash("Este link não é mais válido. Solicite a troca novamente pelo perfil.", "warning")
+        return redirect(url_for("perfil") if current_user.is_authenticated else url_for("login"))
+
+    # Evita colisão de e-mail
+    ja_existe = User.query.filter(func.lower(User.email) == new_email, User.id != usuario.id).first()
+    if ja_existe:
+        flash("Este e-mail já está em uso. Informe outro.", "danger")
+        return redirect(url_for("perfil") if current_user.is_authenticated else url_for("login"))
+
+    try:
+        usuario.email = new_email
+        db.session.commit()
+        flash("E-mail atualizado com sucesso!", "success")
+    except IntegrityError:
+        db.session.rollback()
+        flash("Este e-mail já está em uso. Informe outro.", "danger")
+    except Exception:
+        db.session.rollback()
+        flash("Não foi possível atualizar o e-mail. Tente novamente.", "danger")
+
+    return redirect(url_for("perfil") if current_user.is_authenticated else url_for("login"))
+
+
+# ===========================================
+# PERFIL (corrigido: flashes coerentes + troca de e-mail)
 # ===========================================
 @app.route('/perfil', methods=['GET', 'POST'])
 @login_required
@@ -4025,21 +4318,125 @@ def perfil():
     ])
 
     if request.method == 'POST':
-        try:
-            usuario.celular = request.form.get('celular') or None
-            usuario.data_nascimento = request.form.get('data_nascimento') or None
-            usuario.cpf = request.form.get('cpf') or None
-            usuario.rg = request.form.get('rg') or None
-            usuario.data_emissao_rg = request.form.get('data_emissao_rg') or None
-            usuario.orgao_emissor = request.form.get('orgao_emissor') or None
-            usuario.graduacao = request.form.get('graduacao') or None
-            usuario.cargo = request.form.get('cargo') or None
+        # ====== A) Detecta solicitação de troca de e-mail ======
+        novo_email = (request.form.get("novo_email") or "").strip().lower()
+        confirmar_novo_email = (request.form.get("confirmar_novo_email") or "").strip().lower()
+        senha_atual = (request.form.get("senha_atual") or "").strip()
 
-            db.session.commit()
-            flash('Perfil atualizado com sucesso!', 'success')
+        email_change_requested = bool(novo_email or confirmar_novo_email or senha_atual)
+
+        # ====== B) Atualiza dados do perfil (somente se houver mudanças reais) ======
+        perfil_alterado = False
+        try:
+            # celular
+            celular_novo = (request.form.get('celular') or "").strip() or None
+            if usuario.celular != celular_novo:
+                usuario.celular = celular_novo
+                perfil_alterado = True
+
+            # data_nascimento
+            dn_raw = request.form.get('data_nascimento')
+            if dn_raw is not None:  # veio no form
+                dn_nova = _parse_date_yyyy_mm_dd(dn_raw)
+                if usuario.data_nascimento != dn_nova:
+                    usuario.data_nascimento = dn_nova
+                    perfil_alterado = True
+
+            # CPF (NOT NULL no seu modelo) -> só altera se vier preenchido
+            cpf_in = (request.form.get('cpf') or "").strip()
+            if cpf_in:
+                cpf_norm = _digits_only(cpf_in)
+                if usuario.cpf != cpf_norm:
+                    usuario.cpf = cpf_norm
+                    perfil_alterado = True
+
+            # RG (NOT NULL no seu modelo) -> só altera se vier preenchido
+            rg_in = (request.form.get('rg') or "").strip()
+            if rg_in and usuario.rg != rg_in:
+                usuario.rg = rg_in
+                perfil_alterado = True
+
+            # data_emissao_rg
+            der_raw = request.form.get('data_emissao_rg')
+            if der_raw is not None:
+                der_nova = _parse_date_yyyy_mm_dd(der_raw)
+                if usuario.data_emissao_rg != der_nova:
+                    usuario.data_emissao_rg = der_nova
+                    perfil_alterado = True
+
+            # orgao_emissor
+            orgao_novo = (request.form.get('orgao_emissor') or "").strip() or None
+            if usuario.orgao_emissor != orgao_novo:
+                usuario.orgao_emissor = orgao_novo
+                perfil_alterado = True
+
+            # graduacao
+            graduacao_nova = (request.form.get('graduacao') or "").strip() or None
+            if usuario.graduacao != graduacao_nova:
+                usuario.graduacao = graduacao_nova
+                perfil_alterado = True
+
+            # cargo
+            cargo_novo = (request.form.get('cargo') or "").strip() or None
+            if usuario.cargo != cargo_novo:
+                usuario.cargo = cargo_novo
+                perfil_alterado = True
+
+            if perfil_alterado:
+                db.session.commit()
+                flash('Perfil atualizado com sucesso!', 'success')
+            else:
+                # Só mostra "nada para salvar" quando o usuário NÃO está tentando trocar e-mail
+                if not email_change_requested:
+                    flash('Nenhuma alteração no perfil para salvar.', 'info')
+
+        except IntegrityError:
+            db.session.rollback()
+            flash("CPF, RG ou E-mail já estão em uso por outro usuário. Verifique os dados.", "danger")
+            return redirect(url_for('perfil'))
         except Exception as e:
             db.session.rollback()
             flash(f'Erro ao atualizar o perfil: {str(e)}', 'danger')
+            return redirect(url_for('perfil'))
+
+        # ====== C) Troca de e-mail (se solicitada) ======
+        if email_change_requested:
+            # Se o usuário clicou salvar com algum campo da seção de e-mail preenchido:
+            if not novo_email and not confirmar_novo_email and senha_atual:
+                flash("Para alterar o e-mail, informe o novo e-mail e a confirmação.", "warning")
+                return redirect(url_for('perfil'))
+
+            if not novo_email or not confirmar_novo_email:
+                flash("Preencha o novo e-mail e a confirmação.", "warning")
+                return redirect(url_for('perfil'))
+
+            if novo_email != confirmar_novo_email:
+                flash("Os e-mails não coincidem.", "danger")
+                return redirect(url_for('perfil'))
+
+            if "@" not in novo_email:
+                flash("Informe um e-mail válido.", "danger")
+                return redirect(url_for('perfil'))
+
+            if novo_email == (usuario.email or "").strip().lower():
+                flash("Este já é o seu e-mail atual.", "info")
+                return redirect(url_for('perfil'))
+
+            if not senha_atual or not check_password_hash(usuario.senha, senha_atual):
+                flash("Senha atual incorreta para solicitar a alteração de e-mail.", "danger")
+                return redirect(url_for('perfil'))
+
+            ja_existe = User.query.filter(func.lower(User.email) == novo_email, User.id != usuario.id).first()
+            if ja_existe:
+                flash("Este e-mail já está em uso. Informe outro.", "danger")
+                return redirect(url_for('perfil'))
+
+            try:
+                send_email_change_confirmation(usuario, novo_email)
+                flash("Enviamos um link de confirmação para o novo e-mail. Confirme para concluir a alteração.", "success")
+            except Exception:
+                current_app.logger.exception("Falha ao enviar confirmação de troca de e-mail")
+                flash("Não foi possível enviar o e-mail de confirmação no momento. Tente novamente.", "danger")
 
         return redirect(url_for('perfil'))
 
@@ -4385,7 +4782,20 @@ def admin_agendamento_set_substituto(id):
 
 # ===========================================
 # RESUMO DE USUÁRIOS / SALDOS (ADMIN)
+# + ALTERAR E-MAIL (ADMIN) COM ENVIO DE LINK DE REDEFINIÇÃO
 # ===========================================
+from sqlalchemy import func, or_
+from sqlalchemy.exc import IntegrityError
+from flask import request, redirect, url_for, render_template, flash, current_app, jsonify
+from flask_login import login_required, current_user
+
+# ✅ IMPORTANTE:
+# - Esta implementação assume que você já tem:
+#   - modelos: User, Agendamento
+#   - db (SQLAlchemy)
+#   - função sync_tre_user(user_id)
+#   - função send_password_reset_email(user) (sua recuperação de senha já existente)
+
 @app.route('/user_info_all', methods=['GET'])
 @login_required
 def user_info_all():
@@ -4413,6 +4823,7 @@ def user_info_all():
         # status == 'todos' -> não filtra
 
     if q:
+        # Busca por nome (como você já fazia)
         user_q = user_q.filter(User.nome.ilike(f'%{q}%'))
 
     pagination = user_q.order_by(User.nome.asc()).paginate(
@@ -4423,6 +4834,7 @@ def user_info_all():
     users = pagination.items
     user_ids = [u.id for u in users] or [-1]
 
+    # Sincroniza TRE
     for u in users:
         try:
             sync_tre_user(u.id)
@@ -4432,6 +4844,7 @@ def user_info_all():
     ABONADAS_POR_ANO = 6
     ano_atual = datetime.date.today().year
 
+    # Estrutura base
     resumos = {}
     for u in users:
         total_tre = u.tre_total or 0
@@ -4456,12 +4869,13 @@ def user_info_all():
             "bh_agendamentos": [],
         }
 
+    # ====== ABONADAS (AGENDAMENTOS DEFERIDOS NO ANO) ======
     try:
         Ag = Agendamento
-        ag_uid  = getattr(Ag, 'funcionario_id')
+        ag_uid = getattr(Ag, 'funcionario_id')
         ag_stat = getattr(Ag, 'status')
         ag_data = getattr(Ag, 'data')
-        ag_mot  = getattr(Ag, 'motivo')
+        ag_mot = getattr(Ag, 'motivo')
         ag_tipoF = getattr(Ag, 'tipo_folga')
 
         status_cond = func.lower(ag_stat) == 'deferido'
@@ -4490,15 +4904,17 @@ def user_info_all():
                 resumos[uid]['abonadas_usadas'] = usadas
                 resumos[uid]['abonadas_restantes'] = restante
                 resumos[uid]['abonadas'] = restante
+
     except Exception as e:
         current_app.logger.exception("Erro ao calcular abonadas: %s", e)
 
+    # ====== TRE (AGENDAMENTOS DEFERIDOS) ======
     try:
         Ag = Agendamento
-        ag_uid  = getattr(Ag, 'funcionario_id')
+        ag_uid = getattr(Ag, 'funcionario_id')
         ag_stat = getattr(Ag, 'status')
         ag_data = getattr(Ag, 'data')
-        ag_mot  = getattr(Ag, 'motivo')
+        ag_mot = getattr(Ag, 'motivo')
         ag_tipoF = getattr(Ag, 'tipo_folga')
 
         status_cond = func.lower(ag_stat) == 'deferido'
@@ -4513,15 +4929,17 @@ def user_info_all():
             uid_val = getattr(ag, 'funcionario_id', None)
             if uid_val in resumos:
                 resumos[uid_val].setdefault('tre_agendamentos', []).append(ag)
+
     except Exception as e:
         current_app.logger.exception("Erro ao listar TRE: %s", e)
 
+    # ====== BH (AGENDAMENTOS DEFERIDOS) ======
     try:
         Ag = Agendamento
-        ag_uid  = getattr(Ag, 'funcionario_id')
+        ag_uid = getattr(Ag, 'funcionario_id')
         ag_stat = getattr(Ag, 'status')
         ag_data = getattr(Ag, 'data')
-        ag_mot  = getattr(Ag, 'motivo')
+        ag_mot = getattr(Ag, 'motivo')
         ag_tipoF = getattr(Ag, 'tipo_folga')
 
         status_cond = func.lower(ag_stat) == 'deferido'
@@ -4536,6 +4954,7 @@ def user_info_all():
             uid_val = getattr(ag, 'funcionario_id', None)
             if uid_val in resumos:
                 resumos[uid_val].setdefault('bh_agendamentos', []).append(ag)
+
     except Exception as e:
         current_app.logger.exception("Erro ao listar Banco de Horas: %s", e)
 
@@ -4550,6 +4969,74 @@ def user_info_all():
         q=q,
         status=status_filtro
     )
+
+
+# ===========================================
+# ✅ NOVO: ALTERAR E-MAIL DO USUÁRIO (ADMIN)
+# - Resolve o caso: usuário não lembra e-mail / e-mail errado no cadastro
+# - Atualiza o e-mail e envia link de redefinição para o NOVO e-mail
+# ===========================================
+@app.route('/admin/user/<int:user_id>/alterar_email', methods=['POST'])
+@login_required
+def admin_alterar_email(user_id):
+    if getattr(current_user, 'tipo', None) != 'administrador':
+        flash("Acesso negado.", "danger")
+        return redirect(url_for('index'))
+
+    novo_email = (request.form.get('novo_email') or "").strip().lower()
+
+    # Preserva paginação/filtros da listagem
+    page = request.form.get('page', 1, type=int)
+    per_page = request.form.get('per_page', 10, type=int)
+    q = request.form.get('q', '', type=str)
+    status = request.form.get('status', 'ativos', type=str)
+
+    if not novo_email or "@" not in novo_email:
+        flash("Informe um e-mail válido.", "danger")
+        return redirect(url_for('user_info_all', page=page, per_page=per_page, q=q, status=status))
+
+    usuario = User.query.get(user_id)
+    if not usuario:
+        flash("Usuário não encontrado.", "danger")
+        return redirect(url_for('user_info_all', page=page, per_page=per_page, q=q, status=status))
+
+    # Evita colisão (email é unique)
+    ja_existe = User.query.filter(func.lower(User.email) == novo_email, User.id != usuario.id).first()
+    if ja_existe:
+        flash("Este e-mail já está em uso por outro usuário.", "danger")
+        return redirect(url_for('user_info_all', page=page, per_page=per_page, q=q, status=status))
+
+    try:
+        old_email = (usuario.email or "").strip().lower()
+        usuario.email = novo_email
+        db.session.commit()
+
+        current_app.logger.info(
+            "Admin %s (id=%s) alterou o e-mail do usuário %s (id=%s) de '%s' para '%s'",
+            getattr(current_user, "nome", "admin"),
+            getattr(current_user, "id", None),
+            getattr(usuario, "nome", "usuario"),
+            usuario.id,
+            old_email,
+            novo_email
+        )
+
+        # Envia link de redefinição no novo e-mail
+        try:
+            send_password_reset_email(usuario)
+            flash(f"E-mail atualizado e link de redefinição enviado para {novo_email}.", "success")
+        except Exception:
+            current_app.logger.exception("Falha ao enviar e-mail de redefinição após troca de e-mail (admin)")
+            flash("E-mail atualizado, mas não foi possível enviar o link de redefinição agora.", "warning")
+
+    except IntegrityError:
+        db.session.rollback()
+        flash("Não foi possível atualizar: e-mail já existe no sistema.", "danger")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erro ao atualizar e-mail: {str(e)}", "danger")
+
+    return redirect(url_for('user_info_all', page=page, per_page=per_page, q=q, status=status))
 
 
 # ===========================================
@@ -4569,7 +5056,6 @@ if CSRFError is not None:
             return jsonify(success=False, error='Falha de segurança (CSRF). Recarregue a página e tente novamente.'), 400
         # Caso contrário, mantém resposta padrão (você pode renderizar um template se quiser)
         return "Falha de segurança (CSRF). Recarregue a página e tente novamente.", 400
-
 
 # ===========================================
 # TOGGLE ATIVO / INATIVO

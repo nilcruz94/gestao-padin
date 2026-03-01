@@ -22,6 +22,13 @@
       --padin-border:rgba(0,0,0,.08);
       --padin-shadow:0 14px 34px rgba(15,23,42,.1),0 2px 4px rgba(15,23,42,.06);
       --muted:#6c757d;
+
+      --good:#16a34a;
+      --warn:#d97706;
+      --bad:#dc2626;
+      --info:#2563eb;
+      --focus:0 0 0 3px rgba(13,110,253,0.16);
+      --radius:18px;
     }
 
     * ,
@@ -266,7 +273,7 @@
       background:#ffffff;
       border-radius:18px;
       padding:16px 18px;
-      margin:18px auto 20px;
+      margin:18px auto 14px;
       display:flex;
       align-items:center;
       gap:16px;
@@ -321,6 +328,30 @@
         font-size:.82rem;
       }
     }
+
+    /* ✅ Flash messages (novo — para POST/redirect do alterar e-mail) */
+    ul.flashes{
+      list-style:none;
+      padding:0;
+      margin:0 0 14px 0;
+    }
+    ul.flashes li{
+      padding:10px 14px;
+      margin-bottom:8px;
+      border-radius:14px;
+      font-weight:600;
+      font-size:0.9rem;
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      box-shadow:0 3px 10px rgba(15,23,42,.08);
+      background:#fff;
+      border:1px solid var(--padin-border);
+    }
+    ul.flashes li.success{ background:#e8f7ee; color:#065f46; border-color:#b7ebc6; }
+    ul.flashes li.danger{ background:#fee2e2; color:#991b1b; border-color:#fecaca; }
+    ul.flashes li.warning{ background:#fff7ed; color:#9a3412; border-color:#fed7aa; }
+    ul.flashes li.info{ background:#eff6ff; color:#1e3a8a; border-color:#bfdbfe; }
 
     /* Cards principais */
     .content-card{
@@ -443,6 +474,11 @@
       box-shadow:0 4px 12px rgba(0,0,0,.05);
     }
 
+    .search-input-wrapper:focus-within{
+      box-shadow:var(--focus);
+      border-color:rgba(13,110,253,.35);
+    }
+
     .search-input-wrapper .search-icon{
       font-size:0.9rem;
       color:#8a96a3;
@@ -469,7 +505,7 @@
       border-radius:999px;
       padding:8px 16px;
       font-size:.8rem;
-      font-weight:600;
+      font-weight:700;
       background:var(--padin-primary);
       color:#fff;
       cursor:pointer;
@@ -489,11 +525,11 @@
       background:#fff;
       padding:4px 10px;
       font-size:.78rem;
-      font-weight:600;
+      font-weight:700;
       color:#444;
       flex-shrink:0;
       width:auto;
-      max-width:140px;
+      max-width:160px;
     }
 
     /* RESPONSIVO CONTROLS / FILTRO */
@@ -587,7 +623,7 @@
     }
 
     .user-name{
-      font-weight:700;
+      font-weight:800;
       color:#111;
       font-size:.98rem;
       flex:1 1 auto;
@@ -625,9 +661,9 @@
       gap:8px;
       padding:8px 10px;
       border:1px solid var(--padin-border);
-      border-radius:10px;
+      border-radius:12px;
       background:#fff;
-      font-weight:700;
+      font-weight:800;
       font-size:.88rem;
     }
 
@@ -635,7 +671,7 @@
       min-width:60px;
       display:inline-flex;
       align-items:center;
-      gap:4px;
+      gap:6px;
     }
 
     .metric.metric-clickable{
@@ -687,7 +723,7 @@
 
     .user-details table{
       width:100%;
-      min-width:420px;
+      min-width:520px;
       border-collapse:collapse;
     }
 
@@ -697,11 +733,12 @@
       border-bottom:1px solid var(--padin-border);
       font-size:14px;
       text-align:left;
+      vertical-align:top;
     }
 
     .user-details th{
       width:36%;
-      font-weight:700;
+      font-weight:800;
       color:#222;
       background:#fafbff;
     }
@@ -709,7 +746,7 @@
     .subsection-title{
       margin:10px 0 4px;
       font-size:.9rem;
-      font-weight:700;
+      font-weight:800;
       color:#333;
     }
 
@@ -721,7 +758,7 @@
     }
 
     .ag-list li{
-      padding:4px 0;
+      padding:6px 0;
       border-bottom:1px dashed rgba(0,0,0,.06);
       display:flex;
       justify-content:space-between;
@@ -759,7 +796,7 @@
       padding:4px 10px;
       border-radius:999px;
       font-size:.75rem;
-      font-weight:700;
+      font-weight:800;
       white-space:nowrap;
       border:1px solid transparent;
     }
@@ -784,15 +821,16 @@
     }
 
     .btn-mini{
-      padding:5px 12px;
+      padding:6px 12px;
       border-radius:999px;
       border:none;
       font-size:.75rem;
-      font-weight:700;
+      font-weight:900;
       cursor:pointer;
       display:inline-flex;
       align-items:center;
       gap:6px;
+      white-space:nowrap;
     }
 
     .btn-mini.ativar{
@@ -814,6 +852,80 @@
     .btn-mini.inativar:hover{
       background:#c82333;
     }
+
+    /* ✅ NOVO: edição de e-mail (admin) */
+    .email-line{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .email-value{
+      font-weight:700;
+      color:#111827;
+      word-break:break-all;
+    }
+
+    .email-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .btn-mini.outline{
+      background:#f5f9ff;
+      color:#0d6efd;
+      border:1px solid rgba(13,110,253,.28);
+      box-shadow:0 2px 5px rgba(13,110,253,.12);
+    }
+    .btn-mini.outline:hover{
+      background:#e7f1ff;
+    }
+
+    .email-edit-form{
+      margin-top:10px;
+      display:none;
+      padding:10px 12px;
+      border:1px dashed rgba(13,110,253,.28);
+      border-radius:14px;
+      background:#fbfdff;
+    }
+
+    .email-edit-form.open{
+      display:block;
+    }
+
+    .email-edit-row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .email-input{
+      flex:1 1 220px;
+      min-width:200px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,.14);
+      outline:none;
+      font-weight:600;
+    }
+    .email-input:focus{
+      border-color:rgba(13,110,253,.45);
+      box-shadow:var(--focus);
+    }
+
+    .email-hint{
+      margin-top:8px;
+      font-size:.82rem;
+      color:#6b7280;
+      line-height:1.35;
+    }
+    .email-hint strong{ color:#111827; }
 
     /* Paginação */
     .pagination-wrapper{
@@ -842,7 +954,7 @@
       text-decoration:none;
       color:#374151;
       background:#fff;
-      font-weight:600;
+      font-weight:700;
       font-size:.9rem;
       min-width:34px;
       text-align:center;
@@ -885,28 +997,18 @@
       font-size:.85rem;
     }
 
-    .footer a{
-      color:#fff;
-      text-decoration:none;
-      font-weight:600;
-    }
-
-    .footer a:hover{
-      color:#00aaff;
-    }
-
     /* Toast de status (alerta bonito) */
     #statusAlert{
       position:fixed;
       top:90px;
       right:15px;
       z-index:2500;
-      max-width:320px;
+      max-width:340px;
     }
 
     .alert-toast{
       background:#fff;
-      border-radius:10px;
+      border-radius:14px;
       padding:10px 12px;
       box-shadow:0 6px 18px rgba(0,0,0,.15);
       font-size:.85rem;
@@ -954,8 +1056,8 @@
       background:#fff;
       border-radius:18px;
       padding:18px 20px 16px;
-      max-width:360px;
-      width:90%;
+      max-width:380px;
+      width:92%;
       box-shadow:0 20px 45px rgba(15,23,42,.4);
       animation:fadeIn .2s ease-out;
     }
@@ -963,13 +1065,14 @@
     .modal-title{
       margin:0 0 6px;
       font-size:1rem;
-      font-weight:700;
+      font-weight:900;
     }
 
     .modal-text{
       font-size:.9rem;
       color:#555;
       margin-bottom:14px;
+      line-height:1.35;
     }
 
     .modal-actions{
@@ -981,9 +1084,9 @@
     .modal-btn{
       border-radius:999px;
       border:none;
-      padding:7px 14px;
+      padding:8px 14px;
       font-size:.85rem;
-      font-weight:600;
+      font-weight:900;
       cursor:pointer;
     }
 
@@ -1002,6 +1105,13 @@
       background:#0fb300;
       box-shadow:0 3px 8px rgba(15,179,0,.5);
     }
+
+    /* Modal específico para e-mail */
+    .modal-btn.primary{
+      background:var(--padin-primary);
+      box-shadow:0 3px 10px rgba(13,110,253,.35);
+    }
+    .modal-btn.primary:hover{ background:var(--padin-primary-dark); }
   </style>
 
 </head>
@@ -1043,14 +1153,13 @@
     </div>
   </header>
 
-  <!-- Área de toast -->
+  <!-- Área de toast (AJAX do ativar/inativar) -->
   <div id="statusAlert" aria-live="polite"></div>
 
-  <!-- Conteúdo -->
   <main role="main">
     <div class="page">
 
-      <!-- Header-card (padrão TRE) -->
+      <!-- Header-card -->
       <div class="page-header-card">
         <div class="page-header-icon">
           <i class="fa-solid fa-users"></i>
@@ -1062,6 +1171,30 @@
           </p>
         </div>
       </div>
+
+      <!-- ✅ Flash messages (para POST do alterar e-mail / redirects) -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="flashes">
+            {% for category, message in messages %}
+              <li class="{{ category }}">
+                {% if category == 'success' %}
+                  <i class="fa-solid fa-circle-check"></i>
+                {% elif category == 'danger' %}
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                {% elif category == 'warning' %}
+                  <i class="fa-solid fa-circle-exclamation"></i>
+                {% elif category == 'info' %}
+                  <i class="fa-solid fa-circle-info"></i>
+                {% else %}
+                  <i class="fa-solid fa-circle-info"></i>
+                {% endif %}
+                <span>{{ message }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
 
       {# status_filtro para o select: padrão "ativos" #}
       {% set status_filtro = status or 'ativos' %}
@@ -1079,12 +1212,7 @@
         <div class="controls-row">
 
           <!-- Busca (GET q=..., status=...) -->
-          <form
-            class="searchbar"
-            role="search"
-            method="get"
-            action="{{ url_for('user_info_all') }}"
-          >
+          <form class="searchbar" role="search" method="get" action="{{ url_for('user_info_all') }}">
             <input type="hidden" name="per_page" value="{{ per_page }}">
 
             <div class="search-input-wrapper">
@@ -1099,7 +1227,7 @@
               />
             </div>
 
-            <select name="status" class="status-filter">
+            <select name="status" class="status-filter" aria-label="Filtrar por status">
               <option value="ativos"   {% if status_filtro == 'ativos'   %}selected{% endif %}>Somente ativos</option>
               <option value="inativos" {% if status_filtro == 'inativos' %}selected{% endif %}>Somente inativos</option>
               <option value="todos"    {% if status_filtro == 'todos'    %}selected{% endif %}>Todos</option>
@@ -1118,11 +1246,7 @@
             </button>
 
             <!-- Botão: Gerar Relatório PDF -->
-            <a
-              class="btn outline-blue"
-              href="{{ url_for('user_info_report') }}"
-              target="_blank"
-            >
+            <a class="btn outline-blue" href="{{ url_for('user_info_report') }}" target="_blank">
               <i class="fa-solid fa-file-pdf"></i>
               <span>Gerar Relatório</span>
             </a>
@@ -1133,7 +1257,6 @@
       <!-- Card principal com resultados -->
       <section class="content-card">
 
-        <!-- Lista -->
         <section class="user-list" id="userList" aria-label="Lista de usuários">
           {% for user in users %}
             {% set r = (resumos[user.id] if (resumos is defined and resumos and user.id in resumos) else {}) %}
@@ -1150,29 +1273,20 @@
             {% set tre_ag = r.get('tre_agendamentos', []) %}
             {% set bh_ag  = r.get('bh_agendamentos', []) %}
 
-            {# Banco de horas em minutos vindo do usuário #}
             {% set bh_total_min = user.banco_horas or 0 %}
             {% set bh_horas = (bh_total_min // 60) | int %}
             {% set bh_min   = (bh_total_min % 60) | int %}
 
             <article class="user-card" data-name="{{ (user.nome or '')|lower }}">
-              <div
-                class="user-header"
-                role="button"
-                tabindex="0"
-                aria-expanded="false"
-              >
+              <div class="user-header" role="button" tabindex="0" aria-expanded="false">
                 <div class="user-header-top">
                   <div class="user-header-main">
-                    <div class="user-name">{{ user.nome|default('Sem nome')|title }}</div>
+                    <div class="user-name">{{ user.nome|default('Sem nome') }}</div>
                     <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
                   </div>
 
                   <div class="user-status-row">
-                    <span
-                      class="status-pill {% if user.ativo %}status-ativo{% else %}status-inativo{% endif %}"
-                      data-user-id="{{ user.id }}"
-                    >
+                    <span class="status-pill {% if user.ativo %}status-ativo{% else %}status-inativo{% endif %}" data-user-id="{{ user.id }}">
                       <i class="fa-solid fa-circle{% if user.ativo %}-check{% else %}-minus{% endif %}"></i>
                       {% if user.ativo %}Ativo{% else %}Inativo{% endif %}
                     </span>
@@ -1197,29 +1311,24 @@
                 </div>
 
                 <div class="metrics" aria-label="Resumo do usuário">
-                  <!-- ABONADAS -->
                   <div class="metric m-ab">
                     <span class="label">
                       <i class="fa-solid fa-circle-check"></i> AB:
                     </span>
                     <span>
-                      Total {{ ab_total }} · A usufruir {{ ab_rest }}
-                      (usadas {{ ab_used }})
+                      Total {{ ab_total }} · A usufruir {{ ab_rest }} (usadas {{ ab_used }})
                     </span>
                   </div>
 
-                  <!-- TRE (clicável) -->
                   <div class="metric m-tre metric-clickable" data-metric="tre">
                     <span class="label">
                       <i class="fa-solid fa-hourglass-half"></i> TRE:
                     </span>
                     <span>
-                      Total {{ tre_total|int }} · A usufruir {{ tre_saldo|int }}
-                      (usadas {{ tre_usadas|int }}) dias
+                      Total {{ tre_total|int }} · A usufruir {{ tre_saldo|int }} (usadas {{ tre_usadas|int }}) dias
                     </span>
                   </div>
 
-                  <!-- Banco de Horas (clicável) -->
                   <div class="metric m-bh metric-clickable" data-metric="bh">
                     <span class="label">
                       <i class="fa-solid fa-scale-balanced"></i> BH:
@@ -1238,10 +1347,65 @@
                       <th>Registro</th>
                       <td>{{ user.registro|default('Não informado') }}</td>
                     </tr>
+
                     <tr>
-                      <th>Email</th>
-                      <td>{{ user.email|default('Não informado') }}</td>
+                      <th>E-mail</th>
+                      <td>
+                        <div class="email-line">
+                          <span class="email-value">{{ user.email|default('Não informado') }}</span>
+
+                          {% if current_user.is_authenticated and current_user.tipo == 'administrador' %}
+                            <div class="email-actions">
+                              <button
+                                type="button"
+                                class="btn-mini outline email-toggle-btn"
+                                data-target="emailForm{{ user.id }}"
+                              >
+                                <i class="fa-solid fa-pen"></i> Alterar e-mail
+                              </button>
+                            </div>
+                          {% endif %}
+                        </div>
+
+                        {% if current_user.is_authenticated and current_user.tipo == 'administrador' %}
+                          <!-- ✅ NOVO: form para admin alterar e-mail + enviar redefinição -->
+                          <form
+                            id="emailForm{{ user.id }}"
+                            class="email-edit-form"
+                            method="POST"
+                            action="{{ url_for('admin_alterar_email', user_id=user.id) }}"
+                            autocomplete="off"
+                          >
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="page" value="{{ page }}">
+                            <input type="hidden" name="per_page" value="{{ per_page }}">
+                            <input type="hidden" name="q" value="{{ q or '' }}">
+                            <input type="hidden" name="status" value="{{ status_filtro }}">
+
+                            <div class="email-edit-row">
+                              <input
+                                type="email"
+                                class="email-input"
+                                name="novo_email"
+                                placeholder="novo@email.com"
+                                required
+                              >
+                              <button type="submit" class="btn-mini ativar" style="min-width:160px;">
+                                <i class="fa-solid fa-paper-plane"></i> Atualizar e enviar link
+                              </button>
+                              <button type="button" class="btn-mini outline email-cancel-btn" data-target="emailForm{{ user.id }}">
+                                <i class="fa-solid fa-xmark"></i> Cancelar
+                              </button>
+                            </div>
+
+                            <div class="email-hint">
+                              Ao confirmar, o sistema <strong>altera o e-mail</strong> e envia um link de <strong>redefinição de senha</strong>.
+                            </div>
+                          </form>
+                        {% endif %}
+                      </td>
                     </tr>
+
                     <tr>
                       <th>Celular</th>
                       <td>{{ user.celular|default('Não informado') }}</td>
@@ -1287,15 +1451,11 @@
                       <td>{{ user.cargo|default('Não informado') }}</td>
                     </tr>
 
-                    <!-- Status no sistema + botão ativar/inativar também dentro do card -->
                     <tr>
                       <th>Status no sistema</th>
                       <td>
                         <div class="status-wrapper">
-                          <span
-                            class="status-pill {% if user.ativo %}status-ativo{% else %}status-inativo{% endif %}"
-                            data-user-id="{{ user.id }}"
-                          >
+                          <span class="status-pill {% if user.ativo %}status-ativo{% else %}status-inativo{% endif %}" data-user-id="{{ user.id }}">
                             <i class="fa-solid fa-circle{% if user.ativo %}-check{% else %}-minus{% endif %}"></i>
                             {% if user.ativo %}Ativo{% else %}Inativo{% endif %}
                           </span>
@@ -1322,7 +1482,6 @@
                   </table>
                 </div>
 
-                <!-- Detalhes de TRE -->
                 <div class="tre-details">
                   <div class="subsection-title">TRE — Agendamentos deferidos</div>
                   {% if tre_ag and tre_ag|length > 0 %}
@@ -1337,9 +1496,7 @@
                             {% endif %}
                             — {{ ag.motivo or 'TRE' }}
                           </span>
-                          <span class="small">
-                            Status: {{ ag.status }}
-                          </span>
+                          <span class="small">Status: {{ ag.status }}</span>
                         </li>
                       {% endfor %}
                     </ul>
@@ -1348,7 +1505,6 @@
                   {% endif %}
                 </div>
 
-                <!-- Detalhes de Banco de Horas -->
                 <div class="bh-details">
                   <div class="subsection-title">Banco de Horas — Agendamentos deferidos (BH)</div>
                   {% if bh_ag and bh_ag|length > 0 %}
@@ -1363,9 +1519,7 @@
                             {% endif %}
                             — {{ ag.motivo or 'BH' }}
                           </span>
-                          <span class="small">
-                            Status: {{ ag.status }}
-                          </span>
+                          <span class="small">Status: {{ ag.status }}</span>
                         </li>
                       {% endfor %}
                     </ul>
@@ -1382,10 +1536,8 @@
         {% if pages and pages > 1 %}
           <div class="pagination-wrapper">
             <nav class="pagination" aria-label="Paginação">
-              <a
-                class="{% if page <= 1 %}disabled{% endif %}"
-                href="{{ url_for('user_info_all', page=page-1, per_page=per_page, q=q, status=status_filtro) }}"
-              >
+              <a class="{% if page <= 1 %}disabled{% endif %}"
+                 href="{{ url_for('user_info_all', page=page-1, per_page=per_page, q=q, status=status_filtro) }}">
                 <i class="fa-solid fa-chevron-left"></i> Anterior
               </a>
 
@@ -1399,17 +1551,15 @@
                 {% endif %}
               {% endfor %}
 
-              <a
-                class="{% if page >= pages %}disabled{% endif %}"
-                href="{{ url_for('user_info_all', page=page+1, per_page=per_page, q=q, status=status_filtro) }}"
-              >
+              <a class="{% if page >= pages %}disabled{% endif %}"
+                 href="{{ url_for('user_info_all', page=page+1, per_page=per_page, q=q, status=status_filtro) }}">
                 Próxima <i class="fa-solid fa-chevron-right"></i>
               </a>
             </nav>
           </div>
         {% endif %}
 
-      </section> <!-- /content-card -->
+      </section>
     </div>
   </main>
 
@@ -1420,26 +1570,16 @@
     </p>
   </footer>
 
-  <!-- Modal de confirmação -->
-  <div
-    id="confirmModal"
-    class="modal-backdrop"
-    role="dialog"
-    aria-modal="true"
-    aria-hidden="true"
-  >
+  <!-- Modal de confirmação (ativar/inativar) -->
+  <div id="confirmModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal-box">
       <h2 class="modal-title" id="confirmModalTitle">Confirmar alteração</h2>
       <p class="modal-text" id="confirmModalMessage">
         Tem certeza que deseja alterar o status deste usuário?
       </p>
       <div class="modal-actions">
-        <button type="button" class="modal-btn cancel" id="confirmModalCancel">
-          Cancelar
-        </button>
-        <button type="button" class="modal-btn confirm" id="confirmModalConfirm">
-          Confirmar
-        </button>
+        <button type="button" class="modal-btn cancel" id="confirmModalCancel">Cancelar</button>
+        <button type="button" class="modal-btn confirm" id="confirmModalConfirm">Confirmar</button>
       </div>
     </div>
   </div>
@@ -1502,45 +1642,51 @@
             <div>${message}</div>
           </div>
         `;
-        setTimeout(() => {
-          alertBox.innerHTML = '';
-        }, 4000);
+        setTimeout(() => { alertBox.innerHTML = ''; }, 4000);
       }
 
-      function openModalForToggle(btn) {
-        const userId = btn.getAttribute('data-user-id');
-        const userNome = btn.getAttribute('data-user-nome') || 'Usuário';
-        const url = btn.getAttribute('data-url');
-        const ativo = btn.getAttribute('data-ativo') === '1';
-
-        currentAction = { userId, userNome, url, ativo };
-
-        if (ativo) {
-          modalTitle.textContent = 'Marcar como inativo';
-          modalMessage.innerHTML = `Tem certeza que deseja marcar <strong>${userNome}</strong> como <strong>inativo</strong>?`;
-          modalBtnConfirm.textContent = 'Sim, inativar';
-          modalBtnConfirm.classList.remove('confirm-ativar');
-        } else {
-          modalTitle.textContent = 'Marcar como ativo';
-          modalMessage.innerHTML = `Tem certeza que deseja marcar <strong>${userNome}</strong> como <strong>ativo</strong>?`;
-          modalBtnConfirm.textContent = 'Sim, ativar';
-          modalBtnConfirm.classList.add('confirm-ativar');
-        }
-
-        modalBackdrop.classList.add('show');
-        modalBackdrop.setAttribute('aria-hidden', 'false');
+      // ✅ Toggle do form de e-mail
+      function openEmailForm(formId){
+        const form = document.getElementById(formId);
+        if (!form) return;
+        form.classList.add('open');
+        const input = form.querySelector('input[type="email"]');
+        if (input) input.focus();
+      }
+      function closeEmailForm(formId){
+        const form = document.getElementById(formId);
+        if (!form) return;
+        form.classList.remove('open');
+        const input = form.querySelector('input[type="email"]');
+        if (input) input.value = '';
       }
 
-      function closeModal() {
-        modalBackdrop.classList.remove('show');
-        modalBackdrop.setAttribute('aria-hidden', 'true');
-        modalBtnConfirm.disabled = false;
-      }
+      document.querySelectorAll('.email-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function(e){
+          e.stopPropagation();
+          const targetId = btn.getAttribute('data-target');
+          if (!targetId) return;
+          const form = document.getElementById(targetId);
+          if (!form) return;
+          const isOpen = form.classList.contains('open');
+          if (isOpen) closeEmailForm(targetId);
+          else openEmailForm(targetId);
+        });
+      });
+
+      document.querySelectorAll('.email-cancel-btn').forEach(btn => {
+        btn.addEventListener('click', function(e){
+          e.preventDefault();
+          e.stopPropagation();
+          const targetId = btn.getAttribute('data-target');
+          if (targetId) closeEmailForm(targetId);
+        });
+      });
 
       // Clique nos headers (abrir/fechar card)
       document.querySelectorAll('.user-header').forEach(header => {
         header.addEventListener('click', function (event) {
-          if (event.target.closest('.metric') || event.target.closest('.toggle-ativo-btn')) return;
+          if (event.target.closest('.metric') || event.target.closest('.toggle-ativo-btn') || event.target.closest('.email-toggle-btn')) return;
           toggleDetails(header);
         });
 
@@ -1570,26 +1716,46 @@
         });
       });
 
-      if (expandAllBtn) {
-        expandAllBtn.addEventListener('click', expandAll);
-      }
-
-      if (collapseAllBtn) {
-        collapseAllBtn.addEventListener('click', collapseAll);
-      }
+      if (expandAllBtn) expandAllBtn.addEventListener('click', expandAll);
+      if (collapseAllBtn) collapseAllBtn.addEventListener('click', collapseAll);
 
       // Botões de ativar/inativar (topo e dentro do card)
       document.querySelectorAll('.toggle-ativo-btn').forEach(btn => {
         btn.addEventListener('click', function (event) {
           event.stopPropagation();
-          openModalForToggle(btn);
+          const userId = btn.getAttribute('data-user-id');
+          const userNome = btn.getAttribute('data-user-nome') || 'Usuário';
+          const url = btn.getAttribute('data-url');
+          const ativo = btn.getAttribute('data-ativo') === '1';
+
+          currentAction = { userId, userNome, url, ativo };
+
+          if (ativo) {
+            modalTitle.textContent = 'Marcar como inativo';
+            modalMessage.innerHTML = `Tem certeza que deseja marcar <strong>${userNome}</strong> como <strong>inativo</strong>?`;
+            modalBtnConfirm.textContent = 'Sim, inativar';
+            modalBtnConfirm.classList.remove('confirm-ativar');
+          } else {
+            modalTitle.textContent = 'Marcar como ativo';
+            modalMessage.innerHTML = `Tem certeza que deseja marcar <strong>${userNome}</strong> como <strong>ativo</strong>?`;
+            modalBtnConfirm.textContent = 'Sim, ativar';
+            modalBtnConfirm.classList.add('confirm-ativar');
+          }
+
+          modalBackdrop.classList.add('show');
+          modalBackdrop.setAttribute('aria-hidden', 'false');
         });
       });
 
-      // Confirmar alteração
+      function closeModal() {
+        modalBackdrop.classList.remove('show');
+        modalBackdrop.setAttribute('aria-hidden', 'true');
+        modalBtnConfirm.disabled = false;
+      }
+
+      // Confirmar alteração (AJAX)
       modalBtnConfirm.addEventListener('click', function () {
         if (!currentAction) return;
-
         modalBtnConfirm.disabled = true;
 
         const headers = {
@@ -1597,10 +1763,8 @@
           'Content-Type': 'application/json'
         };
 
-        // ✅ Envia CSRF em header (padrão aceito pelo Flask-WTF)
         if (csrfToken) {
           headers['X-CSRFToken'] = csrfToken;
-          // Se no seu projeto estiver esperando outro nome, habilite também:
           headers['X-CSRF-Token'] = csrfToken;
         }
 
@@ -1613,13 +1777,9 @@
         .then(async (resp) => {
           if (!resp.ok) {
             const text = await resp.text().catch(() => '');
-            console.error('Erro HTTP ao alterar status:', resp.status, text);
-
-            // ✅ mensagem mais clara em caso de CSRF
             if (resp.status === 400 && /csrf|token/i.test(text)) {
               throw new Error('Falha de segurança (CSRF). Recarregue a página e tente novamente.');
             }
-
             throw new Error('Erro ao comunicar com o servidor (HTTP ' + resp.status + ').');
           }
 
@@ -1627,13 +1787,10 @@
           try {
             data = await resp.json();
           } catch (e) {
-            const text = await resp.text().catch(() => '');
-            console.error('Resposta não JSON da rota /toggle_user_ativo:', text);
             throw new Error('Resposta inválida do servidor.');
           }
 
           if (!data || !data.success) {
-            console.error('toggle_user_ativo retornou erro:', data);
             throw new Error((data && data.error) || 'Erro ao alterar status.');
           }
 
@@ -1641,7 +1798,6 @@
           const userId = currentAction.userId;
           const userNome = currentAction.userNome;
 
-          // Atualiza todos os pills desse usuário (header + detalhes)
           document.querySelectorAll('.status-pill[data-user-id="' + userId + '"]').forEach(pill => {
             pill.classList.toggle('status-ativo', novoAtivo);
             pill.classList.toggle('status-inativo', !novoAtivo);
@@ -1651,26 +1807,19 @@
             `;
           });
 
-          // Atualiza todos os botões desse usuário
           document.querySelectorAll('.toggle-ativo-btn[data-user-id="' + userId + '"]').forEach(btn => {
             btn.setAttribute('data-ativo', novoAtivo ? '1' : '0');
             btn.classList.toggle('ativar', !novoAtivo);
             btn.classList.toggle('inativar', novoAtivo);
 
             if (!btn.closest('td')) {
-              // botão do header
-              if (novoAtivo) {
-                btn.innerHTML = '<i class="fa-solid fa-user-slash"></i> Inativar';
-              } else {
-                btn.innerHTML = '<i class="fa-solid fa-user-check"></i> Ativar';
-              }
+              btn.innerHTML = novoAtivo
+                ? '<i class="fa-solid fa-user-slash"></i> Inativar'
+                : '<i class="fa-solid fa-user-check"></i> Ativar';
             } else {
-              // botão dentro da tabela
-              if (novoAtivo) {
-                btn.innerHTML = '<i class="fa-solid fa-user-slash"></i> Marcar como inativo';
-              } else {
-                btn.innerHTML = '<i class="fa-solid fa-user-check"></i> Marcar como ativo';
-              }
+              btn.innerHTML = novoAtivo
+                ? '<i class="fa-solid fa-user-slash"></i> Marcar como inativo'
+                : '<i class="fa-solid fa-user-check"></i> Marcar como ativo';
             }
           });
 
@@ -1685,20 +1834,13 @@
           );
         })
         .catch(err => {
-          console.error(err);
           modalBtnConfirm.disabled = false;
           closeModal();
           currentAction = null;
-          showAlert(
-            err && err.message
-              ? err.message
-              : 'Não foi possível comunicar com o servidor. Verifique sua conexão.',
-            'error'
-          );
+          showAlert(err && err.message ? err.message : 'Não foi possível comunicar com o servidor.', 'error');
         });
       });
 
-      // Cancelar / fechar modal
       modalBtnCancel.addEventListener('click', function () {
         closeModal();
         currentAction = null;
