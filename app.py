@@ -4580,8 +4580,93 @@ def relatorio_horas_extras():
     return render_template('relatorio_horas_extras.html', usuarios=usuarios_relatorio)
 
 # ===========================================
-# ADMIN AGENDAMENTOS (página + AJAX + excluir)
+# ADMIN AGENDAMENTOS (página + AJAX + excluir + substituto)
 # ===========================================
+import datetime
+import unicodedata
+
+from flask import request, redirect, url_for, render_template, flash, jsonify, current_app
+from flask_login import login_required, current_user
+from sqlalchemy import func, or_
+from sqlalchemy.orm import selectinload
+
+# Requer no seu projeto:
+# - db (SQLAlchemy)
+# - csrf (CSRFProtect)
+# - _csrf_ok_from_header(request)
+# - Models: User, Agendamento
+
+
+def _strip_accents(s: str) -> str:
+    s = s or ""
+    nfkd = unicodedata.normalize("NFKD", s)
+    return "".join([c for c in nfkd if not unicodedata.combining(c)])
+
+
+def _norm_status(s: str) -> str:
+    """
+    Normaliza status para comparação:
+    - lower
+    - remove acentos
+    - troca '_' por ' '
+    - colapsa espaços
+    """
+    s = _strip_accents((s or "").strip().lower())
+    s = s.replace("_", " ")
+    s = " ".join(s.split())
+    return s
+
+
+def _status_matches(filter_status: str, raw_status: str) -> bool:
+    """
+    filter_status: deferido | indeferido | em_espera | ""
+    """
+    if not filter_status:
+        return True
+
+    fs = _norm_status(filter_status)          # "em espera" etc
+    st = _norm_status(raw_status)
+
+    # deferido/deferida
+    if fs == "deferido":
+        return st.startswith("deferid")
+
+    # indeferido/indeferida
+    if fs == "indeferido":
+        return st.startswith("indeferid")
+
+    # em espera / pendente / aguardando / em análise
+    # seu select manda "em_espera"
+    if fs in ("em espera", "em_espera"):
+        return (
+            "espera" in st
+            or "penden" in st
+            or "aguard" in st
+            or "analis" in st  # analise / análise / analisando
+        )
+
+    # fallback: comparação direta
+    return fs == st
+
+
+def _display_status(raw_status: str) -> str:
+    """
+    Padroniza o texto exibido no front (melhora consistência).
+    """
+    st = _norm_status(raw_status)
+
+    if st.startswith("deferid"):
+        return "Deferido"
+    if st.startswith("indeferid"):
+        return "Indeferido"
+    if ("espera" in st) or ("penden" in st) or ("aguard" in st) or ("analis" in st):
+        return "Em espera"
+
+    # fallback: tenta title() do original
+    rs = (raw_status or "").strip()
+    return rs.title() if rs else ""
+
+
 def _get_ag_datetime(ag):
     for attr in ("data", "data_agendada", "data_inicio", "created_at"):
         val = getattr(ag, attr, None)
@@ -4591,6 +4676,7 @@ def _get_ag_datetime(ag):
             return datetime.datetime(val.year, val.month, val.day)
     return None
 
+
 def _ord_key(val_dt):
     if isinstance(val_dt, datetime.datetime):
         try:
@@ -4599,10 +4685,12 @@ def _ord_key(val_dt):
             return int(val_dt.strftime("%Y%m%d%H%M%S"))
     return 0
 
+
 def _fmt_br(val_dt):
     if isinstance(val_dt, (datetime.datetime, datetime.date)):
         return val_dt.strftime("%d/%m/%Y")
     return ""
+
 
 @app.route('/admin/agendamentos', methods=['GET'])
 @login_required
@@ -4621,18 +4709,26 @@ def admin_agendamentos_ajax():
 
     try:
         nome     = (request.args.get("nome") or "").strip()
-        status   = (request.args.get("status") or "").strip().lower()
+        status   = (request.args.get("status") or "").strip().lower()   # deferido | indeferido | em_espera | ""
         cargo    = (request.args.get("cargo") or "").strip()
         page     = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 10, type=int)
-        order    = (request.args.get("order") or "desc").lower()
+        order    = (request.args.get("order") or "desc").strip().lower()
 
+        # sanity
+        page = max(1, page)
+        per_page = max(5, min(per_page, 50))
+        if order not in ("asc", "desc"):
+            order = "desc"
+
+        # Base query: usuarios que possuem agendamentos
         query = (
             User.query
-            .join(Agendamento)
-            .options(joinedload(User.agendamentos))
+            .options(selectinload(User.agendamentos))
+            .filter(User.agendamentos.any())  # só quem tem agendamento
         )
 
+        # Somente ativos (se existir a coluna)
         if hasattr(User, "ativo"):
             query = query.filter(User.ativo.is_(True))
 
@@ -4642,44 +4738,60 @@ def admin_agendamentos_ajax():
         if cargo:
             query = query.filter(User.cargo == cargo)
 
-        query = query.order_by(User.nome.asc()).distinct()
+        # ✅ IMPORTANTE: quando filtra status, filtra também os usuários no DB
+        # (para a paginação ficar coerente e não dar “falso vazio”)
+        if status:
+            st_col = func.lower(func.coalesce(Agendamento.status, ""))
+
+            if status == "deferido":
+                query = query.filter(User.agendamentos.any(st_col.like("deferid%")))
+            elif status == "indeferido":
+                query = query.filter(User.agendamentos.any(st_col.like("indeferid%")))
+            elif status == "em_espera":
+                query = query.filter(User.agendamentos.any(or_(
+                    st_col.like("%espera%"),
+                    st_col.like("%penden%"),
+                    st_col.like("%aguard%"),
+                    st_col.like("%analis%")
+                )))
+
+        query = query.order_by(User.nome.asc())
 
         funcionarios = query.paginate(page=page, per_page=per_page, error_out=False)
 
         dados = []
-        espera_aliases = {"em_espera", "em espera", "pendente"}
 
-        for func in funcionarios.items:
+        for funci in funcionarios.items:
             ags_tmp = []
 
-            for ag in (func.agendamentos or []):
+            for ag in (funci.agendamentos or []):
                 ag_status_raw = (getattr(ag, "status", "") or "").strip()
-                ag_status = ag_status_raw.lower()
 
-                if status:
-                    if status == "deferido" and not ag_status.startswith("deferido"):
-                        continue
-                    if status == "indeferido" and not ag_status.startswith("indeferido"):
-                        continue
-                    if status == "em_espera" and (ag_status not in espera_aliases):
-                        continue
+                # aplica filtro robusto
+                if status and (not _status_matches(status, ag_status_raw)):
+                    continue
 
                 ag_dt = _get_ag_datetime(ag)
 
-                # ✅ NOVO: incluir substituição no JSON para o HTML conseguir exibir/editar
                 nome_sub = (getattr(ag, "nome_substituto", None) or "").strip()
                 subs_flag = (getattr(ag, "substituicao", None) or "").strip()
+
+                # opcional: ajuda o front a ordenar melhor se quiser
+                iso = ag_dt.isoformat() if isinstance(ag_dt, datetime.datetime) else None
 
                 ags_tmp.append({
                     "id": ag.id,
                     "data": _fmt_br(ag_dt),
-                    "motivo": getattr(ag, "motivo", None),
-                    "status": ag_status_raw.title() if ag_status_raw else "",
+                    "data_iso": iso,
+                    "motivo": getattr(ag, "motivo", None) or "",
+                    "status": _display_status(ag_status_raw),
+
+                    # (não é usado pelo seu front atual, mas fica coerente)
                     "delete_url": url_for('admin_delete_agendamento', id=ag.id),
 
-                    # ✅ enviados para o front
-                    "nome_substituto": nome_sub or None,
-                    "substituicao": subs_flag or None,
+                    # enviados para o front (edição/visualização)
+                    "nome_substituto": nome_sub,
+                    "substituicao": subs_flag,
 
                     "_ord": _ord_key(ag_dt)
                 })
@@ -4691,9 +4803,9 @@ def admin_agendamentos_ajax():
 
             if ags_tmp:
                 dados.append({
-                    "id": func.id,
-                    "funcionario": (func.nome or "").title(),
-                    "cargo": func.cargo,
+                    "id": funci.id,
+                    "funcionario": (funci.nome or "").title(),
+                    "cargo": funci.cargo or "",
                     "agendamentos": ags_tmp
                 })
 
@@ -4711,7 +4823,7 @@ def admin_agendamentos_ajax():
         })
 
     except Exception:
-        app.logger.exception("Erro em /admin/agendamentos/ajax")
+        current_app.logger.exception("Erro em /admin/agendamentos/ajax")
         return jsonify({"error": "Erro interno ao carregar agendamentos."}), 500
 
 
@@ -4733,12 +4845,11 @@ def admin_delete_agendamento(id):
         return jsonify({"success": True, "message": "Agendamento excluído com sucesso."})
     except Exception:
         db.session.rollback()
-        app.logger.exception("Erro ao excluir agendamento")
+        current_app.logger.exception("Erro ao excluir agendamento")
         return jsonify({"error": "Não foi possível excluir o agendamento."}), 500
 
-# ✅ NOVA ROTA (necessária para o HTML de admin_agendamentos conseguir salvar a substituição)
-# Endpoint usado pelo JS do HTML: POST /admin/agendamento/<id>/substituto
-# Body JSON: {"nome_substituto": "Fulana de Tal"}  (ou "" para limpar)
+
+# ✅ ROTA: salvar substituto (M/I/T/N serializado no campo nome_substituto)
 @csrf.exempt
 @app.route('/admin/agendamento/<int:id>/substituto', methods=['POST'])
 @login_required
@@ -4754,14 +4865,12 @@ def admin_agendamento_set_substituto(id):
     payload = request.get_json(silent=True) or {}
     nome = (payload.get("nome_substituto") or "").strip()
 
-    # validação simples de tamanho
     if len(nome) > 255:
         return jsonify({"success": False, "error": "Nome do substituto muito longo (máx. 255)."}), 400
 
     try:
         if nome:
             ag.nome_substituto = nome
-            # mantém coerência com seu model (string "Sim"/"Não")
             ag.substituicao = "Sim"
         else:
             ag.nome_substituto = None
@@ -4771,13 +4880,13 @@ def admin_agendamento_set_substituto(id):
         return jsonify({
             "success": True,
             "id": ag.id,
-            "nome_substituto": ag.nome_substituto,
+            "nome_substituto": ag.nome_substituto or "",
             "substituicao": ag.substituicao
         }), 200
 
     except Exception:
         db.session.rollback()
-        app.logger.exception("Erro ao salvar substituição no agendamento %s", id)
+        current_app.logger.exception("Erro ao salvar substituição no agendamento %s", id)
         return jsonify({"success": False, "error": "Não foi possível salvar a substituição."}), 500
 
 # ===========================================

@@ -17,347 +17,504 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js"></script>
 
   <style>
-    /* BASE */
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      background-color: #f4f6f9;
-      color: #333;
-      font-family: 'Montserrat', sans-serif;
+    :root{
+      --bg:#f4f6f9;
+      --ink:#0f172a;
+      --muted:#6b7280;
+
+      --brand:#007bff;
+      --brand-dark:#0056b3;
+
+      --accent:#0fb300;
+      --accent-dark:#0d8a00;
+
+      --card:#ffffff;
+      --border:rgba(148,163,184,0.40);
+
+      --shadow: 0 18px 40px rgba(15,23,42,0.14);
+      --shadow-soft: 0 10px 24px rgba(15,23,42,0.10);
+
+      --focus:0 0 0 3px rgba(0,123,255,0.18);
+
+      --good:#16a34a;
+      --bad:#dc2626;
+      --warn:#d97706;
+      --info:#2563eb;
     }
 
-    body {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
+    *{ box-sizing:border-box; }
+
+    html, body{
+      height:100%;
+      margin:0;
+      padding:0;
+      background-color: var(--bg);
+      color:#333;
+      font-family:'Montserrat', sans-serif;
     }
 
-    main {
-      flex: 1 0 auto;
-      padding: 20px 15px 30px;
-      box-sizing: border-box;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      flex-direction: column; /* para permitir flash acima do card sem "quebrar" o layout */
-      gap: 12px;
+    body{
+      display:flex;
+      flex-direction:column;
+      min-height:100vh;
     }
 
-    @media (min-width: 769px) {
-      main { align-items: center; }
+    /* ✅ SEM “padding-bottom” artificial gigante (isso causava o espaço branco) */
+    main{
+      flex:1 0 auto;
+      padding:20px 15px 30px;
+      box-sizing:border-box;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      flex-direction:column;
+      gap:12px;
     }
 
-    /* ===== FLASH MESSAGES (AJUSTE DO "VERDE") =====
-       Observação: se no backend você der flash() sem categoria,
-       o Flask usa a categoria padrão "message". Muitos templates
-       acabam renderizando como flash-message flash-message (ou alert-info),
-       e aí não fica verde. Aqui eu mapeio também "message" como sucesso.
-       Isso resolve o caso típico de "Cadastro realizado" não ficar verde.
-    */
-    .flash-wrapper{
-      width: 100%;
-      max-width: 720px;
-      box-sizing: border-box;
-    }
-    .flash-message{
-      padding: 10px 12px;
-      margin-bottom: 10px;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      border: 1px solid rgba(148,163,184,0.45);
-      background: #fff;
-      box-shadow: 0 10px 20px rgba(15,23,42,0.10);
-      box-sizing: border-box;
-    }
-    .flash-message i{ font-size: 1rem; }
-
-    /* SUCESSO: cobre 'success', e também a categoria padrão do Flask 'message' */
-    .flash-success,
-    .flash-message.flash-success,
-    .flash-message.flash-message,
-    .alert-success{
-      background: #dcfce7 !important;
-      border-color: #bbf7d0 !important;
-      color: #065f46 !important;
-    }
-
-    /* ERRO */
-    .flash-danger,
-    .flash-error,
-    .flash-message.flash-danger,
-    .flash-message.flash-error,
-    .alert-danger{
-      background: #fee2e2 !important;
-      border-color: #fecaca !important;
-      color: #7f1d1d !important;
-    }
-
-    /* INFO */
-    .flash-info,
-    .flash-message.flash-info,
-    .alert-info{
-      background: #e0f2fe !important;
-      border-color: #bae6fd !important;
-      color: #075985 !important;
-    }
-
-    /* WARNING */
-    .flash-warning,
-    .flash-message.flash-warning,
-    .alert-warning{
-      background: #ffedd5 !important;
-      border-color: #fed7aa !important;
-      color: #7c2d12 !important;
+    @media (min-width: 769px){
+      main{
+        align-items:center;
+        padding:26px 18px 34px;
+      }
     }
 
     /* ===== CABEÇALHO (PADRÃO PORTAL) ===== */
-    .header-desktop,
-    .header-mobile {
-      display: none;
-      flex-shrink: 0;
+    .header-desktop, .header-mobile{
+      display:none;
+      flex-shrink:0;
     }
 
     /* Desktop */
     @media (min-width: 769px) {
-      .header-desktop {
-        display: flex;
-        background-color: #007bff;
-        padding: 14px 30px;
-        width: 100%;
-        align-items: center;
-        justify-content: space-between;
-        box-sizing: border-box;
-        min-height: 110px;
-        position: relative;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        color: white;
+      .header-desktop{
+        display:flex;
+        background-color: var(--brand);
+        padding:14px 30px;
+        width:100%;
+        align-items:center;
+        justify-content:space-between;
+        box-sizing:border-box;
+        min-height:110px;
+        position:relative;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);
+        color:white;
       }
 
-      .left-section { display: flex; align-items: center; gap: 20px; }
+      .left-section{ display:flex; align-items:center; gap:20px; }
 
-      .logo {
-        width: 80px;
-        height: 80px;
-        object-fit: contain;
-        border-radius: 10px;
-        background-color: white;
-        padding: 6px;
+      .logo{
+        width:80px; height:80px; object-fit:contain;
+        border-radius:10px; background-color:white; padding:6px;
       }
 
-      .text-container { display: flex; flex-direction: column; justify-content: center; text-align: left; color: white; }
+      .text-container{ display:flex; flex-direction:column; justify-content:center; text-align:left; color:white; }
+      .escola-nome{ font-weight:700; font-size:1.6rem; margin:0; line-height:1.1; }
+      .escola-subtitulo{ font-weight:600; font-size:1.1rem; margin-top:4px; }
 
-      .escola-nome { font-weight: 700; font-size: 1.6rem; margin: 0; line-height: 1.1; }
-
-      .escola-subtitulo { font-weight: 600; font-size: 1.1rem; margin-top: 4px; }
-
-      .header-center-text-container {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        user-select: none;
-        z-index: 1;
+      .header-center-text-container{
+        position:absolute; left:50%; top:50%;
+        transform:translate(-50%, -50%);
+        display:flex; align-items:center; gap:20px;
+        user-select:none; z-index:1;
       }
 
-      .header-center-text {
-        font-weight: 800;
-        font-size: 1.9rem;
-        color: white;
-        letter-spacing: 5px;
-        white-space: nowrap;
-        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      .header-center-text{
+        font-weight:800; font-size:1.9rem; color:white;
+        letter-spacing:5px; white-space:nowrap;
+        text-shadow:0 2px 5px rgba(0,0,0,0.3);
       }
 
-      .btn-home {
-        background-color: #0fb300;
-        color: white;
-        padding: 6px 14px;
-        border-radius: 6px;
-        font-weight: 700;
-        font-size: 1.5rem;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-        transition: background-color 0.3s ease;
-        position: absolute;
-        right: 30px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 2;
+      .btn-home{
+        background-color: var(--accent);
+        color:white;
+        padding:6px 14px;
+        border-radius:6px;
+        font-weight:700;
+        font-size:1.5rem;
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        gap:8px;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);
+        transition: transform .15s ease, background-color 0.3s ease;
+        position:absolute;
+        right:30px;
+        top:50%;
+        transform:translateY(-50%);
+        z-index:2;
       }
 
-      .btn-home:hover { background-color: #0d8a00; }
+      .btn-home:hover{
+        background-color: var(--accent-dark);
+        transform:translateY(-52%);
+      }
     }
 
     /* Mobile */
     @media (max-width: 768px) {
-      .header-mobile {
-        display: block;
-        width: 100%;
-        box-sizing: border-box;
-        color: white;
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        background-color: #007bff;
+      .header-mobile{
+        display:block;
+        width:100%;
+        box-sizing:border-box;
+        color:white;
+        position:sticky;
+        top:0;
+        z-index:1000;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);
+        background-color: var(--brand);
       }
 
-      .header-top {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 15px;
-        padding: 10px 15px;
-        background-color: #007bff;
-        text-align: center;
+      .header-top{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:15px;
+        padding:10px 15px;
+        background-color: var(--brand);
+        text-align:center;
       }
 
-      .logo {
-        width: 48px;
-        height: 48px;
-        object-fit: contain;
-        border-radius: 10px;
-        background-color: white;
-        padding: 6px;
+      .logo{
+        width:48px; height:48px; object-fit:contain;
+        border-radius:10px; background-color:white; padding:6px;
       }
 
-      .text-container { display: flex; flex-direction: column; justify-content: center; color: white; text-align: center; }
+      .text-container{ display:flex; flex-direction:column; justify-content:center; color:white; text-align:center; }
+      .escola-nome{ font-weight:700; font-size:1.3rem; margin:0; line-height:1.1; }
+      .escola-subtitulo{ font-weight:600; font-size:1rem; margin-top:2px; }
 
-      .escola-nome { font-weight: 700; font-size: 1.3rem; margin: 0; line-height: 1.1; }
-
-      .escola-subtitulo { font-weight: 600; font-size: 1rem; margin-top: 2px; }
-
-      .header-bottom {
-        background-color: #0056b3;
-        text-align: center;
-        padding: 12px 10px;
-        font-weight: 800;
-        font-size: 1.0rem;
-        letter-spacing: 4px;
-        user-select: none;
-        color: white;
-        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 12px;
-        white-space: nowrap;
+      .header-bottom{
+        background-color: var(--brand-dark);
+        text-align:center;
+        padding:12px 10px;
+        font-weight:800;
+        font-size:1.0rem;
+        letter-spacing:4px;
+        user-select:none;
+        color:white;
+        box-shadow:inset 0 -2px 5px rgba(0,0,0,0.2);
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        gap:12px;
+        white-space:nowrap;
       }
 
-      .btn-home-mobile {
-        background-color: #0fb300;
-        color: white;
-        padding: 6px 10px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 1rem;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-        transition: background-color 0.3s ease;
+      .btn-home-mobile{
+        background-color: var(--accent);
+        color:white;
+        padding:6px 10px;
+        border-radius:6px;
+        font-weight:600;
+        font-size:1rem;
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);
+        transition: transform .15s ease, background-color 0.3s ease;
       }
 
-      .btn-home-mobile:hover { background-color: #0d8a00; }
+      .btn-home-mobile:hover{
+        background-color: var(--accent-dark);
+        transform:translateY(-1px);
+      }
 
-      main { padding-top: 20px; }
+      main{ padding-top:20px; }
     }
 
-    /* ===== CARD DE REGISTRO ===== */
-    .register-card {
-      width: 100%;
-      max-width: 720px;
-      background: #ffffff;
-      border-radius: 18px;
-      box-shadow: 0 15px 35px rgba(15,23,42,0.18);
-      padding: 24px 22px 22px;
-      border: 1px solid rgba(148,163,184,0.4);
-      backdrop-filter: blur(6px);
-      box-sizing: border-box;
+    /* ===== FLASH ===== */
+    .flash-wrapper{
+      width:100%;
+      max-width:760px;
+      box-sizing:border-box;
     }
 
-    .register-header { text-align: center; margin-bottom: 18px; }
-
-    .register-header-icon {
-      width: 56px; height: 56px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg,#0d6efd,#2563eb); color: #fff; margin-bottom: 8px; box-shadow: 0 6px 14px rgba(37,99,235,0.5);
+    .flash-message{
+      border-radius:14px;
+      padding:10px 12px;
+      font-size:0.88rem;
+      margin-bottom:8px;
+      border:1px solid transparent;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      line-height:1.35;
+      box-shadow: var(--shadow-soft);
+      background:#fff;
     }
 
-    .register-header h1 { font-size: 1.4rem; margin: 0; color: #0f172a; }
+    .flash-message i{ margin-top:2px; }
+    .flash-message span{ display:block; }
 
-    .register-subtitle { margin-top: 4px; font-size: 0.9rem; color: #6b7280; }
+    .flash-message.flash-success,
+    .flash-message.flash-message{
+      background:#e8f7ee;
+      color:#065f46;
+      border-color:#b7ebc6;
+    }
+    .flash-message.flash-success i,
+    .flash-message.flash-message i{ color: var(--good); }
 
-    /* GRID DO FORMULÁRIO */
-    .form-grid {
-      display: grid;
+    .flash-message.flash-danger,
+    .flash-message.flash-error{
+      background:#fee2e2;
+      color:#991b1b;
+      border-color:#fecaca;
+    }
+    .flash-message.flash-danger i,
+    .flash-message.flash-error i{ color: var(--bad); }
+
+    .flash-message.flash-warning{
+      background:#fff7ed;
+      color:#9a3412;
+      border-color:#fed7aa;
+    }
+    .flash-message.flash-warning i{ color: var(--warn); }
+
+    .flash-message.flash-info{
+      background:#eff6ff;
+      color:#1e3a8a;
+      border-color:#bfdbfe;
+    }
+    .flash-message.flash-info i{ color: var(--info); }
+
+    /* ===== CARD ===== */
+    .register-card{
+      width:100%;
+      max-width:760px;
+      background: var(--card);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding:24px 22px 18px;
+      border:1px solid var(--border);
+      box-sizing:border-box;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .register-card::before{
+      content:"";
+      position:absolute;
+      left:0; top:0; right:0;
+      height:10px;
+      background: linear-gradient(90deg, var(--brand), #2563eb);
+    }
+
+    .register-header{
+      text-align:center;
+      margin:4px 0 16px;
+    }
+
+    .register-header-icon{
+      width:58px; height:58px;
+      border-radius:16px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      background: linear-gradient(135deg, var(--brand), #2563eb);
+      color:#fff;
+      margin-bottom:10px;
+      box-shadow: 0 10px 22px rgba(0,123,255,0.25);
+    }
+
+    .register-header h1{
+      font-size:1.45rem;
+      margin:0;
+      color: var(--ink);
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+
+    .register-subtitle{
+      margin-top:6px;
+      font-size:0.92rem;
+      color: var(--muted);
+      line-height:1.35;
+    }
+
+    .form-grid{
+      display:grid;
       grid-template-columns: 1fr;
       gap: 12px 16px;
+      margin-top: 10px;
     }
 
-    @media (min-width: 769px) {
-      .form-grid { grid-template-columns: repeat(2, 1fr); }
-      .full-width { grid-column: 1 / 3; }
+    @media (min-width: 769px){
+      .form-grid{ grid-template-columns: repeat(2, 1fr); }
+      .full-width{ grid-column: 1 / 3; }
     }
 
-    .form-group { display: flex; flex-direction: column; }
-
-    label { font-size: 0.9rem; color: #0f172a; font-weight: 600; margin-bottom: 4px; }
-    label i { margin-right: 4px; color: #0d6efd; }
-
-    input, select {
-      width: 100%; padding: 9px 10px; font-size: 0.95rem; border-radius: 8px; border: 1px solid #cbd5e1; margin: 0;
-      box-sizing: border-box; background-color: #f9fafb; transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    .form-group{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
     }
 
-    input:focus, select:focus {
-      background-color: #ffffff; border-color: #0d6efd; outline: none; box-shadow: 0 0 0 2px rgba(37,99,235,0.18);
+    label{
+      font-size:0.9rem;
+      color:#111827;
+      font-weight:800;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin:0;
+    }
+    label i{ color: var(--brand); }
+
+    .input-wrap{ position:relative; }
+    .input-icon{
+      position:absolute;
+      left:14px;
+      top:50%;
+      transform:translateY(-50%);
+      color:#64748b;
+      pointer-events:none;
     }
 
-    .error-message {
-      color: #b91c1c; font-size: 0.75rem; margin-top: 3px; min-height: 14px; font-weight: 600;
+    input, select{
+      width:100%;
+      padding:11px 12px 11px 42px;
+      font-size:0.95rem;
+      border-radius:14px;
+      border:1px solid #cbd5e1;
+      background:#f9fafb;
+      transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;
+      font-family:'Montserrat', sans-serif;
+      appearance:none;
     }
 
-    .submit-btn {
-      width: 100%; padding: 11px; background: linear-gradient(135deg,#0d6efd,#2563eb); color: #ffffff; border: none; font-size: 1rem; cursor: pointer;
-      border-radius: 999px; margin-top: 14px; font-weight: 700; letter-spacing: 0.03em; box-shadow: 0 8px 18px rgba(37,99,235,0.55);
-      transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    select{
+      padding-right:40px;
+      background-image:
+        linear-gradient(45deg, transparent 50%, #64748b 50%),
+        linear-gradient(135deg, #64748b 50%, transparent 50%);
+      background-position:
+        calc(100% - 18px) calc(50% - 3px),
+        calc(100% - 12px) calc(50% - 3px);
+      background-size:6px 6px, 6px 6px;
+      background-repeat:no-repeat;
     }
 
-    .submit-btn:hover {
-      background: linear-gradient(135deg,#16a34a,#22c55e); transform: translateY(-1px); box-shadow: 0 10px 22px rgba(22,163,74,0.7);
+    input:focus, select:focus{
+      background:#fff;
+      border-color: var(--brand);
+      outline:none;
+      box-shadow: var(--focus);
     }
 
-    .submit-btn:active { transform: translateY(0); box-shadow: 0 4px 10px rgba(22,163,74,0.55); }
+    .toggle-pass{
+      position:absolute;
+      right:10px;
+      top:50%;
+      transform:translateY(-50%);
+      border:none;
+      background:transparent;
+      cursor:pointer;
+      padding:8px 10px;
+      border-radius:12px;
+      color:#64748b;
+      transition: background .2s ease, color .2s ease, transform .12s ease;
+      font-family:'Montserrat', sans-serif;
+    }
+    .toggle-pass:hover{
+      background:#eef2ff;
+      color:#334155;
+      transform:translateY(-50%) scale(1.02);
+    }
 
-    /* Rodapé */
-    footer {
+    .error-message{
+      color:#991b1b;
+      font-size:0.78rem;
+      font-weight:800;
+      min-height:14px;
+      line-height:1.25;
+      margin:0;
+    }
+
+    /* ✅ botão só azul (sem virar verde) */
+    .submit-btn{
+      width:100%;
+      padding:12px;
+      background: linear-gradient(135deg, var(--brand), #2563eb);
+      color:#fff;
+      border:none;
+      font-size:1rem;
+      cursor:pointer;
+      border-radius:999px;
+      margin-top:14px;
+      font-weight:900;
+      letter-spacing:0.02em;
+      box-shadow:0 12px 24px rgba(0,123,255,0.28);
+      transition: transform .12s ease, filter .2s ease, box-shadow .2s ease;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      font-family:'Montserrat', sans-serif;
+    }
+
+    .submit-btn:hover{
+      filter:saturate(1.06);
+      transform: translateY(-1px);
+      box-shadow:0 18px 34px rgba(0,123,255,0.22);
+    }
+
+    .submit-btn:active{
+      transform: translateY(0);
+      box-shadow:0 12px 24px rgba(0,123,255,0.28);
+    }
+
+    .form-links{
+      margin-top:16px;
+      display:flex;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:10px;
+      font-size:0.9rem;
+      border-top:1px solid rgba(0,0,0,0.06);
+      padding-top:12px;
+    }
+
+    .form-links a{
+      color: var(--brand);
+      text-decoration:none;
+      font-weight:800;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .form-links a:hover{ text-decoration:underline; }
+
+    /* ✅ Evita footer global fixo/sticky sobrepor o conteúdo */
+    footer{
+      position: relative !important;
+      bottom: auto !important;
+      left: auto !important;
+      right: auto !important;
+
       background: linear-gradient(to right, #222, #444);
-      color: #ddd;
-      text-align: center;
-      padding: 15px 0;
-      font-size: 14px;
-      border-top: 2px solid #555;
-      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
-      flex-shrink: 0;
-      width: 100%;
-      box-sizing: border-box;
+      color:#ddd;
+      text-align:center;
+      padding:15px 0;
+      font-size:14px;
+      border-top:2px solid #555;
+      box-shadow:0px -2px 10px rgba(0,0,0,0.3);
+      flex-shrink:0;
+      width:100%;
+      box-sizing:border-box;
     }
 
-    footer p { margin: 5px 0; font-size: 0.9rem; }
+    footer p{ margin:5px 0; font-size:0.9rem; }
+
+    a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible{
+      outline:none;
+      box-shadow: var(--focus);
+    }
   </style>
 </head>
+
 <body>
 
   <!-- Cabeçalho Desktop -->
@@ -397,20 +554,19 @@
   </header>
 
   <main>
-    <!-- Flash messages (se houver) -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         <div class="flash-wrapper">
           {% for category, message in messages %}
             <div class="flash-message flash-{{ category }}">
               {% if category == 'success' or category == 'message' %}
-                <i class="fas fa-check-circle"></i>
+                <i class="fas fa-circle-check"></i>
               {% elif category in ['danger', 'error'] %}
-                <i class="fas fa-exclamation-triangle"></i>
-              {% elif category == 'warning' %}
                 <i class="fas fa-triangle-exclamation"></i>
+              {% elif category == 'warning' %}
+                <i class="fas fa-circle-exclamation"></i>
               {% else %}
-                <i class="fas fa-info-circle"></i>
+                <i class="fas fa-circle-info"></i>
               {% endif %}
               <span>{{ message }}</span>
             </div>
@@ -421,111 +577,146 @@
 
     <div class="register-card">
       <div class="register-header">
-        <div class="register-header-icon">
+        <div class="register-header-icon" aria-hidden="true">
           <i class="fas fa-user-plus"></i>
         </div>
         <h1>Registrar Novo Usuário</h1>
         <p class="register-subtitle">Preencha seus dados para criar o acesso ao Portal do Servidor.</p>
       </div>
 
-      <!-- Importante: action aponta para a rota de registro; POST protegido com CSRF -->
       <form id="register-form" action="{{ url_for('register') }}" method="POST" novalidate>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <div class="form-grid">
-          <!-- Nome Completo -->
+
           <div class="form-group full-width">
-            <label for="nome"><i class="fas fa-user"></i>Nome Completo:</label>
-            <input type="text" id="nome" name="nome" required />
+            <label for="nome"><i class="fas fa-user"></i> Nome Completo</label>
+            <div class="input-wrap">
+              <i class="fas fa-user input-icon" aria-hidden="true"></i>
+              <input type="text" id="nome" name="nome" required placeholder="Digite seu nome completo" autocomplete="name" />
+            </div>
             <div id="nome-error" class="error-message"></div>
           </div>
 
-          <!-- Registro -->
           <div class="form-group">
-            <label for="registro"><i class="fas fa-id-badge"></i>Registro:</label>
-            <input type="text" id="registro" name="registro" required />
+            <label for="registro"><i class="fas fa-id-badge"></i> Registro</label>
+            <div class="input-wrap">
+              <i class="fas fa-id-badge input-icon" aria-hidden="true"></i>
+              <input type="text" id="registro" name="registro" required placeholder="Ex.: 12345" />
+            </div>
             <div id="registro-error" class="error-message"></div>
           </div>
 
-          <!-- E-mail -->
           <div class="form-group">
-            <label for="email"><i class="fas fa-envelope"></i>E-mail:</label>
-            <input type="email" id="email" name="email" required />
+            <label for="email"><i class="fas fa-envelope"></i> E-mail</label>
+            <div class="input-wrap">
+              <i class="fas fa-at input-icon" aria-hidden="true"></i>
+              <input type="email" id="email" name="email" required placeholder="seu.email@dominio.com" autocomplete="email" />
+            </div>
             <div id="email-error" class="error-message"></div>
           </div>
 
-          <!-- Senha -->
           <div class="form-group">
-            <label for="senha"><i class="fas fa-lock"></i>Senha:</label>
-            <input type="password" id="senha" name="senha" required minlength="6" />
+            <label for="senha"><i class="fas fa-lock"></i> Senha</label>
+            <div class="input-wrap">
+              <i class="fas fa-key input-icon" aria-hidden="true"></i>
+              <input type="password" id="senha" name="senha" required minlength="6" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+              <button type="button" class="toggle-pass" data-target="senha" aria-label="Mostrar ou ocultar senha" title="Mostrar/ocultar">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
             <div id="senha-error" class="error-message"></div>
           </div>
 
-          <!-- Confirmar Senha -->
           <div class="form-group">
-            <label for="confirmar_senha"><i class="fas fa-lock"></i>Confirmar Senha:</label>
-            <input type="password" id="confirmar_senha" name="confirmar_senha" required minlength="6" />
+            <label for="confirmar_senha"><i class="fas fa-lock"></i> Confirmar Senha</label>
+            <div class="input-wrap">
+              <i class="fas fa-key input-icon" aria-hidden="true"></i>
+              <input type="password" id="confirmar_senha" name="confirmar_senha" required minlength="6" placeholder="Repita a senha" autocomplete="new-password" />
+              <button type="button" class="toggle-pass" data-target="confirmar_senha" aria-label="Mostrar ou ocultar senha" title="Mostrar/ocultar">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
             <div id="confirmar-senha-error" class="error-message"></div>
           </div>
 
-          <!-- CPF -->
           <div class="form-group">
-            <label for="cpf"><i class="fas fa-id-card"></i>CPF:</label>
-            <input type="text" id="cpf" name="cpf" required />
+            <label for="cpf"><i class="fas fa-id-card"></i> CPF</label>
+            <div class="input-wrap">
+              <i class="fas fa-id-card input-icon" aria-hidden="true"></i>
+              <input type="text" id="cpf" name="cpf" required placeholder="000.000.000-00" />
+            </div>
             <div id="cpf-error" class="error-message"></div>
           </div>
 
-          <!-- RG -->
           <div class="form-group">
-            <label for="rg"><i class="fas fa-id-card"></i>RG:</label>
-            <input type="text" id="rg" name="rg" required />
+            <label for="rg"><i class="fas fa-id-card"></i> RG</label>
+            <div class="input-wrap">
+              <i class="fas fa-address-card input-icon" aria-hidden="true"></i>
+              <input type="text" id="rg" name="rg" required placeholder="00.000.000-0" />
+            </div>
             <div id="rg-error" class="error-message"></div>
           </div>
 
-          <!-- Data de Nascimento -->
           <div class="form-group">
-            <label for="data_nascimento"><i class="fas fa-birthday-cake"></i>Data de Nascimento:</label>
-            <input type="date" id="data_nascimento" name="data_nascimento" required />
+            <label for="data_nascimento"><i class="fas fa-birthday-cake"></i> Data de Nascimento</label>
+            <div class="input-wrap">
+              <i class="fas fa-calendar-day input-icon" aria-hidden="true"></i>
+              <input type="date" id="data_nascimento" name="data_nascimento" required />
+            </div>
             <div id="data_nascimento-error" class="error-message"></div>
           </div>
 
-          <!-- Celular -->
           <div class="form-group">
-            <label for="celular"><i class="fas fa-mobile-alt"></i>Celular:</label>
-            <input type="text" id="celular" name="celular" required />
+            <label for="celular"><i class="fas fa-mobile-alt"></i> Celular</label>
+            <div class="input-wrap">
+              <i class="fas fa-phone input-icon" aria-hidden="true"></i>
+              <input type="text" id="celular" name="celular" required placeholder="(00) 00000-0000" autocomplete="tel" />
+            </div>
             <div id="celular-error" class="error-message"></div>
           </div>
 
-          <!-- Cargo -->
           <div class="form-group full-width">
-            <label for="cargo"><i class="fas fa-briefcase"></i>Cargo:</label>
-            <select id="cargo" name="cargo" required>
-              <option value="" disabled selected>Selecione o cargo</option>
-              <option value="Agente Administrativo">Agente Administrativo</option>
-              <option value="Assistente de Direção">Assistente de Direção</option>
-              <option value="Assistente Tecnico Pedagogico">Assistente Técnico Pedagógico</option>
-              <option value="Diretor de Unidade Escolar">Diretor de Unidade Escolar</option>
-              <option value="Educador de Desenvolvimento Infanto Juvenil">Educador de Desenvolvimento Infanto Juvenil</option>
-              <option value="Inspetor de Aluno">Inspetor de Aluno</option>
-              <option value="Pedagoga Comunitaria">Pedagoga Comunitária</option>
-              <option value="Professor Adjunto">Professor Adjunto</option>
-              <option value="Professor I">Professor I</option>
-              <option value="Professor II">Professor II</option>
-              <option value="Professor III">Professor III</option>
-              <option value="Professor IV">Professor IV</option>
-              <option value="Secretário de Unidade Escolar">Secretário de Unidade Escolar</option>
-              <option value="Servente">Servente</option>
-              <option value="Servente I">Servente I</option>
-              <option value="Servente II">Servente II</option>
-              <option value="Trabalhador">Trabalhador</option>
-              <option value="Atendente de Educação I">Atendente de Educação I</option>
-              <option value="Atendente de Educação II">Atendente de Educação II</option>
-            </select>
+            <label for="cargo"><i class="fas fa-briefcase"></i> Cargo</label>
+            <div class="input-wrap">
+              <i class="fas fa-briefcase input-icon" aria-hidden="true"></i>
+              <select id="cargo" name="cargo" required aria-label="Selecione o cargo">
+                <option value="" disabled selected>Selecione o cargo</option>
+                <option value="Agente Administrativo">Agente Administrativo</option>
+                <option value="Assistente de Direção">Assistente de Direção</option>
+                <option value="Assistente Tecnico Pedagogico">Assistente Técnico Pedagógico</option>
+                <option value="Diretor de Unidade Escolar">Diretor de Unidade Escolar</option>
+                <option value="Educador de Desenvolvimento Infanto Juvenil">Educador de Desenvolvimento Infanto Juvenil</option>
+                <option value="Inspetor de Aluno">Inspetor de Aluno</option>
+                <option value="Pedagoga Comunitaria">Pedagoga Comunitária</option>
+                <option value="Professor Adjunto">Professor Adjunto</option>
+                <option value="Professor I">Professor I</option>
+                <option value="Professor II">Professor II</option>
+                <option value="Professor III">Professor III</option>
+                <option value="Professor IV">Professor IV</option>
+                <option value="Secretário de Unidade Escolar">Secretário de Unidade Escolar</option>
+                <option value="Servente">Servente</option>
+                <option value="Servente I">Servente I</option>
+                <option value="Servente II">Servente II</option>
+                <option value="Trabalhador">Trabalhador</option>
+                <option value="Atendente de Educação I">Atendente de Educação I</option>
+                <option value="Atendente de Educação II">Atendente de Educação II</option>
+              </select>
+            </div>
             <div id="cargo-error" class="error-message"></div>
           </div>
+
         </div>
 
-        <input type="submit" value="Registrar" class="submit-btn" />
+        <button type="submit" class="submit-btn">
+          <i class="fas fa-user-check"></i>
+          Registrar
+        </button>
+
+        <div class="form-links">
+          <a href="{{ url_for('login') }}"><i class="fas fa-right-to-bracket"></i> Já tenho conta</a>
+          <a href="{{ url_for('recuperar_senha') }}"><i class="fas fa-key"></i> Esqueci a senha</a>
+        </div>
       </form>
     </div>
   </main>
@@ -535,13 +726,11 @@
   </footer>
 
   <script>
-    // Anexa o CSRF em requisições Ajax (incluindo o GET de checagem, caso o backend exija)
+    // CSRF em AJAX
     $.ajaxSetup({
-      beforeSend: function (xhr, settings) {
+      beforeSend: function (xhr) {
         const token = $('meta[name="csrf-token"]').attr('content');
-        if (token) {
-          xhr.setRequestHeader('X-CSRFToken', token);
-        }
+        if (token) xhr.setRequestHeader('X-CSRFToken', token);
       }
     });
 
@@ -551,127 +740,99 @@
       $("#rg").inputmask("99.999.999-9");
       $("#celular").inputmask("(99) 99999-9999");
 
+      // Toggle senha
+      document.querySelectorAll('.toggle-pass').forEach(btn => {
+        btn.addEventListener('click', function(){
+          const targetId = btn.getAttribute('data-target');
+          const input = document.getElementById(targetId);
+          if (!input) return;
+
+          const isHidden = input.type === 'password';
+          input.type = isHidden ? 'text' : 'password';
+
+          const icon = btn.querySelector('i');
+          if (icon) icon.className = isHidden ? 'fas fa-eye-slash' : 'fas fa-eye';
+        });
+      });
+
       function setError(campo, mensagem) {
-        document.getElementById(campo + "-error").textContent = mensagem;
+        const el = document.getElementById(campo + "-error");
+        if (el) el.textContent = mensagem;
       }
       function clearError(campo) {
-        document.getElementById(campo + "-error").textContent = "";
+        const el = document.getElementById(campo + "-error");
+        if (el) el.textContent = "";
       }
 
       function validarNome() {
         const val = $("#nome").val().trim();
-        if (val.length < 3) {
-          setError("nome", "Por favor, informe um nome válido com pelo menos 3 caracteres.");
-          return false;
-        }
-        clearError("nome");
-        return true;
+        if (val.length < 3) { setError("nome", "Por favor, informe um nome válido (mínimo 3 caracteres)."); return false; }
+        clearError("nome"); return true;
       }
 
       function validarRegistro() {
         const val = $("#registro").val().trim();
-        if (val === "") {
-          setError("registro", "Registro é obrigatório.");
-          return false;
-        }
-        clearError("registro");
-        return true;
+        if (!val) { setError("registro", "Registro é obrigatório."); return false; }
+        clearError("registro"); return true;
       }
 
       function validarEmail() {
         const val = $("#email").val().trim();
         const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!pattern.test(val)) {
-          setError("email", "Por favor, informe um e-mail válido.");
-          return false;
-        }
-        clearError("email");
-        return true;
+        if (!pattern.test(val)) { setError("email", "Por favor, informe um e-mail válido."); return false; }
+        clearError("email"); return true;
       }
 
       function validarSenha() {
         const val = $("#senha").val();
-        if (val.length < 6) {
-          setError("senha", "A senha deve ter pelo menos 6 caracteres.");
-          return false;
-        }
-        clearError("senha");
-        return true;
+        if (val.length < 6) { setError("senha", "A senha deve ter pelo menos 6 caracteres."); return false; }
+        clearError("senha"); return true;
       }
 
       function validarConfirmarSenha() {
         const senha = $("#senha").val();
         const confirmar = $("#confirmar_senha").val();
-        if (confirmar !== senha) {
-          setError("confirmar-senha", "As senhas não coincidem.");
-          return false;
-        }
-        clearError("confirmar-senha");
-        return true;
+        if (confirmar !== senha) { setError("confirmar-senha", "As senhas não coincidem."); return false; }
+        clearError("confirmar-senha"); return true;
       }
 
       function validarCPF() {
-        if ($("#cpf").inputmask("unmaskedvalue").length !== 11) {
-          setError("cpf", "Por favor, informe um CPF válido.");
-          return false;
-        }
-        clearError("cpf");
-        return true;
+        if ($("#cpf").inputmask("unmaskedvalue").length !== 11) { setError("cpf", "Por favor, informe um CPF válido."); return false; }
+        clearError("cpf"); return true;
       }
 
       function validarRG() {
-        if ($("#rg").inputmask("unmaskedvalue").length < 8) {
-          setError("rg", "Por favor, informe um RG válido.");
-          return false;
-        }
-        clearError("rg");
-        return true;
+        if ($("#rg").inputmask("unmaskedvalue").length < 8) { setError("rg", "Por favor, informe um RG válido."); return false; }
+        clearError("rg"); return true;
       }
 
       function validarDataNascimento() {
         const val = $("#data_nascimento").val();
-        if (!val) {
-          setError("data_nascimento", "Data de nascimento é obrigatória.");
-          return false;
-        }
+        if (!val) { setError("data_nascimento", "Data de nascimento é obrigatória."); return false; }
         const inputDate = new Date(val);
         const hoje = new Date();
-        if (inputDate >= hoje) {
-          setError("data_nascimento", "Data de nascimento deve ser anterior a hoje.");
-          return false;
-        }
-        clearError("data_nascimento");
-        return true;
+        if (inputDate >= hoje) { setError("data_nascimento", "Data de nascimento deve ser anterior a hoje."); return false; }
+        clearError("data_nascimento"); return true;
       }
 
       function validarCelular() {
-        if ($("#celular").inputmask("unmaskedvalue").length !== 11) {
-          setError("celular", "Por favor, informe um número de celular válido.");
-          return false;
-        }
-        clearError("celular");
-        return true;
+        if ($("#celular").inputmask("unmaskedvalue").length !== 11) { setError("celular", "Por favor, informe um celular válido."); return false; }
+        clearError("celular"); return true;
       }
 
       function validarCargo() {
-        if (!$("#cargo").val()) {
-          setError("cargo", "Por favor, selecione um cargo.");
-          return false;
-        }
-        clearError("cargo");
-        return true;
+        if (!$("#cargo").val()) { setError("cargo", "Por favor, selecione um cargo."); return false; }
+        clearError("cargo"); return true;
       }
 
-      // Debounce para checar duplicidade
+      // Debounce duplicidade
       let timeoutIDs = {};
 
       function checarDuplicidade(campo, valor) {
         clearError(campo);
         if (!valor.trim()) return;
 
-        if (timeoutIDs[campo]) {
-          clearTimeout(timeoutIDs[campo]);
-        }
+        if (timeoutIDs[campo]) clearTimeout(timeoutIDs[campo]);
 
         timeoutIDs[campo] = setTimeout(function () {
           $.ajax({
@@ -680,7 +841,7 @@
             data: { campo: campo, valor: valor },
             dataType: "json",
             success: function (response) {
-              if (response.exists) {
+              if (response && response.exists) {
                 setError(
                   campo,
                   campo === "email" ? "Este e-mail já está cadastrado."
@@ -693,9 +854,7 @@
                 clearError(campo);
               }
             },
-            error: function () {
-              // Silencioso para não interferir na UX
-            },
+            error: function () { /* silencioso */ },
           });
         }, 500);
       }
@@ -727,27 +886,34 @@
 
       // Eventos
       $("#nome").on("input", validarNome);
+
       $("#registro").on("input", function () {
         validarRegistro();
         checarDuplicidade("registro", $(this).val());
       });
+
       $("#email").on("input", function () {
         validarEmail();
         checarDuplicidade("email", $(this).val());
       });
+
       $("#senha").on("input", function () {
         validarSenha();
         validarConfirmarSenha();
       });
+
       $("#confirmar_senha").on("input", validarConfirmarSenha);
+
       $("#cpf").on("input", function () {
         validarCPF();
         checarDuplicidade("cpf", $(this).val());
       });
+
       $("#rg").on("input", function () {
         validarRG();
         checarDuplicidade("rg", $(this).val());
       });
+
       $("#data_nascimento").on("change", validarDataNascimento);
       $("#celular").on("input", validarCelular);
       $("#cargo").on("change", validarCargo);

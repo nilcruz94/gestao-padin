@@ -13,400 +13,466 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
 
   <style>
-    /* LAYOUT BASE */
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      background-color: #f4f6f9;
-      color: #333;
-      font-family: 'Montserrat', sans-serif;
+    :root{
+      --bg:#f4f6f9;
+      --ink:#0f172a;
+      --muted:#6b7280;
+
+      --brand:#007bff;
+      --brand-dark:#0056b3;
+
+      --accent:#0fb300;
+      --accent-dark:#0d8a00;
+
+      --card:#ffffff;
+      --border:rgba(148,163,184,0.40);
+
+      --shadow: 0 18px 40px rgba(15,23,42,0.14);
+      --shadow-soft: 0 10px 24px rgba(15,23,42,0.10);
+      --radius:18px;
+      --focus:0 0 0 3px rgba(0,123,255,0.18);
+
+      --good:#16a34a;
+      --bad:#dc2626;
+      --warn:#d97706;
+      --info:#2563eb;
     }
 
-    body {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
+    *{ box-sizing:border-box; }
+
+    /* ✅ Mantém a mesma fonte do seu projeto: Montserrat */
+    html, body{
+      height:100%;
+      margin:0;
+      padding:0;
+      background-color: var(--bg);
+      color:#333;
+      font-family:'Montserrat', sans-serif;
     }
 
-    main {
-      flex: 1 0 auto;
-      padding: 20px 15px 30px;
-      box-sizing: border-box;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+    body{
+      display:flex;
+      flex-direction:column;
+      min-height:100vh;
+    }
+
+    main{
+      flex:1 0 auto;
+      padding:20px 15px 30px;
+      box-sizing:border-box;
+      display:flex;
+      justify-content:center;
+      align-items:center;
     }
 
     /* ===== CABEÇALHO (PADRÃO PORTAL) ===== */
-    .header-desktop,
-    .header-mobile {
-      display: none;
-      flex-shrink: 0;
+    .header-desktop, .header-mobile{
+      display:none;
+      flex-shrink:0;
     }
 
     /* Desktop */
     @media (min-width: 769px) {
-      .header-desktop {
-        display: flex;
-        background-color: #007bff;
-        padding: 15px 30px;
-        width: 100%;
-        align-items: center;
-        justify-content: space-between;
-        box-sizing: border-box;
-        min-height: 110px;
-        position: relative;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        color: white;
+      .header-desktop{
+        display:flex;
+        background-color: var(--brand);
+        padding:15px 30px;
+        width:100%;
+        align-items:center;
+        justify-content:space-between;
+        box-sizing:border-box;
+        min-height:110px;
+        position:relative;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);
+        color:white;
       }
 
-      .left-section {
-        display: flex;
-        align-items: center;
-        gap: 20px;
+      .left-section{ display:flex; align-items:center; gap:20px; }
+
+      .logo{
+        width:80px; height:80px; object-fit:contain;
+        border-radius:10px; background-color:white; padding:6px;
       }
 
-      .logo {
-        width: 80px;
-        height: 80px;
-        object-fit: contain;
-        border-radius: 10px;
-        background-color: white;
-        padding: 6px;
+      .text-container{
+        display:flex; flex-direction:column; justify-content:center;
+        text-align:left; color:white;
       }
 
-      .text-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        text-align: left;
-        color: white;
+      .escola-nome{ font-weight:700; font-size:1.6rem; margin:0; line-height:1.1; }
+      .escola-subtitulo{ font-weight:600; font-size:1.1rem; margin-top:4px; }
+
+      .header-center-text-container{
+        position:absolute;
+        left:50%;
+        top:50%;
+        transform:translate(-50%, -50%);
+        display:flex;
+        align-items:center;
+        gap:20px;
+        user-select:none;
+        z-index:1;
       }
 
-      .escola-nome {
-        font-weight: 700;
-        font-size: 1.6rem;
-        margin: 0;
-        line-height: 1.1;
+      .header-center-text{
+        font-weight:800;
+        font-size:1.9rem;
+        color:white;
+        letter-spacing:5px;
+        white-space:nowrap;
+        text-shadow:0 2px 5px rgba(0,0,0,0.3);
       }
 
-      .escola-subtitulo {
-        font-weight: 600;
-        font-size: 1.1rem;
-        margin-top: 4px;
+      .btn-home{
+        background-color: var(--accent);
+        color:white;
+        padding:6px 14px;
+        border-radius:6px;
+        font-weight:700;
+        font-size:1.5rem;
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        gap:8px;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);
+        transition: transform .15s ease, background-color 0.3s ease;
+        position:absolute;
+        right:30px;
+        top:50%;
+        transform:translateY(-50%);
+        z-index:2;
       }
 
-      .header-center-text-container {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        user-select: none;
-        z-index: 1;
-      }
-
-      .header-center-text {
-        font-weight: 800;
-        font-size: 1.9rem;
-        color: white;
-        letter-spacing: 5px;
-        white-space: nowrap;
-        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
-      }
-
-      .btn-home {
-        background-color: #0fb300;
-        color: white;
-        padding: 6px 14px;
-        border-radius: 6px;
-        font-weight: 700;
-        font-size: 1.5rem;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-        transition: background-color 0.3s ease;
-        position: absolute;
-        right: 30px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 2;
-      }
-
-      .btn-home:hover {
-        background-color: #0d8a00;
+      .btn-home:hover{
+        background-color: var(--accent-dark);
+        transform:translateY(-52%);
       }
     }
 
     /* Mobile */
     @media (max-width: 768px) {
-      .header-mobile {
-        display: block;
-        width: 100%;
-        box-sizing: border-box;
-        color: white;
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        background-color: #007bff;
+      .header-mobile{
+        display:block;
+        width:100%;
+        box-sizing:border-box;
+        color:white;
+        position:sticky;
+        top:0;
+        z-index:1000;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);
+        background-color: var(--brand);
       }
 
-      .header-top {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 15px;
-        padding: 10px 15px;
-        background-color: #007bff;
-        text-align: center;
+      .header-top{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:15px;
+        padding:10px 15px;
+        background-color: var(--brand);
+        text-align:center;
       }
 
-      .logo {
-        width: 48px;
-        height: 48px;
-        object-fit: contain;
-        border-radius: 10px;
-        background-color: white;
-        padding: 6px;
+      .logo{
+        width:48px; height:48px; object-fit:contain;
+        border-radius:10px; background-color:white; padding:6px;
       }
 
-      .text-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        color: white;
-        text-align: center;
+      .text-container{
+        display:flex; flex-direction:column; justify-content:center;
+        color:white; text-align:center;
       }
 
-      .escola-nome {
-        font-weight: 700;
-        font-size: 1.3rem;
-        margin: 0;
-        line-height: 1.1;
+      .escola-nome{ font-weight:700; font-size:1.3rem; margin:0; line-height:1.1; }
+      .escola-subtitulo{ font-weight:600; font-size:1rem; margin-top:2px; }
+
+      .header-bottom{
+        background-color: var(--brand-dark);
+        text-align:center;
+        padding:12px 10px;
+        font-weight:800;
+        font-size:1.0rem;
+        letter-spacing:4px;
+        user-select:none;
+        color:white;
+        box-shadow:inset 0 -2px 5px rgba(0,0,0,0.2);
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        gap:12px;
+        white-space:nowrap;
       }
 
-      .escola-subtitulo {
-        font-weight: 600;
-        font-size: 1rem;
-        margin-top: 2px;
+      .btn-home-mobile{
+        background-color: var(--accent);
+        color:white;
+        padding:6px 10px;
+        border-radius:6px;
+        font-weight:600;
+        font-size:1rem;
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);
+        transition: transform .15s ease, background-color 0.3s ease;
       }
 
-      .header-bottom {
-        background-color: #0056b3;
-        text-align: center;
-        padding: 12px 10px;
-        font-weight: 800;
-        font-size: 1.0rem;
-        letter-spacing: 4px;
-        user-select: none;
-        color: white;
-        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 12px;
-        white-space: nowrap;
+      .btn-home-mobile:hover{
+        background-color: var(--accent-dark);
+        transform:translateY(-1px);
       }
 
-      .btn-home-mobile {
-        background-color: #0fb300;
-        color: white;
-        padding: 6px 10px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 1rem;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-        transition: background-color 0.3s ease;
-      }
-
-      .btn-home-mobile:hover {
-        background-color: #0d8a00;
-      }
-
-      main {
-        padding-top: 20px;
-      }
+      main{ padding-top:20px; }
     }
 
-    /* ===== CARD DE LOGIN ===== */
-    .login-card {
-      width: 100%;
-      max-width: 420px;
-      background: #ffffff;
-      border-radius: 18px;
-      box-shadow: 0 15px 35px rgba(15,23,42,0.22);
-      padding: 22px 20px 20px;
-      border: 1px solid rgba(148,163,184,0.4);
-      backdrop-filter: blur(6px);
-      box-sizing: border-box;
+    /* ===== CARD DE LOGIN (modernizado sem mudar paleta) ===== */
+    .login-card{
+      width:100%;
+      max-width:440px;
+      background: var(--card);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding:24px 22px 20px;
+      border:1px solid var(--border);
+      box-sizing:border-box;
+      position:relative;
+      overflow:hidden;
     }
 
-    .login-header {
-      text-align: center;
-      margin-bottom: 18px;
+    /* ✅ Barra superior APENAS AZUL (sem verde) */
+    .login-card::before{
+      content:"";
+      position:absolute;
+      left:0; top:0; right:0;
+      height:10px;
+      background: linear-gradient(90deg, var(--brand), #2563eb);
     }
 
-    .login-header-icon {
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg,#0d6efd,#2563eb);
-      color: #fff;
-      margin-bottom: 8px;
-      box-shadow: 0 6px 14px rgba(37,99,235,0.5);
+    .login-header{
+      text-align:center;
+      margin:4px 0 16px;
     }
 
-    .login-header h1 {
-      font-size: 1.4rem;
-      margin: 0;
-      color: #0f172a;
+    .login-header-icon{
+      width:58px; height:58px;
+      border-radius: 16px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      background: linear-gradient(135deg, var(--brand), #2563eb);
+      color:#fff;
+      margin-bottom:10px;
+      box-shadow: 0 10px 22px rgba(0,123,255,0.25);
     }
 
-    .login-subtitle {
-      margin-top: 4px;
-      font-size: 0.9rem;
-      color: #6b7280;
-      white-space: nowrap;
+    .login-header h1{
+      font-size:1.45rem;
+      margin:0;
+      color: var(--ink);
+      font-weight:800;
+      letter-spacing:.2px;
     }
 
-    @media (max-width: 480px) {
-      .login-subtitle { white-space: normal; }
+    .login-subtitle{
+      margin-top:6px;
+      font-size:0.92rem;
+      color: var(--muted);
+      line-height:1.35;
     }
 
-    /* Inputs */
-    .form-group { margin-bottom: 14px; }
+    /* Mensagens flash (premium) */
+    .flash-messages{ margin: 0 0 14px; }
+    .flash-message{
+      border-radius:14px;
+      padding:10px 12px;
+      font-size:0.87rem;
+      margin-bottom:8px;
+      border:1px solid transparent;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      line-height:1.35;
+      box-shadow: var(--shadow-soft);
+      background:#fff;
+    }
+    .flash-message i{ margin-top:2px; }
+    .flash-message p{ margin:0; }
 
-    .form-group label {
-      font-size: 0.9rem;
-      display: block;
-      margin-bottom: 4px;
-      color: #111827;
-      font-weight: 600;
+    .flash-message.success,
+    .flash-message.message{
+      background:#e8f7ee;
+      color:#065f46;
+      border-color:#b7ebc6;
+    }
+    .flash-message.success i,
+    .flash-message.message i{ color: var(--good); }
+
+    .flash-message.error,
+    .flash-message.danger{
+      background:#fee2e2;
+      color:#991b1b;
+      border-color:#fecaca;
+    }
+    .flash-message.error i,
+    .flash-message.danger i{ color: var(--bad); }
+
+    .flash-message.warning{
+      background:#fff7ed;
+      color:#9a3412;
+      border-color:#fed7aa;
+    }
+    .flash-message.warning i{ color: var(--warn); }
+
+    .flash-message.info{
+      background:#eff6ff;
+      color:#1e3a8a;
+      border-color:#bfdbfe;
+    }
+    .flash-message.info i{ color: var(--info); }
+
+    /* Inputs (modernizados) */
+    .form-group{ margin-bottom:14px; }
+
+    .form-group label{
+      font-size:0.9rem;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-bottom:6px;
+      color:#111827;
+      font-weight:800;
     }
 
-    .form-group label i { margin-right: 4px; color: #0d6efd; }
+    .form-group label i{ color: var(--brand); }
 
-    .form-group input {
-      width: 100%;
-      padding: 10px 11px;
-      font-size: 0.95rem;
-      border-radius: 8px;
+    .input-wrap{ position:relative; }
+
+    .input-icon{
+      position:absolute;
+      left:14px;
+      top:50%;
+      transform:translateY(-50%);
+      color:#64748b;
+      pointer-events:none;
+    }
+
+    .form-group input{
+      width:100%;
+      padding:11px 12px 11px 42px;
+      font-size:0.95rem;
+      border-radius:14px;
       border: 1px solid #cbd5e1;
-      box-sizing: border-box;
-      background-color: #f9fafb;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+      background:#f9fafb;
+      transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;
+      font-family:'Montserrat', sans-serif; /* ✅ garante a mesma fonte também nos inputs */
     }
 
-    .form-group input:focus {
-      background-color: #ffffff;
-      border-color: #0d6efd;
-      outline: none;
-      box-shadow: 0 0 0 2px rgba(37,99,235,0.18);
+    .form-group input:focus{
+      background:#ffffff;
+      border-color: var(--brand);
+      outline:none;
+      box-shadow: var(--focus);
+    }
+
+    /* Mostrar/ocultar senha */
+    .toggle-pass{
+      position:absolute;
+      right:10px;
+      top:50%;
+      transform:translateY(-50%);
+      border:none;
+      background:transparent;
+      cursor:pointer;
+      padding:8px 10px;
+      border-radius:12px;
+      color:#64748b;
+      transition: background .2s ease, color .2s ease, transform .12s ease;
+      font-family:'Montserrat', sans-serif;
+    }
+    .toggle-pass:hover{
+      background:#eef2ff;
+      color:#334155;
+      transform:translateY(-50%) scale(1.02);
     }
 
     /* Botão */
-    .submit-btn {
-      width: 100%;
-      padding: 11px;
-      background: linear-gradient(135deg,#0d6efd,#2563eb);
-      color: #ffffff;
-      border: none;
-      font-size: 1rem;
-      cursor: pointer;
-      border-radius: 999px;
-      margin-top: 4px;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      box-shadow: 0 8px 18px rgba(37,99,235,0.55);
-      transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    .submit-btn{
+      width:100%;
+      padding:12px;
+      background: linear-gradient(135deg, var(--brand), #2563eb);
+      color:#fff;
+      border:none;
+      font-size:1rem;
+      cursor:pointer;
+      border-radius:999px;
+      margin-top:6px;
+      font-weight:900;
+      letter-spacing:0.02em;
+      box-shadow:0 12px 24px rgba(0,123,255,0.28);
+      transition: transform .12s ease, filter .2s ease, box-shadow .2s ease;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      font-family:'Montserrat', sans-serif;
     }
 
-    .submit-btn:hover {
-      background: linear-gradient(135deg,#16a34a,#22c55e);
+    .submit-btn:hover{
+      filter:saturate(1.06);
       transform: translateY(-1px);
-      box-shadow: 0 10px 22px rgba(22,163,74,0.7);
+      box-shadow:0 18px 34px rgba(0,123,255,0.22);
     }
 
-    .submit-btn:active {
+    .submit-btn:active{
       transform: translateY(0);
-      box-shadow: 0 4px 10px rgba(22,163,74,0.55);
+      box-shadow:0 12px 24px rgba(0,123,255,0.28);
     }
 
     /* Links abaixo do formulário */
-    .form-links {
-      margin-top: 16px;
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 10px;
-      font-size: 0.9rem;
+    .form-links{
+      margin-top:16px;
+      display:flex;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:10px;
+      font-size:0.9rem;
+      border-top:1px solid rgba(0,0,0,0.06);
+      padding-top:12px;
     }
 
-    .form-links a {
-      color: #0d6efd;
-      text-decoration: none;
-      font-weight: 600;
+    .form-links a{
+      color: var(--brand);
+      text-decoration:none;
+      font-weight:800;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
     }
+    .form-links a:hover{ text-decoration:underline; }
 
-    .form-links a:hover { text-decoration: underline; }
-
-    /* Mensagens flash */
-    .flash-messages { margin-bottom: 14px; }
-    .flash-message {
-      border-radius: 8px;
-      padding: 8px 10px;
-      font-size: 0.85rem;
-      margin-bottom: 6px;
-      border: 1px solid transparent;
+    /* Acessibilidade */
+    a:focus-visible, button:focus-visible, input:focus-visible{
+      outline:none;
+      box-shadow: var(--focus);
     }
-
-    /* AJUSTE MÍNIMO: tratar 'message' como sucesso (categoria padrão do Flask) */
-    .flash-message.success,
-    .flash-message.message {
-      background-color: #d1fae5;
-      color: #065f46;
-      border: 1px solid #a7f3d0;
-    }
-
-    .flash-message.error,
-    .flash-message.danger {
-      background-color: #fee2e2;
-      color: #b91c1c;
-      border: 1px solid #fecaca;
-    }
-
-    /* Evita margem padrão do <p> dentro do flash */
-    .flash-message p { margin: 0; }
 
     /* Rodapé */
-    footer {
+    footer{
       background: linear-gradient(to right, #222, #444);
-      color: #ddd;
-      text-align: center;
-      padding: 15px 0;
-      font-size: 14px;
-      border-top: 2px solid #555;
-      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
-      flex-shrink: 0;
-      width: 100%;
+      color:#ddd;
+      text-align:center;
+      padding:15px 0;
+      font-size:14px;
+      border-top:2px solid #555;
+      box-shadow:0px -2px 10px rgba(0,0,0,0.3);
+      flex-shrink:0;
+      width:100%;
     }
-
-    footer p { margin: 5px 0; font-size: 0.9rem; }
+    footer p{ margin:5px 0; font-size:0.9rem; }
   </style>
 </head>
+
 <body>
 
   <!-- Cabeçalho Desktop -->
@@ -449,7 +515,7 @@
   <main>
     <div class="login-card">
       <div class="login-header">
-        <div class="login-header-icon">
+        <div class="login-header-icon" aria-hidden="true">
           <i class="fas fa-user-lock"></i>
         </div>
         <h1>Login</h1>
@@ -458,9 +524,20 @@
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-          <div class="flash-messages">
+          <div class="flash-messages" aria-live="polite">
             {% for category, message in messages %}
               <div class="flash-message {{ category }}">
+                {% if category in ['success','message'] %}
+                  <i class="fas fa-circle-check"></i>
+                {% elif category in ['danger','error'] %}
+                  <i class="fas fa-triangle-exclamation"></i>
+                {% elif category == 'warning' %}
+                  <i class="fas fa-circle-exclamation"></i>
+                {% elif category == 'info' %}
+                  <i class="fas fa-circle-info"></i>
+                {% else %}
+                  <i class="fas fa-circle-info"></i>
+                {% endif %}
                 <p>{{ message }}</p>
               </div>
             {% endfor %}
@@ -469,37 +546,74 @@
       {% endwith %}
 
       <form action="{{ url_for('login') }}" method="POST" autocomplete="on">
-        <!-- Campo oculto de CSRF (Flask-WTF/CSRFProtect) -->
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <div class="form-group">
-          <label for="email">
-            <i class="fas fa-envelope"></i>E-mail
-          </label>
-          <input type="email" id="email" name="email" required placeholder="seu.email@dominio.com" autocomplete="username" autofocus />
+          <label for="email"><i class="fas fa-envelope"></i> E-mail</label>
+          <div class="input-wrap">
+            <i class="fas fa-at input-icon" aria-hidden="true"></i>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              placeholder="seu.email@dominio.com"
+              autocomplete="username"
+              autofocus
+            />
+          </div>
         </div>
 
         <div class="form-group">
-          <label for="password">
-            <i class="fas fa-lock"></i>Senha
-          </label>
-          <input type="password" id="password" name="password" required placeholder="Digite sua senha" autocomplete="current-password" />
+          <label for="password"><i class="fas fa-lock"></i> Senha</label>
+          <div class="input-wrap">
+            <i class="fas fa-key input-icon" aria-hidden="true"></i>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              required
+              placeholder="Digite sua senha"
+              autocomplete="current-password"
+            />
+            <button type="button" class="toggle-pass" id="togglePass" aria-label="Mostrar ou ocultar senha" title="Mostrar/ocultar">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
         </div>
 
-        <button type="submit" class="submit-btn">Entrar</button>
+        <button type="submit" class="submit-btn">
+          <i class="fas fa-right-to-bracket"></i>
+          Entrar
+        </button>
       </form>
 
+      <!-- ✅ Apenas UM link de recuperar senha (remove duplicado) -->
       <div class="form-links">
-        <a href="{{ url_for('register') }}">Não tem uma conta? Registre-se</a>
-        <a href="{{ url_for('recuperar_senha') }}">Esqueceu a senha?</a>
+        <a href="{{ url_for('register') }}"><i class="fas fa-user-plus"></i> Criar conta</a>
+        <a href="{{ url_for('recuperar_senha') }}"><i class="fas fa-key"></i> Esqueceu a senha?</a>
       </div>
     </div>
   </main>
 
-  <!-- Rodapé -->
   <footer>
     <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
   </footer>
+
+  <script>
+    (function(){
+      const btn = document.getElementById('togglePass');
+      const input = document.getElementById('password');
+      if (!btn || !input) return;
+
+      btn.addEventListener('click', function(){
+        const isHidden = input.type === 'password';
+        input.type = isHidden ? 'text' : 'password';
+        const icon = btn.querySelector('i');
+        if (icon) icon.className = isHidden ? 'fas fa-eye-slash' : 'fas fa-eye';
+      });
+    })();
+  </script>
 
 </body>
 </html>
