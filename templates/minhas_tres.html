@@ -17,11 +17,18 @@
       --bg:#f3f4f6;
       --ink:#0f172a;
       --muted:#6b7280;
+
       --brand:#0d6efd;
+      --brand-dark:#0056b3;
       --brand-soft:#e0edff;
+
+      --accent:#0fb300;
+      --accent-dark:#0d8a00;
+
       --border-soft:#e5e7eb;
+      --card:#ffffff;
+      --radius:16px;
       --card-shadow:0 14px 34px rgba(15,23,42,.08), 0 2px 4px rgba(15,23,42,.05);
-      --radius:18px;
     }
 
     *, *::before, *::after{ box-sizing:border-box; }
@@ -38,23 +45,43 @@
       min-height: 100vh;
     }
 
-    body { overflow-y:auto; }
+    /* ✅ evita “largura fantasma” em mobile */
+    body{
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
 
     main {
       flex: 1 0 auto;
-      padding: 24px 12px 70px;
+      padding: 14px 10px 26px; /* ✅ mais compacto */
+    }
+    @media (min-width:769px){
+      main{ padding:18px 20px 28px; }
     }
 
-    .shell{ max-width: 1100px; margin:0 auto; }
+    .shell{
+      max-width: 1100px;
+      margin:0 auto;
+      width:100%;
+    }
 
-    @media (min-width:769px){
-      main{ padding:30px 24px 90px; }
+    /* Acessibilidade */
+    .sr-only{
+      position:absolute !important;
+      width:1px !important;
+      height:1px !important;
+      padding:0 !important;
+      margin:-1px !important;
+      overflow:hidden !important;
+      clip:rect(0,0,0,0) !important;
+      white-space:nowrap !important;
+      border:0 !important;
     }
 
     /* Cabeçalhos */
     .header-desktop, .header-mobile { display: none; flex-shrink: 0; }
 
-    /* === Desktop Header === */
+    /* === Desktop Header (somente referência visual do login) === */
     @media (min-width: 769px) {
       .header-desktop {
         display: flex;
@@ -84,7 +111,6 @@
       .text-container { display: flex; flex-direction: column; justify-content: center; text-align: left; color: white; }
 
       .escola-nome { font-weight: 700; font-size: 1.6rem; margin: 0; line-height: 1.1; }
-
       .escola-subtitulo { font-weight: 600; font-size: 1.1rem; margin-top: 4px; }
 
       .header-center-text-container {
@@ -99,6 +125,9 @@
         user-select: none;
         white-space: nowrap;
         text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        max-width: 70vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .btn-home {
@@ -120,11 +149,10 @@
         transform: translateY(-50%);
         z-index: 2;
       }
-
       .btn-home:hover { background-color: #0d8a00; }
     }
 
-    /* === Mobile Header === */
+    /* === Mobile Header (compacto + sem quebrar layout) === */
     @media (max-width: 768px) {
       .header-mobile {
         display: block;
@@ -142,375 +170,415 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 15px;
-        padding: 10px 15px;
+        gap: 12px;
+        padding: 10px 12px;
         background-color: #007bff;
         text-align: center;
       }
 
       .logo {
-        width: 48px;
-        height: 48px;
+        width: 46px;
+        height: 46px;
         object-fit: contain;
         border-radius: 10px;
         background-color: white;
         padding: 6px;
+        flex-shrink: 0;
       }
 
-      .text-container { display: flex; flex-direction: column; justify-content: center; color: white; text-align: center; }
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: white;
+        text-align: center;
+        min-width: 0;
+      }
 
-      .escola-nome { font-weight: 700; font-size: 1.3rem; margin: 0; line-height: 1.1; }
-
-      .escola-subtitulo { font-weight: 600; font-size: 1rem; margin-top: 2px; }
+      .escola-nome { font-weight: 700; font-size: 1.22rem; margin: 0; line-height: 1.1; }
+      .escola-subtitulo { font-weight: 600; font-size: 0.98rem; margin-top: 2px; }
 
       .header-bottom {
         background-color: #0056b3;
-        text-align: center;
-        padding: 12px 10px;
+        padding: 10px 10px;
         font-weight: 800;
-        font-size: 1.0rem;
-        letter-spacing: 4px;
+        font-size: 0.98rem;
+        letter-spacing: 3px;
         user-select: none;
         color: white;
         box-shadow: inset 0  -2px 5px rgba(0, 0, 0, 0.2);
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 12px;
-        position: relative;
-        white-space: nowrap;
+        gap: 10px;
+        flex-wrap: wrap; /* ✅ evita overflow */
       }
+
+      .header-bottom span{ white-space: normal; line-height: 1.15; }
 
       .btn-home-mobile {
         background-color: #0fb300;
         color: white;
         padding: 6px 10px;
         border-radius: 6px;
-        font-weight: 600;
+        font-weight: 700;
         font-size: 1rem;
         text-decoration: none;
-        display: flex;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
         box-shadow: 0 2px 6px rgba(15,179,0,0.8);
         transition: background-color 0.3s ease;
       }
-
       .btn-home-mobile:hover { background-color: #0d8a00; }
     }
 
-    /* ===== Cabeçalho da página ===== */
-    .page-header-card{
-      background:#ffffff;
-      border-radius:var(--radius);
-      padding:16px 18px;
-      margin-bottom:18px;
-      display:flex;
-      align-items:center;
-      gap:16px;
-      box-shadow:var(--card-shadow);
-      border-left:5px solid var(--brand);
-    }
-
-    .page-header-icon{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      width:42px;
-      height:42px;
-      border-radius:999px;
-      background:radial-gradient(circle at 30% 30%,#ffffff 0%,var(--brand-soft) 60%,#c7d9ff 100%);
-      box-shadow:0 4px 12px rgba(37,99,235,.45);
-      color:#2563eb;
-      flex-shrink:0;
-    }
-
-    .page-header-icon i{ font-size:22px; }
-
-    .page-header-content{ display:flex; flex-direction:column; gap:4px; }
-
-    .page-header-title{
-      font-size:1.2rem;
-      font-weight:800;
-      margin:0;
-      color:var(--ink);
-    }
-
-    .page-header-subtitle{ font-size:0.9rem; margin:0; color:var(--muted); }
-
-    @media (max-width:600px){
-      .page-header-card{ padding:12px 14px; margin-bottom:14px; }
-      .page-header-title{ font-size:1.05rem; }
-      .page-header-subtitle{ font-size:0.82rem; }
-    }
-
-    /* Flash messages */
-    .flash-messages { margin-bottom: 14px; }
-
+    /* ===== Flash messages (compactas) ===== */
+    .flash-messages { margin: 0 0 10px; }
     .flash {
-      padding: 9px 12px;
+      padding: 8px 10px;
       border-radius: 12px;
       margin-bottom: 6px;
-      font-size: 0.86rem;
+      font-size: 0.84rem;
       font-weight:600;
       display:flex;
       align-items:center;
       gap:8px;
       box-shadow:0 3px 10px rgba(15,23,42,.08);
+      overflow-wrap:anywhere;
     }
-
     .flash.success { background: #e8f7ee; color: #065f46; border:1px solid #b7ebc6; }
     .flash.danger  { background: #fee2e2; color: #991b1b; border:1px solid #fecaca; }
     .flash.warning { background: #fef3c7; color: #92400e; border:1px solid #fde68a; }
     .flash.info    { background: #e0edff; color: #1d4ed8; border:1px solid #bfdbfe; }
 
-    /* Card principal da lista */
+    /* ===== Topbar compacto (substitui blocos altos) ===== */
+    .page-topbar{
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--card-shadow);
+      border:1px solid rgba(148,163,184,0.20);
+      padding: 10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:10px; /* ✅ menos altura */
+      min-width:0;
+    }
+
+    .page-top-left{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+      flex:1;
+    }
+
+    .page-icon{
+      width:36px;
+      height:36px;
+      border-radius:12px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, var(--brand-soft) 60%, #c7d9ff 100%);
+      color:#2563eb;
+      box-shadow:0 4px 12px rgba(37,99,235,.35);
+      flex-shrink:0;
+    }
+
+    .page-title-wrap{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      min-width:0;
+    }
+
+    .page-title{
+      margin:0;
+      font-size:1.05rem;
+      font-weight:900;
+      color:var(--ink);
+      line-height:1.1;
+    }
+
+    .page-meta{
+      margin:0;
+      font-size:0.82rem;
+      color:var(--muted);
+      line-height:1.2;
+      overflow-wrap:anywhere;
+    }
+
+    /* Topbar ações (mantém “Nova TRE” em linha como no desktop) */
+    .page-top-actions{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-shrink:0;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    /* ===== Card principal (compacto) ===== */
     .agenda-card{
       width:100%;
-      background:#ffffff;
+      background:var(--card);
       border-radius:var(--radius);
       box-shadow:var(--card-shadow);
-      padding:18px 16px 20px;
-      border:1px solid rgba(148,163,184,0.25);
+      padding:12px; /* ✅ mais compacto */
+      border:1px solid rgba(148,163,184,0.20);
       box-sizing:border-box;
-      margin-bottom:18px;
+      margin-bottom:12px;
+      min-width:0;
     }
 
-    .agenda-headline{ display:flex; flex-direction:column; gap:4px; margin-bottom:12px; }
-
-    .agenda-title{ font-size:1.05rem; font-weight:800; color:var(--ink); }
-
-    .agenda-subtitle{ font-size:0.86rem; color:var(--muted); }
-
-    @media (min-width:640px){
-      .agenda-headline{ flex-direction:row; justify-content:space-between; align-items:center; }
-      .agenda-title{ font-size:1.1rem; }
+    .no-data {
+      text-align: center;
+      margin: 10px 0 4px;
+      font-size: 0.92rem;
+      color: var(--muted);
+      font-weight:700;
     }
 
-    .no-data { text-align: center; margin-top: 10px; font-size: 0.95rem; color: var(--muted); }
-
-    /* Filtros */
+    /* ===== Controles / Filtros (mais em linha, menos altura) ===== */
     .filters{
-      display:grid;
-      grid-template-columns: 1fr;
+      display:flex;
+      flex-wrap:wrap;
       gap:8px;
-      margin-bottom:10px;
+      align-items:flex-end;
+      margin: 0 0 10px;
+      width:100%;
     }
-    @media (min-width:700px){
-      .filters{ grid-template-columns: 1fr 1fr 2fr auto; align-items:end; }
+
+    .control{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-width: 150px;
+      flex: 1 1 160px;
     }
-    label.small{ font-size:.78rem; color:var(--muted); font-weight:700; display:block; margin-bottom:4px; }
+
+    .control.search{
+      flex: 2 1 260px; /* busca maior */
+      min-width: 220px;
+    }
+
+    label.small{
+      font-size:.76rem;
+      color:var(--muted);
+      font-weight:800;
+      margin:0;
+    }
+
     select, input[type="text"]{
-      width:100%; padding:8px 10px; border:1px solid var(--border-soft); border-radius:10px; font-size:.9rem;
-      outline:none; background:#fff;
+      width:100%;
+      padding:9px 10px;
+      border:1px solid var(--border-soft);
+      border-radius:10px;
+      font-size:.9rem;
+      outline:none;
+      background:#fff;
+      min-height:40px;
+      font-family:'Montserrat', sans-serif;
     }
+
+    /* Ações dos filtros */
+    .filters-actions{
+      display:flex;
+      gap:8px;
+      align-items:stretch;
+      flex: 0 0 auto;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
     .btn{
-      display:inline-flex; align-items:center; gap:8px; padding:9px 14px; border-radius:10px; border:1px solid #0d6efd; background:#0d6efd; color:#fff; font-weight:800; cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:9px 12px;
+      border-radius:10px;
+      border:1px solid #0d6efd;
+      background:#0d6efd;
+      color:#fff;
+      font-weight:900;
+      cursor:pointer;
+      text-decoration:none;
+      min-height:40px;
+      white-space:nowrap;
+      font-size:0.92rem;
+      font-family:'Montserrat', sans-serif;
     }
     .btn.secondary{ background:#fff; color:#0d6efd; }
     .btn:disabled{ opacity:.6; cursor:default; }
 
-    /* Tabela */
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top:6px; }
-    thead th {
-      background-color: #f8fafc; color: #0f172a; padding: 8px 6px; font-weight: 800; text-align: center;
-      border-bottom:1px solid #e5e7eb; white-space:nowrap;
+    /* ✅ Em telas pequenas, rótulos viram sr-only pra economizar altura */
+    @media (max-width: 560px){
+      .control label.small{ display:none; }
+      .control select, .control input[type="text"]{ min-height:38px; padding:8px 10px; }
+      .btn{ min-height:38px; padding:8px 10px; }
+      .filters-actions{ width:100%; justify-content:stretch; }
+      .filters-actions .btn{ flex: 1 1 calc(50% - 6px); }
     }
-    tbody td { padding: 8px 6px; border-bottom: 1px solid #e5e7eb; text-align: center; color: #111827; vertical-align: middle; }
-    tbody tr:nth-child(even) { background-color: #f9fafb; }
+    @media (max-width: 380px){
+      .filters-actions .btn{ flex: 1 1 100%; }
+    }
+
+    /* ===== Tabela (compacta + centralizada) ===== */
+    .table-wrap{
+      width:100%;
+      border:1px solid var(--border-soft);
+      border-radius:12px;
+      overflow:auto; /* ✅ scroll só dentro da tabela */
+      background:#fff;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:0.88rem;
+      min-width: 860px; /* ✅ mantém layout horizontal como desktop */
+    }
+
+    thead th{
+      background:#f8fafc;
+      color:#0f172a;
+      padding:8px 8px;           /* ✅ menor */
+      font-weight:900;
+      text-align:center;         /* ✅ centralizado */
+      border-bottom:1px solid #e5e7eb;
+      white-space:nowrap;
+    }
+
+    tbody td{
+      padding:7px 8px;           /* ✅ menor */
+      border-bottom:1px solid #e5e7eb;
+      text-align:center;         /* ✅ centralizado */
+      color:#111827;
+      vertical-align:middle;
+      white-space:nowrap;        /* ✅ evita quebrar e aumentar altura */
+    }
+
+    tbody tr:nth-child(even){ background:#f9fafb; }
     tbody tr:hover{ background:#f7fbff; }
 
-    /* Status pill */
-    .status-pill {
-      display: inline-flex; align-items: center; justify-content: center; padding: 2px 10px; border-radius: 999px;
-      font-size: 0.8rem; font-weight: 700; white-space: nowrap;
+    /* Parecer: 1–2 linhas no máximo (compacto), com tooltip no hover */
+    td.parecer{
+      white-space:normal;        /* permite “clamp” */
+      width: 34%;
+      min-width: 220px;
     }
-    .status-pill.pendente { background-color: #fef3c7; color: #92400e; }
-    .status-pill.deferida { background-color: #d1fae5; color: #065f46; }
-    .status-pill.indeferida { background-color: #fee2e2; color: #991b1b; }
+    .parecer-text{
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+      line-height:1.2;
+      text-align:center;         /* ✅ centralizado */
+      word-break:break-word;
+    }
+
+    /* Dias: tudo em linha */
+    td.dias{
+      white-space:nowrap;
+    }
+    td.dias small{
+      color:#6b7280;
+      font-weight:800;
+    }
+    td.dias .mini{
+      font-size:.78rem;
+      color:#6b7280;
+      font-weight:800;
+      margin-left:6px;
+      white-space:nowrap;
+    }
+
+    /* Status pill */
+    .status-pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:2px 10px;
+      border-radius:999px;
+      font-size:0.8rem;
+      font-weight:900;
+      white-space:nowrap;
+    }
+    .status-pill.pendente{ background:#fef3c7; color:#92400e; }
+    .status-pill.deferida{ background:#d1fae5; color:#065f46; }
+    .status-pill.indeferida{ background:#fee2e2; color:#991b1b; }
 
     /* Ações */
     .btn-action{
-      border:1px solid #0d6efd; color:#0d6efd; background:#fff; border-radius:999px; padding:6px 10px; font-size:.82rem; font-weight:800;
-      display:inline-flex; align-items:center; gap:6px; text-decoration:none;
+      border:1px solid #0d6efd;
+      color:#0d6efd;
+      background:#fff;
+      border-radius:999px;
+      padding:7px 10px;
+      font-size:.82rem;
+      font-weight:900;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      text-decoration:none;
+      white-space:nowrap;
+      min-width: 92px;
     }
     .btn-action:hover{ background:#0d6efd; color:#fff; }
 
-    /* Paginação */
-    .pagination {
-      margin-top: 14px; display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap;
+    /* ✅ Em mobile, mantém compactação e evita cortar */
+    @media (max-width: 768px){
+      table{ min-width: 760px; }
+      thead th, tbody td{ font-size:0.82rem; padding:6px 6px; }
+      .btn-action{ min-width: 44px; padding:7px 9px; }
+      .btn-action .lbl{ display:none; } /* ícone-only */
     }
-    .pagination button {
-      border: 1px solid #007bff; background-color: #fff; color: #007bff; padding: 4px 9px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;
-    }
-    .pagination button:hover:not(.active):not(:disabled) { background-color: #007bff; color: #fff; }
-    .pagination button.active { background-color: #007bff; color: #fff; font-weight: 700; }
-    .pagination button:disabled { opacity: 0.5; cursor: default; }
-    .pagination span { font-size: 0.85rem; color: #555; }
 
-    @media (max-width: 768px) {
-      thead th, tbody td { font-size: 0.8rem; padding: 6px 4px; }
+    /* Paginação (compacta) */
+    .pagination{
+      margin-top:10px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:6px;
+      flex-wrap:wrap;
     }
+    .pagination button{
+      border:1px solid #007bff;
+      background:#fff;
+      color:#007bff;
+      padding:6px 10px;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:0.85rem;
+      font-weight:900;
+      font-family:'Montserrat', sans-serif;
+    }
+    .pagination button:hover:not(.active):not(:disabled){ background:#007bff; color:#fff; }
+    .pagination button.active{ background:#007bff; color:#fff; }
+    .pagination button:disabled{ opacity:.5; cursor:default; }
+    .pagination span{ font-size:0.85rem; color:#555; font-weight:800; }
 
     /* Rodapé */
-    footer {
+    footer{
       background: linear-gradient(to right, #222, #444);
-      color: #ddd;
-      text-align: center;
-      padding: 15px 0;
-      font-size: 14px;
-      border-top: 2px solid #555;
-      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
-      flex-shrink: 0;
-      width: 100%;
+      color:#ddd;
+      text-align:center;
+      padding:15px 0;
+      font-size:14px;
+      border-top:2px solid #555;
+      box-shadow:0px -2px 10px rgba(0,0,0,0.3);
+      flex-shrink:0;
+      width:100%;
     }
+    footer p{ margin:5px 0; font-size:0.9rem; padding:0 10px; overflow-wrap:anywhere; }
   </style>
 </head>
-
-<script>
-  // Expor token CSRF (para fetch/AJAX, se necessário)
-  (function () {
-    const el = document.querySelector('meta[name="csrf-token"]');
-    if (el) window.csrfToken = el.getAttribute('content');
-  })();
-
-  document.addEventListener("DOMContentLoaded", function () {
-    // Paginação + filtros
-    const table = document.getElementById("tresTable");
-    const tbody = table ? table.querySelector("tbody") : null;
-    const allRows = tbody ? Array.from(tbody.querySelectorAll("tr")) : [];
-    const rowsPerPage = 10;
-    let currentPage = 1;
-    const paginationContainer = document.getElementById("pagination");
-
-    const statusFilter = document.getElementById("statusFilter");
-    const ordenacao = document.getElementById("ordenacao");
-    const buscaTexto = document.getElementById("buscaTexto");
-    const limparBusca = document.getElementById("limparBusca");
-    const countVisiveis = document.getElementById("countVisiveis");
-
-    function normalizaData(ddmmyyyyHHMM) {
-      // "dd/mm/yyyy hh:mm" -> "yyyy-mm-dd hh:mm" (para comparação)
-      if (!ddmmyyyyHHMM) return "";
-      const m = ddmmyyyyHHMM.match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);
-      if (!m) return "";
-      const d = m[1], M = m[2], y = m[3], hh = m[4] || "00", mm = m[5] || "00";
-      return `${y}-${M}-${d} ${hh}:${mm}`;
-    }
-
-    function aplicaOrdenacao(rows) {
-      const desc = ordenacao && ordenacao.value === "desc";
-      rows.sort(function (a, b) {
-        const aText = a.getAttribute("data-enviado") || "";
-        const bText = b.getAttribute("data-enviado") || "";
-        const ka = normalizaData(aText);
-        const kb = normalizaData(bText);
-        if (ka === kb) {
-          const ida = parseInt(a.getAttribute("data-id") || "0", 10);
-          const idb = parseInt(b.getAttribute("data-id") || "0", 10);
-          return desc ? (idb - ida) : (ida - idb);
-        }
-        return desc ? kb.localeCompare(ka) : ka.localeCompare(kb);
-      });
-    }
-
-    function aplicaFiltrosBasicos(row) {
-      const st = statusFilter ? statusFilter.value : "todos";
-      const q = (buscaTexto ? buscaTexto.value : "").toLowerCase().trim();
-
-      const status = (row.getAttribute("data-status") || "").toLowerCase();
-      const haystack = (row.getAttribute("data-busca") || "").toLowerCase();
-
-      const passStatus = (st === "todos" || status === st);
-      const passBusca = (!q || haystack.includes(q));
-
-      return (passStatus && passBusca);
-    }
-
-    function renderTablePage(page) {
-      if (!tbody) return;
-
-      // 1) Ordenar
-      const rows = Array.from(allRows);
-      aplicaOrdenacao(rows);
-
-      // 2) Filtrar
-      const filtradas = rows.filter(aplicaFiltrosBasicos);
-
-      // 3) Paginar
-      const totalFiltradas = filtradas.length;
-      const totalPages = Math.max(1, Math.ceil(totalFiltradas / rowsPerPage));
-      currentPage = Math.min(Math.max(1, page), totalPages);
-
-      const start = (currentPage - 1) * rowsPerPage;
-      const end = start + rowsPerPage;
-
-      // 4) Aplicar visibilidade
-      rows.forEach(r => r.style.display = "none");
-      filtradas.slice(start, end).forEach(r => r.style.display = "");
-
-      // 5) Atualizar contagem
-      if (countVisiveis) countVisiveis.textContent = totalFiltradas.toString();
-
-      // 6) Render paginador
-      renderPaginationControls(totalPages);
-    }
-
-    function renderPaginationControls(totalPages) {
-      if (!paginationContainer) return;
-      paginationContainer.innerHTML = "";
-
-      if (totalPages <= 1) return;
-
-      const prevBtn = document.createElement("button");
-      prevBtn.textContent = "«";
-      prevBtn.disabled = currentPage === 1;
-      prevBtn.addEventListener("click", () => {
-        if (currentPage > 1) {
-          currentPage -= 1;
-          renderTablePage(currentPage);
-        }
-      });
-      paginationContainer.appendChild(prevBtn);
-
-      for (let p = 1; p <= totalPages; p++) {
-        if (p === 1 || p === totalPages || (p >= currentPage - 2 && p <= currentPage + 2)) {
-          const btn = document.createElement("button");
-          btn.textContent = p;
-          if (p === currentPage) btn.classList.add("active");
-          btn.addEventListener("click", () => renderTablePage(p));
-          paginationContainer.appendChild(btn);
-        } else if (p === currentPage - 3 || p === currentPage + 3) {
-          const span = document.createElement("span");
-          span.textContent = "...";
-          paginationContainer.appendChild(span);
-        }
-      }
-
-      const nextBtn = document.createElement("button");
-      nextBtn.textContent = "»";
-      nextBtn.disabled = currentPage === totalPages;
-      nextBtn.addEventListener("click", () => {
-        if (currentPage < totalPages) {
-          currentPage += 1;
-          renderTablePage(currentPage);
-        }
-      });
-      paginationContainer.appendChild(nextBtn);
-    }
-
-    if (statusFilter) statusFilter.addEventListener("change", () => renderTablePage(1));
-    if (ordenacao) ordenacao.addEventListener("change", () => renderTablePage(1));
-    if (buscaTexto) buscaTexto.addEventListener("input", () => renderTablePage(1));
-    if (limparBusca) limparBusca.addEventListener("click", function(){
-      if (buscaTexto) buscaTexto.value = "";
-      renderTablePage(1);
-    });
-
-    // Inicial
-    renderTablePage(1);
-  });
-</script>
 
 <body>
 
@@ -575,53 +643,53 @@
         {% endif %}
       {% endwith %}
 
-      <!-- Cabeçalho da página -->
-      <div class="page-header-card">
-        <div class="page-header-icon">
-          <i class="fas fa-file-pdf"></i>
+      <!-- ✅ Topbar compacto (título + meta em linha, e ações na direita) -->
+      <div class="page-topbar">
+        <div class="page-top-left">
+          <div class="page-icon" aria-hidden="true">
+            <i class="fas fa-file-pdf"></i>
+          </div>
+          <div class="page-title-wrap">
+            <p class="page-title">Minhas TREs</p>
+            <p class="page-meta">
+              TREs de <strong>{{ current_user.nome }}</strong> • Exibindo <span id="countVisiveis">{{ tres|length if tres else 0 }}</span> registro(s).
+            </p>
+          </div>
         </div>
-        <div class="page-header-content">
-          <p class="page-header-title">Minhas TREs</p>
-          <p class="page-header-subtitle">
-            Visualize seus envios, status e baixe os PDFs deferidos.
-          </p>
-        </div>
+
+        <!-- (opcional) manter vazio aqui — ações ficam nos filtros para reduzir blocos -->
+        <div class="page-top-actions" aria-hidden="true"></div>
       </div>
 
       <!-- Card principal -->
       <div class="agenda-card">
-        <div class="agenda-headline">
-          <div class="agenda-title">
-            TREs de {{ current_user.nome }}
-          </div>
-          <div class="agenda-subtitle">
-            Listadas do mais recente para o mais antigo. Exibindo <span id="countVisiveis">{{ tres|length if tres else 0 }}</span> registro(s).
-          </div>
-        </div>
 
-        <!-- Filtros -->
+        <!-- Filtros (mais horizontais / compactos) -->
         <div class="filters">
-          <div>
+          <div class="control">
             <label class="small" for="statusFilter">Status</label>
-            <select id="statusFilter">
+            <select id="statusFilter" aria-label="Status">
               <option value="todos" selected>Todos</option>
               <option value="pendente">Pendentes</option>
               <option value="deferida">Deferidas</option>
               <option value="indeferida">Indeferidas</option>
             </select>
           </div>
-          <div>
+
+          <div class="control">
             <label class="small" for="ordenacao">Ordenação</label>
-            <select id="ordenacao">
-              <option value="desc" selected>Mais recentes primeiro</option>
-              <option value="asc">Mais antigas primeiro</option>
+            <select id="ordenacao" aria-label="Ordenação">
+              <option value="desc" selected>Mais recentes</option>
+              <option value="asc">Mais antigas</option>
             </select>
           </div>
-          <div>
+
+          <div class="control search">
             <label class="small" for="buscaTexto">Busca (parecer/arquivo)</label>
-            <input type="text" id="buscaTexto" placeholder="Digite para filtrar…">
+            <input type="text" id="buscaTexto" placeholder="Filtrar por parecer ou arquivo…" aria-label="Busca">
           </div>
-          <div style="display:flex; gap:8px;">
+
+          <div class="filters-actions">
             <button id="limparBusca" type="button" class="btn secondary" title="Limpar">
               <i class="fa-solid fa-eraser"></i><span>Limpar</span>
             </button>
@@ -632,95 +700,234 @@
         </div>
 
         {% if tres and tres|length > 0 %}
-          <table id="tresTable">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Enviado em</th>
-                <th>Status</th>
-                <th>Dias</th>
-                <th>Parecer</th>
-                <th>Validado em</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for t in tres|sort(attribute='data_envio', reverse=True) %}
-              {% set st = (t.status or '').lower().strip() %}
-              <tr
-                data-id="{{ t.id }}"
-                data-status="{{ st }}"
-                data-enviado="{{ t.data_envio.strftime('%d/%m/%Y %H:%M') if t.data_envio else '' }}"
-                data-busca="{{ (t.parecer_admin or '') ~ ' ' ~ (t.arquivo_pdf or '') }}"
-              >
-                <td class="text-muted">#{{ t.id }}</td>
-                <td>
-                  {% if t.data_envio %}
-                    {{ t.data_envio.strftime('%d/%m/%Y %H:%M') }}
-                  {% else %}
-                    —
-                  {% endif %}
-                </td>
-                <td>
-                  <span class="status-pill
-                    {% if st == 'deferida' %}deferida
-                    {% elif st == 'indeferida' %}indeferida
-                    {% else %}pendente{% endif %}">
-                    {% if st == 'deferida' %}Deferida
-                    {% elif st == 'indeferida' %}Indeferida
-                    {% else %}Pendente{% endif %}
-                  </span>
-                </td>
-                <td>
-                  {% if t.dias_validados is not none %}
-                    {{ t.dias_validados }} <small style="color:#6b7280;">validados</small>
-                    {% if t.dias_folga and t.dias_validados != t.dias_folga %}
-                      <div style="font-size:.8rem; color:#6b7280;">({{ t.dias_folga }} solicitado)</div>
-                    {% endif %}
-                  {% else %}
-                    {{ t.dias_folga or 0 }} <small style="color:#6b7280;">solicitado</small>
-                  {% endif %}
-                </td>
-                <td class="text-truncate" style="max-width:420px;">
-                  {{ t.parecer_admin or '—' }}
-                </td>
-                <td>
-                  {% if t.validado_em %}
-                    {{ t.validado_em.strftime('%d/%m/%Y %H:%M') }}
-                  {% else %}
-                    —
-                  {% endif %}
-                </td>
-                <td>
-                  <a class="btn-action" href="{{ url_for('download_tre', tre_id=t.id) }}" title="Baixar PDF">
-                    <i class="fa-solid fa-download"></i> Baixar
-                  </a>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+          <div class="table-wrap">
+            <table id="tresTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Enviado em</th>
+                  <th>Status</th>
+                  <th>Dias</th>
+                  <th>Parecer</th>
+                  <th>Validado em</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
 
-          <!-- Paginação (front-end) -->
+              <tbody>
+                {% for t in tres|sort(attribute='data_envio', reverse=True) %}
+                {% set st = (t.status or '').lower().strip() %}
+                <tr
+                  data-id="{{ t.id }}"
+                  data-status="{{ st }}"
+                  data-enviado="{{ t.data_envio.strftime('%d/%m/%Y %H:%M') if t.data_envio else '' }}"
+                  data-busca="{{ (t.parecer_admin or '') ~ ' ' ~ (t.arquivo_pdf or '') }}"
+                >
+                  <td class="text-muted">#{{ t.id }}</td>
+
+                  <td>
+                    {% if t.data_envio %}
+                      {{ t.data_envio.strftime('%d/%m/%Y %H:%M') }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
+
+                  <td>
+                    <span class="status-pill
+                      {% if st == 'deferida' %}deferida
+                      {% elif st == 'indeferida' %}indeferida
+                      {% else %}pendente{% endif %}">
+                      {% if st == 'deferida' %}Deferida
+                      {% elif st == 'indeferida' %}Indeferida
+                      {% else %}Pendente{% endif %}
+                    </span>
+                  </td>
+
+                  <td class="dias">
+                    {% if t.dias_validados is not none %}
+                      {{ t.dias_validados }} <small>validados</small>
+                      {% if t.dias_folga and t.dias_validados != t.dias_folga %}
+                        <span class="mini">({{ t.dias_folga }} sol.)</span>
+                      {% endif %}
+                    {% else %}
+                      {{ t.dias_folga or 0 }} <small>solicitado</small>
+                    {% endif %}
+                  </td>
+
+                  <td class="parecer">
+                    <span class="parecer-text" title="{{ t.parecer_admin or '' }}">
+                      {{ t.parecer_admin or '—' }}
+                    </span>
+                  </td>
+
+                  <td>
+                    {% if t.validado_em %}
+                      {{ t.validado_em.strftime('%d/%m/%Y %H:%M') }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
+
+                  <td>
+                    <a class="btn-action" href="{{ url_for('download_tre', tre_id=t.id) }}" title="Baixar PDF">
+                      <i class="fa-solid fa-download"></i> <span class="lbl">Baixar</span>
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
           <div id="pagination" class="pagination"></div>
         {% else %}
-          <div class="no-data">
-            Você não possui TREs cadastradas.
-          </div>
+          <div class="no-data">Você não possui TREs cadastradas.</div>
         {% endif %}
       </div>
 
-      <div style="text-align:center; margin-top:4px;">
-        <a href="{{ url_for('index') }}" class="btn-action">
-          <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
-        </a>
-      </div>
+      <!-- ✅ removido: “Voltar para a Página Inicial” -->
     </div>
   </main>
 
-  <!-- Rodapé -->
   <footer>
     <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
   </footer>
+
+  <script>
+    // Expor token CSRF (para fetch/AJAX, se necessário)
+    (function () {
+      const el = document.querySelector('meta[name="csrf-token"]');
+      if (el) window.csrfToken = el.getAttribute('content');
+    })();
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const table = document.getElementById("tresTable");
+      const tbody = table ? table.querySelector("tbody") : null;
+      const allRows = tbody ? Array.from(tbody.querySelectorAll("tr")) : [];
+      const rowsPerPage = 10;
+      let currentPage = 1;
+      const paginationContainer = document.getElementById("pagination");
+
+      const statusFilter = document.getElementById("statusFilter");
+      const ordenacao = document.getElementById("ordenacao");
+      const buscaTexto = document.getElementById("buscaTexto");
+      const limparBusca = document.getElementById("limparBusca");
+      const countVisiveis = document.getElementById("countVisiveis");
+
+      function normalizaData(ddmmyyyyHHMM) {
+        if (!ddmmyyyyHHMM) return "";
+        const m = ddmmyyyyHHMM.match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);
+        if (!m) return "";
+        const d = m[1], M = m[2], y = m[3], hh = m[4] || "00", mm = m[5] || "00";
+        return `${y}-${M}-${d} ${hh}:${mm}`;
+      }
+
+      function aplicaOrdenacao(rows) {
+        const desc = ordenacao && ordenacao.value === "desc";
+        rows.sort(function (a, b) {
+          const aText = a.getAttribute("data-enviado") || "";
+          const bText = b.getAttribute("data-enviado") || "";
+          const ka = normalizaData(aText);
+          const kb = normalizaData(bText);
+          if (ka === kb) {
+            const ida = parseInt(a.getAttribute("data-id") || "0", 10);
+            const idb = parseInt(b.getAttribute("data-id") || "0", 10);
+            return desc ? (idb - ida) : (ida - idb);
+          }
+          return desc ? kb.localeCompare(ka) : ka.localeCompare(kb);
+        });
+      }
+
+      function aplicaFiltrosBasicos(row) {
+        const st = statusFilter ? statusFilter.value : "todos";
+        const q = (buscaTexto ? buscaTexto.value : "").toLowerCase().trim();
+
+        const status = (row.getAttribute("data-status") || "").toLowerCase();
+        const haystack = (row.getAttribute("data-busca") || "").toLowerCase();
+
+        const passStatus = (st === "todos" || status === st);
+        const passBusca = (!q || haystack.includes(q));
+
+        return (passStatus && passBusca);
+      }
+
+      function renderTablePage(page) {
+        if (!tbody) return;
+
+        const rows = Array.from(allRows);
+        aplicaOrdenacao(rows);
+
+        const filtradas = rows.filter(aplicaFiltrosBasicos);
+
+        const totalFiltradas = filtradas.length;
+        const totalPages = Math.max(1, Math.ceil(totalFiltradas / rowsPerPage));
+        currentPage = Math.min(Math.max(1, page), totalPages);
+
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+
+        rows.forEach(r => r.style.display = "none");
+        filtradas.slice(start, end).forEach(r => r.style.display = "");
+
+        if (countVisiveis) countVisiveis.textContent = totalFiltradas.toString();
+
+        renderPaginationControls(totalPages);
+      }
+
+      function renderPaginationControls(totalPages) {
+        if (!paginationContainer) return;
+        paginationContainer.innerHTML = "";
+
+        if (totalPages <= 1) return;
+
+        const prevBtn = document.createElement("button");
+        prevBtn.textContent = "«";
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.addEventListener("click", () => {
+          if (currentPage > 1) {
+            currentPage -= 1;
+            renderTablePage(currentPage);
+          }
+        });
+        paginationContainer.appendChild(prevBtn);
+
+        for (let p = 1; p <= totalPages; p++) {
+          if (p === 1 || p === totalPages || (p >= currentPage - 2 && p <= currentPage + 2)) {
+            const btn = document.createElement("button");
+            btn.textContent = p;
+            if (p === currentPage) btn.classList.add("active");
+            btn.addEventListener("click", () => renderTablePage(p));
+            paginationContainer.appendChild(btn);
+          } else if (p === currentPage - 3 || p === currentPage + 3) {
+            const span = document.createElement("span");
+            span.textContent = "...";
+            paginationContainer.appendChild(span);
+          }
+        }
+
+        const nextBtn = document.createElement("button");
+        nextBtn.textContent = "»";
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.addEventListener("click", () => {
+          if (currentPage < totalPages) {
+            currentPage += 1;
+            renderTablePage(currentPage);
+          }
+        });
+        paginationContainer.appendChild(nextBtn);
+      }
+
+      if (statusFilter) statusFilter.addEventListener("change", () => renderTablePage(1));
+      if (ordenacao) ordenacao.addEventListener("change", () => renderTablePage(1));
+      if (buscaTexto) buscaTexto.addEventListener("input", () => renderTablePage(1));
+      if (limparBusca) limparBusca.addEventListener("click", function(){
+        if (buscaTexto) buscaTexto.value = "";
+        renderTablePage(1);
+      });
+
+      renderTablePage(1);
+    });
+  </script>
 </body>
 </html>
