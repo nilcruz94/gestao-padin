@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agendar Folga (Admin)</title>
+
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+
+  <script>
+    // Exibe / esconde Data de Referência + Horas/Minutos quando motivo = BH
+    function toggleDataReferencia() {
+      var motivo = document.getElementById("motivo").value;
+      var dataReferenciaGroup = document.getElementById("data_banco_horas");
+      var dataReferenciaInput = document.getElementById("data_referencia");
+      var horasGroup = document.getElementById("horas_group");
+      var minutosGroup = document.getElementById("minutos_group");
+      var horasInput = document.getElementById("quantidade_horas");
+      var minutosInput = document.getElementById("quantidade_minutos");
+
+      if (motivo === "BH") {
+        if (dataReferenciaGroup) dataReferenciaGroup.style.display = "block";
+        if (dataReferenciaInput) dataReferenciaInput.setAttribute("required", "true");
+
+        if (horasGroup) horasGroup.style.display = "flex";
+        if (minutosGroup) minutosGroup.style.display = "flex";
+
+        if (horasInput) horasInput.setAttribute("required", "true");
+        if (minutosInput) minutosInput.setAttribute("required", "true");
+      } else {
+        if (dataReferenciaGroup) dataReferenciaGroup.style.display = "none";
+        if (dataReferenciaInput) {
+          dataReferenciaInput.removeAttribute("required");
+          dataReferenciaInput.value = "";
+        }
+
+        if (horasGroup) horasGroup.style.display = "none";
+        if (minutosGroup) minutosGroup.style.display = "none";
+
+        if (horasInput) {
+          horasInput.value = "0";
+          horasInput.removeAttribute("required");
+        }
+        if (minutosInput) {
+          minutosInput.value = "0";
+          minutosInput.removeAttribute("required");
+        }
+      }
+    }
+
+    // Mostra / esconde campo "Nome do Substituto" e exige quando "Sim"
+    function toggleSubstituto() {
+      var select = document.getElementById("havera_substituicao");
+      var group = document.getElementById("substituto_group");
+      var input = document.getElementById("nome_substituto");
+      if (!select || !group) return;
+
+      if (select.value === "Sim") {
+        group.style.display = "block";
+        if (input) input.setAttribute("required", "true");
+      } else {
+        group.style.display = "none";
+        if (input) input.removeAttribute("required");
+        if (input) input.value = "";
+      }
+    }
+
+    // Preenche tipo_folga com o mesmo valor do motivo (backend usa)
+    function syncTipoFolga() {
+      var motivo = document.getElementById("motivo");
+      var tipoFolgaField = document.getElementById("tipo_folga");
+      if (tipoFolgaField && motivo) tipoFolgaField.value = motivo.value || "";
+    }
+
+    // Validação básica antes de enviar (mesma do seu template)
+    function validateForm(event) {
+      var motivo = document.getElementById("motivo").value;
+      var dataReferenciaInput = document.getElementById("data_referencia");
+      var horasInput = document.getElementById("quantidade_horas");
+      var minutosInput = document.getElementById("quantidade_minutos");
+      var tipoFolgaField = document.getElementById("tipo_folga");
+      var dataFolgaInput = document.getElementById("data");
+      var userId = document.getElementById("user_id");
+
+      if (userId && !userId.value) {
+        alert("Selecione um usuário ativo.");
+        if (event) event.preventDefault();
+        return false;
+      }
+
+      // Preenche tipo_folga com o mesmo valor do motivo
+      if (tipoFolgaField) tipoFolgaField.value = motivo;
+
+      if (motivo === "BH" && dataReferenciaInput && !dataReferenciaInput.value) {
+        alert("A data de referência é obrigatória quando o motivo for Banco de Horas.");
+        if (event) event.preventDefault();
+        return false;
+      }
+
+      if (motivo === "BH") {
+        var h = parseInt(horasInput && horasInput.value ? horasInput.value : "0", 10);
+        var m = parseInt(minutosInput && minutosInput.value ? minutosInput.value : "0", 10);
+
+        if (Number.isNaN(h) || Number.isNaN(m) || h < 0 || m < 0 || m > 59) {
+          alert("Horas e minutos devem ser válidos (minutos entre 0 e 59) para Banco de Horas.");
+          if (event) event.preventDefault();
+          return false;
+        }
+        if ((h + m) === 0) {
+          alert("Informe um total de tempo maior que zero para utilizar Banco de Horas.");
+          if (event) event.preventDefault();
+          return false;
+        }
+
+        if (dataReferenciaInput && dataReferenciaInput.value && dataFolgaInput && dataFolgaInput.value) {
+          var ref = new Date(dataReferenciaInput.value);
+          var folga = new Date(dataFolgaInput.value);
+          if (ref > folga) {
+            alert("A data de referência do Banco de Horas não pode ser posterior à data da folga.");
+            if (event) event.preventDefault();
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    // Atualiza “preview” do usuário selecionado (nome/registro) sem precisar de backend
+    function updateUserPreview() {
+      var select = document.getElementById("user_id");
+      var preview = document.getElementById("user_preview");
+      var nome = document.getElementById("preview_nome");
+      var reg = document.getElementById("preview_registro");
+
+      if (!select || !preview || !nome || !reg) return;
+
+      var opt = select.options[select.selectedIndex];
+      var n = opt ? (opt.getAttribute("data-nome") || "") : "";
+      var r = opt ? (opt.getAttribute("data-registro") || "") : "";
+
+      if (!select.value) {
+        preview.style.display = "none";
+        nome.textContent = "";
+        reg.textContent = "";
+        return;
+      }
+
+      preview.style.display = "block";
+      nome.textContent = n || "—";
+      reg.textContent = r || "—";
+    }
+
+    // Ajusta campos iniciais ao carregar
+    window.addEventListener("load", function () {
+      toggleDataReferencia();
+      toggleSubstituto();
+      syncTipoFolga();
+      updateUserPreview();
+
+      // auto-hide flash (8s)
+      setTimeout(() => {
+        document.querySelectorAll('.flash').forEach(flash => {
+          flash.style.transition = 'opacity 1s ease';
+          flash.style.opacity = '0';
+          setTimeout(() => flash.remove(), 1000);
+        });
+      }, 8000);
+    });
+  </script>
+
+  <style>
+    :root {
+      --bg:#f3f4f6;
+      --ink:#0f172a;
+      --muted:#6b7280;
+      --brand:#0d6efd;
+      --border-soft:#e5e7eb;
+      --card-shadow:0 14px 34px rgba(15,23,42,.1), 0 2px 4px rgba(15,23,42,.06);
+      --radius:18px;
+
+      --shadow-soft: 0 10px 24px rgba(15,23,42,.10);
+      --good:#16a34a;
+      --bad:#dc2626;
+      --warn:#d97706;
+      --info:#2563eb;
+    }
+
+    * , *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--bg);
+      color: var(--ink);
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      overflow-y: auto;
+      overflow-x:hidden;
+    }
+
+    main {
+      flex: 1 0 auto;
+      padding: 24px 12px 120px; /* ✅ espaço extra p/ footer */
+      box-sizing: border-box;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    @media (min-width:769px){
+      main{ padding:30px 24px 140px; }
+    }
+
+    .header-desktop, .header-mobile { display: none; flex-shrink: 0; }
+
+    @media (min-width: 769px) {
+      .header-desktop {
+        display: flex;
+        background-color: #007bff;
+        padding: 15px 30px;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+        min-height: 110px;
+        position: relative;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        color: white;
+      }
+
+      .left-section { display: flex; align-items: center; gap: 20px; }
+
+      .logo {
+        width: 80px; height: 80px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+        color: white;
+      }
+
+      .escola-nome { font-weight: 700; font-size: 1.6rem; margin: 0; line-height: 1.1; }
+      .escola-subtitulo { font-weight: 600; font-size: 1.1rem; margin-top: 4px; }
+
+      .header-center-text-container {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: 800;
+        font-size: 1.9rem;
+        color: white;
+        letter-spacing: 5px;
+        user-select: none;
+        white-space: nowrap;
+        z-index: 1;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      }
+
+      .btn-home {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+      }
+
+      .btn-home:hover { background-color: #0d8a00; }
+    }
+
+    @media (max-width: 768px) {
+      .header-mobile {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        background-color: #007bff;
+      }
+
+      .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        padding: 10px 15px;
+        background-color: #007bff;
+        text-align: center;
+      }
+
+      .logo {
+        width: 48px; height: 48px;
+        object-fit: contain;
+        border-radius: 10px;
+        background-color: white;
+        padding: 6px;
+      }
+
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: white;
+        text-align: center;
+      }
+
+      .escola-nome { font-weight: 700; font-size: 1.3rem; margin: 0; line-height: 1.1; }
+      .escola-subtitulo { font-weight: 600; font-size: 1rem; margin-top: 2px; }
+
+      .header-bottom {
+        background-color: #0056b3;
+        text-align: center;
+        padding: 12px 10px;
+        font-weight: 800;
+        font-size: 1rem;
+        letter-spacing: 4px;
+        user-select: none;
+        color: white;
+        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        white-space: nowrap;
+      }
+
+      .btn-home-mobile {
+        background-color: #0fb300;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
+        transition: background-color 0.3s ease;
+      }
+
+      .btn-home-mobile:hover { background-color: #0d8a00; }
+    }
+
+    /* ✅ FLASH (agora mostra success/warning/info também) */
+    .flash-container{
+      margin: 0 auto 14px;
+      max-width: 900px;
+    }
+    .flash{
+      padding: 12px 14px;
+      margin: 8px 0;
+      border-radius: 16px;
+      width: 100%;
+      font-weight:800;
+      font-size: 0.9rem;
+      line-height: 1.35;
+      border: 1px solid transparent;
+      box-shadow: var(--shadow-soft);
+      overflow-wrap:anywhere;
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+    }
+    .flash i{ margin-top:2px; }
+
+    .flash.message{ background:#eff6ff; color:#1e3a8a; border-color:#bfdbfe; border-left:6px solid #3b82f6; }
+    .flash.success{ background:#dcfce7; color:#166534; border-color:#bbf7d0; border-left:6px solid #22c55e; }
+    .flash.error, .flash.danger{ background:#fee2e2; color:#b91c1c; border-color:#fecaca; border-left:6px solid #ef4444; }
+    .flash.warning{ background:#ffedd5; color:#7c2d12; border-color:#fed7aa; border-left:6px solid #fb923c; }
+    .flash.info{ background:#dbeafe; color:#1e3a8a; border-color:#bfdbfe; border-left:6px solid #3b82f6; }
+
+    .page-header-card{
+      background:#ffffff;
+      border-radius:var(--radius);
+      padding:16px 18px;
+      margin:0 auto 16px;
+      display:flex;
+      align-items:center;
+      gap:16px;
+      box-shadow:var(--card-shadow);
+      border-left:5px solid var(--brand);
+      max-width:900px;
+    }
+
+    .page-header-icon{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:42px;
+      height:42px;
+      border-radius:999px;
+      background:radial-gradient(circle at 30% 30%,#ffffff 0%,#e0edff 60%,#c7d9ff 100%);
+      box-shadow:0 4px 12px rgba(37,99,235,.45);
+      color:#2563eb;
+    }
+
+    .page-header-icon i{ font-size:22px; }
+
+    .page-header-content{ display:flex; flex-direction:column; gap:4px; }
+    .page-header-title{ font-size:1.15rem; font-weight:800; margin:0; color:var(--ink); }
+    .page-header-subtitle{ font-size:0.9rem; margin:0; color:var(--muted); }
+
+    @media (max-width:600px){
+      .page-header-card{ padding:12px 14px; }
+      .page-header-title{ font-size:1.05rem; }
+      .page-header-subtitle{ font-size:0.82rem; }
+    }
+
+    .card-agendar {
+      width: 100%;
+      background: #ffffff;
+      border-radius: var(--radius);
+      box-shadow: var(--card-shadow);
+      padding: 18px 18px 20px;
+      border: 1px solid rgba(148,163,184,0.25);
+      box-sizing: border-box;
+      margin: 0 auto 18px;
+    }
+
+    .card-agendar-header { margin-bottom: 14px; }
+
+    .card-agendar-header h1 {
+      margin: 0 0 4px;
+      font-size: 1.25rem;
+      color: #0f172a;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight:800;
+    }
+
+    .card-agendar-header h1 i {
+      font-size: 1.4rem;
+      color:#2563eb;
+    }
+
+    .card-agendar-header p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #6b7280;
+    }
+
+    .form-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top:4px;
+    }
+
+    .input-group, .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-group label, .form-group label {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #374151;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .input-group label i, .form-group label i { color: #007bff; }
+
+    .input-group input, .input-group select, .form-group input {
+      padding: 9px 10px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+      background-color: #ffffff;
+    }
+
+    .input-group input:focus, .input-group select:focus, .form-group input:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 2px rgba(13,110,253,0.15);
+    }
+
+    .user-preview{
+      display:none;
+      border:1px dashed rgba(148,163,184,0.7);
+      background:#f8fafc;
+      border-radius:12px;
+      padding:10px 12px;
+      line-height:1.35;
+      margin-top:8px;
+    }
+    .user-preview strong{ color:#0f172a; }
+    .user-preview .meta{ color:#6b7280; font-size:0.9rem; margin-top:3px; }
+
+    .horas-minutos-wrapper { display: flex; flex-direction: column; gap: 8px; }
+    .horas-minutos-group { display: flex; gap: 12px; flex-wrap: wrap; }
+    .horas-minutos-group .input-group { flex: 1; margin-bottom: 0; }
+    .horas-minutos-group input { max-width: 160px; }
+
+    @media (max-width: 768px) {
+      .horas-minutos-group { flex-direction: column; }
+      .horas-minutos-group input { max-width: 100%; }
+    }
+
+    .submit-row { display: flex; justify-content: flex-end; margin-top: 10px; }
+
+    .submit-btn {
+      background: linear-gradient(135deg,#0d6efd,#0b5ed7);
+      border: none;
+      color: #fff;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 9px 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(13,110,253,0.35);
+      transition: background-color 0.2s ease, box-shadow 0.2s ease;
+      font-size: 0.95rem;
+      white-space: nowrap;
+    }
+
+    .submit-btn i { font-size: 1rem; }
+
+    .submit-btn:hover {
+      background: #0fb300;
+      box-shadow: 0 8px 18px rgba(15,179,0,0.45);
+    }
+
+    .submit-btn:active { box-shadow: 0 4px 10px rgba(15,179,0,0.35); }
+
+    @media (max-width:768px) {
+      .submit-row { justify-content: stretch; }
+      .submit-btn { width: 100%; }
+    }
+
+    .info-section {
+      background-color: #ffffff;
+      padding: 16px 16px 18px;
+      margin: 0 auto 15px;
+      border-radius: var(--radius);
+      max-width: 900px;
+      box-shadow: var(--card-shadow);
+      border: 1px solid rgba(148,163,184,0.25);
+      box-sizing: border-box;
+      font-size: 0.93rem;
+    }
+
+    .info-section h2 {
+      margin: 0 0 6px;
+      color: #0f172a;
+      font-size: 1.02rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight:800;
+    }
+
+    .info-section h2 i { color: #2563eb; }
+    .info-section p { margin: 6px 0; line-height: 1.5; color: #374151; }
+
+    .voltar-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #2563eb;
+      font-size: 0.96rem;
+      text-decoration: none;
+      margin: 0 auto;
+      padding-top: 4px;
+      font-weight:600;
+    }
+
+    .voltar-link:hover { text-decoration: underline; }
+    .voltar-link i { font-size: 0.9rem; }
+
+    .voltar-wrapper {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: left;
+    }
+
+    footer {
+      background: linear-gradient(to right, #222, #444);
+      color: #ddd;
+      text-align: center;
+      padding: 15px 0;
+      font-size: 14px;
+      border-top: 2px solid #555;
+      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      flex-shrink: 0;
+
+      /* ✅ protege contra footer fixado no style.css */
+      position: relative !important;
+      bottom: auto !important;
+      left: auto !important;
+      right: auto !important;
+      z-index: 0 !important;
+    }
+  </style>
+</head>
+
+<body class="page-agendar">
+  <!-- Cabeçalho Desktop -->
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
+    </div>
+
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
+    </a>
+  </header>
+
+  <!-- Cabeçalho Mobile -->
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- Conteúdo principal -->
+  <main>
+    <div class="shell">
+
+      <!-- ✅ FLASH (agora todos os tipos aparecem) -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-container" aria-live="polite">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">
+                {% if category in ['success'] %}
+                  <i class="fas fa-circle-check" aria-hidden="true"></i>
+                {% elif category in ['danger','error'] %}
+                  <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+                {% elif category == 'warning' %}
+                  <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
+                {% elif category == 'info' or category == 'message' %}
+                  <i class="fas fa-circle-info" aria-hidden="true"></i>
+                {% else %}
+                  <i class="fas fa-circle-info" aria-hidden="true"></i>
+                {% endif %}
+                <div>{{ message|safe }}</div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <!-- Header card da página -->
+      <div class="page-header-card">
+        <div class="page-header-icon">
+          <i class="fas fa-user-shield"></i>
+        </div>
+        <div class="page-header-content">
+          <p class="page-header-title">Agendar Folga (Admin)</p>
+          <p class="page-header-subtitle">
+            Registre uma folga para um servidor ativo e o sistema enviará o protocolo e e-mail automaticamente.
+          </p>
+        </div>
+      </div>
+
+      <!-- CARD FORMULÁRIO -->
+      <div class="card-agendar">
+        <div class="card-agendar-header">
+          <h1><i class="fas fa-edit"></i> Dados do Agendamento</h1>
+          <p>Selecione o servidor e revise os dados antes de enviar.</p>
+        </div>
+
+        <form method="POST" onsubmit="return validateForm(event)">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="form-grid">
+
+            <!-- Usuário alvo -->
+            <div class="input-group">
+              <label for="user_id"><i class="fas fa-users"></i> Servidor (ativo)</label>
+              <select id="user_id" name="user_id" required onchange="updateUserPreview()">
+                <option value="">Selecione...</option>
+                {% for u in usuarios %}
+                  <option value="{{ u.id }}" data-nome="{{ u.nome|e }}" data-registro="{{ u.registro|e }}">
+                    {{ u.nome }} — {{ u.registro }}
+                  </option>
+                {% endfor %}
+              </select>
+
+              <div class="user-preview" id="user_preview">
+                <div><strong id="preview_nome"></strong></div>
+                <div class="meta">Registro: <span id="preview_registro"></span></div>
+              </div>
+            </div>
+
+            <!-- Data da folga -->
+            <div class="input-group">
+              <label for="data"><i class="fas fa-calendar-alt"></i> Data da Folga</label>
+              <input type="date" id="data" name="data" required />
+            </div>
+
+            <!-- Motivo -->
+            <div class="input-group">
+              <label for="motivo"><i class="fas fa-list-alt"></i> Motivo da Ausência</label>
+              <select id="motivo" name="motivo" required onchange="toggleDataReferencia(); syncTipoFolga();">
+                <option value="AB">Abonada (AB)</option>
+                <option value="BH">Banco de Horas (BH)</option>
+                <option value="DL">Dispensa Legal (DL)</option>
+                <option value="DS">Doação de Sangue (DS)</option>
+                <option value="TRE">TRE (TRE)</option>
+                <option value="LM">Licença Médica (LM)</option>
+                <option value="FS">Falta Simples (FS)</option>
+              </select>
+            </div>
+
+            <!-- Haverá substituição -->
+            <div class="input-group">
+              <label for="havera_substituicao"><i class="fas fa-user-check"></i> Haverá Substituição? (para professores)</label>
+              <select id="havera_substituicao" name="havera_substituicao" required onchange="toggleSubstituto()">
+                <option value="Não">Não</option>
+                <option value="Sim">Sim</option>
+              </select>
+            </div>
+
+            <!-- Nome do substituto -->
+            <div class="input-group" id="substituto_group" style="display: none;">
+              <label for="nome_substituto"><i class="fas fa-user"></i> Nome do Substituto(a)</label>
+              <input type="text" id="nome_substituto" name="nome_substituto" />
+            </div>
+
+            <!-- Data de referência BH -->
+            <div class="form-group" id="data_banco_horas" style="display: none;">
+              <label for="data_referencia"><i class="fas fa-calendar-day"></i> Data de Referência (dia em que o banco foi acumulado)</label>
+              <input type="date" id="data_referencia" name="data_referencia" />
+            </div>
+
+            <!-- Horas / minutos BH -->
+            <div class="horas-minutos-wrapper">
+              <div class="horas-minutos-group" id="horas_group" style="display: none;">
+                <div class="input-group">
+                  <label for="quantidade_horas"><i class="fas fa-clock"></i> Horas a utilizar</label>
+                  <input type="number" id="quantidade_horas" name="quantidade_horas" min="0" placeholder="Horas" value="0" />
+                </div>
+
+                <div class="input-group" id="minutos_group" style="display: none;">
+                  <label for="quantidade_minutos"><i class="fas fa-clock"></i> Minutos a utilizar</label>
+                  <input type="number" id="quantidade_minutos" name="quantidade_minutos" min="0" max="59" placeholder="Minutos" value="0" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Tipo folga (hidden) -->
+            <input type="hidden" id="tipo_folga" name="tipo_folga" value="" />
+
+            <!-- Botão -->
+            <div class="submit-row">
+              <button type="submit" class="submit-btn">
+                <i class="fas fa-calendar-check"></i> Registrar Agendamento
+              </button>
+            </div>
+
+          </div>
+        </form>
+      </div>
+
+      <!-- SEÇÃO INFORMATIVA -->
+      <div class="info-section">
+        <h2><i class="fas fa-info-circle"></i> O que acontece após registrar</h2>
+        <p>
+          Ao enviar o registro, o sistema irá gerar um <strong>protocolo em PDF</strong> e enviará um
+          <strong>e-mail automático</strong> ao servidor selecionado.
+        </p>
+        <p>
+          Caso o servidor não localize na caixa de entrada, oriente a verificar também a pasta de spam.
+        </p>
+      </div>
+
+      <!-- Link Voltar -->
+      <div class="voltar-wrapper">
+        <a href="{{ url_for('index') }}" class="voltar-link">
+          <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
+        </a>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
+</body>
+</html>

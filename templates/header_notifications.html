@@ -1,422 +1,438 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+{# templates/header_notifications.html #}
+{% set _unread = (notif_unread|default(0, true)) %}
+{% set _list = (notifications|default([], true)) %}
 
-  <title>{% block title %}Portal do Servidor{% endblock %}</title>
+<div class="gp-notify" id="gpNotifyRoot" role="region" aria-label="Notificações">
+  <div class="gp-notify__actions">
+    <button class="gp-iconbtn" type="button" id="gpNotifBtn"
+            aria-haspopup="true" aria-expanded="false" aria-controls="gpNotifMenu">
+      <i class="fas fa-bell" aria-hidden="true"></i>
+      <span class="gp-badge" id="gpNotifBadge" {% if _unread <= 0 %}style="display:none"{% endif %}>
+        {{ _unread }}
+      </span>
+      <span class="sr-only">Abrir notificações</span>
+    </button>
 
-  <!-- CSRF para formulários/AJAX -->
-  <meta name="csrf-token" content="{{ csrf_token() }}">
+    <div class="gp-menu" id="gpNotifMenu" role="menu" aria-label="Notificações">
+      <div class="gp-menu__head">
+        <div class="gp-menu__title">Notificações</div>
+        <button class="gp-linkbtn" type="button" id="gpMarkAllReadBtn" {% if _unread <= 0 %}disabled{% endif %}>
+          Marcar como lidas
+        </button>
+      </div>
 
-  <!-- CSS global do projeto -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+      <div class="gp-menu__body" id="gpNotifList">
+        {% if _list|length == 0 %}
+          <div class="gp-empty">
+            <div class="gp-empty__title">Nada por aqui</div>
+            <div class="gp-empty__sub">Quando houver novidades, elas aparecem aqui.</div>
+          </div>
+        {% else %}
+          {% for n in _list %}
+            {% set _read = n.read|default(false, true) %}
+            {% set _level = n.level|default('info', true) %}
+            {% set _url = n.url|default('', true) %}
+            <a class="gp-notif {% if not _read %}is-unread{% endif %}" role="menuitem"
+               href="{{ _url if _url else '#' }}"
+               {% if not _url %}onclick="event.preventDefault()"{% endif %}>
+              <span class="gp-dot gp-dot--{{ _level }}"></span>
+              <span class="gp-notif__txt">
+                <span class="gp-notif__title">{{ n.title|default('Notificação', true) }}</span>
+                {% if n.body %}
+                  <span class="gp-notif__body">{{ n.body }}</span>
+                {% endif %}
+                {% if n.created_at %}
+                  <span class="gp-notif__time">{{ n.created_at }}</span>
+                {% endif %}
+              </span>
+            </a>
+          {% endfor %}
+        {% endif %}
+      </div>
 
-  <!-- Ícones (mesma versão do seu login.html) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-
-  <!-- Fonte -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
-
-  {# CSS/links extras por página (ex.: Bootstrap) #}
-  {% block head %}{% endblock %}
-
-  <style>
-    :root{
-      --bg:#f4f6f9;
-      --ink:#0f172a;
-      --muted:#6b7280;
-
-      --brand:#007bff;
-      --brand-dark:#0056b3;
-
-      --accent:#0fb300;
-      --accent-dark:#0d8a00;
-
-      --focus:0 0 0 3px rgba(0,123,255,0.18);
-    }
-
-    *{ box-sizing:border-box; }
-
-    html, body{
-      height:100%;
-      margin:0;
-      padding:0;
-      background-color: var(--bg);
-      color:#333;
-      font-family:'Montserrat', sans-serif;
-      font-size:16px;
-      line-height: 1.25;
-
-      overflow-x:hidden;
-    }
-
-    body{
-      display:flex;
-      flex-direction:column;
-      min-height:100vh;
-      overflow-x:hidden;
-    }
-
-    /* Mantém Montserrat em inputs/botões (inclui Bootstrap) */
-    body, button, input, select, textarea, .btn, .form-control{
-      font-family:'Montserrat', sans-serif;
-    }
-
-    img, svg, video, canvas{ max-width:100%; height:auto; }
-
-    .sr-only{
-      position:absolute !important;
-      width:1px; height:1px;
-      padding:0; margin:-1px;
-      overflow:hidden; clip:rect(0,0,0,0);
-      white-space:nowrap; border:0;
-    }
-
-    /* ===== CABEÇALHO ===== */
-    .header-desktop, .header-mobile{ display:none; flex-shrink:0; }
-
-    @media (min-width: 769px) {
-      .header-desktop{
-        display:flex;
-        background-color: var(--brand);
-        padding:15px 30px;
-        width:100%;
-        align-items:center;
-        justify-content:space-between;
-        box-sizing:border-box;
-        height:110px;
-        position:relative;
-        box-shadow:0 2px 6px rgba(0,0,0,0.15);
-        color:#fff;
-        z-index:1000;
-      }
-
-      .left-section{ display:flex; align-items:center; gap:20px; }
-
-      .logo{
-        width:80px; height:80px; object-fit:contain;
-        border-radius:10px; background-color:#fff; padding:6px;
-      }
-
-      .text-container{
-        display:flex;
-        flex-direction:column;
-        justify-content:center;
-        text-align:left;
-        color:#fff;
-      }
-
-      .escola-nome{
-        font-weight:700;
-        font-size:1.6rem;
-        margin:0;
-        line-height:1.1;
-      }
-
-      .escola-subtitulo{
-        font-weight:600;
-        font-size:1.1rem;
-        margin-top:4px;
-        line-height:1.15;
-      }
-
-      .header-center-text-container{
-        position:absolute;
-        left:50%;
-        top:50%;
-        transform:translate(-50%, -50%);
-        display:flex;
-        align-items:center;
-        user-select:none;
-        z-index:1;
-        min-width:0;
-      }
-
-      .header-center-text{
-        font-weight:800;
-        font-size:1.9rem;
-        line-height:1;
-        color:#fff;
-        letter-spacing:5px;
-        white-space:nowrap;
-        text-shadow:0 2px 5px rgba(0,0,0,0.3);
-      }
-
-      /* HOME desktop moderno */
-      .btn-home{
-        position:absolute;
-        right:22px;
-        top:50%;
-        transform:translateY(-50%);
-        z-index:2;
-
-        width:46px;
-        height:46px;
-        border-radius:14px;
-
-        display:inline-flex;
-        align-items:center;
-        justify-content:center;
-
-        background: linear-gradient(135deg, var(--accent), #22c55e);
-        color:#fff;
-        text-decoration:none;
-
-        box-shadow:0 10px 18px rgba(15,179,0,0.28), 0 2px 6px rgba(0,0,0,0.10);
-        border: 1px solid rgba(255,255,255,0.22);
-
-        transition: transform .14s ease, filter .2s ease, box-shadow .2s ease;
-      }
-
-      .btn-home i{ font-size: 1.15rem; line-height:1; }
-
-      .btn-home:hover{
-        filter:saturate(1.05);
-        transform:translateY(-52%) scale(1.03);
-        box-shadow:0 14px 26px rgba(15,179,0,0.34), 0 2px 8px rgba(0,0,0,0.14);
-      }
-
-      .btn-home:focus-visible{
-        outline:none;
-        box-shadow: var(--focus), 0 14px 26px rgba(15,179,0,0.34);
-      }
-    }
-
-    @media (max-width: 768px) {
-      .header-mobile{
-        display:block;
-        width:100%;
-        box-sizing:border-box;
-        color:#fff;
-        position:sticky;
-        top:0;
-        z-index:1000;
-        box-shadow:0 2px 6px rgba(0,0,0,0.15);
-        background-color: var(--brand);
-      }
-
-      .header-top{
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        gap:12px;
-        padding:10px 14px;
-        background-color: var(--brand);
-        text-align:center;
-      }
-
-      .logo{
-        width:46px; height:46px; object-fit:contain;
-        border-radius:12px; background-color:#fff; padding:6px;
-        flex:0 0 auto;
-      }
-
-      .text-container{
-        display:flex;
-        flex-direction:column;
-        justify-content:center;
-        color:#fff;
-        text-align:left;
-        min-width:0;
-        line-height:1.1;
-      }
-
-      .escola-nome{
-        font-weight:800;
-        font-size:1.18rem;
-        margin:0;
-        line-height:1.05;
-        white-space:nowrap;
-        overflow:hidden;
-        text-overflow:ellipsis;
-      }
-
-      .escola-subtitulo{
-        font-weight:700;
-        font-size:0.98rem;
-        margin-top:2px;
-        line-height:1.1;
-        white-space:nowrap;
-        overflow:hidden;
-        text-overflow:ellipsis;
-      }
-
-      /* ✅ Barra inferior com 3 colunas: centro REAL */
-      .header-bottom{
-        background-color: var(--brand-dark);
-        padding:10px 10px;
-        box-shadow: inset 0 -2px 5px rgba(0,0,0,0.2);
-
-        display:grid;
-        grid-template-columns: 44px 1fr 44px; /* espaço esq / título / botão */
-        align-items:center;
-        gap:10px;
-
-        width:100%;
-        overflow:hidden;
-      }
-
-      .header-bottom .hb-spacer{
-        width:44px;
-        height:44px;
-      }
-
-      .header-bottom .hb-title{
-        text-align:center;
-        font-weight:900;
-        font-size:0.95rem;
-        letter-spacing: 4px;
-        color:#fff;
-        line-height:1;
-        white-space:nowrap;
-        overflow:hidden;
-        text-overflow:ellipsis;
-        user-select:none;
-      }
-
-      /* ✅ HOME mobile perfeitamente centralizado */
-      .btn-home-mobile{
-        width:44px;
-        height:44px;
-        border-radius:14px;
-
-        display:inline-flex;
-        align-items:center;
-        justify-content:center;
-
-        background: linear-gradient(135deg, var(--accent), #22c55e);
-        color:#fff;
-        text-decoration:none;
-
-        border: 1px solid rgba(255,255,255,0.20);
-        box-shadow:0 8px 14px rgba(15,179,0,0.26);
-        transition: transform .14s ease, filter .2s ease;
-      }
-
-      .btn-home-mobile i{
-        font-size:1.15rem;
-        line-height:1;
-      }
-
-      .btn-home-mobile:hover{
-        filter:saturate(1.05);
-        transform: translateY(-1px) scale(1.02);
-      }
-
-      .btn-home-mobile:focus-visible{
-        outline:none;
-        box-shadow: var(--focus), 0 8px 14px rgba(15,179,0,0.26);
-      }
-    }
-
-    /* Main padrão */
-    main{
-      flex:1 0 auto;
-      width:100%;
-      padding:20px 15px 30px;
-      box-sizing:border-box;
-      overflow-x:hidden;
-    }
-
-    /* Rodapé */
-    footer.app-footer{
-      position: relative !important;
-      left:auto !important;
-      right:auto !important;
-      bottom:auto !important;
-
-      background: linear-gradient(to right, #222, #444);
-      color:#ddd;
-      text-align:center;
-      padding:15px 12px;
-      font-size:14px;
-      border-top:2px solid #555;
-      box-shadow:0px -2px 10px rgba(0,0,0,0.3);
-      flex-shrink:0;
-      width:100%;
-      overflow:hidden;
-    }
-
-    footer.app-footer p{
-      margin:0;
-      font-size:0.9rem;
-      line-height:1.2;
-    }
-
-    @media (max-width: 520px){
-      footer.app-footer p{
-        font-size:0.82rem;
-        white-space:nowrap;
-        overflow:hidden;
-        text-overflow:ellipsis;
-      }
-      .header-bottom .hb-title{
-        letter-spacing: 3px;
-      }
-    }
-
-    a:focus-visible, button:focus-visible, input:focus-visible{
-      outline:none;
-      box-shadow: var(--focus);
-    }
-  </style>
-
-  {% block page_css %}{% endblock %}
-</head>
-
-<body>
-  <!-- Cabeçalho Desktop -->
-  <header class="header-desktop">
-    <div class="left-section">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
-      <div class="text-container">
-        <div class="escola-nome">Escola Municipal</div>
-        <div class="escola-subtitulo">José Padin Mouta</div>
+      <div class="gp-menu__foot">
+        <button class="gp-ghostbtn" type="button" id="gpClearBtn">Limpar</button>
       </div>
     </div>
+  </div>
+</div>
 
-    <div class="header-center-text-container">
-      <div class="header-center-text">PORTAL DO SERVIDOR</div>
-    </div>
+<style>
+  /* ✅ impede herança do header-bottom (letter-spacing, etc.) */
+  .gp-notify, .gp-notify *{
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    font-family: 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial !important;
+  }
 
-    <a href="{% block home_href %}{{ url_for('index') }}{% endblock %}" class="btn-home" title="Página Inicial" aria-label="Página Inicial">
-      <i class="fas fa-home" aria-hidden="true"></i>
-      <span class="sr-only">Página Inicial</span>
-    </a>
-  </header>
+  /* Garantia contra corte por overflow no header */
+  .header-mobile, .header-bottom{ overflow: visible !important; }
 
-  <!-- Cabeçalho Mobile -->
-  <header class="header-mobile">
-    <div class="header-top">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
-      <div class="text-container">
-        <div class="escola-nome">Escola Municipal</div>
-        <div class="escola-subtitulo">José Padin Mouta</div>
-      </div>
-    </div>
+  .gp-notify{
+    --gp-brand: var(--brand, #007bff);
+    --gp-ink: #ffffff;
+    --gp-border: rgba(255,255,255,.28);
+    --gp-shadow: 0 18px 50px rgba(15,23,42,.18);
+    --gp-card: #ffffff;
+    --gp-text: var(--ink, #0f172a);
+    --gp-muted: var(--muted, #6b7280);
 
-    <div class="header-bottom">
-      <div class="hb-spacer" aria-hidden="true"></div>
-      <div class="hb-title">PORTAL DO SERVIDOR</div>
+    position: fixed;
+    z-index: 2200;
+    top: 12px;
+    right: 12px;
+  }
 
-      <a href="{% block home_href_mobile %}{{ url_for('index') }}{% endblock %}"
-         class="btn-home-mobile" title="Página Inicial" aria-label="Página Inicial">
-        <i class="fas fa-home" aria-hidden="true"></i>
-      </a>
-    </div>
-  </header>
+  /* Desktop: posição boa sem brigar com o Home */
+  @media (min-width: 769px){
+    .gp-notify{
+      top: 55px;
+      transform: translateY(-50%);
+      right: 92px;
+    }
+  }
 
-  <main>
-    {% block content %}{% endblock %}
-  </main>
+  /* Quando encaixado no mobile ao lado do Home */
+  .gp-notify.gp-notify--docked{
+    position: static;
+    top: auto;
+    right: auto;
+    transform: none;
+    z-index: auto;
+  }
 
-  <footer class="app-footer">
-    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-  </footer>
+  .sr-only{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
 
-  {% block scripts %}{% endblock %}
-</body>
-</html>
+  .gp-notify__actions{
+    position: relative; /* âncora (desktop) */
+    display: flex;
+    align-items: center;
+  }
+
+  .gp-iconbtn{
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--gp-border);
+    background: rgba(255,255,255,.16);
+    color: var(--gp-ink);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    box-shadow: 0 10px 22px rgba(0,0,0,.14);
+    backdrop-filter: blur(8px);
+    transition: transform .12s ease, background .12s ease, border-color .12s ease;
+  }
+  .gp-iconbtn:hover{
+    background: rgba(255,255,255,.24);
+    border-color: rgba(255,255,255,.40);
+  }
+  .gp-iconbtn:active{ transform: scale(.98); }
+
+  /* Compacto quando dockado no mobile */
+  .gp-notify--docked .gp-iconbtn{
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    box-shadow: 0 6px 14px rgba(0,0,0,.18);
+    background: rgba(255,255,255,.14);
+    border-color: rgba(255,255,255,.26);
+  }
+  .gp-notify--docked .gp-iconbtn:hover{
+    background: rgba(255,255,255,.22);
+    border-color: rgba(255,255,255,.34);
+  }
+
+  .gp-badge{
+    position:absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 12px;
+    line-height: 18px;
+    font-weight: 800;
+    border: 2px solid rgba(0,123,255,.95);
+    text-align:center;
+  }
+
+  /* Dropdown (desktop: absoluto e ancorado no sino) */
+  .gp-menu{
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+
+    width: 380px;
+    max-width: calc(100vw - 24px);
+
+    background: var(--gp-card);
+    border: 1px solid rgba(148,163,184,0.35);
+    border-radius: 16px;
+    box-shadow: var(--gp-shadow);
+    overflow: hidden;
+    display: none;
+    z-index: 2300;
+
+    text-align: left !important;
+  }
+  .gp-menu.is-open{ display:block; }
+
+  /* Mobile menor */
+  @media (max-width: 480px){
+    .gp-menu{ width: min(340px, calc(100vw - 24px)); }
+  }
+
+  .gp-menu__head, .gp-menu__foot{
+    padding: 12px 12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+    border-bottom: 1px solid rgba(148,163,184,0.22);
+  }
+  .gp-menu__foot{ border-bottom: 0; border-top: 1px solid rgba(148,163,184,0.22); }
+
+  .gp-menu__title{
+    font-weight: 900;
+    color: var(--gp-text);
+  }
+
+  .gp-linkbtn{
+    border:0;
+    background: transparent;
+    color: var(--gp-brand);
+    font-weight: 900;
+    cursor:pointer;
+    padding: 6px 10px;
+    border-radius: 10px;
+  }
+  .gp-linkbtn:disabled{ opacity:.45; cursor:not-allowed; }
+  .gp-linkbtn:hover:not(:disabled){ background: rgba(0,123,255,.10); }
+
+  .gp-menu__body{
+    max-height: min(420px, 60vh);
+    overflow:auto;
+  }
+
+  .gp-empty{ padding: 16px 14px; }
+  .gp-empty__title{ font-weight: 900; color: var(--gp-text); }
+  .gp-empty__sub{ color: var(--gp-muted); margin-top: 4px; font-size: 13px; }
+
+  .gp-notif{
+    display:flex;
+    gap: 10px;
+    padding: 12px 14px;
+    text-decoration:none;
+    border-bottom: 1px solid rgba(148,163,184,0.18);
+    color: var(--gp-text);
+    transition: background .12s ease;
+  }
+  .gp-notif:hover{ background: rgba(0,0,0,.03); }
+  .gp-notif.is-unread{ background: rgba(0,123,255,.08); }
+
+  .gp-dot{
+    width:10px;height:10px;border-radius: 999px;
+    margin-top: 5px; flex: 0 0 auto;
+  }
+  .gp-dot--info{ background:#2563eb; }
+  .gp-dot--success{ background:#16a34a; }
+  .gp-dot--warning{ background:#d97706; }
+  .gp-dot--danger{ background:#dc2626; }
+
+  .gp-notif__txt{ min-width: 0; display:flex; flex-direction:column; }
+  .gp-notif__title{ font-weight: 900; }
+  .gp-notif__body{
+    color: var(--gp-muted);
+    font-size: 13px;
+    margin-top: 2px;
+    line-height: 1.25rem;
+    overflow-wrap: anywhere;
+  }
+  .gp-notif__time{ color: rgba(107,114,128,.95); font-size: 12px; margin-top: 6px; }
+
+  .gp-ghostbtn{
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid rgba(148,163,184,0.35);
+    background: rgba(0,0,0,.03);
+    color: var(--gp-text);
+    padding: 10px 12px;
+    font-weight: 900;
+    cursor:pointer;
+  }
+  .gp-ghostbtn:hover{ background: rgba(0,0,0,.06); }
+</style>
+
+<script>
+(function(){
+  const root = document.getElementById('gpNotifyRoot');
+  const btn = document.getElementById('gpNotifBtn');
+  const menu = document.getElementById('gpNotifMenu');
+  const badge = document.getElementById('gpNotifBadge');
+  const markAllBtn = document.getElementById('gpMarkAllReadBtn');
+  const clearBtn = document.getElementById('gpClearBtn');
+
+  if(!root || !btn || !menu) return;
+
+  function positionMenuFixed(){
+    // Só usa posição fixed quando estiver dockado no header-bottom (mobile)
+    const docked = root.classList.contains('gp-notify--docked');
+    if(!docked){
+      // limpa estilos inline para voltar ao CSS padrão (absolute)
+      menu.style.position = '';
+      menu.style.left = '';
+      menu.style.top = '';
+      menu.style.right = '';
+      menu.style.bottom = '';
+      return;
+    }
+
+    // menu precisa estar visível pra medir
+    const rectBtn = btn.getBoundingClientRect();
+    const rectMenu = menu.getBoundingClientRect();
+    const width = rectMenu.width || 340;
+
+    const pad = 12;
+    let left = rectBtn.right - width;
+    if(left < pad) left = pad;
+    if(left + width > window.innerWidth - pad) left = window.innerWidth - width - pad;
+
+    let top = rectBtn.bottom + 10;
+    // se faltar espaço embaixo, tenta abrir pra cima
+    const menuHeight = rectMenu.height || 300;
+    if(top + menuHeight > window.innerHeight - pad){
+      const upTop = rectBtn.top - menuHeight - 10;
+      if(upTop > pad) top = upTop;
+    }
+
+    menu.style.position = 'fixed';
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+    menu.style.right = 'auto';
+    menu.style.bottom = 'auto';
+    menu.style.zIndex = '9999';
+  }
+
+  function openMenu(){
+    menu.classList.add('is-open');
+    btn.setAttribute('aria-expanded', 'true');
+    // posiciona depois de abrir (medição correta)
+    requestAnimationFrame(positionMenuFixed);
+  }
+  function closeMenu(){
+    menu.classList.remove('is-open');
+    btn.setAttribute('aria-expanded', 'false');
+    // limpa posição fixed se quiser (não é obrigatório)
+  }
+  function toggleMenu(){
+    menu.classList.contains('is-open') ? closeMenu() : openMenu();
+  }
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleMenu();
+  });
+
+  document.addEventListener('click', (e) => {
+    if(menu.classList.contains('is-open')){
+      const inside = menu.contains(e.target) || btn.contains(e.target);
+      if(!inside) closeMenu();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape') closeMenu();
+  });
+
+  // Reposiciona se redimensionar enquanto aberto
+  window.addEventListener('resize', () => {
+    if(menu.classList.contains('is-open')) positionMenuFixed();
+  });
+
+  /* ✅ MOBILE: encaixa ao lado do Home dentro do .header-bottom */
+  const mq = window.matchMedia('(max-width: 768px)');
+  const originalParent = root.parentNode;
+  const originalNext = root.nextSibling;
+
+  function dock(){
+    const headerBottom = document.querySelector('.header-bottom');
+    const homeBtn = headerBottom?.querySelector('.btn-home-mobile');
+
+    if(mq.matches && headerBottom && homeBtn){
+      headerBottom.insertBefore(root, homeBtn);
+      root.classList.add('gp-notify--docked');
+      // garante que o dropdown não herde alinhamento do header
+      headerBottom.style.overflow = 'visible';
+    }else{
+      if(originalParent){
+        if(originalNext){
+          originalParent.insertBefore(root, originalNext);
+        }else{
+          originalParent.appendChild(root);
+        }
+      }
+      root.classList.remove('gp-notify--docked');
+      // volta ao comportamento padrão de posicionamento
+      positionMenuFixed();
+    }
+  }
+
+  dock();
+  if(mq.addEventListener){
+    mq.addEventListener('change', dock);
+  }else if(mq.addListener){
+    mq.addListener(dock);
+  }
+
+  const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+  async function postJSON(url){
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(csrf ? {'X-CSRFToken': csrf, 'X-CSRF-Token': csrf} : {})
+      },
+      body: JSON.stringify({})
+    });
+    return res.ok ? res.json().catch(()=> ({})) : null;
+  }
+
+  if(markAllBtn){
+    markAllBtn.addEventListener('click', async () => {
+      const data = await postJSON('/notifications/mark_all_read');
+      if(data && data.ok){
+        if(badge){ badge.style.display = 'none'; badge.textContent = '0'; }
+        markAllBtn.disabled = true;
+        menu.querySelectorAll('.gp-notif.is-unread').forEach(el => el.classList.remove('is-unread'));
+      }
+    });
+  }
+
+  if(clearBtn){
+    clearBtn.addEventListener('click', async () => {
+      const data = await postJSON('/notifications/clear');
+      if(data && data.ok){
+        if(badge){ badge.style.display = 'none'; badge.textContent = '0'; }
+        if(markAllBtn) markAllBtn.disabled = true;
+        const list = document.getElementById('gpNotifList');
+        if(list){
+          list.innerHTML = `
+            <div class="gp-empty">
+              <div class="gp-empty__title">Nada por aqui</div>
+              <div class="gp-empty__sub">Quando houver novidades, elas aparecem aqui.</div>
+            </div>`;
+        }
+      }
+    });
+  }
+})();
+</script>

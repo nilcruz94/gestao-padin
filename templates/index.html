@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
@@ -49,18 +49,19 @@
       min-height:100vh;
       background: var(--bg);
       color: var(--ink);
+      overflow-x:hidden;
     }
 
-    /* ✅ evita “centralizar vertical” e criar espaço branco grande */
+    /* ✅ evita “centralizar vertical” e cria folga pro footer */
     main{
       flex:1 0 auto;
-      padding: 22px 16px 70px;
+      padding: 22px 16px 120px; /* ✅ aumentei */
       display:flex;
-      justify-content:center; /* centraliza horizontal */
-      align-items:flex-start; /* sempre top */
+      justify-content:center;
+      align-items:flex-start;
     }
     @media (min-width:769px){
-      main{ padding: 26px 24px 90px; }
+      main{ padding: 26px 24px 140px; } /* ✅ aumentei */
     }
 
     a:focus-visible, button:focus-visible, .tab:focus-visible{
@@ -226,7 +227,7 @@
       background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
       box-shadow: 0 8px 18px rgba(37,99,235,.22);
       color:#2563eb;
-      margin-left:6px; /* por causa da barra lateral */
+      margin-left:6px;
     }
     .welcome-icon i{ font-size:20px; }
 
@@ -278,9 +279,7 @@
     }
 
     /* ========= FLASH ========= */
-    .flash-container{
-      margin: 0 0 16px 0;
-    }
+    .flash-container{ margin: 0 0 16px 0; }
     .flash{
       padding: 12px 14px;
       margin: 8px 0;
@@ -294,18 +293,11 @@
       overflow-wrap:anywhere;
     }
     .flash a{ color:inherit; text-decoration:underline; font-weight:900; }
-
-    /* ✅ categoria padrão do Flask quando flash() sem categoria */
     .flash.message{ background:#eff6ff; color:#1e3a8a; border-color:#bfdbfe; border-left:6px solid #3b82f6; }
-
     .flash.success{ background:#dcfce7; color:#166534; border-color:#bbf7d0; border-left:6px solid #22c55e; }
     .flash.error, .flash.danger{ background:#fee2e2; color:#b91c1c; border-color:#fecaca; border-left:6px solid #ef4444; }
     .flash.warning{ background:#ffedd5; color:#7c2d12; border-color:#fed7aa; border-left:6px solid #fb923c; }
     .flash.info{ background:#dbeafe; color:#1e3a8a; border-color:#bfdbfe; border-left:6px solid #3b82f6; }
-
-    @media (max-width:600px){
-      .flash{ font-size:0.86rem; padding:11px 12px; border-radius:14px; }
-    }
 
     /* ========= TABS ========= */
     .tabs{
@@ -364,6 +356,7 @@
       box-shadow: var(--shadow);
       width:100%;
       border:1px solid var(--border);
+      margin-bottom: 18px; /* ✅ folga pro footer */
     }
 
     .cards-grid{
@@ -372,7 +365,6 @@
       gap: 14px;
       justify-content:center;
     }
-
     @media (max-width: 992px){
       .cards-grid{ grid-template-columns: repeat(2, minmax(160px, 1fr)); }
     }
@@ -381,7 +373,6 @@
       .cards-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
     }
 
-    /* ========= CARD (link + button) ========= */
     .card{
       background:#ffffff;
       color:#111827;
@@ -409,7 +400,6 @@
       font-family:'Montserrat', sans-serif;
     }
 
-    /* normaliza button logout */
     button.card{
       border:1px solid rgba(0,0,0,.08);
       outline:none;
@@ -483,7 +473,6 @@
 
     .cards-grid form.logout-form{ display: contents; }
 
-    /* Logout card */
     .logout-btn{
       background:#fef2f2;
       color:#991b1b;
@@ -512,146 +501,37 @@
       box-shadow:0 -2px 10px rgba(0,0,0,.30);
       flex-shrink:0;
       width:100%;
+
+      /* ✅ FORÇA NÃO FIXAR/OVERLAY (caso style.css esteja fixando) */
+      position: relative !important;
+      bottom: auto !important;
+      left: auto !important;
+      right: auto !important;
+      z-index: 0 !important;
     }
     footer p{ margin:5px 0; font-size:0.9rem; }
 
-    /* =========================================================
-       PATCH NOTES MODAL (mantido e apenas ajustado p/ tokens)
-       ========================================================= */
-    .patch-modal{
-      display:none;
-      position:fixed;
-      inset:0;
-      z-index:3000;
-      background: rgba(0,0,0,.55);
-      align-items:center;
-      justify-content:center;
-      padding:12px;
-    }
+    /* PATCH MODAL (mantido) ... */
+    .patch-modal{ display:none; position:fixed; inset:0; z-index:3000; background: rgba(0,0,0,.55); align-items:center; justify-content:center; padding:12px; }
     .patch-modal.open{ display:flex; }
-
-    .patch-modal-content{
-      width:100%;
-      max-width:560px;
-      background:#ffffff;
-      border-radius: var(--radius);
-      border:1px solid rgba(148,163,184,.35);
-      box-shadow: 0 18px 60px rgba(0,0,0,.25);
-      overflow:hidden;
-    }
-    .patch-modal-header{
-      padding:14px 16px;
-      background: linear-gradient(90deg,#f9fafb 0,#eef2ff 100%);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-    .patch-modal-title{
-      margin:0;
-      font-size:1rem;
-      font-weight:900;
-      color: var(--ink);
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-    .patch-badge{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:4px 10px;
-      border-radius:999px;
-      font-weight:900;
-      font-size:.75rem;
-      border:1px solid #e5e7eb;
-      background:#f3f4f6;
-      color:#111827;
-      white-space:nowrap;
-    }
+    .patch-modal-content{ width:100%; max-width:560px; background:#ffffff; border-radius: var(--radius); border:1px solid rgba(148,163,184,.35); box-shadow: 0 18px 60px rgba(0,0,0,.25); overflow:hidden; }
+    .patch-modal-header{ padding:14px 16px; background: linear-gradient(90deg,#f9fafb 0,#eef2ff 100%); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .patch-modal-title{ margin:0; font-size:1rem; font-weight:900; color: var(--ink); display:flex; align-items:center; gap:10px; }
+    .patch-badge{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-weight:900; font-size:.75rem; border:1px solid #e5e7eb; background:#f3f4f6; color:#111827; white-space:nowrap; }
     .patch-badge.info{ background:#dbeafe; border-color:#bfdbfe; color:#1e3a8a; }
     .patch-badge.improvement{ background:#dcfce7; border-color:#bbf7d0; color:#166534; }
     .patch-badge.fix{ background:#fff7ed; border-color:#fed7aa; color:#7c2d12; }
     .patch-badge.breaking{ background:#fee2e2; border-color:#fecaca; color:#b91c1c; }
-
-    .patch-close{
-      border:none;
-      background:transparent;
-      cursor:pointer;
-      color:#64748b;
-      font-size:1.1rem;
-      padding:6px 8px;
-      border-radius:10px;
-      transition: background .15s ease, color .15s ease;
-    }
+    .patch-close{ border:none; background:transparent; cursor:pointer; color:#64748b; font-size:1.1rem; padding:6px 8px; border-radius:10px; transition: background .15s ease, color .15s ease; }
     .patch-close:hover{ background: rgba(100,116,139,.12); color:#0f172a; }
-
     .patch-modal-body{ padding:14px 16px 16px; background:#fff; }
-    .patch-meta{
-      font-size:.86rem;
-      color: var(--muted);
-      font-weight:900;
-      margin-bottom:10px;
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px 10px;
-      align-items:center;
-      justify-content:flex-start;
-    }
-    .patch-meta span{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:4px 10px;
-      border-radius:999px;
-      background:#f1f5f9;
-      border:1px solid #e5e7eb;
-      font-size:.8rem;
-      color:#111827;
-      font-weight:900;
-    }
-    .patch-body{
-      text-align:left;
-      font-size:.92rem;
-      color:#111827;
-      line-height:1.35rem;
-      max-height:360px;
-      overflow:auto;
-      border:1px solid #e5e7eb;
-      border-radius:14px;
-      padding:12px;
-      background:#f9fafb;
-      white-space:normal;
-      overflow-wrap:anywhere;
-    }
-    .patch-actions{
-      display:flex;
-      gap:10px;
-      margin-top:14px;
-      flex-wrap:wrap;
-      justify-content:center;
-    }
-    .patch-btn{
-      padding:10px 12px;
-      border-radius:999px;
-      font-weight:900;
-      cursor:pointer;
-      border:1px solid #e5e7eb;
-      background:#f3f4f6;
-      color:#111827;
-      transition: transform .12s ease, background-color .18s ease, box-shadow .18s ease;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      font-family:'Montserrat', sans-serif;
-    }
+    .patch-meta{ font-size:.86rem; color: var(--muted); font-weight:900; margin-bottom:10px; display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center; justify-content:flex-start; }
+    .patch-meta span{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:#f1f5f9; border:1px solid #e5e7eb; font-size:.8rem; color:#111827; font-weight:900; }
+    .patch-body{ text-align:left; font-size:.92rem; color:#111827; line-height:1.35rem; max-height:360px; overflow:auto; border:1px solid #e5e7eb; border-radius:14px; padding:12px; background:#f9fafb; white-space:normal; overflow-wrap:anywhere; }
+    .patch-actions{ display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; justify-content:center; }
+    .patch-btn{ padding:10px 12px; border-radius:999px; font-weight:900; cursor:pointer; border:1px solid #e5e7eb; background:#f3f4f6; color:#111827; transition: transform .12s ease, background-color .18s ease, box-shadow .18s ease; display:inline-flex; align-items:center; gap:8px; font-family:'Montserrat', sans-serif; }
     .patch-btn:hover{ transform: translateY(-1px); background:#e5e7eb; }
-    .patch-btn-primary{
-      border-color:#1d4ed8;
-      background:#2563eb;
-      color:#fff;
-      box-shadow: 0 6px 16px rgba(37,99,235,.25);
-    }
+    .patch-btn-primary{ border-color:#1d4ed8; background:#2563eb; color:#fff; box-shadow: 0 6px 16px rgba(37,99,235,.25); }
     .patch-btn-primary:hover{ background:#1d4ed8; }
     .patch-btn-soft{ background:#ffffff; border-color:#e5e7eb; }
   </style>
@@ -807,7 +687,7 @@
                 <span class="mobile-only">Ajuste de ponto.</span>
               </div>
             </a>
-            
+
             <a href="{{ url_for('calendario') }}" class="card" aria-label="Calendário">
               <i class="fas fa-calendar-days" aria-hidden="true"></i>
               <div class="card-title">Calendário</div>
@@ -815,7 +695,7 @@
                 <span class="desktop-only">Visualize seus agendamentos no calendário.</span>
                 <span class="mobile-only">Agenda.</span>
               </div>
-            </a>            
+            </a>
 
             <a href="{{ url_for('tre_menu') }}" class="card" aria-label="TRE">
               <i class="fas fa-scale-balanced" aria-hidden="true"></i>
@@ -892,6 +772,16 @@
               <div class="card-subtitle">
                 <span class="desktop-only">Liste, filtre e edite agendamentos.</span>
                 <span class="mobile-only">Listar/editar.</span>
+              </div>
+            </a>
+
+            <!-- ✅ CARD ADMIN: AGENDAR PARA SERVIDOR -->
+            <a href="{{ url_for('admin_agendar_para') }}" class="card" aria-label="Agendar para Servidor">
+              <i class="fas fa-calendar-plus" aria-hidden="true"></i>
+              <div class="card-title">Agendar p/ Servidor</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Registre folga/comunicação em nome de um servidor ativo.</span>
+                <span class="mobile-only">Lançar folga.</span>
               </div>
             </a>
 

@@ -2114,6 +2114,424 @@ def agendar():
 
     return render_template('agendar.html')
 
+from functools import wraps
+import datetime
+from flask import request, render_template, redirect, url_for, flash, current_app
+from flask_login import current_user
+from sqlalchemy import func
+
+def admin_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if (getattr(current_user, "tipo", "") or "").lower() != "administrador":
+            flash("Acesso restrito ao administrador.", "danger")
+            return redirect(url_for("index"))
+        return f(*args, **kwargs)
+    return wrapper
+
+@app.route('/admin/agendar_para', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_agendar_para():
+    usuarios_ativos = User.query.filter_by(ativo=True).order_by(User.nome.asc()).all()
+
+    if request.method == 'POST':
+        # --- usuário alvo ---
+        try:
+            alvo_id = int(request.form.get("user_id") or 0)
+        except ValueError:
+            alvo_id = 0
+
+        usuario_alvo = User.query.filter_by(id=alvo_id, ativo=True).first()
+        if not usuario_alvo:
+            flash("Selecione um usuário ATIVO válido.", "danger")
+            return render_template("admin_agendar_para.html", usuarios=usuarios_ativos)
+
+        # 🔹 Mantém o saldo de TRE do ALVO sempre correto antes de validar
+        sync_tre_user(usuario_alvo.id)
+
+        # Valores do formulário (mesmos nomes que sua rota /agendar)
+        tipo_folga = request.form.get('tipo_folga')
+        data_folga = request.form.get('data')
+        motivo = request.form.get('motivo')
+        data_referencia = request.form.get('data_referencia')
+
+        substituicao = request.form.get("havera_substituicao")
+        nome_substituto = request.form.get("nome_substituto")
+
+        # ✅ Normaliza textos
+        tipo_folga = (tipo_folga or "").strip().upper()
+        motivo = (motivo or "").strip().upper()
+
+        # 🔸 Mantém motivo/tipo_folga sincronizados (o select é a fonte da verdade)
+        tipo_folga = motivo or tipo_folga
+
+        # ✅ Normaliza substituição e limpa substituto
+        substituicao = (substituicao or "").strip()
+        nome_substituto = (nome_substituto or "").strip()
+        if substituicao.lower() in ("não", "nao", "n", "false", "0", ""):
+            nome_substituto = None
+        elif not nome_substituto:
+            nome_substituto = None
+
+        # ---- Validação específica para TRE (do ALVO) ----
+        if tipo_folga == 'TRE':
+            tre_total = int(usuario_alvo.tre_total or 0)
+            tre_usuf = int(usuario_alvo.tre_usufruidas or 0)
+            tre_restantes = max(tre_total - tre_usuf, 0)
+
+            pedidos_abertos = (
+                Agendamento.query
+                .filter(
+                    Agendamento.funcionario_id == usuario_alvo.id,
+                    Agendamento.motivo == 'TRE',
+                    Agendamento.status.in_(['em_espera', 'pendente'])
+                )
+                .count()
+            )
+
+            saldo_disponivel_para_solicitar = tre_restantes - pedidos_abertos
+            if saldo_disponivel_para_solicitar <= 0:
+                flash("Este usuário não possui TREs disponíveis para agendar no momento.", "danger")
+                return render_template("admin_agendar_para.html", usuarios=usuarios_ativos)
+
+        # Descrição amigável
+        descricao_motivo = {
+            'AB':  'Abonada',
+            'BH':  'Banco de Horas',
+            'DS':  'Doação de Sangue',
+            'TRE': 'TRE',
+            'LM':  'Licença Médica',
+            'FS':  'Falta Simples (FS)',
+            'DL':  'Dispensa Legal',
+        }.get(tipo_folga, 'Agendamento')
+
+        # ---- Validação e parsing da data da folga ----
+        try:
+            data_folga = datetime.datetime.strptime(data_folga, '%Y-%m-%d').date()
+        except (TypeError, ValueError):
+            flash("Data inválida.", "danger")
+            return redirect(url_for('admin_agendar_para'))
+
+        # ---- Regras específicas AB (do ALVO) ----
+        if tipo_folga == 'AB':
+            agendamento_existente = Agendamento.query.filter(
+                Agendamento.funcionario_id == usuario_alvo.id,
+                Agendamento.motivo == 'AB',
+                func.extract('year', Agendamento.data) == data_folga.year,
+                func.extract('month', Agendamento.data) == data_folga.month
+            ).first()
+            if agendamento_existente and agendamento_existente.status != 'indeferido':
+                flash("Este usuário já possui um agendamento 'AB' aprovado ou em análise neste mês.", "danger")
+                return render_template("admin_agendar_para.html", usuarios=usuarios_ativos)
+
+            agendamentos_ab_deferidos = Agendamento.query.filter(
+                Agendamento.funcionario_id == usuario_alvo.id,
+                Agendamento.motivo == 'AB',
+                func.extract('year', Agendamento.data) == data_folga.year,
+                Agendamento.status == 'deferido'
+            ).count()
+
+            if agendamentos_ab_deferidos >= 6:
+                flash("Este usuário já atingiu o limite de 6 folgas 'AB' deferidas neste ano.", "danger")
+                return render_template("admin_agendar_para.html", usuarios=usuarios_ativos)
+
+        # ---- Banco de Horas: validação de data de referência ----
+        if tipo_folga == 'BH' and data_referencia:
+            try:
+                data_referencia = datetime.datetime.strptime(data_referencia, '%Y-%m-%d').date()
+            except ValueError:
+                flash("Data de referência inválida.", "danger")
+                return redirect(url_for('admin_agendar_para'))
+        else:
+            data_referencia = None
+
+        # Horas/minutos (para BH; para outros motivos mantém 0/0)
+        try:
+            horas = int(request.form.get('quantidade_horas', '0').strip() or 0)
+            minutos = int(request.form.get('quantidade_minutos', '0').strip() or 0)
+        except ValueError:
+            flash("Horas ou minutos inválidos.", "danger")
+            return redirect(url_for('admin_agendar_para'))
+
+        total_minutos = (horas * 60) + minutos
+
+        if tipo_folga == 'BH':
+            if minutos < 0 or minutos > 59 or horas < 0 or total_minutos == 0:
+                flash("Informe um tempo válido para Banco de Horas (minutos entre 0 e 59 e total > 0).", "danger")
+                return redirect(url_for('admin_agendar_para'))
+
+            if data_referencia and data_referencia > data_folga:
+                flash("A data de referência do Banco de Horas não pode ser posterior à data da folga.", "danger")
+                return redirect(url_for('admin_agendar_para'))
+
+            if (usuario_alvo.banco_horas or 0) < total_minutos:
+                flash("Este usuário não possui horas suficientes no banco de horas para este agendamento.", "danger")
+                return redirect(url_for('admin_agendar_para'))
+        else:
+            horas = 0
+            minutos = 0
+            total_minutos = 0
+
+        # ==========================================================
+        # ✅ ADMIN LANÇA E JÁ DEIXA DEFERIDO (SEM PENDÊNCIA)
+        # ==========================================================
+        novo_agendamento = Agendamento(
+            funcionario_id=usuario_alvo.id,
+            status='deferido',
+            data=data_folga,
+            motivo=tipo_folga,
+            tipo_folga=tipo_folga,
+            data_referencia=data_referencia,
+            horas=horas,
+            minutos=minutos,
+            substituicao=substituicao,
+            nome_substituto=nome_substituto,
+            conferido=True  # ✅ opcional, mas faz sentido pro admin
+        )
+
+        try:
+            # ✅ Se BH, aplica o mesmo efeito do /deferir_folgas:
+            # debita saldo e cria registro em BancoDeHoras
+            if tipo_folga == 'BH':
+                usuario_alvo.banco_horas = int(usuario_alvo.banco_horas or 0) - int(total_minutos)
+
+                novo_banco_horas = BancoDeHoras(
+                    funcionario_id=usuario_alvo.id,
+                    horas=horas or 0,
+                    minutos=minutos or 0,
+                    total_minutos=int(total_minutos),
+                    data_realizacao=data_folga,
+                    motivo=tipo_folga,
+                    status="Deferida",
+                    data_criacao=datetime.datetime.utcnow(),
+                )
+                db.session.add(novo_banco_horas)
+
+            db.session.add(novo_agendamento)
+            db.session.commit()
+
+            # ✅ Após deferir TRE via agendamento, sincroniza saldo
+            if tipo_folga == 'TRE':
+                try:
+                    sync_tre_user(usuario_alvo.id)
+                except Exception:
+                    current_app.logger.exception("Falha ao sincronizar TRE do usuário %s após deferimento", usuario_alvo.id)
+
+            # ✅ gera/salva protocolo PDF já com status DEFERIDO
+            try:
+                gerar_protocolo_agendamento_pdf(novo_agendamento, usuario_alvo)
+            except Exception:
+                current_app.logger.exception("Falha ao gerar protocolo PDF do agendamento %s", novo_agendamento.id)
+                flash("Agendamento deferido e registrado, mas não foi possível gerar o protocolo em PDF neste momento.", "warning")
+
+            # =========================
+            # E-MAIL para o USUÁRIO ALVO (texto adaptado p/ DEFERIDO)
+            # =========================
+            nome = (usuario_alvo.nome or "").strip() or "Servidor(a)"
+            data_str = novo_agendamento.data.strftime('%d/%m/%Y')
+            status_label = "DEFERIDO"
+            admin_nome = (current_user.nome or "").strip() or "Administração"
+
+            def _format_tempo_bh(h, m):
+                h = int(h or 0)
+                m = int(m or 0)
+                parts = []
+                if h > 0:
+                    parts.append(f"{h}h")
+                if m > 0:
+                    parts.append(f"{m}min")
+                return " ".join(parts) if parts else "0min"
+
+            tempo_bh = _format_tempo_bh(novo_agendamento.horas, novo_agendamento.minutos)
+            data_ref_str = novo_agendamento.data_referencia.strftime('%d/%m/%Y') if novo_agendamento.data_referencia else None
+
+            def _escape(s):
+                if s is None:
+                    return ""
+                return (str(s)
+                        .replace("&", "&amp;")
+                        .replace("<", "&lt;")
+                        .replace(">", "&gt;")
+                        .replace('"', "&quot;")
+                        .replace("'", "&#39;"))
+
+            def build_email_html(title, greeting_name, lead, paragraphs, summary_rows, note_lines=None):
+                greeting_name = _escape(greeting_name)
+                title = _escape(title)
+                note_lines = note_lines or []
+
+                p_html = ""
+                for p in paragraphs:
+                    if not p:
+                        continue
+                    p_html += f'<p style="margin:0 0 12px 0;">{p}</p>'
+
+                rows_html = ""
+                for k, v in summary_rows:
+                    if v is None or v == "":
+                        continue
+                    rows_html += f"""
+                      <tr>
+                        <td style="padding:10px 12px;border-top:1px solid #EAEAEA;color:#555;font-weight:600;white-space:nowrap;">
+                          {_escape(k)}
+                        </td>
+                        <td style="padding:10px 12px;border-top:1px solid #EAEAEA;color:#222;">
+                          {v}
+                        </td>
+                      </tr>
+                    """
+
+                notes_html = ""
+                if note_lines:
+                    li = "".join([f"<li style='margin:0 0 6px 0;'>{x}</li>" for x in note_lines if x])
+                    notes_html = f"""
+                      <div style="margin-top:14px;padding:12px 12px;border:1px dashed #D7D7D7;border-radius:10px;background:#FAFAFA;">
+                        <div style="font-weight:700;color:#333;margin-bottom:8px;">Observações</div>
+                        <ul style="margin:0 0 0 18px;padding:0;color:#444;">
+                          {li}
+                        </ul>
+                      </div>
+                    """
+
+                html = f"""
+                <html>
+                  <body style="margin:0;padding:0;background:#F4F6F8;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F4F6F8;padding:24px 0;">
+                      <tr>
+                        <td align="center" style="padding:0 12px;">
+                          <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="width:100%;max-width:640px;background:#FFFFFF;border-radius:14px;overflow:hidden;border:1px solid #E6E6E6;">
+                            <tr>
+                              <td style="padding:18px 20px;background:#0F172A;color:#FFFFFF;">
+                                <div style="font-size:14px;opacity:.9;">E.M José Padin Mouta</div>
+                                <div style="font-size:20px;font-weight:800;margin-top:6px;letter-spacing:0.2px;">{title}</div>
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <td style="padding:20px 20px 6px 20px;color:#111827;font-family:Arial,sans-serif;line-height:1.6;">
+                                <p style="margin:0 0 12px 0;">Prezado(a) Senhor(a) <strong>{greeting_name}</strong>,</p>
+                                <p style="margin:0 0 14px 0;color:#111827;">
+                                  {lead}
+                                </p>
+
+                                {p_html}
+
+                                <div style="margin:16px 0 10px 0;font-weight:800;color:#111827;">Resumo do registro</div>
+
+                                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #EAEAEA;border-radius:12px;overflow:hidden;">
+                                  {rows_html}
+                                </table>
+
+                                {notes_html}
+
+                                <div style="margin-top:18px;border-top:1px solid #EEEEEE;padding-top:14px;color:#374151;">
+                                  <p style="margin:0 0 4px 0;">Atenciosamente,</p>
+                                  <p style="margin:0;font-weight:700;">Nilson Cruz</p>
+                                  <p style="margin:0;">Secretário da Unidade Escolar</p>
+                                  <p style="margin:0;">E.M José Padin Mouta</p>
+                                </div>
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <td style="padding:12px 20px;background:#FAFAFA;color:#6B7280;font-size:12px;font-family:Arial,sans-serif;">
+                                Este e-mail é uma confirmação automática do sistema para fins administrativos da unidade.
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </body>
+                </html>
+                """
+                return html
+
+            # Resumo
+            badge_status = "<span style='font-weight:800;color:#16A34A;'>DEFERIDO</span>"
+            resumo = [
+                ("Motivo", f"<strong>{_escape(descricao_motivo)}</strong>"),
+                ("Data", f"<strong>{_escape(data_str)}</strong>"),
+                ("Status no sistema", badge_status),
+            ]
+
+            if tipo_folga == "BH":
+                resumo.append(("Tempo lançado", f"<strong>{_escape(tempo_bh)}</strong>"))
+                if data_ref_str:
+                    resumo.append(("Data de referência", _escape(data_ref_str)))
+
+            if nome_substituto:
+                resumo.append(("Haverá substituição", "Sim"))
+                resumo.append(("Substituto", f"<strong>{_escape(nome_substituto)}</strong>"))
+            else:
+                resumo.append(("Haverá substituição", "Não"))
+
+            # Conteúdo por motivo (com deferimento)
+            if tipo_folga in ("AB", "BH", "TRE"):
+                assunto = f"E.M José Padin Mouta – {descricao_motivo} deferido(a) pela unidade"
+                title = f"{descricao_motivo} deferido(a)"
+                lead = (
+                    f"A unidade escolar registrou e <strong>deferiu</strong> em seu nome "
+                    f"<strong>{_escape(descricao_motivo)}</strong> para <strong>{_escape(data_str)}</strong>. "
+                    f"(Registrado por: <strong>{_escape(admin_nome)}</strong>)"
+                )
+                paragraphs = [
+                    "Este lançamento foi concluído no sistema no momento do registro (sem pendências).",
+                    "Você pode consultar o registro no Portal do Servidor."
+                ]
+                notes = []
+            else:
+                # Comunicações (LM/DL/DS/FS) — “deferido” aqui é sinalização de concluído
+                assunto = f"E.M José Padin Mouta – {descricao_motivo} registrado(a) pela unidade"
+                title = f"{descricao_motivo} registrado(a)"
+                lead = (
+                    f"A unidade escolar registrou em seu nome <strong>{_escape(descricao_motivo)}</strong> "
+                    f"para <strong>{_escape(data_str)}</strong>. (Registrado por: <strong>{_escape(admin_nome)}</strong>)"
+                )
+                paragraphs = [
+                    "Este registro serve para ciência e organização interna da unidade (cobertura/rotina).",
+                    "No sistema, ele consta como <strong>DEFERIDO</strong> apenas para indicar que foi registrado e concluído."
+                ]
+                notes = []
+
+            if tipo_folga == "BH" and data_ref_str:
+                notes.append(f"Data de referência informada: <strong>{_escape(data_ref_str)}</strong>.")
+            if nome_substituto:
+                notes.append(f"Haverá substituição por: <strong>{_escape(nome_substituto)}</strong>.")
+
+            mensagem_html = build_email_html(
+                title=title,
+                greeting_name=nome,
+                lead=lead,
+                paragraphs=paragraphs,
+                summary_rows=resumo,
+                note_lines=notes
+            )
+
+            mensagem_texto = (
+                f"E.M José Padin Mouta – {title}\n\n"
+                f"Prezado(a) Senhor(a) {nome},\n\n"
+                f"A unidade escolar registrou em seu nome {descricao_motivo} para {data_str}.\n"
+                f"Status no sistema: {status_label}\n"
+            )
+
+            try:
+                enviar_email(usuario_alvo.email, assunto, mensagem_html, mensagem_texto)
+                flash(f"Agendamento DEFERIDO criado para {usuario_alvo.nome} e e-mail enviado.", "success")
+            except Exception:
+                current_app.logger.exception("Falha ao enviar e-mail para agendamento %s", novo_agendamento.id)
+                flash(f"Agendamento DEFERIDO criado para {usuario_alvo.nome}, mas o e-mail falhou.", "warning")
+
+            return redirect(url_for('admin_agendar_para'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Erro ao salvar agendamento: {str(e)}", "danger")
+            return render_template("admin_agendar_para.html", usuarios=usuarios_ativos)
+
+    return render_template("admin_agendar_para.html", usuarios=usuarios_ativos)
+
 # ===========================================
 # CALENDÁRIO
 # ===========================================
