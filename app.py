@@ -36,7 +36,7 @@ from datetime import timedelta, date
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from sqlalchemy import func, or_, case, asc
+from sqlalchemy import func, or_, case, asc, text
 from sqlalchemy.orm import joinedload, selectinload
 
 from reportlab.pdfgen import canvas
@@ -45,8 +45,7 @@ from reportlab.lib.units import cm, mm
 from reportlab.lib import colors
 
 # ======== CSRF / Segurança =========
-from flask_wtf import CSRFProtect
-from flask_wtf.csrf import generate_csrf
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 from markupsafe import Markup
 
 # ===========================================
@@ -54,10 +53,15 @@ from markupsafe import Markup
 # ===========================================
 app = Flask(__name__)
 
-# =========================================================
-# ✅ Carrega .env quando você roda "python app.py"
-# (no Render isso não atrapalha; ele já injeta env vars)
-# =========================================================
+# ===========================================
+# ProxyFix (Render / reverse proxy)
+# ===========================================
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
+
+# ===========================================
+# (Opcional) Carrega .env em dev/local
+# ===========================================
 try:
     from dotenv import load_dotenv  # pip install python-dotenv
     load_dotenv()
@@ -65,7 +69,7 @@ except Exception:
     pass
 
 # ===========================================
-# Configuração Calendario / Normalização
+# Normalização PT-BR (títulos / abreviações)
 # ===========================================
 import re
 
@@ -73,16 +77,9 @@ PT_SMALL_WORDS = {"da", "de", "do", "das", "dos", "e", "d", "del", "della", "di"
 ROMAN = {"i","ii","iii","iv","v","vi","vii","viii","ix","x","xi","xii","xiii","xiv","xv"}
 
 def pt_title(s: str) -> str:
-    """
-    Title Case PT-BR (somente exibição):
-    - Mantém preposições/partículas em minúsculo (exceto 1ª palavra)
-    - Mantém acentos
-    - Suporta hífen e apóstrofo (D'Ávila)
-    """
     s = (s or "").strip()
     if not s:
         return ""
-
     s = re.sub(r"\s+", " ", s)
     words = s.split(" ")
 
@@ -93,7 +90,6 @@ def pt_title(s: str) -> str:
 
         wl = w.lower()
 
-        # Romanos
         if wl.strip(".") in ROMAN:
             out.append(w.upper())
             continue
@@ -106,11 +102,9 @@ def pt_title(s: str) -> str:
                 return t
             return t[0].upper() + t[1:]
 
-        # Hífens: "ana-maria"
         hy_parts = w.split("-")
         hy_done = []
         for part in hy_parts:
-            # Apóstrofo: "d'almeida"
             if "'" in part:
                 ap = part.split("'")
                 ap_done = []
@@ -131,15 +125,10 @@ def pt_title(s: str) -> str:
     return " ".join(out)
 
 def abbr_name(s: str) -> str:
-    """
-    Abrevia para: 'Primeiro N.' (pula partículas tipo 'da/de/do').
-    Mantém Title Case.
-    """
     full = pt_title(s)
     parts = [p for p in full.split() if p]
     if not parts:
         return ""
-
     first = parts[0]
     initial = ""
     for w in parts[1:]:
@@ -148,14 +137,22 @@ def abbr_name(s: str) -> str:
             continue
         initial = w[0].upper() + "."
         break
-
     return f"{first} {initial}".strip()
 
-# =========================================================
-# ✅ CONFIG BÁSICA (Render / Prod / Dev) — BANCO + SEGURANÇA
-# - Cole após: app = Flask(__name__)
-# - Cole antes: db = SQLAlchemy(app)
-# =========================================================
+# ===========================================
+# Filtros Jinja
+# ===========================================
+@app.template_filter("pt_title")
+def _pt_title_filter(value):
+    return pt_title(value)
+
+@app.template_filter("abbr_name")
+def _abbr_name_filter(value):
+    return abbr_name(value)
+
+# ===========================================
+# Config básica (Render / Prod / Dev)
+# ===========================================
 from pathlib import Path
 from urllib.parse import urlparse, parse_qsl, urlencode
 
@@ -166,22 +163,28 @@ IS_RENDER = bool(os.environ.get("RENDER")) or bool(os.environ.get("RENDER_SERVIC
 ENV_NAME = (os.environ.get("FLASK_ENV") or os.environ.get("ENV") or "").strip().lower()
 IS_PROD = IS_RENDER or (ENV_NAME == "production")
 
-# =========================
+# ===========================================
 # Banco (PostgreSQL)
-# =========================
-# ✅ Render usa DATABASE_URL. Local você pode colocar DATABASE_URL no .env.
+# ===========================================
 db_url = (os.environ.get("DATABASE_URL") or os.environ.get("SQLALCHEMY_DATABASE_URI") or "").strip()
 
-# compatibilidade com alguns provedores que usam postgres://
+# ✅ Correção defensiva: se você colou errado no Render tipo:
+# DATABASE_URL="DATABASE_URL=postgresql://...."
+if db_url.startswith("DATABASE_URL="):
+    db_url = db_url.split("=", 1)[1].strip()
+if db_url.startswith("SQLALCHEMY_DATABASE_URI="):
+    db_url = db_url.split("=", 1)[1].strip()
+
+# compatibilidade postgres:// -> postgresql://
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-# ✅ Se a URL for do Render (ou dpg-), força sslmode=require (sem quebrar sqlite/local)
 def _ensure_sslmode_require(url: str) -> str:
     try:
         p = urlparse(url)
         if p.scheme not in ("postgresql", "postgres"):
             return url
+
         host = (p.hostname or "")
         is_renderish = ("render.com" in host) or host.startswith("dpg-")
         if not is_renderish:
@@ -190,8 +193,8 @@ def _ensure_sslmode_require(url: str) -> str:
         qs = dict(parse_qsl(p.query, keep_blank_values=True))
         if "sslmode" not in qs:
             qs["sslmode"] = "require"
-            new_query = urlencode(qs)
-            return p._replace(query=new_query).geturl()
+            return p._replace(query=urlencode(qs)).geturl()
+
         return url
     except Exception:
         return url
@@ -199,20 +202,21 @@ def _ensure_sslmode_require(url: str) -> str:
 if db_url:
     db_url = _ensure_sslmode_require(db_url)
 
-# Em produção, NÃO pode ficar vazio (evita cair em sqlite sem perceber)
+# Em produção (Render), não aceita vazio
 if not db_url:
     if IS_PROD:
         raise RuntimeError(
             "DATABASE_URL não configurada em produção (Render). "
-            "Configure a env var DATABASE_URL com a *Internal Database URL* do Render."
+            "Configure a env var DATABASE_URL com a Internal Database URL do Render."
         )
-    # Dev/local: fallback SQLite (use seu arquivo local se quiser)
+    # Dev/local: fallback SQLite
+    Path("instance").mkdir(parents=True, exist_ok=True)
     db_url = "sqlite:///instance/folgas.db"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Engine options (pool) — aplique só em Postgres
+# Engine options (somente Postgres)
 if not db_url.startswith("sqlite"):
     pool_recycle = int(os.environ.get("SQLALCHEMY_POOL_RECYCLE", "299"))
     pool_timeout = int(os.environ.get("SQLALCHEMY_POOL_TIMEOUT", "30"))
@@ -222,9 +226,9 @@ if not db_url.startswith("sqlite"):
         "pool_timeout": pool_timeout,
     }
 
-# =========================
-# SECRET_KEY (obrigatório em prod)
-# =========================
+# ===========================================
+# SECRET_KEY / Cookies
+# ===========================================
 secret_key = (os.environ.get("SECRET_KEY") or "").strip()
 if not secret_key:
     if IS_PROD:
@@ -232,17 +236,15 @@ if not secret_key:
     secret_key = "dev-secret-CHANGE-ME"
 app.config["SECRET_KEY"] = secret_key
 
-# Proteções de cookie/sessão
 app.config["SESSION_COOKIE_SAMESITE"] = (os.environ.get("SESSION_COOKIE_SAMESITE") or "Lax").strip()
-
 secure_default = "True" if IS_PROD else "False"
 app.config["SESSION_COOKIE_SECURE"] = _is_truthy(os.environ.get("SESSION_COOKIE_SECURE", secure_default))
 
-# =========================
-# CSRF (Flask-WTF)
-# =========================
+# ===========================================
+# CSRF
+# ===========================================
 app.config["WTF_CSRF_ENABLED"] = True
-app.config["WTF_CSRF_TIME_LIMIT"] = 60 * 60 * 8  # 8 horas
+app.config["WTF_CSRF_TIME_LIMIT"] = 60 * 60 * 8
 csrf = CSRFProtect(app)
 
 @app.context_processor
@@ -254,9 +256,9 @@ def inject_csrf_token():
         ),
     )
 
-# =========================
-# Segurança/Links externos p/ e-mail
-# =========================
+# ===========================================
+# Salt / Links externos
+# ===========================================
 pwd_salt = (os.environ.get("SECURITY_PASSWORD_SALT") or "").strip()
 if not pwd_salt:
     if IS_PROD:
@@ -265,6 +267,44 @@ if not pwd_salt:
 
 app.config["SECURITY_PASSWORD_SALT"] = pwd_salt
 app.config["PREFERRED_URL_SCHEME"] = (os.environ.get("PREFERRED_URL_SCHEME") or ("https" if IS_PROD else "http")).strip()
+
+# ===========================================
+# Debug de 403 (Render)
+# ===========================================
+from werkzeug.exceptions import Forbidden
+
+@app.errorhandler(Forbidden)
+def _dbg_forbidden(e):
+    current_app.logger.warning(
+        "403 FORBIDDEN path=%s method=%s scheme=%s xf_proto=%s host=%s remote=%s",
+        request.path,
+        request.method,
+        request.scheme,
+        request.headers.get("X-Forwarded-Proto"),
+        request.host,
+        request.headers.get("X-Forwarded-For") or request.remote_addr,
+    )
+    return e, 403
+
+# ===========================================
+# Healthcheck DB (p/ testar Render)
+# ===========================================
+@app.get("/__health/db")
+def health_db():
+    try:
+        v = db.session.execute(text("select 1")).scalar()
+        return {"ok": True, "db": v}, 200
+    except Exception as ex:
+        current_app.logger.exception("DB health failed")
+        return {"ok": False, "error": str(ex)}, 500
+
+# ===========================================
+# Extensões (TEM que vir depois da config)
+# ===========================================
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+login_manager = LoginManager(app)
+login_manager.login_view = "login"
 
 # =========================
 # Filtros Jinja
