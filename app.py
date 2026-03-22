@@ -148,52 +148,77 @@ def abbr_name(s: str) -> str:
     return f"{first} {initial}".strip()
 
 import os
+from pathlib import Path
+
 from markupsafe import Markup
 from flask_wtf.csrf import CSRFProtect, generate_csrf
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from flask_login import LoginManager
 
-# ====== registra filtros Jinja ======
-@app.template_filter("pt_title")
-def _pt_title_filter(value):
-    return pt_title(value)
+# =========================================================
+# CONFIG BÁSICA (Render / Prod / Dev)
+# - Cole após: app = Flask(__name__)
+# - Cole antes: db = SQLAlchemy(app)
+# =========================================================
 
-@app.template_filter("abbr_name")
-def _abbr_name_filter(value):
-    return abbr_name(value)
+def _is_truthy(v: str) -> bool:
+    return str(v or "").strip().lower() in ("1", "true", "t", "sim", "s", "yes", "y", "on")
+
+# Render geralmente expõe uma dessas variáveis
+IS_RENDER = bool(os.environ.get("RENDER")) or bool(os.environ.get("RENDER_SERVICE_ID"))
+ENV_NAME = (os.environ.get("FLASK_ENV") or os.environ.get("ENV") or "").strip().lower()
+IS_PROD = IS_RENDER or (ENV_NAME == "production")
 
 # =========================
-# Config Banco PostgreSQL
-# - Prioriza env vars (Render)
-# - Mantém fallback local (dev)
+# Banco (PostgreSQL)
 # =========================
 db_url = (os.environ.get("DATABASE_URL") or os.environ.get("SQLALCHEMY_DATABASE_URI") or "").strip()
 
-# compatibilidade com alguns provedores que usam postgres://
+# compatibilidade com provedores que usam postgres://
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-# fallback local (evita hardcode de credenciais em produção)
-# Se você quiser MESMO um fallback Postgres, pode colocar, mas o ideal é não.
+# Em produção (Render), NÃO pode ficar vazio (evita cair em sqlite sem perceber)
 if not db_url:
+    if IS_PROD:
+        raise RuntimeError("DATABASE_URL não configurada em produção (Render). Configure a env var DATABASE_URL.")
+    # Dev/local: fallback SQLite
     db_url = "sqlite:///local.db"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
-app.config["SQLALCHEMY_POOL_RECYCLE"] = int(os.environ.get("SQLALCHEMY_POOL_RECYCLE", "299"))
-app.config["SQLALCHEMY_POOL_TIMEOUT"] = int(os.environ.get("SQLALCHEMY_POOL_TIMEOUT", "30"))
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+# Engine options (pool) — aplique só em Postgres (evita confusão no SQLite)
+if not db_url.startswith("sqlite"):
+    pool_recycle = int(os.environ.get("SQLALCHEMY_POOL_RECYCLE", "299"))
+    pool_timeout = int(os.environ.get("SQLALCHEMY_POOL_TIMEOUT", "30"))
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+        "pool_recycle": pool_recycle,
+        "pool_timeout": pool_timeout,
+    }
+
 # =========================
-# SECRET_KEY
-# - Prioriza env var (Render)
+# SECRET_KEY (obrigatório em prod)
 # =========================
-app.config["SECRET_KEY"] = (os.environ.get("SECRET_KEY") or "dev-secret-CHANGE-ME").strip()
+secret_key = (os.environ.get("SECRET_KEY") or "").strip()
+if not secret_key:
+    if IS_PROD:
+        raise RuntimeError("SECRET_KEY não configurada em produção (Render). Configure a env var SECRET_KEY.")
+    secret_key = "dev-secret-CHANGE-ME"
+app.config["SECRET_KEY"] = secret_key
 
 # Proteções de cookie/sessão recomendadas
-app.config["SESSION_COOKIE_SAMESITE"] = os.environ.get("SESSION_COOKIE_SAMESITE", "Lax")
-app.config["SESSION_COOKIE_SECURE"] = (
-    os.environ.get("SESSION_COOKIE_SECURE", "True").strip().lower() in ("1", "true", "t", "sim", "s", "yes", "y")
-)
+app.config["SESSION_COOKIE_SAMESITE"] = (os.environ.get("SESSION_COOKIE_SAMESITE") or "Lax").strip()
 
-# Flask-WTF CSRF
+# Secure cookie: em produção (HTTPS) True; em dev/local default False (pra não “matar” login)
+secure_default = "True" if IS_PROD else "False"
+app.config["SESSION_COOKIE_SECURE"] = _is_truthy(os.environ.get("SESSION_COOKIE_SECURE", secure_default))
+
+# =========================
+# CSRF (Flask-WTF)
+# =========================
 app.config["WTF_CSRF_ENABLED"] = True
 app.config["WTF_CSRF_TIME_LIMIT"] = 60 * 60 * 8  # 8 horas
 csrf = CSRFProtect(app)
@@ -208,26 +233,42 @@ def inject_csrf_token():
         ),
     )
 
-# Segurança/Links externos para e-mail
-app.config["SECURITY_PASSWORD_SALT"] = (
-    os.environ.get("SECURITY_PASSWORD_SALT") or "dev-salt-CHANGE-ME"
-).strip()
-app.config["PREFERRED_URL_SCHEME"] = os.environ.get("PREFERRED_URL_SCHEME", "https").strip()
+# =========================
+# Segurança/Links externos p/ e-mail
+# =========================
+pwd_salt = (os.environ.get("SECURITY_PASSWORD_SALT") or "").strip()
+if not pwd_salt:
+    if IS_PROD:
+        raise RuntimeError("SECURITY_PASSWORD_SALT não configurado em produção (Render). Configure essa env var.")
+    pwd_salt = "dev-salt-CHANGE-ME"
+
+app.config["SECURITY_PASSWORD_SALT"] = pwd_salt
+app.config["PREFERRED_URL_SCHEME"] = (os.environ.get("PREFERRED_URL_SCHEME") or ("https" if IS_PROD else "http")).strip()
+
+# =========================
+# Filtros Jinja (precisa existir pt_title / abbr_name)
+# =========================
+@app.template_filter("pt_title")
+def _pt_title_filter(value):
+    return pt_title(value)
+
+@app.template_filter("abbr_name")
+def _abbr_name_filter(value):
+    return abbr_name(value)
 
 # ===========================================
-# Config Uploads (Ajustado p/ TRE persistente)
+# Config Uploads (TRE persistente)
+# - Render Disk: defina UPLOAD_FOLDER=/var/data/uploads/tre (exemplo)
 # ===========================================
-from pathlib import Path
-
 ALLOWED_EXTENSIONS = {"pdf"}
 
 _raw_env_upload = os.getenv("UPLOAD_FOLDER")
 if _raw_env_upload:
-    _env_upload = _raw_env_upload
+    _env_upload = _raw_env_upload.strip()
     if not _env_upload.startswith("/"):
         _env_upload = "/" + _env_upload.lstrip("/")
 else:
-    _env_upload = "uploads/tre"
+    _env_upload = "uploads/tre"  # local
 
 BASE_UPLOAD_DIR = Path(_env_upload).resolve()
 BASE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -236,7 +277,7 @@ app.config["UPLOAD_FOLDER"] = str(BASE_UPLOAD_DIR)
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024  # 20MB
 
 # ===========================================
-# Extensões
+# Extensões (TEM que vir depois da config)
 # ===========================================
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -7572,6 +7613,9 @@ def admin_patch_notes_delete(release_id):
     flash("Patch note removido.", "success")
     return redirect(url_for("admin_patch_notes_page"))
 
+@app.get("/healthz")
+def healthz():
+    return "ok", 200
 
 # ===========================================
 # MAIN
