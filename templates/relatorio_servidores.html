@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <title>Relatório de Controle Interno — Ficha do Servidor</title>
+
+  <style>
+    @page{
+      size: A4;
+      margin: 10mm 10mm 19mm 10mm; /* um pouco maior p/ rodapé fixo */
+    }
+
+    :root{
+      --ink:#0f172a;
+      --muted:#334155;
+
+      --grid:#1f2937;
+      --head:#0b1220;
+      --head2:#111827;
+
+      --th:#eef2ff;
+
+      --ab-bg:#e8f1ff;  --ab-bd:#9bbcf2;
+      --bh-bg:#f2ecff;  --bh-bd:#c8b0f4;
+      --tre-bg:#e7f7ff; --tre-bd:#8fc9e8;
+      --lm-bg:#ffecec;  --lm-bd:#f0aaaa;
+      --dl-bg:#fff1e1;  --dl-bd:#f1c08f;
+      --ds-bg:#eafff0;  --ds-bd:#92d8a7;
+      --fs-bg:#f3f6fb;  --fs-bd:#cbd5e1;
+      --out-bg:#f8fafc; --out-bd:#cbd5e1;
+    }
+
+    *{ box-sizing:border-box; }
+    html, body{ margin:0; padding:0; }
+    body{
+      font-family: DejaVu Sans, Arial, sans-serif;
+      color: var(--ink);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page{ page-break-after: always; }
+    .page:last-child{ page-break-after: auto; }
+
+    /* ===== Cabeçalho ===== */
+    .report-header{
+      width:100%;
+      border: 1.2px solid var(--grid);
+      background: linear-gradient(90deg, var(--head), var(--head2));
+      color:#fff;
+      padding: 10px 12px;
+      margin: 0 0 10px 0;
+    }
+
+    table.hdr{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+    }
+    .hdr td{ vertical-align:middle; }
+    .hdr-left{ width:24%; }
+    .hdr-center{ width:52%; text-align:center; padding: 0 10px; }
+    .hdr-right{ width:24%; text-align:right; }
+
+    .logo{
+      width:72px;
+      height:72px;
+      border-radius:14px;
+      background:#fff;
+      padding:9px;
+      display:inline-block;
+      object-fit:contain;
+    }
+
+    .hdr-title{
+      font-size:13.5px;
+      font-weight:900;
+      letter-spacing:.65px;
+      text-transform:uppercase;
+      line-height:1.15;
+      margin:0;
+    }
+    .hdr-title .l1{ display:block; }
+
+    /* ✅ força a 2ª linha a NÃO quebrar (fica em uma linha abaixo) */
+    .hdr-title .l2{
+      display:block;
+      margin-top:2px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      letter-spacing:.55px;
+    }
+
+    .hdr-sub{
+      font-size:10.6px;
+      font-weight:900;
+      opacity:.96;
+      margin-top:4px;
+      line-height:1.2;
+    }
+
+    .hdr-meta-label{
+      font-size:9px;
+      font-weight:900;
+      letter-spacing:.6px;
+      opacity:.9;
+      text-transform:uppercase;
+    }
+    .hdr-meta{
+      font-size:10px;
+      font-weight:900;
+      margin-top:2px;
+      line-height:1.25;
+    }
+
+    /* ✅ Período “humano” */
+    .hdr-period{
+      margin-top:7px;
+      font-size:10px;
+      font-weight:900;
+      letter-spacing:.12px;
+      text-transform:none;
+      opacity:.96;
+    }
+    .hdr-period .lbl{ font-weight:900; opacity:.92; }
+    .hdr-period .val{ font-weight:800; opacity:.98; }
+
+    /* ✅ Auditoria enxuta (sem tipos) */
+    .hdr-audit{
+      margin-top:6px;
+      font-size:9.2px;
+      font-weight:800;
+      opacity:.95;
+      line-height:1.25;
+      text-align:center;
+    }
+    .hdr-audit .row{ display:block; margin-top:2px; }
+    .hdr-audit .k{ font-weight:900; opacity:.92; }
+    .hdr-audit .v{ font-weight:800; opacity:.98; }
+
+    /* ===== Seções / tabelas ===== */
+    .section-title{
+      margin: 10px 0 6px;
+      font-size:11.5px;
+      font-weight:900;
+      letter-spacing:.4px;
+      text-transform:uppercase;
+      color: var(--ink);
+    }
+
+    table.grid{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+      border: 1.2px solid var(--grid);
+      font-size:10.5px;
+    }
+
+    .grid th, .grid td{
+      border: 1px solid var(--grid);
+      padding: 6px 8px;
+      vertical-align:top;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      hyphens: auto;
+    }
+
+    .grid th{
+      background: var(--th);
+      color: var(--ink);
+      font-weight:900;
+    }
+
+    .kv th.k{
+      width:18%;
+      background: #f1f5f9;
+      color: var(--muted);
+      text-transform:none;
+      letter-spacing:0;
+    }
+    .kv td.v{
+      width:32%;
+      font-weight:800;
+    }
+
+    .summary th{ text-align:left; }
+    .summary th.qty,
+    .summary td.qty{
+      text-align:center;
+      width:18%;
+      font-weight:900;
+    }
+    .summary tr.total td{
+      font-weight:900;
+      background:#f8fafc;
+    }
+
+    .hist thead th{
+      text-align:center;
+      font-weight:900;
+    }
+
+    .hist td.c-date{
+      width:18%;
+      text-align:center;
+      font-weight:900;
+      white-space:nowrap;
+    }
+
+    .hist tr.item td.c-cat{
+      width:32%;
+      text-align:center;
+      font-weight:800;
+    }
+
+    .hist td.c-det{
+      width:50%;
+      text-align:center;
+      font-weight:800;
+    }
+
+    /* ====== LINHA DE TÍTULO “MESCLADA” (faixa) ====== */
+    .ghead-merged td{
+      padding:0;
+      border-left: 1px solid var(--grid);
+      border-right: 1px solid var(--grid);
+    }
+    .ghead-merged .gband{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding: 7px 10px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.35px;
+      white-space:nowrap;
+      overflow:hidden;
+    }
+    .ghead-merged .gband .left{
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      text-align:left;
+    }
+    .ghead-merged .gband .right{
+      flex:0 0 auto;
+      text-align:right;
+      font-weight:900;
+      white-space:nowrap;
+    }
+
+    .g-ab   .gband{ background: var(--ab-bg);  border-bottom:1px solid var(--ab-bd); }
+    .g-bh   .gband{ background: var(--bh-bg);  border-bottom:1px solid var(--bh-bd); }
+    .g-tre  .gband{ background: var(--tre-bg); border-bottom:1px solid var(--tre-bd); }
+    .g-lm   .gband{ background: var(--lm-bg);  border-bottom:1px solid var(--lm-bd); }
+    .g-dl   .gband{ background: var(--dl-bg);  border-bottom:1px solid var(--dl-bd); }
+    .g-ds   .gband{ background: var(--ds-bg);  border-bottom:1px solid var(--ds-bd); }
+    .g-fs   .gband{ background: var(--fs-bg);  border-bottom:1px solid var(--fs-bd); }
+    .g-out  .gband{ background: var(--out-bg); border-bottom:1px solid var(--out-bd); }
+
+    .hist tbody tr.item:nth-child(even) td{
+      background:#fbfdff;
+    }
+
+    tr{ break-inside:avoid; page-break-inside:avoid; }
+
+    .muted{
+      color:#475569;
+      font-weight:800;
+    }
+
+    .no-items td{
+      text-align:center;
+      padding: 10px 8px;
+      font-weight:900;
+      color:#475569;
+      background:#f8fafc;
+    }
+
+    /* ✅ Aviso no fim do conteúdo */
+    .doc-disclaimer{
+      margin-top:10px;
+      border:1px dashed rgba(31,41,55,.35);
+      border-radius:12px;
+      padding:9px 10px;
+      background:#f8fafc;
+      color:#334155;
+      font-size:9.4px;
+      font-weight:800;
+      line-height:1.35;
+      break-inside:avoid;
+      page-break-inside:avoid;
+    }
+
+    /* ============================================================
+       ✅ Rodapé “faixa” full width (mais elegante)
+       ============================================================ */
+    .footer-fixed{
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+
+      height: 8mm;
+      padding: 0 10mm;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10mm;
+
+      background: linear-gradient(90deg,
+        rgba(2,6,23,.82),
+        rgba(15,23,42,.70)
+      );
+      border-top: 0.25mm solid rgba(255,255,255,.18);
+
+      color: rgba(255,255,255,.92);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .12px;
+
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .footer-fixed .f-left,
+    .footer-fixed .f-center,
+    .footer-fixed .f-right{
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-top: .2mm;
+    }
+
+    .footer-fixed .f-left{ flex: 1 1 40%; text-align:left; opacity:.95; }
+    .footer-fixed .f-center{
+      flex: 0 0 auto;
+      text-align:center;
+      font-weight: 900;
+      opacity:.92;
+      letter-spacing:.18px;
+      text-transform:none;
+    }
+    .footer-fixed .f-right{ flex: 1 1 40%; text-align:right; opacity:.95; }
+
+    .footer-fixed .page-counter::after{
+      content: "Página " counter(page) " de " counter(pages);
+      font-weight: 900;
+      opacity: .96;
+    }
+  </style>
+</head>
+
+<body>
+  {# ============================================================
+     NORMALIZAÇÃO (apenas visual, não altera o banco)
+     - Corrige ALL CAPS em nome/cargo/graduação
+     - Mantém siglas (ex.: SSP/SP) em UPPER
+     - Mantém email em lower
+     - “de/da/do/dos/das/e” em minúsculas no meio do texto
+     - Ajusta numerais romanos comuns (II, III, IV...)
+     ============================================================ #}
+
+  {% macro _clean(v) -%}
+    {%- set s = (v|string)|trim -%}
+    {%- if (not s) or s == '—' -%}—{%- else -%}{{ s }}{%- endif -%}
+  {%- endmacro %}
+
+  {% macro _title_pt(v) -%}
+    {%- set s = (v|string)|trim -%}
+    {%- if (not s) or s == '—' -%}
+      —
+    {%- else -%}
+      {%- set t = s|lower|title -%}
+
+      {# conectivos em minúsculas (meio) #}
+      {%- set t = t
+        |replace(' Da ', ' da ')
+        |replace(' De ', ' de ')
+        |replace(' Do ', ' do ')
+        |replace(' Das ', ' das ')
+        |replace(' Dos ', ' dos ')
+        |replace(' E ', ' e ')
+      -%}
+
+      {# conectivos no início (caso venha) #}
+      {%- set t = t
+        |replace('Da ', 'da ')
+        |replace('De ', 'de ')
+        |replace('Do ', 'do ')
+        |replace('Das ', 'das ')
+        |replace('Dos ', 'dos ')
+      -%}
+
+      {# numerais romanos mais comuns (evita Ii, Iii, Iv...) #}
+      {%- set t = t
+        |replace(' Ii ', ' II ')
+        |replace(' Iii ', ' III ')
+        |replace(' Iv ', ' IV ')
+        |replace(' Vi ', ' VI ')
+        |replace(' Vii ', ' VII ')
+        |replace(' Viii ', ' VIII ')
+        |replace(' Ix ', ' IX ')
+        |replace(' Xi ', ' XI ')
+        |replace(' Xii ', ' XII ')
+        |replace(' Ii', ' II')
+        |replace(' Iii', ' III')
+        |replace(' Iv', ' IV')
+        |replace(' Vi', ' VI')
+        |replace(' Vii', ' VII')
+        |replace(' Viii', ' VIII')
+        |replace(' Ix', ' IX')
+        |replace(' Xi', ' XI')
+        |replace(' Xii', ' XII')
+      -%}
+
+      {{ t }}
+    {%- endif -%}
+  {%- endmacro %}
+
+  {% macro norm_nome(v) -%}{{ _title_pt(v) }}{%- endmacro %}
+  {% macro norm_cargo(v) -%}{{ _title_pt(v) }}{%- endmacro %}
+  {% macro norm_graduacao(v) -%}{{ _title_pt(v) }}{%- endmacro %}
+
+  {% macro norm_email(v) -%}
+    {%- set s = (v|string)|trim -%}
+    {%- if (not s) or s == '—' -%}—{%- else -%}{{ s|lower }}{%- endif -%}
+  {%- endmacro %}
+
+  {% macro norm_orgao(v) -%}
+    {%- set s = (v|string)|trim -%}
+    {%- if (not s) or s == '—' -%}
+      —
+    {%- else -%}
+      {# Se tem “/” (SSP/SP) ou é curtinho, mantém como sigla #}
+      {%- if ('/' in s) or (s|length <= 6) -%}
+        {{ s|upper }}
+      {%- else -%}
+        {{ _title_pt(s) }}
+      {%- endif -%}
+    {%- endif -%}
+  {%- endmacro %}
+
+  {% for it in items %}
+  <section class="page">
+
+    {# --------- Período sem redundância --------- #}
+    {% set _pl_raw = (period_label or "") %}
+    {% if _pl_raw %}
+      {% set _pl_clean = (_pl_raw.split(":", 1)[1].strip() if (":" in _pl_raw) else _pl_raw.strip()) %}
+    {% else %}
+      {% set _pl_clean = "" %}
+    {% endif %}
+
+    <div class="report-header">
+      <table class="hdr">
+        <tr>
+          <td class="hdr-left">
+            {% if logo_uri %}
+              <img class="logo" src="{{ logo_uri }}" alt="Logo" />
+            {% else %}
+              &nbsp;
+            {% endif %}
+          </td>
+
+          <td class="hdr-center">
+            <div class="hdr-title">
+              <span class="l1">Relatório de controle interno</span>
+              <span class="l2">Ficha do servidor</span>
+            </div>
+
+            <div class="hdr-sub">E.M. José Padin Mouta</div>
+
+            <div class="hdr-period">
+              <span class="lbl">Período considerado:</span>
+              <span class="val">
+                {% if _pl_clean %}
+                  {{ _pl_clean }}
+                {% elif dt_ini and dt_fim %}
+                  de {{ dt_ini.strftime("%d/%m/%Y") }} até {{ dt_fim.strftime("%d/%m/%Y") }}
+                {% elif dt_ini %}
+                  a partir de {{ dt_ini.strftime("%d/%m/%Y") }}
+                {% elif dt_fim %}
+                  até {{ dt_fim.strftime("%d/%m/%Y") }}
+                {% else %}
+                  Período total
+                {% endif %}
+              </span>
+            </div>
+
+            {% if generated_by or scope_label %}
+              <div class="hdr-audit">
+                {% if generated_by %}
+                  <span class="row"><span class="k">Gerado por:</span> <span class="v">{{ norm_nome(generated_by) }}</span></span>
+                {% endif %}
+                {% if scope_label %}
+                  <span class="row"><span class="k">Escopo:</span> <span class="v">{{ scope_label }}</span></span>
+                {% endif %}
+              </div>
+            {% endif %}
+          </td>
+
+          <td class="hdr-right">
+            <div class="hdr-meta-label">Emitido em</div>
+            <div class="hdr-meta">{{ emitted_at }}</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="section-title">Dados funcionais e cadastrais</div>
+    <table class="grid kv">
+      <tbody>
+        <tr>
+          <th class="k">Servidor</th><td class="v">{{ norm_nome(it.dados["Servidor"]) }}</td>
+          <th class="k">Registro</th><td class="v">{{ _clean(it.dados["Registro"]) }}</td>
+        </tr>
+        <tr>
+          <th class="k">Cargo</th><td class="v">{{ norm_cargo(it.dados["Cargo"]) }}</td>
+          <th class="k">E-mail</th><td class="v">{{ norm_email(it.dados["E-mail"]) }}</td>
+        </tr>
+        <tr>
+          <th class="k">CPF</th><td class="v">{{ _clean(it.dados["CPF"]) }}</td>
+          <th class="k">RG</th><td class="v">{{ _clean(it.dados["RG"]) }}</td>
+        </tr>
+        <tr>
+          <th class="k">Nascimento</th><td class="v">{{ _clean(it.dados["Nascimento"]) }}</td>
+          <th class="k">Órgão emissor</th><td class="v">{{ norm_orgao(it.dados["Órgão emissor"]) }}</td>
+        </tr>
+        <tr>
+          <th class="k">Celular</th><td class="v">{{ _clean(it.dados["Celular"]) }}</td>
+          <th class="k">Emissão do RG</th><td class="v">{{ _clean(it.dados["Emissão do RG"]) }}</td>
+        </tr>
+        <tr>
+          <th class="k">Graduação</th><td class="v">{{ norm_graduacao(it.dados["Graduação"]) }}</td>
+          <th class="k"></th><td class="v"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="section-title" style="margin-top:12px;">Resumo</div>
+    <table class="grid summary">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th class="qty">Quantidade</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in it.summary_rows %}
+          <tr>
+            <td>{{ r.tipo }}</td>
+            <td class="qty">{{ r.qtd }}</td>
+          </tr>
+        {% endfor %}
+        <tr class="total">
+          <td>Total</td>
+          <td class="qty">{{ it.total_qtd }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="section-title" style="margin-top:12px;">Histórico de registros</div>
+
+    <table class="grid hist">
+      <thead>
+        <tr>
+          <th style="width:18%;">Data</th>
+          <th style="width:32%;">Categoria</th>
+          <th style="width:50%;">Detalhes</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for g in it.groups %}
+          <tr class="ghead-merged g-{{ g.tag }}">
+            <td colspan="3">
+              <div class="gband">
+                <div class="left">{{ g.title }} — {{ g.count }} registro(s)</div>
+                <div class="right">{{ g.extra }}</div>
+              </div>
+            </td>
+          </tr>
+
+          {% if g.count == 0 %}
+            <tr class="no-items">
+              <td colspan="3" class="muted">Nenhum registro encontrado nesta categoria no período.</td>
+            </tr>
+          {% else %}
+            {% for row in g.rows %}
+              <tr class="item">
+                <td class="c-date">{{ row.date }}</td>
+                <td class="c-cat">{{ row.category }}</td>
+                <td class="c-det">{{ row.details }}</td>
+              </tr>
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="doc-disclaimer">
+      Documento para controle interno da unidade escolar. Não constitui documento oficial da Prefeitura.
+    </div>
+
+  </section>
+  {% endfor %}
+
+  <!-- ✅ Rodapé full width (todas as páginas) -->
+  <div class="footer-fixed" aria-hidden="true">
+    <div class="f-left">E.M. José Padin Mouta</div>
+    <div class="f-center">Relatório de Controle Interno</div>
+    <div class="f-right"><span class="page-counter"></span></div>
+  </div>
+</body>
+</html>

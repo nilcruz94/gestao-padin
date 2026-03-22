@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
-  <!-- ✅ CSRF token para POST via fetch (corrige HTTP 400 quando CSRFProtect está ativo) -->
+  <!-- ✅ CSRF token para POST via fetch -->
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
   <style>
@@ -29,16 +29,15 @@
       --info:#2563eb;
       --focus:0 0 0 3px rgba(13,110,253,0.16);
       --radius:18px;
+
+      --soft:#f8fafc;
+      --soft2:#f1f5f9;
+      --ink:#0f172a;
     }
 
-    * ,
-    *::before,
-    *::after {
-      box-sizing:border-box;
-    }
+    * , *::before, *::after { box-sizing:border-box; }
 
-    html,
-    body{
+    html, body{
       margin:0;
       padding:0;
       height:100%;
@@ -61,35 +60,20 @@
     }
 
     @media (min-width:769px){
-      main{
-        padding:30px 24px 80px;
-      }
+      main{ padding:30px 24px 80px; }
     }
 
-    button{
-      font-family:inherit;
-    }
+    button{ font-family:inherit; }
 
     /* ===========================
        CABEÇALHO (IGUAL AO ÍNDICE)
        =========================== */
+    .header-desktop, .header-mobile { flex-shrink:0; }
+    .header-desktop{ display:none; }
+    .header-mobile{ display:none; }
 
-    .header-desktop,
-    .header-mobile {
-      flex-shrink:0;
-    }
-
-    .header-desktop {
-      display:none;
-    }
-
-    .header-mobile {
-      display:none;
-    }
-
-    /* Desktop */
     @media (min-width: 769px) {
-      .header-desktop {
+      .header-desktop{
         display:flex;
         background-color:#007bff;
         padding:15px 30px;
@@ -102,38 +86,33 @@
         box-shadow:0 2px 6px rgba(0, 0, 0, 0.15);
         color:white;
       }
-      .left-section {
-        display:flex;
-        align-items:center;
-        gap:20px;
-      }
-      .logo {
-        width:80px;
-        height:80px;
+      .left-section{ display:flex; align-items:center; gap:20px; }
+      .logo{
+        width:80px; height:80px;
         object-fit:contain;
         border-radius:10px;
         background-color:white;
         padding:6px;
       }
-      .text-container {
+      .text-container{
         display:flex;
         flex-direction:column;
         justify-content:center;
         text-align:left;
         color:white;
       }
-      .escola-nome {
+      .escola-nome{
         font-weight:700;
         font-size:1.6rem;
         margin:0;
         line-height:1.1;
       }
-      .escola-subtitulo {
+      .escola-subtitulo{
         font-weight:600;
         font-size:1.1rem;
         margin-top:4px;
       }
-      .header-center-text-container {
+      .header-center-text-container{
         position:absolute;
         left:50%;
         top:50%;
@@ -147,10 +126,8 @@
         z-index:1;
         text-shadow:0 2px 5px rgba(0,0,0,0.3);
       }
-      .header-center-text {
-        font-family:'Montserrat',sans-serif;
-      }
-      .btn-home {
+      .header-center-text{ font-family:'Montserrat',sans-serif; }
+      .btn-home{
         background-color:#0fb300;
         color:white;
         padding:6px 14px;
@@ -169,14 +146,11 @@
         transform:translateY(-50%);
         z-index:2;
       }
-      .btn-home:hover {
-        background-color:#0d8a00;
-      }
+      .btn-home:hover{ background-color:#0d8a00; }
     }
 
-    /* Mobile */
     @media (max-width: 768px) {
-      .header-mobile {
+      .header-mobile{
         display:block;
         width:100%;
         box-sizing:border-box;
@@ -187,7 +161,7 @@
         box-shadow:0 2px 6px rgba(0, 0, 0, 0.15);
         background-color:#007bff;
       }
-      .header-top {
+      .header-top{
         display:flex;
         align-items:center;
         justify-content:center;
@@ -196,33 +170,32 @@
         background-color:#007bff;
         text-align:center;
       }
-      .logo {
-        width:48px;
-        height:48px;
+      .logo{
+        width:48px; height:48px;
         object-fit:contain;
         border-radius:10px;
         background-color:white;
         padding:6px;
       }
-      .text-container {
+      .text-container{
         display:flex;
         flex-direction:column;
         justify-content:center;
         color:white;
         text-align:center;
       }
-      .escola-nome {
+      .escola-nome{
         font-weight:700;
         font-size:1.3rem;
         margin:0;
         line-height:1.1;
       }
-      .escola-subtitulo {
+      .escola-subtitulo{
         font-weight:600;
         font-size:1rem;
         margin-top:2px;
       }
-      .header-bottom {
+      .header-bottom{
         background-color:#0056b3;
         text-align:center;
         padding:12px 10px;
@@ -239,7 +212,7 @@
         box-sizing:border-box;
         white-space:nowrap;
       }
-      .btn-home-mobile {
+      .btn-home-mobile{
         background-color:#0fb300;
         color:white;
         padding:6px 10px;
@@ -253,23 +226,19 @@
         box-shadow:0 2px 6px rgba(15,179,0,0.8);
         transition:background-color 0.3s ease;
       }
-      .btn-home-mobile:hover {
-        background-color:#0d8a00;
-      }
+      .btn-home-mobile:hover{ background-color:#0d8a00; }
     }
 
     /* ===========================
-       CONTEÚDO DA PÁGINA
+       CONTEÚDO
        =========================== */
-
     .page{
       width:100%;
       max-width:1100px;
       margin:0 auto;
     }
 
-    /* Header-card da página (igual TRE) */
-    .page-header-card {
+    .page-header-card{
       background:#ffffff;
       border-radius:18px;
       padding:16px 18px;
@@ -281,7 +250,7 @@
       border-left:5px solid var(--padin-primary);
     }
 
-    .page-header-icon {
+    .page-header-icon{
       display:inline-flex;
       align-items:center;
       justify-content:center;
@@ -293,48 +262,20 @@
       color:#2563eb;
       flex-shrink:0;
     }
+    .page-header-icon i{ font-size:22px; }
 
-    .page-header-icon i {
-      font-size:22px;
-    }
-
-    .page-header-content {
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-    }
-
-    .page-header-title {
-      font-size:1.15rem;
-      font-weight:800;
-      margin:0;
-      color:#111827;
-    }
-
-    .page-header-subtitle {
-      font-size:0.9rem;
-      margin:0;
-      color:#6b7280;
-    }
+    .page-header-content{ display:flex; flex-direction:column; gap:4px; }
+    .page-header-title{ font-size:1.15rem; font-weight:800; margin:0; color:#111827; }
+    .page-header-subtitle{ font-size:0.9rem; margin:0; color:#6b7280; }
 
     @media (max-width:600px){
-      .page-header-card{
-        padding:12px 14px;
-      }
-      .page-header-title{
-        font-size:1.05rem;
-      }
-      .page-header-subtitle{
-        font-size:.82rem;
-      }
+      .page-header-card{ padding:12px 14px; }
+      .page-header-title{ font-size:1.05rem; }
+      .page-header-subtitle{ font-size:.82rem; }
     }
 
-    /* ✅ Flash messages (novo — para POST/redirect do alterar e-mail) */
-    ul.flashes{
-      list-style:none;
-      padding:0;
-      margin:0 0 14px 0;
-    }
+    /* Flash messages */
+    ul.flashes{ list-style:none; padding:0; margin:0 0 14px 0; }
     ul.flashes li{
       padding:10px 14px;
       margin-bottom:8px;
@@ -353,7 +294,6 @@
     ul.flashes li.warning{ background:#fff7ed; color:#9a3412; border-color:#fed7aa; }
     ul.flashes li.info{ background:#eff6ff; color:#1e3a8a; border-color:#bfdbfe; }
 
-    /* Cards principais */
     .content-card{
       background:var(--padin-card);
       border-radius:16px;
@@ -364,10 +304,7 @@
       backdrop-filter:blur(8px);
       margin-bottom:24px;
     }
-
-    .filter-card{
-      margin-bottom:22px;
-    }
+    .filter-card{ margin-bottom:22px; }
 
     .content-title{
       font-size:1.05rem;
@@ -378,10 +315,7 @@
       align-items:center;
       gap:8px;
     }
-
-    .content-title i{
-      color:var(--padin-primary);
-    }
+    .content-title i{ color:var(--padin-primary); }
 
     .content-subtitle{
       font-size:.88rem;
@@ -389,7 +323,6 @@
       margin:0 0 14px;
     }
 
-    /* linha de busca + botões */
     .controls-row{
       display:flex;
       align-items:stretch;
@@ -421,34 +354,24 @@
       color:#333;
       box-shadow:0 2px 4px rgba(0,0,0,0.04);
       white-space:nowrap;
+      user-select:none;
     }
-
-    .btn:hover{
-      background:#f8fbff;
-    }
-
-    .btn.primary{
-      background:var(--padin-primary);
-      color:#fff;
-      border-color:var(--padin-primary);
-      box-shadow:0 3px 6px rgba(13,110,253,.4);
-    }
-
-    .btn.primary:hover{
-      background:var(--padin-primary-dark);
-    }
+    .btn:hover{ background:#f8fbff; }
 
     .btn.outline-blue{
       border-color:var(--padin-primary);
       color:var(--padin-primary);
       background:#f5f9ff;
     }
+    .btn.outline-blue:hover{ background:#e7f1ff; }
 
-    .btn.outline-blue:hover{
-      background:#e7f1ff;
-    }
+    /* ✅ Loading */
+    .btn.is-loading{ pointer-events:none; opacity:.78; }
+    .btn .spinner{ display:none; animation: spin 1s linear infinite; }
+    .btn.is-loading .spinner{ display:inline-block; }
+    .btn.is-loading .pdf-ico{ display:none; }
+    @keyframes spin{ to{ transform: rotate(360deg); } }
 
-    /* Barra de busca (dentro da linha de controles) */
     .searchbar{
       background:transparent;
       border:none;
@@ -473,18 +396,15 @@
       padding:6px 12px;
       box-shadow:0 4px 12px rgba(0,0,0,.05);
     }
-
     .search-input-wrapper:focus-within{
       box-shadow:var(--focus);
       border-color:rgba(13,110,253,.35);
     }
-
     .search-input-wrapper .search-icon{
       font-size:0.9rem;
       color:#8a96a3;
       flex-shrink:0;
     }
-
     .search-input-wrapper input{
       border:0;
       outline:0;
@@ -495,10 +415,7 @@
       color:#333;
       min-width:120px;
     }
-
-    .search-input-wrapper input::placeholder{
-      color:#a0a9b5;
-    }
+    .search-input-wrapper input::placeholder{ color:#a0a9b5; }
 
     .searchbar button{
       border:0;
@@ -513,12 +430,8 @@
       box-shadow:0 2px 5px rgba(13,110,253,.35);
       flex-shrink:0;
     }
+    .searchbar button:hover{ background:var(--padin-primary-dark); }
 
-    .searchbar button:hover{
-      background:var(--padin-primary-dark);
-    }
-
-    /* SELECT do filtro (compacto) */
     .status-filter{
       border-radius:999px;
       border:1px solid var(--padin-border);
@@ -532,48 +445,22 @@
       max-width:160px;
     }
 
-    /* RESPONSIVO CONTROLS / FILTRO */
     @media (max-width: 900px){
-      .controls-row{
-        flex-direction:column;
-        align-items:stretch;
-      }
-      .searchbar{
-        flex:1 1 100%;
-      }
-      .tools{
-        justify-content:flex-start;
-      }
+      .controls-row{ flex-direction:column; align-items:stretch; }
+      .searchbar{ flex:1 1 100%; }
+      .tools{ justify-content:flex-start; }
     }
 
     @media (max-width: 600px){
-      .searchbar{
-        flex-direction:column;
-        align-items:stretch;
-      }
-      .search-input-wrapper{
-        width:100%;
-      }
-      .status-filter{
-        width:100%;
-        max-width:none;
-      }
-      .searchbar button{
-        width:100%;
-        justify-content:center;
-      }
-      .tools{
-        flex-direction:column;
-        align-items:stretch;
-      }
-      .tools .btn{
-        width:100%;
-        justify-content:center;
-      }
+      .searchbar{ flex-direction:column; align-items:stretch; }
+      .search-input-wrapper{ width:100%; }
+      .status-filter{ width:100%; max-width:none; }
+      .searchbar button{ width:100%; justify-content:center; }
+      .tools{ flex-direction:column; align-items:stretch; }
+      .tools .btn{ width:100%; justify-content:center; }
     }
 
-    /* === LISTA DE USUÁRIOS (FLEX) === */
-
+    /* === LISTA DE USUÁRIOS === */
     .user-list{
       display:flex;
       flex-wrap:wrap;
@@ -592,9 +479,7 @@
     }
 
     @media (max-width:920px){
-      .user-card{
-        flex:1 1 100%;
-      }
+      .user-card{ flex:1 1 100%; }
     }
 
     .user-header{
@@ -603,25 +488,13 @@
       background:linear-gradient(180deg,#fff,#fcfdff);
       cursor:pointer;
     }
-
     .user-header:focus-visible{
       outline:2px solid var(--padin-primary);
       outline-offset:2px;
     }
 
-    /* Topo do card (nome + status + ação) */
-    .user-header-top{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-    }
-
-    .user-header-main{
-      display:flex;
-      align-items:center;
-      gap:8px;
-    }
-
+    .user-header-top{ display:flex; flex-direction:column; gap:8px; }
+    .user-header-main{ display:flex; align-items:center; gap:8px; }
     .user-name{
       font-weight:800;
       color:#111;
@@ -643,10 +516,7 @@
       margin-left:auto;
       flex-shrink:0;
     }
-
-    .user-header.open .chevron{
-      transform:rotate(180deg);
-    }
+    .user-header.open .chevron{ transform:rotate(180deg); }
 
     .metrics{
       display:flex;
@@ -678,35 +548,19 @@
       cursor:pointer;
       transition:background .2s ease, transform .08s ease, box-shadow .2s ease;
     }
-
     .metric.metric-clickable:hover{
       background:#f0f4ff;
       box-shadow:0 0 0 1px rgba(13,110,253,0.12);
       transform:translateY(-1px);
     }
-
     .metric.metric-clickable:active{
       transform:translateY(0);
       box-shadow:none;
     }
 
-    .m-ab{
-      color:#0b7;
-      background:#eafff7;
-      border-color:rgba(0,187,119,.25);
-    }
-
-    .m-tre{
-      color:#0d6efd;
-      background:#eef5ff;
-      border-color:rgba(13,110,253,.25);
-    }
-
-    .m-bh{
-      color:#7b3fe0;
-      background:#f5f0ff;
-      border-color:rgba(163,78,245,.25);
-    }
+    .m-ab{ color:#0b7; background:#eafff7; border-color:rgba(0,187,119,.25); }
+    .m-tre{ color:#0d6efd; background:#eef5ff; border-color:rgba(13,110,253,.25); }
+    .m-bh{ color:#7b3fe0; background:#f5f0ff; border-color:rgba(163,78,245,.25); }
 
     .user-details{
       display:none;
@@ -727,8 +581,7 @@
       border-collapse:collapse;
     }
 
-    .user-details th,
-    .user-details td{
+    .user-details th, .user-details td{
       padding:10px 8px;
       border-bottom:1px solid var(--padin-border);
       font-size:14px;
@@ -764,30 +617,12 @@
       justify-content:space-between;
       gap:8px;
     }
+    .ag-list li span.small{ font-size:.8rem; color:#666; }
 
-    .ag-list li span.small{
-      font-size:.8rem;
-      color:#666;
-    }
+    .no-records{ font-size:.85rem; color:#777; margin-bottom:6px; }
 
-    .no-records{
-      font-size:.85rem;
-      color:#777;
-      margin-bottom:6px;
-    }
-
-    .tre-details,
-    .bh-details{
-      display:none;
-      margin-top:4px;
-    }
-
-    .tre-details.open,
-    .bh-details.open{
-      display:block;
-    }
-
-    /* Status ativo/inativo */
+    .tre-details, .bh-details{ display:none; margin-top:4px; }
+    .tre-details.open, .bh-details.open{ display:block; }
 
     .status-pill{
       display:inline-flex;
@@ -800,25 +635,10 @@
       white-space:nowrap;
       border:1px solid transparent;
     }
+    .status-ativo{ background:#e7f8ef; color:#107c41; border-color:rgba(16,124,65,.25); }
+    .status-inativo{ background:#f0f0f0; color:#666; border-color:rgba(0,0,0,.12); }
 
-    .status-ativo{
-      background:#e7f8ef;
-      color:#107c41;
-      border-color:rgba(16,124,65,.25);
-    }
-
-    .status-inativo{
-      background:#f0f0f0;
-      color:#666;
-      border-color:rgba(0,0,0,.12);
-    }
-
-    .status-wrapper{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex-wrap:wrap;
-    }
+    .status-wrapper{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 
     .btn-mini{
       padding:6px 12px;
@@ -831,6 +651,7 @@
       align-items:center;
       gap:6px;
       white-space:nowrap;
+      text-decoration:none;
     }
 
     .btn-mini.ativar{
@@ -838,22 +659,16 @@
       color:#fff;
       box-shadow:0 2px 5px rgba(15,179,0,.4);
     }
-
-    .btn-mini.ativar:hover{
-      background:#0d8a00;
-    }
+    .btn-mini.ativar:hover{ background:#0d8a00; }
 
     .btn-mini.inativar{
       background:#dc3545;
       color:#fff;
       box-shadow:0 2px 5px rgba(220,53,69,.4);
     }
+    .btn-mini.inativar:hover{ background:#c82333; }
 
-    .btn-mini.inativar:hover{
-      background:#c82333;
-    }
-
-    /* ✅ NOVO: edição de e-mail (admin) */
+    /* edição de e-mail (admin) */
     .email-line{
       display:flex;
       align-items:center;
@@ -881,9 +696,7 @@
       border:1px solid rgba(13,110,253,.28);
       box-shadow:0 2px 5px rgba(13,110,253,.12);
     }
-    .btn-mini.outline:hover{
-      background:#e7f1ff;
-    }
+    .btn-mini.outline:hover{ background:#e7f1ff; }
 
     .email-edit-form{
       margin-top:10px;
@@ -893,10 +706,7 @@
       border-radius:14px;
       background:#fbfdff;
     }
-
-    .email-edit-form.open{
-      display:block;
-    }
+    .email-edit-form.open{ display:block; }
 
     .email-edit-row{
       display:flex;
@@ -946,8 +756,7 @@
       box-shadow:0 8px 20px rgba(15,23,42,.08);
     }
 
-    .pagination a,
-    .pagination span{
+    .pagination a, .pagination span{
       padding:8px 12px;
       border:1px solid var(--padin-border);
       border-radius:999px;
@@ -979,14 +788,12 @@
         overflow-x:auto;
         -webkit-overflow-scrolling:touch;
       }
-      .pagination a,
-      .pagination span{
+      .pagination a, .pagination span{
         padding:7px 10px;
         font-size:.8rem;
       }
     }
 
-    /* Rodapé */
     .footer{
       margin-top:auto;
       background:linear-gradient(90deg,#222,#444);
@@ -997,7 +804,7 @@
       font-size:.85rem;
     }
 
-    /* Toast de status (alerta bonito) */
+    /* Toast */
     #statusAlert{
       position:fixed;
       top:90px;
@@ -1019,25 +826,17 @@
       animation:fadeIn .2s ease-out;
     }
 
-    .alert-toast.success{
-      border-left-color:#198754;
-    }
+    .alert-toast.success{ border-left-color:#198754; }
+    .alert-toast.error{ border-left-color:#dc3545; }
 
-    .alert-toast.error{
-      border-left-color:#dc3545;
-    }
-
-    .alert-toast .icon{
-      margin-top:2px;
-      color:#495057;
-    }
+    .alert-toast .icon{ margin-top:2px; color:#495057; }
 
     @keyframes fadeIn{
       from{opacity:0; transform:translateY(-6px);}
       to{opacity:1; transform:translateY(0);}
     }
 
-    /* Modal de confirmação */
+    /* Modal base */
     .modal-backdrop{
       position:fixed;
       inset:0;
@@ -1046,11 +845,9 @@
       align-items:center;
       justify-content:center;
       z-index:3000;
+      padding:14px;
     }
-
-    .modal-backdrop.show{
-      display:flex;
-    }
+    .modal-backdrop.show{ display:flex; }
 
     .modal-box{
       background:#fff;
@@ -1062,24 +859,10 @@
       animation:fadeIn .2s ease-out;
     }
 
-    .modal-title{
-      margin:0 0 6px;
-      font-size:1rem;
-      font-weight:900;
-    }
+    .modal-title{ margin:0 0 6px; font-size:1rem; font-weight:900; }
+    .modal-text{ font-size:.9rem; color:#555; margin-bottom:14px; line-height:1.35; }
 
-    .modal-text{
-      font-size:.9rem;
-      color:#555;
-      margin-bottom:14px;
-      line-height:1.35;
-    }
-
-    .modal-actions{
-      display:flex;
-      justify-content:flex-end;
-      gap:8px;
-    }
+    .modal-actions{ display:flex; justify-content:flex-end; gap:8px; }
 
     .modal-btn{
       border-radius:999px;
@@ -1090,11 +873,7 @@
       cursor:pointer;
     }
 
-    .modal-btn.cancel{
-      background:#e9ecef;
-      color:#333;
-    }
-
+    .modal-btn.cancel{ background:#e9ecef; color:#333; }
     .modal-btn.confirm{
       background:#dc3545;
       color:#fff;
@@ -1106,17 +885,509 @@
       box-shadow:0 3px 8px rgba(15,179,0,.5);
     }
 
-    /* Modal específico para e-mail */
-    .modal-btn.primary{
-      background:var(--padin-primary);
-      box-shadow:0 3px 10px rgba(13,110,253,.35);
+    /* ✅ botão relatório individual */
+    .btn-mini.report{
+      background:#111827;
+      color:#fff;
+      box-shadow:0 2px 6px rgba(17,24,39,.25);
     }
-    .modal-btn.primary:hover{ background:var(--padin-primary-dark); }
+    .btn-mini.report:hover{ background:#0b1220; }
+
+    /* ===========================
+       ✅ MODAL RELATÓRIO (upgrade)
+       =========================== */
+    .modal-box.lg{
+      max-width:920px;
+      width:96%;
+      padding:0;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      max-height:calc(100vh - 24px);
+      border-radius:20px;
+    }
+
+    .report-head{
+      padding:14px 16px 12px;
+      background:linear-gradient(180deg, #ffffff, #fbfdff);
+      border-bottom:1px solid rgba(148,163,184,.22);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .report-title{
+      margin:0;
+      font-size:1.06rem;
+      font-weight:900;
+      color:var(--ink);
+    }
+    .report-sub{
+      margin:6px 0 0;
+      font-size:.86rem;
+      color:#64748b;
+      font-weight:700;
+      line-height:1.35;
+    }
+    .report-close{
+      border:0;
+      background:#f1f5f9;
+      color:#0f172a;
+      width:38px;
+      height:38px;
+      border-radius:14px;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 2px 6px rgba(15,23,42,.08);
+      flex:0 0 auto;
+    }
+    .report-close:hover{ background:#e9eef5; }
+
+    .report-scroll{
+      padding:14px 16px 12px;
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+      background:linear-gradient(180deg,#ffffff,#fbfdff);
+    }
+
+    .report-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width: 760px){
+      .report-grid{ grid-template-columns: 1fr; }
+    }
+
+    .report-panel{
+      border:1px solid rgba(148,163,184,.32);
+      border-radius:16px;
+      background:#fff;
+      box-shadow:0 10px 26px rgba(15,23,42,.06);
+      padding:12px;
+    }
+    .panel-title{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin:0 0 10px;
+      font-size:.92rem;
+      font-weight:900;
+      color:#111827;
+    }
+    .panel-title i{ color: var(--padin-primary); }
+
+    .field-row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      align-items:end;
+    }
+    @media (max-width: 520px){
+      .field-row{ grid-template-columns: 1fr; }
+    }
+
+    .field label{
+      display:block;
+      font-size:.78rem;
+      font-weight:900;
+      color:#374151;
+      margin:0 0 6px;
+    }
+    .field input[type="date"],
+    .field input[type="text"],
+    .field select{
+      width:100%;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,.14);
+      outline:none;
+      font-weight:800;
+      background:#fff;
+      font-size:.9rem;
+    }
+    .field input:focus, .field select:focus{
+      border-color:rgba(13,110,253,.45);
+      box-shadow:var(--focus);
+    }
+
+    .preset-row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .preset-btn{
+      border:1px solid rgba(13,110,253,.22);
+      background:#f5f9ff;
+      color:#0d6efd;
+      border-radius:999px;
+      padding:7px 10px;
+      font-size:.78rem;
+      font-weight:900;
+      cursor:pointer;
+      user-select:none;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .preset-btn:hover{ background:#e7f1ff; }
+    .preset-btn.active{
+      background:#0d6efd;
+      color:#fff;
+      border-color:#0d6efd;
+      box-shadow:0 3px 10px rgba(13,110,253,.25);
+    }
+
+    .types-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:8px;
+    }
+    @media (max-width: 520px){
+      .types-grid{ grid-template-columns: 1fr; }
+    }
+    .type-item{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 10px;
+      border-radius:14px;
+      border:1px solid rgba(148,163,184,.35);
+      background:#fbfdff;
+      cursor:pointer;
+      user-select:none;
+    }
+    .type-item input{
+      width:16px; height:16px;
+      accent-color: var(--padin-primary);
+      margin:0;
+      cursor:pointer;
+    }
+    .type-item:hover{
+      background:#f5f9ff;
+      border-color:rgba(13,110,253,.22);
+    }
+    .type-item .tname{
+      font-weight:900;
+      font-size:.84rem;
+      color:#111827;
+    }
+
+    .sel-tools{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .sel-tools .btn-mini{
+      border-radius:999px;
+      padding:7px 12px;
+      font-size:.78rem;
+      font-weight:900;
+      border:0;
+      background:#f1f5f9;
+      color:#111827;
+      box-shadow:0 2px 5px rgba(15,23,42,.06);
+      cursor:pointer;
+    }
+    .sel-tools .btn-mini:hover{ background:#e9eef5; }
+
+    .sel-summary{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px dashed rgba(13,110,253,.25);
+      background:#fbfdff;
+      color:#111827;
+      font-weight:800;
+      font-size:.86rem;
+      line-height:1.35;
+    }
+    .sel-summary .muted{
+      color:#6b7280;
+      font-weight:700;
+    }
+
+    .scope-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:8px;
+    }
+    @media (max-width:520px){
+      .scope-grid{ grid-template-columns: 1fr; }
+    }
+    .scope-item{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:10px 10px;
+      border-radius:14px;
+      border:1px solid rgba(148,163,184,.35);
+      background:#fbfdff;
+      cursor:pointer;
+      user-select:none;
+    }
+    .scope-item input{
+      margin-top:2px;
+      width:16px; height:16px;
+      accent-color: var(--padin-primary);
+      cursor:pointer;
+      flex:0 0 auto;
+    }
+    .scope-item:hover{
+      background:#f5f9ff;
+      border-color:rgba(13,110,253,.22);
+    }
+    .scope-item .sname{
+      font-weight:900;
+      font-size:.84rem;
+      color:#111827;
+      line-height:1.25;
+    }
+    .scope-item .shint{
+      margin-top:2px;
+      font-size:.78rem;
+      color:#6b7280;
+      font-weight:700;
+      line-height:1.25;
+    }
+
+    .manual-wrap{
+      margin-top:10px;
+      border-top:1px dashed rgba(148,163,184,.45);
+      padding-top:10px;
+      display:none;
+    }
+    .manual-wrap.show{ display:block; }
+
+    .chip-row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top:10px;
+    }
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(13,110,253,.20);
+      background:#f5f9ff;
+      color:#0d6efd;
+      font-size:.78rem;
+      font-weight:900;
+      max-width:100%;
+    }
+    .chip .name{
+      max-width:220px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .chip button{
+      border:0;
+      background:transparent;
+      cursor:pointer;
+      color:#0d6efd;
+      font-size:14px;
+      line-height:1;
+      padding:0;
+    }
+
+    .manual-toolbar{
+      display:grid;
+      grid-template-columns: 1fr 170px;
+      gap:10px;
+      align-items:end;
+      margin-top:10px;
+    }
+    @media (max-width:560px){
+      .manual-toolbar{ grid-template-columns: 1fr; }
+    }
+
+    .pick-list{
+      margin-top:10px;
+      border:1px solid rgba(148,163,184,.35);
+      border-radius:14px;
+      background:#fff;
+      overflow:auto;
+      max-height:320px;
+      -webkit-overflow-scrolling:touch;
+    }
+    .pick-item{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 10px;
+      border-bottom:1px solid rgba(148,163,184,.18);
+      cursor:pointer;
+      user-select:none;
+    }
+    .pick-item:last-child{ border-bottom:0; }
+    .pick-item:hover{ background:#fbfdff; }
+    .pick-item input{
+      width:16px; height:16px;
+      accent-color: var(--padin-primary);
+      margin:0;
+      cursor:pointer;
+      flex:0 0 auto;
+    }
+    .pick-name{
+      flex:1 1 auto;
+      font-weight:900;
+      font-size:.84rem;
+      color:#111827;
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .pick-badge{
+      flex:0 0 auto;
+      font-size:.72rem;
+      font-weight:900;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(0,0,0,.10);
+      background:#f8fafc;
+      color:#334155;
+      white-space:nowrap;
+    }
+    .pick-badge.on{ background:#e7f8ef; color:#107c41; border-color:rgba(16,124,65,.25); }
+    .pick-badge.off{ background:#f0f0f0; color:#666; border-color:rgba(0,0,0,.12); }
+
+    .pick-meta{
+      margin-top:10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .meta-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.35);
+      background:#fff;
+      font-weight:900;
+      font-size:.78rem;
+      color:#111827;
+      white-space:nowrap;
+    }
+    .meta-pill .muted{ color:#64748b; font-weight:800; }
+
+    .out-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:8px;
+    }
+    @media (max-width:520px){
+      .out-grid{ grid-template-columns: 1fr; }
+    }
+    .out-item{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:10px 10px;
+      border-radius:14px;
+      border:1px solid rgba(148,163,184,.35);
+      background:#fbfdff;
+      cursor:pointer;
+      user-select:none;
+    }
+    .out-item input{
+      margin-top:2px;
+      width:16px; height:16px;
+      accent-color: var(--padin-primary);
+      cursor:pointer;
+      flex:0 0 auto;
+    }
+    .out-item:hover{
+      background:#f5f9ff;
+      border-color:rgba(13,110,253,.22);
+    }
+    .out-item .oname{
+      font-weight:900;
+      font-size:.84rem;
+      color:#111827;
+      line-height:1.25;
+    }
+    .out-item .ohint{
+      margin-top:2px;
+      font-size:.78rem;
+      color:#6b7280;
+      font-weight:700;
+      line-height:1.25;
+    }
+
+    .preview-box{
+      border:1px dashed rgba(148,163,184,.55);
+      background:linear-gradient(180deg,#ffffff,#fbfdff);
+      border-radius:14px;
+      padding:10px 12px;
+      margin-top:10px;
+      color:#0f172a;
+      font-weight:800;
+      font-size:.86rem;
+      line-height:1.35;
+    }
+    .preview-box .muted{ color:#64748b; font-weight:700; }
+    .preview-row{ display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .preview-row strong{ font-weight:900; }
+
+    .report-foot{
+      padding:12px 16px;
+      background:#fff;
+      border-top:1px solid rgba(148,163,184,.22);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .report-foot .btn{ border-radius:999px; }
+    .btn.dark{
+      background:#111827;
+      color:#fff;
+      border-color:#111827;
+      box-shadow:0 3px 10px rgba(17,24,39,.20);
+    }
+    .btn.dark:hover{ background:#0b1220; }
+
+    .pref-row{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      color:#64748b;
+      font-weight:800;
+      font-size:.78rem;
+    }
+    .pref-row label{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      cursor:pointer;
+      user-select:none;
+    }
+    .pref-row input{
+      width:14px;
+      height:14px;
+      accent-color: var(--padin-primary);
+      margin:0;
+    }
   </style>
-
 </head>
-<body>
 
+<body>
   <!-- Cabeçalho Desktop -->
   <header class="header-desktop">
     <div class="left-section">
@@ -1153,13 +1424,12 @@
     </div>
   </header>
 
-  <!-- Área de toast (AJAX do ativar/inativar) -->
+  <!-- Toast -->
   <div id="statusAlert" aria-live="polite"></div>
 
   <main role="main">
     <div class="page">
 
-      <!-- Header-card -->
       <div class="page-header-card">
         <div class="page-header-icon">
           <i class="fa-solid fa-users"></i>
@@ -1172,7 +1442,7 @@
         </div>
       </div>
 
-      <!-- ✅ Flash messages (para POST do alterar e-mail / redirects) -->
+      <!-- Flash -->
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           <ul class="flashes">
@@ -1196,10 +1466,9 @@
         {% endif %}
       {% endwith %}
 
-      {# status_filtro para o select: padrão "ativos" #}
       {% set status_filtro = status or 'ativos' %}
 
-      <!-- Card de filtros / ações -->
+      <!-- Filtros -->
       <section class="content-card filter-card">
         <h2 class="content-title">
           <i class="fa-solid fa-filter"></i>
@@ -1210,8 +1479,6 @@
         </p>
 
         <div class="controls-row">
-
-          <!-- Busca (GET q=..., status=...) -->
           <form class="searchbar" role="search" method="get" action="{{ url_for('user_info_all') }}">
             <input type="hidden" name="per_page" value="{{ per_page }}">
 
@@ -1236,7 +1503,6 @@
             <button type="submit">Buscar</button>
           </form>
 
-          <!-- Botões de ação -->
           <div class="tools">
             <button type="button" class="btn" id="expandAllBtn">
               <i class="fa-solid fa-angles-down"></i> <span>Expandir tudo</span>
@@ -1245,16 +1511,23 @@
               <i class="fa-solid fa-angles-up"></i> <span>Recolher tudo</span>
             </button>
 
-            <!-- Botão: Gerar Relatório PDF -->
-            <a class="btn outline-blue" href="{{ url_for('user_info_report') }}" target="_blank">
-              <i class="fa-solid fa-file-pdf"></i>
-              <span>Gerar Relatório</span>
+            <!-- ✅ Relatório completo/detalhado (modal) -->
+            <a
+              class="btn outline-blue"
+              id="btnReport"
+              href="{{ url_for('user_info_report', fetch=1) }}"
+              aria-label="Configurar relatório completo"
+              title="Relatório completo (configurar período, tipos e usuários)"
+            >
+              <i class="fa-solid fa-rotate spinner" aria-hidden="true"></i>
+              <i class="fa-solid fa-file-pdf pdf-ico" aria-hidden="true"></i>
+              <span>Relatório Completo</span>
             </a>
           </div>
         </div>
       </section>
 
-      <!-- Card principal com resultados -->
+      <!-- Resultados -->
       <section class="content-card">
 
         <section class="user-list" id="userList" aria-label="Lista de usuários">
@@ -1277,7 +1550,7 @@
             {% set bh_horas = (bh_total_min // 60) | int %}
             {% set bh_min   = (bh_total_min % 60) | int %}
 
-            <article class="user-card" data-name="{{ (user.nome or '')|lower }}">
+            <article class="user-card" data-name="{{ (user.nome or '')|lower }}" data-user-id="{{ user.id }}">
               <div class="user-header" role="button" tabindex="0" aria-expanded="false">
                 <div class="user-header-top">
                   <div class="user-header-main">
@@ -1290,6 +1563,22 @@
                       <i class="fa-solid fa-circle{% if user.ativo %}-check{% else %}-minus{% endif %}"></i>
                       {% if user.ativo %}Ativo{% else %}Inativo{% endif %}
                     </span>
+
+                    <!-- ✅ Relatório do card:
+                         - Clique normal: gera imediato (período total)
+                         - Alt ou Shift: abre modal com este usuário pré-selecionado (período/tipos) -->
+                    {% if current_user.is_authenticated and current_user.tipo == 'administrador' %}
+                      <a
+                        class="btn-mini report report-single-btn"
+                        href="{{ url_for('user_info_report_single', user_id=user.id, download=1, fetch=1) }}"
+                        data-user-id="{{ user.id }}"
+                        data-user-nome="{{ user.nome|e }}"
+                        title="Relatório deste servidor: clique normal (total) • Alt/Shift (configurar período/tipos)"
+                        aria-label="Relatório deste servidor"
+                      >
+                        <i class="fa-solid fa-file-pdf"></i> Relatório
+                      </a>
+                    {% endif %}
 
                     {% if current_user.is_authenticated and current_user.tipo == 'administrador' %}
                       <button
@@ -1368,7 +1657,6 @@
                         </div>
 
                         {% if current_user.is_authenticated and current_user.tipo == 'administrador' %}
-                          <!-- ✅ NOVO: form para admin alterar e-mail + enviar redefinição -->
                           <form
                             id="emailForm{{ user.id }}"
                             class="email-edit-form"
@@ -1558,7 +1846,6 @@
             </nav>
           </div>
         {% endif %}
-
       </section>
     </div>
   </main>
@@ -1584,11 +1871,285 @@
     </div>
   </div>
 
+  <!-- ✅ Modal de relatório completo -->
+  <div id="reportModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-box lg">
+      <div class="report-head">
+        <div>
+          <h2 class="report-title">Relatório completo — configuração</h2>
+          <p class="report-sub">
+            Registros respeitam período/tipos. Saldos de TRE e BH permanecem como saldos atuais. (Controle interno)
+          </p>
+        </div>
+        <button type="button" class="report-close" id="reportCloseBtn" aria-label="Fechar">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="report-scroll" id="reportScroll">
+        <div class="report-grid">
+          <!-- Período -->
+          <div class="report-panel">
+            <h3 class="panel-title"><i class="fa-solid fa-calendar-days"></i> Período</h3>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="dtIni">Data inicial</label>
+                <input type="date" id="dtIni">
+              </div>
+              <div class="field">
+                <label for="dtFim">Data final</label>
+                <input type="date" id="dtFim">
+              </div>
+            </div>
+
+            <div class="preset-row" aria-label="Presets de período">
+              <button type="button" class="preset-btn" data-preset="month_current"><i class="fa-solid fa-bolt"></i> Mês atual</button>
+              <button type="button" class="preset-btn" data-preset="month_prev">Mês anterior</button>
+              <button type="button" class="preset-btn" data-preset="last_30">Últimos 30 dias</button>
+              <button type="button" class="preset-btn" data-preset="year_current">Ano atual</button>
+              <button type="button" class="preset-btn" data-preset="total">Período total</button>
+            </div>
+
+            <div class="sel-summary">
+              <div><span class="muted">Dica:</span> você pode deixar as datas vazias para gerar “Período total”.</div>
+            </div>
+          </div>
+
+          <!-- Tipos -->
+          <div class="report-panel">
+            <h3 class="panel-title"><i class="fa-solid fa-sliders"></i> Tipos incluídos</h3>
+
+            <div class="types-grid" id="typesGrid">
+              {% if report_types is defined and report_types %}
+                {% for t in report_types %}
+                  <label class="type-item">
+                    <input type="checkbox" class="type-cb" value="{{ t.code }}" checked>
+                    <span class="tname">{{ t.label }}{% if t.code != 'OUTROS' %} ({{ t.code }}){% endif %}</span>
+                  </label>
+                {% endfor %}
+              {% else %}
+                <label class="type-item"><input type="checkbox" class="type-cb" value="AB" checked><span class="tname">Abonadas (AB)</span></label>
+                <label class="type-item"><input type="checkbox" class="type-cb" value="BH" checked><span class="tname">Banco de Horas (BH)</span></label>
+                <label class="type-item"><input type="checkbox" class="type-cb" value="TRE" checked><span class="tname">TRE</span></label>
+                <label class="type-item"><input type="checkbox" class="type-cb" value="LM" checked><span class="tname">Licenças Médicas (LM)</span></label>
+                <label class="type-item"><input type="checkbox" class="type-cb" value="DL" checked><span class="tname">Dispensa Legal (DL)</span></label>
+                <label class="type-item"><input type="checkbox" class="type-cb" value="DS" checked><span class="tname">Doação de Sangue (DS)</span></label>
+                <label class="type-item"><input type="checkbox" class="type-cb" value="FS" checked><span class="tname">Falta Simples (FS)</span></label>
+                <label class="type-item"><input type="checkbox" class="type-cb" value="OUTROS" checked><span class="tname">Outros</span></label>
+              {% endif %}
+            </div>
+
+            <div class="sel-tools">
+              <button type="button" class="btn-mini" id="typesAllBtn"><i class="fa-solid fa-check-double"></i> Marcar todos</button>
+              <button type="button" class="btn-mini" id="typesNoneBtn"><i class="fa-solid fa-ban"></i> Limpar</button>
+            </div>
+          </div>
+
+          <!-- Saída -->
+          <div class="report-panel">
+            <h3 class="panel-title"><i class="fa-solid fa-file-export"></i> Modo de saída</h3>
+
+            <div class="out-grid" role="group" aria-label="Saída">
+              <label class="out-item">
+                <input type="radio" name="reportOutput" value="pdf" checked>
+                <div>
+                  <div class="oname">PDF único (consolidado)</div>
+                  <div class="ohint">Melhor para leitura e consulta em um único arquivo.</div>
+                </div>
+              </label>
+
+              <label class="out-item">
+                <input type="radio" name="reportOutput" value="zip">
+                <div>
+                  <div class="oname">ZIP (1 PDF por servidor)</div>
+                  <div class="ohint">Melhor para arquivamento/prontuário individual.</div>
+                </div>
+              </label>
+            </div>
+
+            <div class="out-grid" role="group" aria-label="Ação" style="margin-top:10px;">
+              <label class="out-item" id="actionOpenItem">
+                <input type="radio" name="reportAction" value="open" checked>
+                <div>
+                  <div class="oname">Abrir no navegador</div>
+                  <div class="ohint">Abre o PDF em nova aba (não “força download”).</div>
+                </div>
+              </label>
+
+              <label class="out-item">
+                <input type="radio" name="reportAction" value="download">
+                <div>
+                  <div class="oname">Baixar</div>
+                  <div class="ohint">Baixa o arquivo (PDF ou ZIP) automaticamente.</div>
+                </div>
+              </label>
+            </div>
+
+            <div class="sel-summary" id="zipHint" style="display:none;">
+              <div><span class="muted">Obs.:</span> no modo ZIP, a opção “Abrir no navegador” é desativada.</div>
+            </div>
+          </div>
+
+          <!-- Preview -->
+          <div class="report-panel">
+            <h3 class="panel-title"><i class="fa-solid fa-chart-simple"></i> Prévia (estimativa)</h3>
+
+            <div class="preview-box" id="previewBox">
+              <div class="preview-row">
+                <span><span class="muted">Usuários no escopo:</span> <strong id="pvUsers">—</strong></span>
+                <span><span class="muted">Registros estimados:</span> <strong id="pvRegs">—</strong></span>
+              </div>
+              <div style="margin-top:6px;" class="muted" id="pvDetail">
+                Ajuste período/tipos e clique em “Atualizar prévia”.
+              </div>
+
+              <div class="sel-tools" style="margin-top:10px;">
+                <button type="button" class="btn-mini" id="pvRefreshBtn"><i class="fa-solid fa-rotate"></i> Atualizar prévia</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Usuários (escopo + manual) -->
+          <div class="report-panel" style="grid-column: 1 / -1;">
+            <h3 class="panel-title"><i class="fa-solid fa-users"></i> Usuários</h3>
+
+            <div class="scope-grid" role="group" aria-label="Escopo de usuários">
+              {% set _has_filter = (q and q|length > 0) or (status_filtro != 'ativos') %}
+              {% if _has_filter %}
+              <label class="scope-item">
+                <input type="radio" name="reportScope" value="filtered_all" checked>
+                <div>
+                  <div class="sname">
+                    Resultados desta busca
+                    {% if total_filtrado is defined %} ({{ total_filtrado }}){% endif %}
+                  </div>
+                  <div class="shint">Usa a pesquisa e o status atuais, sem limitar pela paginação.</div>
+                </div>
+              </label>
+              {% endif %}
+
+              <label class="scope-item">
+                <input
+                  type="radio"
+                  name="reportScope"
+                  value="ativos_all"
+                  {% if not _has_filter %}checked{% endif %}
+                >
+                <div>
+                  <div class="sname">Todos os usuários ativos {% if total_ativos is defined %} ({{ total_ativos }}){% endif %}</div>
+                  <div class="shint">Ignora busca atual; considera apenas ativos.</div>
+                </div>
+              </label>
+
+              <label class="scope-item">
+                <input type="radio" name="reportScope" value="all">
+                <div>
+                  <div class="sname">Todos os usuários (ativos + inativos) {% if total_todos is defined %} ({{ total_todos }}){% endif %}</div>
+                  <div class="shint">Ignora busca atual; inclui todos do sistema.</div>
+                </div>
+              </label>
+
+              <label class="scope-item">
+                <input type="radio" name="reportScope" value="selected">
+                <div>
+                  <div class="sname">Selecionar manualmente (buscar e marcar)</div>
+                  <div class="shint">Pesquise qualquer servidor e selecione somente quem deve entrar.</div>
+                </div>
+              </label>
+            </div>
+
+            <div class="manual-wrap" id="manualWrap">
+              <div class="sel-summary">
+                <div>
+                  <span id="manualSelectedCount">0</span> selecionado(s)
+                  <span class="muted">— a seleção permanece mesmo mudando páginas da busca.</span>
+                </div>
+              </div>
+
+              <!-- Chips selecionados -->
+              <div class="chip-row" id="chipRow" aria-label="Selecionados"></div>
+
+              <div class="manual-toolbar">
+                <div class="field">
+                  <label for="userSearchInput">Buscar servidor</label>
+                  <input type="text" id="userSearchInput" placeholder="Digite nome, parte do nome…" autocomplete="off">
+                </div>
+                <div class="field">
+                  <label for="userSearchStatus">Status</label>
+                  <select id="userSearchStatus">
+                    <option value="ativos">Somente ativos</option>
+                    <option value="inativos">Somente inativos</option>
+                    <option value="todos">Todos</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="sel-tools">
+                <button type="button" class="btn-mini" id="manualSelectPageBtn"><i class="fa-solid fa-check"></i> Selecionar esta página</button>
+                <button type="button" class="btn-mini" id="manualSelectAllResultsBtn"><i class="fa-solid fa-triangle-exclamation"></i> Selecionar todos resultados desta busca</button>
+                <button type="button" class="btn-mini" id="manualClearBtn"><i class="fa-solid fa-eraser"></i> Limpar seleção</button>
+              </div>
+
+              <div class="pick-meta">
+                <span class="meta-pill"><i class="fa-solid fa-magnifying-glass"></i> <span class="muted">Resultados:</span> <span id="manualResultsCount">0</span></span>
+                <span class="meta-pill"><i class="fa-solid fa-layer-group"></i> <span class="muted">Página:</span> <span id="manualPageLabel">1</span></span>
+              </div>
+
+              <div class="pick-list" id="manualList" aria-label="Resultados da busca"></div>
+
+              <div class="sel-tools">
+                <button type="button" class="btn-mini" id="manualPrevBtn"><i class="fa-solid fa-chevron-left"></i> Anterior</button>
+                <button type="button" class="btn-mini" id="manualNextBtn">Próxima <i class="fa-solid fa-chevron-right"></i></button>
+              </div>
+
+              <div class="sel-summary">
+                <div class="muted">
+                  Obs.: esta lista vem do sistema inteiro via busca. Se nada aparecer, verifique a rota <code>/admin/users/search</code>.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- endpoints / dados do filtro atual -->
+        <div
+          id="reportEndpoint"
+          data-report-url="{{ url_for('user_info_report', fetch=1) }}"
+          data-count-url="{{ url_for('user_info_report_count') }}"
+          data-users-search-url="{{ url_for('admin_users_search') }}"
+          data-stats-url="/user_info_report_stats"
+          data-q="{{ q or '' }}"
+          data-status="{{ status_filtro }}"
+          data-has-filter="{{ 1 if ((q and q|length > 0) or (status_filtro != 'ativos')) else 0 }}"
+          style="display:none;"
+        ></div>
+      </div>
+
+      <div class="report-foot">
+        <div class="pref-row">
+          <label title="Salvar escolhas do modal neste navegador">
+            <input type="checkbox" id="rememberPrefsCb" checked>
+            Lembrar minhas escolhas
+          </label>
+        </div>
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn" id="reportCancelBtn">Cancelar</button>
+          <button type="button" class="btn dark" id="reportGenerateBtn">
+            <i class="fa-solid fa-rotate spinner" aria-hidden="true"></i>
+            <i class="fa-solid fa-file-pdf pdf-ico" aria-hidden="true"></i>
+            <span>Gerar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     function toggleDetails(headerEl){
       const details = headerEl.nextElementSibling;
       const isOpen = details.style.display === 'block';
-
       details.style.display = isOpen ? 'none' : 'block';
       headerEl.classList.toggle('open', !isOpen);
       headerEl.setAttribute('aria-expanded', String(!isOpen));
@@ -1627,10 +2188,8 @@
       const modalBtnCancel = document.getElementById('confirmModalCancel');
       const modalBtnConfirm = document.getElementById('confirmModalConfirm');
 
-      // ✅ pega CSRF do <meta> pra evitar 400 (CSRFProtect / Flask-WTF)
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-
-      let currentAction = null; // { userId, userNome, url, ativo }
+      let currentAction = null;
 
       function showAlert(message, type = 'success') {
         if (!alertBox) return;
@@ -1642,10 +2201,10 @@
             <div>${message}</div>
           </div>
         `;
-        setTimeout(() => { alertBox.innerHTML = ''; }, 4000);
+        setTimeout(() => { alertBox.innerHTML = ''; }, 4500);
       }
 
-      // ✅ Toggle do form de e-mail
+      // e-mail form toggle
       function openEmailForm(formId){
         const form = document.getElementById(formId);
         if (!form) return;
@@ -1683,10 +2242,15 @@
         });
       });
 
-      // Clique nos headers (abrir/fechar card)
+      // abrir/fechar cards
       document.querySelectorAll('.user-header').forEach(header => {
         header.addEventListener('click', function (event) {
-          if (event.target.closest('.metric') || event.target.closest('.toggle-ativo-btn') || event.target.closest('.email-toggle-btn')) return;
+          if (
+            event.target.closest('.metric') ||
+            event.target.closest('.toggle-ativo-btn') ||
+            event.target.closest('.email-toggle-btn') ||
+            event.target.closest('.report-single-btn')
+          ) return;
           toggleDetails(header);
         });
 
@@ -1698,7 +2262,7 @@
         });
       });
 
-      // Clique em TRE / BH para abrir listas internas
+      // abrir detalhes TRE/BH
       document.querySelectorAll('.metric.metric-clickable').forEach(metric => {
         metric.addEventListener('click', function (event) {
           event.stopPropagation();
@@ -1719,7 +2283,13 @@
       if (expandAllBtn) expandAllBtn.addEventListener('click', expandAll);
       if (collapseAllBtn) collapseAllBtn.addEventListener('click', collapseAll);
 
-      // Botões de ativar/inativar (topo e dentro do card)
+      function closeConfirmModal() {
+        modalBackdrop.classList.remove('show');
+        modalBackdrop.setAttribute('aria-hidden', 'true');
+        modalBtnConfirm.disabled = false;
+      }
+
+      // abrir modal ativar/inativar
       document.querySelectorAll('.toggle-ativo-btn').forEach(btn => {
         btn.addEventListener('click', function (event) {
           event.stopPropagation();
@@ -1747,13 +2317,7 @@
         });
       });
 
-      function closeModal() {
-        modalBackdrop.classList.remove('show');
-        modalBackdrop.setAttribute('aria-hidden', 'true');
-        modalBtnConfirm.disabled = false;
-      }
-
-      // Confirmar alteração (AJAX)
+      // confirmar ativar/inativar
       modalBtnConfirm.addEventListener('click', function () {
         if (!currentAction) return;
         modalBtnConfirm.disabled = true;
@@ -1784,15 +2348,8 @@
           }
 
           let data;
-          try {
-            data = await resp.json();
-          } catch (e) {
-            throw new Error('Resposta inválida do servidor.');
-          }
-
-          if (!data || !data.success) {
-            throw new Error((data && data.error) || 'Erro ao alterar status.');
-          }
+          try { data = await resp.json(); } catch (e) { throw new Error('Resposta inválida do servidor.'); }
+          if (!data || !data.success) throw new Error((data && data.error) || 'Erro ao alterar status.');
 
           const novoAtivo = !!data.ativo;
           const userId = currentAction.userId;
@@ -1812,18 +2369,12 @@
             btn.classList.toggle('ativar', !novoAtivo);
             btn.classList.toggle('inativar', novoAtivo);
 
-            if (!btn.closest('td')) {
-              btn.innerHTML = novoAtivo
-                ? '<i class="fa-solid fa-user-slash"></i> Inativar'
-                : '<i class="fa-solid fa-user-check"></i> Ativar';
-            } else {
-              btn.innerHTML = novoAtivo
-                ? '<i class="fa-solid fa-user-slash"></i> Marcar como inativo'
-                : '<i class="fa-solid fa-user-check"></i> Marcar como ativo';
-            }
+            btn.innerHTML = novoAtivo
+              ? '<i class="fa-solid fa-user-slash"></i> Inativar'
+              : '<i class="fa-solid fa-user-check"></i> Ativar';
           });
 
-          closeModal();
+          closeConfirmModal();
           currentAction = null;
 
           showAlert(
@@ -1835,30 +2386,952 @@
         })
         .catch(err => {
           modalBtnConfirm.disabled = false;
-          closeModal();
+          closeConfirmModal();
           currentAction = null;
           showAlert(err && err.message ? err.message : 'Não foi possível comunicar com o servidor.', 'error');
         });
       });
 
       modalBtnCancel.addEventListener('click', function () {
-        closeModal();
+        closeConfirmModal();
         currentAction = null;
       });
 
       modalBackdrop.addEventListener('click', function (event) {
         if (event.target === modalBackdrop) {
-          closeModal();
+          closeConfirmModal();
           currentAction = null;
         }
       });
 
       document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape' && modalBackdrop.classList.contains('show')) {
-          closeModal();
+          closeConfirmModal();
           currentAction = null;
         }
       });
+
+      // ===========================
+      // Download helpers (PDF/ZIP)
+      // ===========================
+      function parseFilenameFromContentDisposition(cd){
+        if (!cd) return null;
+        const m = cd.match(/filename\*?=(?:UTF-8''|")?([^\";\n]+)"?/i);
+        if (!m) return null;
+        try { return decodeURIComponent(m[1].trim()); } catch { return m[1].trim(); }
+      }
+
+      async function downloadFile(url, fallbackName){
+        const u = new URL(url, window.location.origin);
+        u.searchParams.set('_ts', String(Date.now()));
+
+        const res = await fetch(u.toString(), { method:'GET', credentials:'same-origin' });
+
+        if (!res.ok){
+          const txt = await res.text().catch(()=> '');
+          throw new Error(txt || ('Falha ao gerar relatório (HTTP ' + res.status + ').'));
+        }
+
+        const blob = await res.blob();
+        const cd = res.headers.get('Content-Disposition') || '';
+        const filename = parseFilenameFromContentDisposition(cd) || fallbackName || 'arquivo';
+
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1500);
+      }
+
+      // ===========================
+      // Relatório individual (card)
+      // ===========================
+      document.querySelectorAll('.report-single-btn').forEach(a => {
+        a.addEventListener('click', async (e) => {
+          if (e.ctrlKey || e.metaKey || e.button === 1) return;
+
+          const uid = a.getAttribute('data-user-id');
+          const nome = a.getAttribute('data-user-nome') || 'servidor';
+          const url = a.getAttribute('href');
+
+          if (e.altKey || e.shiftKey){
+            e.preventDefault();
+            e.stopPropagation();
+            if (uid) {
+              openReportModal({ preselectUserId: String(uid), preselectUserName: nome });
+            } else {
+              openReportModal();
+            }
+            return;
+          }
+
+          e.preventDefault();
+          e.stopPropagation();
+          if (!url) return;
+
+          const original = a.innerHTML;
+          a.style.pointerEvents = 'none';
+          a.style.opacity = '0.75';
+          a.innerHTML = '<i class="fa-solid fa-rotate fa-spin"></i> Gerando…';
+
+          try{
+            showAlert('Gerando relatório de ' + nome + '…', 'success');
+            await downloadFile(url, 'relatorio_servidor.pdf');
+            showAlert('Relatório do servidor gerado.', 'success');
+          }catch(err){
+            showAlert(err?.message || 'Não foi possível gerar o relatório do servidor.', 'error');
+          }finally{
+            a.innerHTML = original;
+            a.style.pointerEvents = '';
+            a.style.opacity = '';
+          }
+        });
+      });
+
+      // ===========================
+      // MODAL: relatório completo
+      // ===========================
+      const reportModal = document.getElementById('reportModal');
+      const reportCloseBtn = document.getElementById('reportCloseBtn');
+      const reportCancelBtn = document.getElementById('reportCancelBtn');
+      const reportGenerateBtn = document.getElementById('reportGenerateBtn');
+      const reportEndpointEl = document.getElementById('reportEndpoint');
+
+      const dtIniEl = document.getElementById('dtIni');
+      const dtFimEl = document.getElementById('dtFim');
+
+      const typesAllBtn = document.getElementById('typesAllBtn');
+      const typesNoneBtn = document.getElementById('typesNoneBtn');
+
+      const manualWrap = document.getElementById('manualWrap');
+      const manualList = document.getElementById('manualList');
+      const manualSelectedCountEl = document.getElementById('manualSelectedCount');
+      const manualResultsCountEl = document.getElementById('manualResultsCount');
+      const manualPageLabelEl = document.getElementById('manualPageLabel');
+      const userSearchInput = document.getElementById('userSearchInput');
+      const userSearchStatus = document.getElementById('userSearchStatus');
+      const manualPrevBtn = document.getElementById('manualPrevBtn');
+      const manualNextBtn = document.getElementById('manualNextBtn');
+      const manualClearBtn = document.getElementById('manualClearBtn');
+      const manualSelectPageBtn = document.getElementById('manualSelectPageBtn');
+      const manualSelectAllResultsBtn = document.getElementById('manualSelectAllResultsBtn');
+      const chipRow = document.getElementById('chipRow');
+
+      const btnReport = document.getElementById('btnReport');
+
+      const pvUsersEl = document.getElementById('pvUsers');
+      const pvRegsEl = document.getElementById('pvRegs');
+      const pvDetailEl = document.getElementById('pvDetail');
+      const pvRefreshBtn = document.getElementById('pvRefreshBtn');
+
+      const rememberPrefsCb = document.getElementById('rememberPrefsCb');
+      const zipHint = document.getElementById('zipHint');
+      const actionOpenItem = document.getElementById('actionOpenItem');
+
+      const presets = Array.from(document.querySelectorAll('.preset-btn'));
+      const PREF_KEY = 'padin_report_prefs_v1';
+
+      const state = {
+        manual: {
+          page: 1,
+          per_page: 40,
+          total: 0,
+          has_more: false,
+          items: [],
+          selected: new Map(), // id -> {id,nome,ativo}
+          last_q: '',
+          last_status: 'ativos',
+        },
+        preset: ''
+      };
+
+      function getReportBaseUrl(){ return reportEndpointEl?.getAttribute('data-report-url') || ''; }
+      function getCountUrl(){ return reportEndpointEl?.getAttribute('data-count-url') || ''; }
+      function getSearchUrl(){ return reportEndpointEl?.getAttribute('data-users-search-url') || ''; }
+      function getStatsUrl(){ return reportEndpointEl?.getAttribute('data-stats-url') || ''; }
+
+      function getCurrentQ(){ return reportEndpointEl?.getAttribute('data-q') || ''; }
+      function getCurrentStatus(){ return reportEndpointEl?.getAttribute('data-status') || 'ativos'; }
+      function hasCurrentFilter(){ return (reportEndpointEl?.getAttribute('data-has-filter') || '0') === '1'; }
+
+      function getSelectedTypes(){
+        return Array.from(document.querySelectorAll('.type-cb'))
+          .filter(cb => cb.checked)
+          .map(cb => (cb.value || '').trim().toUpperCase())
+          .filter(Boolean);
+      }
+
+      function setSelectedTypes(codes){
+        const set = new Set((codes || []).map(x => String(x).toUpperCase()));
+        document.querySelectorAll('.type-cb').forEach(cb => {
+          cb.checked = set.has(String(cb.value || '').toUpperCase());
+        });
+      }
+
+      function getScope(){
+        return (document.querySelector('input[name="reportScope"]:checked')?.value || 'ativos_all');
+      }
+      function setScope(val){
+        const el = document.querySelector('input[name="reportScope"][value="' + val + '"]');
+        if (el) el.checked = true;
+      }
+
+      function getOutput(){
+        return (document.querySelector('input[name="reportOutput"]:checked')?.value || 'pdf');
+      }
+      function setOutput(val){
+        const el = document.querySelector('input[name="reportOutput"][value="' + val + '"]');
+        if (el) el.checked = true;
+        syncOutputUI();
+      }
+
+      function getAction(){
+        return (document.querySelector('input[name="reportAction"]:checked')?.value || 'open');
+      }
+      function setAction(val){
+        const el = document.querySelector('input[name="reportAction"][value="' + val + '"]');
+        if (el) el.checked = true;
+      }
+
+      function syncOutputUI(){
+        const out = getOutput();
+        const isZip = (out === 'zip');
+
+        if (zipHint) zipHint.style.display = isZip ? 'block' : 'none';
+
+        if (isZip){
+          setAction('download');
+          const openRadio = document.querySelector('input[name="reportAction"][value="open"]');
+          if (openRadio) openRadio.disabled = true;
+          if (actionOpenItem) actionOpenItem.style.opacity = '0.55';
+        } else {
+          const openRadio = document.querySelector('input[name="reportAction"][value="open"]');
+          if (openRadio) openRadio.disabled = false;
+          if (actionOpenItem) actionOpenItem.style.opacity = '';
+        }
+      }
+
+      document.querySelectorAll('input[name="reportOutput"]').forEach(r => {
+        r.addEventListener('change', () => {
+          syncOutputUI();
+          savePrefsIfNeeded();
+        });
+      });
+      document.querySelectorAll('input[name="reportAction"]').forEach(r => {
+        r.addEventListener('change', () => savePrefsIfNeeded());
+      });
+
+      function presetDates(presetKey){
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = today.getMonth();
+
+        function toYMD(d){
+          const y = d.getFullYear();
+          const m = String(d.getMonth()+1).padStart(2,'0');
+          const da = String(d.getDate()).padStart(2,'0');
+          return `${y}-${m}-${da}`;
+        }
+
+        presets.forEach(b => b.classList.toggle('active', b.getAttribute('data-preset') === presetKey));
+        state.preset = presetKey || '';
+
+        if (presetKey === 'total'){
+          if (dtIniEl) dtIniEl.value = '';
+          if (dtFimEl) dtFimEl.value = '';
+          return;
+        }
+
+        let start = null;
+        let end = null;
+
+        if (presetKey === 'month_current'){
+          start = new Date(yyyy, mm, 1);
+          end = new Date(yyyy, mm, today.getDate());
+        } else if (presetKey === 'month_prev'){
+          const prevStart = new Date(yyyy, mm-1, 1);
+          const prevEnd = new Date(yyyy, mm, 0);
+          start = prevStart;
+          end = prevEnd;
+        } else if (presetKey === 'last_30'){
+          end = new Date(yyyy, mm, today.getDate());
+          start = new Date(end);
+          start.setDate(start.getDate() - 30);
+        } else if (presetKey === 'year_current'){
+          start = new Date(yyyy, 0, 1);
+          end = new Date(yyyy, mm, today.getDate());
+        }
+
+        if (start && dtIniEl) dtIniEl.value = toYMD(start);
+        if (end && dtFimEl) dtFimEl.value = toYMD(end);
+      }
+
+      presets.forEach(btn => {
+        btn.addEventListener('click', () => {
+          presetDates(btn.getAttribute('data-preset'));
+          savePrefsIfNeeded();
+          refreshPreview().catch(()=>{});
+        });
+      });
+
+      function buildReportUrl(opts){
+        const baseUrl = getReportBaseUrl();
+        const u = new URL(baseUrl, window.location.origin);
+
+        if (opts.dt_ini) u.searchParams.set('dt_ini', opts.dt_ini); else u.searchParams.delete('dt_ini');
+        if (opts.dt_fim) u.searchParams.set('dt_fim', opts.dt_fim); else u.searchParams.delete('dt_fim');
+
+        u.searchParams.delete('types');
+        (opts.types || []).forEach(t => u.searchParams.append('types', t));
+
+        u.searchParams.set('scope', opts.scope);
+        u.searchParams.set('output', opts.output || 'pdf');
+
+        if (opts.download === true) u.searchParams.set('download', '1');
+        else u.searchParams.delete('download');
+
+        u.searchParams.delete('q');
+        u.searchParams.delete('status');
+        if (opts.scope === 'filtered_all'){
+          if (opts.q) u.searchParams.set('q', opts.q);
+          u.searchParams.set('status', opts.status || 'ativos');
+        }
+
+        u.searchParams.delete('user_ids');
+        if (opts.scope === 'selected'){
+          (opts.user_ids || []).forEach(id => u.searchParams.append('user_ids', id));
+        }
+
+        return u.toString();
+      }
+
+      function buildStatsQueryParams(){
+        const scope = getScope();
+        const q = getCurrentQ();
+        const status = getCurrentStatus();
+        const dtIni = (dtIniEl?.value || '').trim();
+        const dtFim = (dtFimEl?.value || '').trim();
+        const types = getSelectedTypes();
+
+        const userIds = (scope === 'selected') ? Array.from(state.manual.selected.keys()) : [];
+
+        return { scope, q, status, dtIni, dtFim, types, userIds };
+      }
+
+      function openReportModal(options){
+        reportModal.classList.add('show');
+        reportModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+
+        if (!hasCurrentFilter()){
+          setScope('ativos_all');
+        }
+
+        applyPrefsIfAny();
+
+        if (dtIniEl && !dtIniEl.value && dtFimEl && !dtFimEl.value){
+          presetDates('month_current');
+        }
+
+        if (options && options.preselectUserId){
+          setScope('selected');
+          state.manual.selected.clear();
+          state.manual.selected.set(String(options.preselectUserId), {
+            id: Number(options.preselectUserId),
+            nome: options.preselectUserName || 'Servidor',
+            ativo: true
+          });
+          renderChips();
+          updateManualSelectedCount();
+          syncScopeUI(true);
+        } else {
+          syncScopeUI(false);
+        }
+
+        syncOutputUI();
+        refreshPreview().catch(()=>{});
+      }
+
+      function closeReportModal(){
+        reportModal.classList.remove('show');
+        reportModal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
+
+      if (btnReport){
+        btnReport.addEventListener('click', (e) => {
+          if (e.ctrlKey || e.metaKey || e.button === 1) return;
+          e.preventDefault();
+          openReportModal();
+        });
+      }
+
+      if (reportCloseBtn) reportCloseBtn.addEventListener('click', closeReportModal);
+      if (reportCancelBtn) reportCancelBtn.addEventListener('click', closeReportModal);
+      reportModal.addEventListener('click', (event) => { if (event.target === reportModal) closeReportModal(); });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && reportModal.classList.contains('show')) closeReportModal();
+      });
+
+      document.querySelectorAll('input[name="reportScope"]').forEach(r => {
+        r.addEventListener('change', () => {
+          syncScopeUI(false);
+          savePrefsIfNeeded();
+          refreshPreview().catch(()=>{});
+        });
+      });
+
+      document.querySelectorAll('.type-cb').forEach(cb => {
+        cb.addEventListener('change', () => {
+          savePrefsIfNeeded();
+          refreshPreview().catch(()=>{});
+        });
+      });
+
+      if (typesAllBtn){
+        typesAllBtn.addEventListener('click', () => {
+          document.querySelectorAll('.type-cb').forEach(cb => cb.checked = true);
+          savePrefsIfNeeded();
+          refreshPreview().catch(()=>{});
+        });
+      }
+      if (typesNoneBtn){
+        typesNoneBtn.addEventListener('click', () => {
+          document.querySelectorAll('.type-cb').forEach(cb => cb.checked = false);
+          savePrefsIfNeeded();
+          refreshPreview().catch(()=>{});
+        });
+      }
+
+      // ===========================
+      // Manual: busca e seleção
+      // ===========================
+      function updateManualSelectedCount(){
+        if (!manualSelectedCountEl) return;
+        manualSelectedCountEl.textContent = String(state.manual.selected.size || 0);
+      }
+
+      function renderChips(){
+        if (!chipRow) return;
+        const arr = Array.from(state.manual.selected.entries()).map(([id,u]) => ({ id, nome: u?.nome || ('ID ' + id) }));
+        chipRow.innerHTML = arr.length ? arr.map(x => {
+          const safe = String(x.nome)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+          return `
+            <span class="chip" title="${safe}">
+              <span class="name">${safe}</span>
+              <button type="button" aria-label="Remover" data-id="${x.id}"><i class="fa-solid fa-xmark"></i></button>
+            </span>
+          `;
+        }).join('') : `<span class="muted" style="font-weight:800;">Nenhum selecionado.</span>`;
+
+        chipRow.querySelectorAll('button[data-id]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = String(btn.getAttribute('data-id') || '');
+            if (!id) return;
+            state.manual.selected.delete(id);
+            updateManualSelectedCount();
+            renderChips();
+            renderManualList();
+            refreshPreview().catch(()=>{});
+          });
+        });
+      }
+
+      function renderManualList(){
+        if (!manualList) return;
+
+        const items = state.manual.items || [];
+        manualList.innerHTML = items.map(u => {
+          const id = String(u.id);
+          const checked = state.manual.selected.has(id) ? 'checked' : '';
+          const badgeClass = u.ativo ? 'on' : 'off';
+          const badgeTxt = u.ativo ? 'Ativo' : 'Inativo';
+          const safeName = (u.nome || 'Sem nome')
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+          return `
+            <label class="pick-item">
+              <input type="checkbox" class="manual-cb" data-id="${id}" ${checked}>
+              <span class="pick-name">${safeName}</span>
+              <span class="pick-badge ${badgeClass}">${badgeTxt}</span>
+            </label>
+          `;
+        }).join('');
+
+        manualList.querySelectorAll('.manual-cb').forEach(cb => {
+          cb.addEventListener('change', () => {
+            const id = String(cb.getAttribute('data-id') || '');
+            const u = (state.manual.items || []).find(x => String(x.id) === id);
+            if (!id || !u) return;
+
+            if (cb.checked) state.manual.selected.set(id, u);
+            else state.manual.selected.delete(id);
+
+            updateManualSelectedCount();
+            renderChips();
+            refreshPreview().catch(()=>{});
+          });
+        });
+
+        if (manualResultsCountEl) manualResultsCountEl.textContent = String(state.manual.total || 0);
+        if (manualPageLabelEl) manualPageLabelEl.textContent = String(state.manual.page || 1);
+
+        if (manualPrevBtn) manualPrevBtn.disabled = (state.manual.page <= 1);
+        if (manualNextBtn) manualNextBtn.disabled = !state.manual.has_more;
+      }
+
+      async function fetchManualUsers(reset){
+        const searchUrl = getSearchUrl();
+        if (!searchUrl){
+          showAlert('Rota de busca de usuários não configurada no template.', 'error');
+          return;
+        }
+
+        const q = (userSearchInput?.value || '').trim();
+        const st = (userSearchStatus?.value || 'ativos').trim();
+
+        if (reset) state.manual.page = 1;
+
+        const u = new URL(searchUrl, window.location.origin);
+        u.searchParams.set('q', q);
+        u.searchParams.set('status', st);
+        u.searchParams.set('page', String(state.manual.page));
+        u.searchParams.set('per_page', String(state.manual.per_page));
+
+        try{
+          const res = await fetch(u.toString(), { method:'GET', credentials:'same-origin' });
+          if (!res.ok){
+            const txt = await res.text().catch(()=> '');
+            throw new Error(txt || ('Falha ao buscar usuários (HTTP ' + res.status + ').'));
+          }
+          const data = await res.json();
+
+          state.manual.total = Number(data.total || 0);
+          state.manual.items = Array.isArray(data.items) ? data.items : [];
+          state.manual.has_more = !!data.has_more;
+          state.manual.last_q = q;
+          state.manual.last_status = st;
+
+          renderManualList();
+        }catch(err){
+          showAlert(err?.message || 'Não foi possível buscar usuários.', 'error');
+        }
+      }
+
+      function syncScopeUI(forceFetch){
+        const scope = getScope();
+        const isManual = (scope === 'selected');
+        if (manualWrap) manualWrap.classList.toggle('show', isManual);
+
+        if (isManual){
+          renderChips();
+          updateManualSelectedCount();
+          if (forceFetch || (manualList && manualList.childElementCount === 0)){
+            state.manual.page = 1;
+            fetchManualUsers(true);
+          }
+        }
+      }
+
+      function debounce(fn, ms){
+        let t = null;
+        return function(...args){
+          if (t) clearTimeout(t);
+          t = setTimeout(() => fn.apply(this, args), ms);
+        };
+      }
+
+      const debouncedSearch = debounce(() => {
+        state.manual.page = 1;
+        fetchManualUsers(true);
+      }, 260);
+
+      if (userSearchInput){
+        userSearchInput.addEventListener('input', () => {
+          if (getScope() !== 'selected') return;
+          debouncedSearch();
+        });
+      }
+      if (userSearchStatus){
+        userSearchStatus.addEventListener('change', () => {
+          if (getScope() !== 'selected') return;
+          state.manual.page = 1;
+          fetchManualUsers(true);
+        });
+      }
+
+      if (manualPrevBtn){
+        manualPrevBtn.addEventListener('click', () => {
+          if (state.manual.page <= 1) return;
+          state.manual.page -= 1;
+          fetchManualUsers(false);
+        });
+      }
+      if (manualNextBtn){
+        manualNextBtn.addEventListener('click', () => {
+          if (!state.manual.has_more) return;
+          state.manual.page += 1;
+          fetchManualUsers(false);
+        });
+      }
+
+      if (manualClearBtn){
+        manualClearBtn.addEventListener('click', () => {
+          state.manual.selected.clear();
+          updateManualSelectedCount();
+          renderChips();
+          renderManualList();
+          refreshPreview().catch(()=>{});
+        });
+      }
+
+      if (manualSelectPageBtn){
+        manualSelectPageBtn.addEventListener('click', () => {
+          (state.manual.items || []).forEach(u => {
+            state.manual.selected.set(String(u.id), u);
+          });
+          updateManualSelectedCount();
+          renderChips();
+          renderManualList();
+          refreshPreview().catch(()=>{});
+        });
+      }
+
+      async function selectAllResultsWithLimit(limit){
+        const searchUrl = getSearchUrl();
+        const q = (userSearchInput?.value || '').trim();
+        const st = (userSearchStatus?.value || 'ativos').trim();
+        let page = 1;
+        let picked = 0;
+
+        while (picked < limit){
+          const u = new URL(searchUrl, window.location.origin);
+          u.searchParams.set('q', q);
+          u.searchParams.set('status', st);
+          u.searchParams.set('page', String(page));
+          u.searchParams.set('per_page', String(Math.min(80, state.manual.per_page)));
+
+          const res = await fetch(u.toString(), { method:'GET', credentials:'same-origin' });
+          if (!res.ok) break;
+          const data = await res.json();
+          const items = Array.isArray(data.items) ? data.items : [];
+          for (const it of items){
+            state.manual.selected.set(String(it.id), it);
+            picked += 1;
+            if (picked >= limit) break;
+          }
+          if (!data.has_more || items.length === 0) break;
+          page += 1;
+        }
+
+        updateManualSelectedCount();
+        renderChips();
+        renderManualList();
+        return picked;
+      }
+
+      if (manualSelectAllResultsBtn){
+        manualSelectAllResultsBtn.addEventListener('click', async () => {
+          const q = (userSearchInput?.value || '').trim();
+          const st = (userSearchStatus?.value || 'ativos').trim();
+          const msg = `Deseja selecionar TODOS os resultados desta busca?\n\nBusca: "${q || '—'}"\nStatus: ${st}\n\nIsso pode gerar um relatório grande.\n\n(Será aplicado um limite de segurança.)`;
+          if (!confirm(msg)) return;
+
+          try{
+            showAlert('Selecionando resultados…', 'success');
+            const picked = await selectAllResultsWithLimit(800);
+            showAlert('Selecionados: ' + picked + ' usuário(s).', 'success');
+            refreshPreview().catch(()=>{});
+          }catch(err){
+            showAlert(err?.message || 'Não foi possível selecionar todos os resultados.', 'error');
+          }
+        });
+      }
+
+      // ===========================
+      // Prévia de contagem
+      // - usuários: /user_info_report_count (existe)
+      // - registros: /user_info_report_stats (precisa existir no backend)
+      // ===========================
+      function humanTypeOrder(types){
+        // mantém estável e amigável
+        const order = ["AB","BH","TRE","LM","DL","DS","FS","OUTROS"];
+        const set = new Set(types || []);
+        return order.filter(x => set.has(x)).concat((types || []).filter(x => !order.includes(x)));
+      }
+
+      function formatBreakdown(counts, selectedTypes){
+        const types = humanTypeOrder(selectedTypes || []);
+        const parts = [];
+        for (const t of types){
+          const v = Number((counts && counts[t]) || 0);
+          parts.push(`${t}: ${v}`);
+        }
+        return parts.join(' · ');
+      }
+
+      async function refreshPreview(){
+        if (!pvUsersEl || !pvRegsEl || !pvDetailEl) return;
+
+        pvUsersEl.textContent = '…';
+        pvRegsEl.textContent = '…';
+        pvDetailEl.textContent = 'Calculando…';
+
+        const countUrl = getCountUrl();
+        if (!countUrl){
+          pvUsersEl.textContent = '—';
+          pvRegsEl.textContent = '—';
+          pvDetailEl.textContent = 'Endpoint de contagem não configurado.';
+          return;
+        }
+
+        const { scope, q, status, dtIni, dtFim, types, userIds } = buildStatsQueryParams();
+
+        if (scope === 'selected' && userIds.length === 0){
+          pvUsersEl.textContent = '0';
+          pvRegsEl.textContent = '—';
+          pvDetailEl.textContent = 'Seleção manual vazia.';
+          return;
+        }
+
+        // 1) usuários no escopo (rápido)
+        try{
+          const u = new URL(countUrl, window.location.origin);
+          u.searchParams.set('scope', scope);
+          if (scope === 'filtered_all'){
+            if (q) u.searchParams.set('q', q);
+            u.searchParams.set('status', status);
+          }
+          if (scope === 'selected'){
+            userIds.forEach(id => u.searchParams.append('user_ids', id));
+          }
+
+          const res = await fetch(u.toString(), { method:'GET', credentials:'same-origin' });
+          if (!res.ok) throw new Error('Falha ao consultar contagem de usuários.');
+          const data = await res.json();
+          const totalUsers = Number(data.total || 0);
+          pvUsersEl.textContent = String(totalUsers);
+        }catch(e){
+          pvUsersEl.textContent = '—';
+        }
+
+        // 2) registros estimados por tipo/período (backend)
+        const statsUrl = getStatsUrl();
+        if (!statsUrl){
+          pvRegsEl.textContent = '—';
+          pvDetailEl.textContent = 'Endpoint de prévia (stats) não configurado.';
+          return;
+        }
+
+        try{
+          const s = new URL(statsUrl, window.location.origin);
+          s.searchParams.set('scope', scope);
+
+          if (dtIni) s.searchParams.set('dt_ini', dtIni);
+          if (dtFim) s.searchParams.set('dt_fim', dtFim);
+
+          s.searchParams.delete('types');
+          (types || []).forEach(t => s.searchParams.append('types', t));
+
+          if (scope === 'filtered_all'){
+            if (q) s.searchParams.set('q', q);
+            s.searchParams.set('status', status || 'ativos');
+          }
+
+          if (scope === 'selected'){
+            userIds.forEach(id => s.searchParams.append('user_ids', id));
+          }
+
+          const res2 = await fetch(s.toString(), { method:'GET', credentials:'same-origin' });
+          if (!res2.ok){
+            // 404 aqui é o “sintoma” mais comum: rota ainda não criada
+            const txt = await res2.text().catch(()=> '');
+            throw new Error(txt || ('Prévia de registros indisponível (HTTP ' + res2.status + ').'));
+          }
+
+          const stats = await res2.json().catch(()=> ({}));
+          if (!stats || stats.success === false){
+            throw new Error((stats && stats.error) || 'Prévia de registros indisponível.');
+          }
+
+          const recordsTotal = Number(stats.records_total ?? stats.total_records ?? stats.total ?? 0);
+          const countsByType = stats.counts_by_type || stats.by_type || stats.counts || {};
+
+          pvRegsEl.textContent = String(recordsTotal);
+          const breakdown = formatBreakdown(countsByType, types);
+
+          if (breakdown && breakdown.trim()){
+            pvDetailEl.textContent = breakdown;
+          } else {
+            pvDetailEl.textContent = 'Sem detalhes por tipo (backend não retornou breakdown).';
+          }
+
+        }catch(e){
+          pvRegsEl.textContent = '—';
+          pvDetailEl.textContent = (e && e.message) ? e.message : 'Falha ao calcular registros estimados.';
+        }
+      }
+
+      if (pvRefreshBtn){
+        pvRefreshBtn.addEventListener('click', () => refreshPreview());
+      }
+
+      // ===========================
+      // Preferências (localStorage)
+      // ===========================
+      function savePrefsIfNeeded(){
+        if (!rememberPrefsCb || !rememberPrefsCb.checked) return;
+
+        const prefs = {
+          preset: state.preset || '',
+          dt_ini: (dtIniEl?.value || ''),
+          dt_fim: (dtFimEl?.value || ''),
+          scope: getScope(),
+          types: getSelectedTypes(),
+          output: getOutput(),
+          action: getAction(),
+          manual_status: (userSearchStatus?.value || 'ativos'),
+        };
+        try{ localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); }catch(e){}
+      }
+
+      function applyPrefsIfAny(){
+        let raw = null;
+        try{ raw = localStorage.getItem(PREF_KEY); }catch(e){}
+        if (!raw) return;
+
+        let prefs = null;
+        try{ prefs = JSON.parse(raw); }catch(e){ return; }
+        if (!prefs) return;
+
+        if (prefs.preset){
+          presetDates(prefs.preset);
+        } else {
+          if (dtIniEl && typeof prefs.dt_ini === 'string') dtIniEl.value = prefs.dt_ini;
+          if (dtFimEl && typeof prefs.dt_fim === 'string') dtFimEl.value = prefs.dt_fim;
+        }
+
+        if (prefs.scope){
+          if (prefs.scope === 'filtered_all' && !hasCurrentFilter()){
+            setScope('ativos_all');
+          } else {
+            setScope(prefs.scope);
+          }
+        }
+
+        if (Array.isArray(prefs.types) && prefs.types.length) setSelectedTypes(prefs.types);
+        if (prefs.output) setOutput(prefs.output);
+        if (prefs.action) setAction(prefs.action);
+
+        if (userSearchStatus && prefs.manual_status){
+          userSearchStatus.value = prefs.manual_status;
+        }
+      }
+
+      if (rememberPrefsCb){
+        rememberPrefsCb.addEventListener('change', () => {
+          if (!rememberPrefsCb.checked){
+            try{ localStorage.removeItem(PREF_KEY); }catch(e){}
+          } else {
+            savePrefsIfNeeded();
+          }
+        });
+      }
+
+      if (dtIniEl) dtIniEl.addEventListener('change', () => { state.preset=''; presets.forEach(b=>b.classList.remove('active')); savePrefsIfNeeded(); refreshPreview().catch(()=>{}); });
+      if (dtFimEl) dtFimEl.addEventListener('change', () => { state.preset=''; presets.forEach(b=>b.classList.remove('active')); savePrefsIfNeeded(); refreshPreview().catch(()=>{}); });
+
+      // ===========================
+      // Gerar relatório (modal)
+      // ===========================
+      if (reportGenerateBtn){
+        reportGenerateBtn.addEventListener('click', async () => {
+          const baseUrl = getReportBaseUrl();
+          if (!baseUrl){
+            showAlert('Endpoint do relatório não encontrado.', 'error');
+            return;
+          }
+
+          const dtIni = (dtIniEl?.value || '').trim();
+          const dtFim = (dtFimEl?.value || '').trim();
+
+          if (dtIni && dtFim && dtIni > dtFim){
+            showAlert('Período inválido: a data inicial é maior que a data final.', 'error');
+            return;
+          }
+
+          const types = getSelectedTypes();
+          if (!types.length){
+            showAlert('Selecione ao menos um tipo para o relatório.', 'error');
+            return;
+          }
+
+          const scope = getScope();
+          const output = getOutput();
+          const action = getAction();
+
+          const q = getCurrentQ();
+          const status = getCurrentStatus();
+
+          let userIds = [];
+          if (scope === 'selected'){
+            userIds = Array.from(state.manual.selected.keys());
+            if (!userIds.length){
+              showAlert('Selecione ao menos um usuário na seleção manual.', 'error');
+              return;
+            }
+          }
+
+          const isDownload = (action === 'download') || (output === 'zip');
+          const url = buildReportUrl({
+            dt_ini: dtIni,
+            dt_fim: dtFim,
+            types,
+            scope,
+            q,
+            status,
+            user_ids: userIds,
+            output,
+            download: isDownload
+          });
+
+          savePrefsIfNeeded();
+
+          reportGenerateBtn.classList.add('is-loading');
+          try{
+            if (isDownload){
+              showAlert('Gerando arquivo… aguarde.', 'success');
+              const fallbackName = (output === 'zip') ? 'relatorios.zip' : 'relatorio.pdf';
+              await downloadFile(url, fallbackName);
+              showAlert('Arquivo gerado e baixado com sucesso.', 'success');
+              closeReportModal();
+            } else {
+              showAlert('Abrindo relatório no navegador…', 'success');
+              window.open(url, '_blank', 'noopener,noreferrer');
+            }
+          }catch(err){
+            showAlert(err?.message || 'Não foi possível gerar o relatório.', 'error');
+          }finally{
+            reportGenerateBtn.classList.remove('is-loading');
+          }
+        });
+      }
+
+      // ===========================
+      // Inicializações
+      // ===========================
+      syncOutputUI();
+
+      if (expandAllBtn) expandAllBtn.addEventListener('click', expandAll);
+      if (collapseAllBtn) collapseAllBtn.addEventListener('click', collapseAll);
+
+      // prévia auto (sem ficar martelando: somente em mudanças relevantes já ligadas acima)
+      if (pvRefreshBtn){
+        // também atualiza ao abrir o modal via openReportModal()
+      }
     });
   </script>
 </body>

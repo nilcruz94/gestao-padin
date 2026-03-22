@@ -147,6 +147,10 @@ def abbr_name(s: str) -> str:
 
     return f"{first} {initial}".strip()
 
+import os
+from markupsafe import Markup
+from flask_wtf.csrf import CSRFProtect, generate_csrf
+
 # ====== registra filtros Jinja ======
 @app.template_filter("pt_title")
 def _pt_title_filter(value):
@@ -156,22 +160,42 @@ def _pt_title_filter(value):
 def _abbr_name_filter(value):
     return abbr_name(value)
 
+# =========================
 # Config Banco PostgreSQL
-app.config['SQLALCHEMY_DATABASE_URI'] = (
-    'postgresql://folgas_user:BLS6AMWRXX0vuFBM6q7oHKKwJChaK8dk@'
-    'dpg-cuece7hopnds738g0usg-a.virginia-postgres.render.com/folgas_3tqr'
-)
-app.config['SQLALCHEMY_POOL_RECYCLE'] = 299
-app.config['SQLALCHEMY_POOL_TIMEOUT'] = 30
-app.config['SECRET_KEY'] = 'supersecretkey'
+# - Prioriza env vars (Render)
+# - Mantém fallback local (dev)
+# =========================
+db_url = (os.environ.get("DATABASE_URL") or os.environ.get("SQLALCHEMY_DATABASE_URI") or "").strip()
+
+# compatibilidade com alguns provedores que usam postgres://
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+# fallback local (evita hardcode de credenciais em produção)
+# Se você quiser MESMO um fallback Postgres, pode colocar, mas o ideal é não.
+if not db_url:
+    db_url = "sqlite:///local.db"
+
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+app.config["SQLALCHEMY_POOL_RECYCLE"] = int(os.environ.get("SQLALCHEMY_POOL_RECYCLE", "299"))
+app.config["SQLALCHEMY_POOL_TIMEOUT"] = int(os.environ.get("SQLALCHEMY_POOL_TIMEOUT", "30"))
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# =========================
+# SECRET_KEY
+# - Prioriza env var (Render)
+# =========================
+app.config["SECRET_KEY"] = (os.environ.get("SECRET_KEY") or "dev-secret-CHANGE-ME").strip()
 
 # Proteções de cookie/sessão recomendadas
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-# Em produção, ative Secure (HTTPS): app.config['SESSION_COOKIE_SECURE'] = True
+app.config["SESSION_COOKIE_SAMESITE"] = os.environ.get("SESSION_COOKIE_SAMESITE", "Lax")
+app.config["SESSION_COOKIE_SECURE"] = (
+    os.environ.get("SESSION_COOKIE_SECURE", "True").strip().lower() in ("1", "true", "t", "sim", "s", "yes", "y")
+)
 
 # Flask-WTF CSRF
-app.config['WTF_CSRF_ENABLED'] = True
-app.config['WTF_CSRF_TIME_LIMIT'] = 60 * 60 * 8  # 8 horas
+app.config["WTF_CSRF_ENABLED"] = True
+app.config["WTF_CSRF_TIME_LIMIT"] = 60 * 60 * 8  # 8 horas
 csrf = CSRFProtect(app)
 
 # Torna csrf_token() e csrf_field() disponíveis nos templates Jinja
@@ -185,8 +209,10 @@ def inject_csrf_token():
     )
 
 # Segurança/Links externos para e-mail
-app.config.setdefault("SECURITY_PASSWORD_SALT", "senha-reset-salt-robusta")
-app.config.setdefault("PREFERRED_URL_SCHEME", "https")
+app.config["SECURITY_PASSWORD_SALT"] = (
+    os.environ.get("SECURITY_PASSWORD_SALT") or "dev-salt-CHANGE-ME"
+).strip()
+app.config["PREFERRED_URL_SCHEME"] = os.environ.get("PREFERRED_URL_SCHEME", "https").strip()
 
 # ===========================================
 # Config Uploads (Ajustado p/ TRE persistente)
@@ -5310,58 +5336,120 @@ def admin_agendamento_set_substituto(id):
 # ===========================================
 # RESUMO DE USUÁRIOS / SALDOS (ADMIN)
 # + ALTERAR E-MAIL (ADMIN) COM ENVIO DE LINK DE REDEFINIÇÃO
+#
+# ✅ Suporte ao modal do relatório (user_info_all.html atualizado):
+#   - Envia para o template:
+#       report_types
+#       total_filtrado (q+status)
+#       total_ativos / total_inativos / total_todos
+#   - Mantém: paginação, busca, filtro status, expand/collapse, toggle ativo,
+#             alterar e-mail, tre/bh detalhes etc.
+#
+# ⚠️ Este arquivo assume que você já tem no projeto:
+#   - app (Flask) / db (SQLAlchemy)
+#   - Models: User, Agendamento
+#   - funções: sync_tre_user(user_id), send_password_reset_email(user)
 # ===========================================
+
+import datetime
+
 from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 from flask import request, redirect, url_for, render_template, flash, current_app, jsonify
 from flask_login import login_required, current_user
 
-# ✅ IMPORTANTE:
-# - Esta implementação assume que você já tem:
-#   - modelos: User, Agendamento
-#   - db (SQLAlchemy)
-#   - função sync_tre_user(user_id)
-#   - função send_password_reset_email(user) (sua recuperação de senha já existente)
 
-@app.route('/user_info_all', methods=['GET'])
-@login_required
-def user_info_all():
-    if getattr(current_user, 'tipo', None) != 'administrador':
-        flash("Acesso negado. Esta página é exclusiva para administradores.", "danger")
-        return redirect(url_for('index'))
+# ✅ Tipos disponíveis para o modal do relatório (frontend)
+# (Use estes "code" para mandar em /user_info_report?types=AB&types=BH...)
+REPORT_TYPES = [
+    {"code": "AB", "label": "Abonadas"},
+    {"code": "BH", "label": "Banco de Horas"},
+    {"code": "TRE", "label": "TRE"},
+    {"code": "LM", "label": "Licenças Médicas"},
+    {"code": "DL", "label": "Dispensa Legal"},
+    {"code": "DS", "label": "Doação de Sangue"},
+    {"code": "FS", "label": "Falta Simples"},
+    {"code": "OUTROS", "label": "Outros"},
+]
 
-    page = request.args.get('page', 1, type=int)
-    PER_PAGE_DEFAULT = 10
-    per_page = request.args.get('per_page', PER_PAGE_DEFAULT, type=int)
-    if not per_page:
-        per_page = PER_PAGE_DEFAULT
-    per_page = max(5, min(per_page, 50))
 
-    q = request.args.get('q', '', type=str).strip()
-    status_filtro = request.args.get('status', 'ativos')
+def _apply_user_filters(base_query, q: str, status_filtro: str):
+    """
+    Reaproveita a mesma lógica da tela:
+      - status: ativos | inativos | todos
+      - q: filtro por nome
+    """
+    status_filtro = (status_filtro or "ativos").strip().lower()
+    if status_filtro not in ("ativos", "inativos", "todos"):
+        status_filtro = "ativos"
 
-    user_q = User.query
+    q = (q or "").strip()
 
-    if hasattr(User, 'ativo'):
-        if status_filtro == 'ativos':
+    user_q = base_query
+
+    if hasattr(User, "ativo"):
+        if status_filtro == "ativos":
             user_q = user_q.filter(User.ativo.is_(True))
-        elif status_filtro == 'inativos':
+        elif status_filtro == "inativos":
             user_q = user_q.filter(User.ativo.is_(False))
-        # status == 'todos' -> não filtra
+        # "todos" -> não filtra
 
     if q:
-        # Busca por nome (como você já fazia)
-        user_q = user_q.filter(User.nome.ilike(f'%{q}%'))
+        user_q = user_q.filter(User.nome.ilike(f"%{q}%"))
+
+    return user_q, status_filtro, q
+
+
+@app.route("/user_info_all", methods=["GET"])
+@login_required
+def user_info_all():
+    if getattr(current_user, "tipo", None) != "administrador":
+        flash("Acesso negado. Esta página é exclusiva para administradores.", "danger")
+        return redirect(url_for("index"))
+
+    page = request.args.get("page", 1, type=int)
+    page = max(1, int(page or 1))
+
+    PER_PAGE_DEFAULT = 10
+    per_page = request.args.get("per_page", PER_PAGE_DEFAULT, type=int)
+    if not per_page:
+        per_page = PER_PAGE_DEFAULT
+    per_page = max(5, min(int(per_page), 50))
+
+    q = (request.args.get("q", "", type=str) or "").strip()
+    status_filtro = (request.args.get("status", "ativos", type=str) or "ativos").strip()
+
+    # Query base (com filtros)
+    user_q, status_filtro_norm, q_norm = _apply_user_filters(User.query, q, status_filtro)
 
     pagination = user_q.order_by(User.nome.asc()).paginate(
         page=page,
         per_page=per_page,
-        error_out=False
+        error_out=False,
     )
-    users = pagination.items
+    users = pagination.items or []
     user_ids = [u.id for u in users] or [-1]
 
-    # Sincroniza TRE
+    # ✅ total do filtro (q+status) SEM limitar pela paginação
+    total_filtrado = int(getattr(pagination, "total", 0) or 0)
+
+    # ✅ contagens globais (para modal)
+    try:
+        total_todos = int(User.query.count() or 0)
+    except Exception:
+        total_todos = 0
+
+    total_ativos = total_todos
+    total_inativos = 0
+    if hasattr(User, "ativo"):
+        try:
+            total_ativos = int(User.query.filter(User.ativo.is_(True)).count() or 0)
+            total_inativos = int(User.query.filter(User.ativo.is_(False)).count() or 0)
+        except Exception:
+            total_ativos = total_todos
+            total_inativos = 0
+
+    # Sincroniza TRE (mantém padrão atual)
     for u in users:
         try:
             sync_tre_user(u.id)
@@ -5371,11 +5459,11 @@ def user_info_all():
     ABONADAS_POR_ANO = 6
     ano_atual = datetime.date.today().year
 
-    # Estrutura base
+    # Estrutura base (resumos por usuário na página)
     resumos = {}
     for u in users:
-        total_tre = u.tre_total or 0
-        usadas_tre = u.tre_usufruidas or 0
+        total_tre = int(getattr(u, "tre_total", 0) or 0)
+        usadas_tre = int(getattr(u, "tre_usufruidas", 0) or 0)
         saldo_tre = total_tre - usadas_tre
         if saldo_tre < 0:
             saldo_tre = 0
@@ -5384,11 +5472,14 @@ def user_info_all():
             "abonadas_total": ABONADAS_POR_ANO,
             "abonadas_usadas": 0,
             "abonadas_restantes": ABONADAS_POR_ANO,
+
+            # compat/legado
             "abonadas": ABONADAS_POR_ANO,
 
             "tre_registros": int(total_tre),
             "tre_saldo_horas": float(saldo_tre),
 
+            # compat/legado (não usado diretamente no template atual)
             "bh_registros": 0,
             "bh_saldo_horas": 0.0,
 
@@ -5399,24 +5490,24 @@ def user_info_all():
     # ====== ABONADAS (AGENDAMENTOS DEFERIDOS NO ANO) ======
     try:
         Ag = Agendamento
-        ag_uid = getattr(Ag, 'funcionario_id')
-        ag_stat = getattr(Ag, 'status')
-        ag_data = getattr(Ag, 'data')
-        ag_mot = getattr(Ag, 'motivo')
-        ag_tipoF = getattr(Ag, 'tipo_folga')
+        ag_uid = getattr(Ag, "funcionario_id")
+        ag_stat = getattr(Ag, "status")
+        ag_data = getattr(Ag, "data")
+        ag_mot = getattr(Ag, "motivo")
+        ag_tipoF = getattr(Ag, "tipo_folga")
 
-        status_cond = func.lower(ag_stat) == 'deferido'
-        ab_filter = or_(func.upper(ag_tipoF) == 'AB', func.upper(ag_mot) == 'AB')
+        status_cond = func.lower(ag_stat) == "deferido"
+        ab_filter = or_(func.upper(ag_tipoF) == "AB", func.upper(ag_mot) == "AB")
 
         rows = (
             db.session.query(
-                ag_uid.label('uid'),
-                func.count(Ag.id)
+                ag_uid.label("uid"),
+                func.count(Ag.id).label("qtd"),
             )
             .filter(ag_uid.in_(user_ids))
             .filter(status_cond)
             .filter(ab_filter)
-            .filter(func.extract('year', ag_data) == ano_atual)
+            .filter(func.extract("year", ag_data) == ano_atual)
             .group_by(ag_uid)
             .all()
         )
@@ -5427,10 +5518,9 @@ def user_info_all():
                 restante = ABONADAS_POR_ANO - usadas
                 if restante < 0:
                     restante = 0
-
-                resumos[uid]['abonadas_usadas'] = usadas
-                resumos[uid]['abonadas_restantes'] = restante
-                resumos[uid]['abonadas'] = restante
+                resumos[uid]["abonadas_usadas"] = usadas
+                resumos[uid]["abonadas_restantes"] = restante
+                resumos[uid]["abonadas"] = restante
 
     except Exception as e:
         current_app.logger.exception("Erro ao calcular abonadas: %s", e)
@@ -5438,14 +5528,14 @@ def user_info_all():
     # ====== TRE (AGENDAMENTOS DEFERIDOS) ======
     try:
         Ag = Agendamento
-        ag_uid = getattr(Ag, 'funcionario_id')
-        ag_stat = getattr(Ag, 'status')
-        ag_data = getattr(Ag, 'data')
-        ag_mot = getattr(Ag, 'motivo')
-        ag_tipoF = getattr(Ag, 'tipo_folga')
+        ag_uid = getattr(Ag, "funcionario_id")
+        ag_stat = getattr(Ag, "status")
+        ag_data = getattr(Ag, "data")
+        ag_mot = getattr(Ag, "motivo")
+        ag_tipoF = getattr(Ag, "tipo_folga")
 
-        status_cond = func.lower(ag_stat) == 'deferido'
-        tre_filter = or_(func.upper(ag_tipoF) == 'TRE', func.upper(ag_mot) == 'TRE')
+        status_cond = func.lower(ag_stat) == "deferido"
+        tre_filter = or_(func.upper(ag_tipoF) == "TRE", func.upper(ag_mot) == "TRE")
 
         query = Ag.query.filter(ag_uid.in_(user_ids)).filter(status_cond).filter(tre_filter)
         if ag_data is not None:
@@ -5453,9 +5543,9 @@ def user_info_all():
         tre_rows = query.all()
 
         for ag in tre_rows:
-            uid_val = getattr(ag, 'funcionario_id', None)
+            uid_val = getattr(ag, "funcionario_id", None)
             if uid_val in resumos:
-                resumos[uid_val].setdefault('tre_agendamentos', []).append(ag)
+                resumos[uid_val].setdefault("tre_agendamentos", []).append(ag)
 
     except Exception as e:
         current_app.logger.exception("Erro ao listar TRE: %s", e)
@@ -5463,14 +5553,14 @@ def user_info_all():
     # ====== BH (AGENDAMENTOS DEFERIDOS) ======
     try:
         Ag = Agendamento
-        ag_uid = getattr(Ag, 'funcionario_id')
-        ag_stat = getattr(Ag, 'status')
-        ag_data = getattr(Ag, 'data')
-        ag_mot = getattr(Ag, 'motivo')
-        ag_tipoF = getattr(Ag, 'tipo_folga')
+        ag_uid = getattr(Ag, "funcionario_id")
+        ag_stat = getattr(Ag, "status")
+        ag_data = getattr(Ag, "data")
+        ag_mot = getattr(Ag, "motivo")
+        ag_tipoF = getattr(Ag, "tipo_folga")
 
-        status_cond = func.lower(ag_stat) == 'deferido'
-        bh_filter = or_(func.upper(ag_tipoF) == 'BH', func.upper(ag_mot) == 'BH')
+        status_cond = func.lower(ag_stat) == "deferido"
+        bh_filter = or_(func.upper(ag_tipoF) == "BH", func.upper(ag_mot) == "BH")
 
         query = Ag.query.filter(ag_uid.in_(user_ids)).filter(status_cond).filter(bh_filter)
         if ag_data is not None:
@@ -5478,60 +5568,63 @@ def user_info_all():
         bh_rows = query.all()
 
         for ag in bh_rows:
-            uid_val = getattr(ag, 'funcionario_id', None)
+            uid_val = getattr(ag, "funcionario_id", None)
             if uid_val in resumos:
-                resumos[uid_val].setdefault('bh_agendamentos', []).append(ag)
+                resumos[uid_val].setdefault("bh_agendamentos", []).append(ag)
 
     except Exception as e:
         current_app.logger.exception("Erro ao listar Banco de Horas: %s", e)
 
     return render_template(
-        'user_info_all.html',
+        "user_info_all.html",
         users=users,
         resumos=resumos,
         page=pagination.page,
         per_page=pagination.per_page,
         pages=pagination.pages,
-        total=pagination.total,
-        q=q,
-        status=status_filtro
+        total=pagination.total,          # (mantém: usado pela paginação antiga)
+        q=q_norm,
+        status=status_filtro_norm,
+
+        # ✅ modal relatório
+        report_types=REPORT_TYPES,
+        total_filtrado=total_filtrado,   # total do filtro atual (q+status)
+        total_ativos=total_ativos,        # total de ativos no sistema
+        total_inativos=total_inativos,    # total de inativos no sistema
+        total_todos=total_todos,          # total geral
     )
 
 
 # ===========================================
-# ✅ NOVO: ALTERAR E-MAIL DO USUÁRIO (ADMIN)
-# - Resolve o caso: usuário não lembra e-mail / e-mail errado no cadastro
-# - Atualiza o e-mail e envia link de redefinição para o NOVO e-mail
+# ✅ ALTERAR E-MAIL DO USUÁRIO (ADMIN)
 # ===========================================
-@app.route('/admin/user/<int:user_id>/alterar_email', methods=['POST'])
+@app.route("/admin/user/<int:user_id>/alterar_email", methods=["POST"])
 @login_required
 def admin_alterar_email(user_id):
-    if getattr(current_user, 'tipo', None) != 'administrador':
+    if getattr(current_user, "tipo", None) != "administrador":
         flash("Acesso negado.", "danger")
-        return redirect(url_for('index'))
+        return redirect(url_for("index"))
 
-    novo_email = (request.form.get('novo_email') or "").strip().lower()
+    novo_email = (request.form.get("novo_email") or "").strip().lower()
 
-    # Preserva paginação/filtros da listagem
-    page = request.form.get('page', 1, type=int)
-    per_page = request.form.get('per_page', 10, type=int)
-    q = request.form.get('q', '', type=str)
-    status = request.form.get('status', 'ativos', type=str)
+    page = request.form.get("page", 1, type=int)
+    per_page = request.form.get("per_page", 10, type=int)
+    q = request.form.get("q", "", type=str)
+    status = request.form.get("status", "ativos", type=str)
 
     if not novo_email or "@" not in novo_email:
         flash("Informe um e-mail válido.", "danger")
-        return redirect(url_for('user_info_all', page=page, per_page=per_page, q=q, status=status))
+        return redirect(url_for("user_info_all", page=page, per_page=per_page, q=q, status=status))
 
     usuario = User.query.get(user_id)
     if not usuario:
         flash("Usuário não encontrado.", "danger")
-        return redirect(url_for('user_info_all', page=page, per_page=per_page, q=q, status=status))
+        return redirect(url_for("user_info_all", page=page, per_page=per_page, q=q, status=status))
 
-    # Evita colisão (email é unique)
     ja_existe = User.query.filter(func.lower(User.email) == novo_email, User.id != usuario.id).first()
     if ja_existe:
         flash("Este e-mail já está em uso por outro usuário.", "danger")
-        return redirect(url_for('user_info_all', page=page, per_page=per_page, q=q, status=status))
+        return redirect(url_for("user_info_all", page=page, per_page=per_page, q=q, status=status))
 
     try:
         old_email = (usuario.email or "").strip().lower()
@@ -5545,10 +5638,9 @@ def admin_alterar_email(user_id):
             getattr(usuario, "nome", "usuario"),
             usuario.id,
             old_email,
-            novo_email
+            novo_email,
         )
 
-        # Envia link de redefinição no novo e-mail
         try:
             send_password_reset_email(usuario)
             flash(f"E-mail atualizado e link de redefinição enviado para {novo_email}.", "success")
@@ -5563,12 +5655,11 @@ def admin_alterar_email(user_id):
         db.session.rollback()
         flash(f"Erro ao atualizar e-mail: {str(e)}", "danger")
 
-    return redirect(url_for('user_info_all', page=page, per_page=per_page, q=q, status=status))
+    return redirect(url_for("user_info_all", page=page, per_page=per_page, q=q, status=status))
 
 
 # ===========================================
 # (RECOMENDADO) TRATAR ERRO DE CSRF EM AJAX
-# - Se você usa Flask-WTF / CSRFProtect, isso evita seu JS receber HTML/400
 # ===========================================
 try:
     from flask_wtf.csrf import CSRFError
@@ -5578,47 +5669,45 @@ except Exception:
 if CSRFError is not None:
     @app.errorhandler(CSRFError)
     def handle_csrf_error(e):
-        # Se for requisição AJAX, devolve JSON (seu JS entende)
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify(success=False, error='Falha de segurança (CSRF). Recarregue a página e tente novamente.'), 400
-        # Caso contrário, mantém resposta padrão (você pode renderizar um template se quiser)
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify(
+                success=False,
+                error="Falha de segurança (CSRF). Recarregue a página e tente novamente.",
+            ), 400
         return "Falha de segurança (CSRF). Recarregue a página e tente novamente.", 400
+
 
 # ===========================================
 # TOGGLE ATIVO / INATIVO
 # ===========================================
-@app.route('/toggle_user_ativo/<int:user_id>', methods=['POST'])
+@app.route("/toggle_user_ativo/<int:user_id>", methods=["POST"])
 @login_required
 def toggle_user_ativo(user_id):
-    if getattr(current_user, 'tipo', None) != 'administrador':
-        return jsonify(success=False, error='Acesso negado.'), 403
+    if getattr(current_user, "tipo", None) != "administrador":
+        return jsonify(success=False, error="Acesso negado."), 403
 
     user = User.query.get_or_404(user_id)
 
-    # Se o model não tiver o campo ativo, evita quebrar
-    if not hasattr(user, 'ativo'):
+    if not hasattr(user, "ativo"):
         return jsonify(success=False, error='Campo "ativo" não existe no usuário.'), 400
 
     current_app.logger.info("Alterando status do usuário %s (antes: %s)", user.id, user.ativo)
 
-    # Aceita JSON (fetch) ou form (caso alguém poste via form)
     payload = request.get_json(silent=True)
     if payload is None:
         payload = request.form.to_dict(flat=True) or {}
 
-    novo_ativo = payload.get('ativo', None)
+    novo_ativo = payload.get("ativo", None)
 
     if novo_ativo is not None:
         try:
-            # suporta '0'/'1', 0/1, True/False
             if isinstance(novo_ativo, str):
-                novo_ativo = novo_ativo.strip().lower()
-                if novo_ativo in ('1', 'true', 't', 'sim', 's', 'yes', 'y'):
+                nv = novo_ativo.strip().lower()
+                if nv in ("1", "true", "t", "sim", "s", "yes", "y"):
                     user.ativo = True
-                elif novo_ativo in ('0', 'false', 'f', 'nao', 'não', 'n', 'no'):
+                elif nv in ("0", "false", "f", "nao", "não", "n", "no"):
                     user.ativo = False
                 else:
-                    # fallback: alterna
                     user.ativo = not bool(user.ativo)
             elif isinstance(novo_ativo, (int, float)):
                 user.ativo = bool(int(novo_ativo))
@@ -5627,7 +5716,6 @@ def toggle_user_ativo(user_id):
         except Exception:
             user.ativo = not bool(user.ativo)
     else:
-        # se não veio "ativo", alterna
         user.ativo = not bool(user.ativo)
 
     try:
@@ -5635,28 +5723,86 @@ def toggle_user_ativo(user_id):
     except Exception as e:
         db.session.rollback()
         current_app.logger.exception("Erro ao salvar status do usuário %s: %s", user.id, e)
-        return jsonify(success=False, error='Erro ao salvar no banco.'), 500
+        return jsonify(success=False, error="Erro ao salvar no banco."), 500
 
     current_app.logger.info("Status do usuário %s alterado para %s", user.id, user.ativo)
     return jsonify(success=True, ativo=bool(user.ativo)), 200
 
+
 # ===========================================
 # CHECK UNIQUE
 # ===========================================
-@app.route('/check_unique')
+@app.route("/check_unique")
 def check_unique():
-    campo = request.args.get('campo')
-    valor = request.args.get('valor', '').strip()
+    campo = request.args.get("campo")
+    valor = (request.args.get("valor", "") or "").strip()
     exists = False
-    if campo == 'registro':
+    if campo == "registro":
         exists = User.query.filter_by(registro=valor).first() is not None
-    elif campo == 'email':
+    elif campo == "email":
         exists = User.query.filter_by(email=valor).first() is not None
-    elif campo == 'cpf':
+    elif campo == "cpf":
         exists = User.query.filter_by(cpf=valor).first() is not None
-    elif campo == 'rg':
+    elif campo == "rg":
         exists = User.query.filter_by(rg=valor).first() is not None
-    return jsonify({'exists': exists})
+    return jsonify({"exists": exists})
+
+
+# ===========================================
+# ✅ NECESSÁRIO PARA O MODAL “seleção manual”
+# /admin/users/search?q=...&status=ativos|inativos|todos&page=1&per_page=40
+# Retorna usuários do sistema inteiro (não depende da paginação do user_info_all)
+# ===========================================
+@app.route("/admin/users/search", methods=["GET"])
+@login_required
+def admin_users_search():
+    if getattr(current_user, "tipo", None) != "administrador":
+        return jsonify({"items": [], "total": 0, "has_more": False}), 403
+
+    q = (request.args.get("q") or "").strip()
+    status = (request.args.get("status") or "ativos").strip().lower()
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 40, type=int)
+
+    # limites defensivos
+    per_page = max(10, min(per_page, 80))
+    page = max(1, page)
+
+    user_q = User.query
+
+    if hasattr(User, "ativo"):
+        if status == "ativos":
+            user_q = user_q.filter(User.ativo.is_(True))
+        elif status == "inativos":
+            user_q = user_q.filter(User.ativo.is_(False))
+        # "todos" -> sem filtro
+
+    if q:
+        user_q = user_q.filter(User.nome.ilike(f"%{q}%"))
+
+    total = int(user_q.count() or 0)
+
+    rows = (
+        user_q.order_by(User.nome.asc())
+        .offset((page - 1) * per_page)
+        .limit(per_page + 1)
+        .all()
+    )
+
+    has_more = len(rows) > per_page
+    rows = rows[:per_page]
+
+    items = [{
+        "id": u.id,
+        "nome": (u.nome or "").strip() or "Sem nome",
+        "ativo": bool(getattr(u, "ativo", True)),
+    } for u in rows]
+
+    return jsonify({
+        "items": items,
+        "total": total,
+        "has_more": bool(has_more),
+    }), 200
 
 # ==========================================
 # AUXILIARES TRE / UPLOAD  (CORRIGIDO)
@@ -6083,344 +6229,440 @@ def admin_tre_lancar():
     )
     return render_template("admin_tre_lancar.html", usuarios=usuarios, hoje=date.today())
 
-# ===========================================
-# RELATÓRIO PDF (ADMIN)
-# ===========================================
-def find_logo(filename: str):
-    base = current_app.root_path
-    candidatos = [
-        os.path.join(base, filename),
-        os.path.join(base, "static", filename),
-        os.path.join(base, "static", "img", filename),
-    ]
-    for path in candidatos:
-        if os.path.exists(path):
-            return path
-    return None
+# ==========================================
+# ✅ RELATÓRIO PDF/ZIP (WeasyPrint) — robusto + filtrável + compatível com o modal
+# - /user_info_report               -> lote (admin)  | output=pdf|zip
+# - /user_info_report/<user_id>     -> individual (admin) | sempre PDF
+#
+# ✅ Suporta filtros (modal do user_info_all):
+#   - scope=selected|filtered_all|ativos_all|all
+#   - q=... (quando scope=filtered_all)
+#   - status=ativos|inativos|todos (quando scope=filtered_all)
+#   - user_ids=1&user_ids=2... (quando scope=selected)  (ou "1,2,3")
+#   - dt_ini=YYYY-MM-DD   (opcional)
+#   - dt_fim=YYYY-MM-DD   (opcional)
+#   - types=AB&types=BH... (ou "AB,BH,TRE")  (opcional; default todos)
+#   - output=pdf|zip  (somente no lote; default pdf)
+#   - download=1|0    (1 baixa, 0 abre no navegador quando possível; default 1)
+#
+# ✅ Histórico respeita período + tipos + usuários.
+# ✅ Saldos atuais (TRE/BH) são SEMPRE atuais (independente do período),
+#    e DEVEM aparecer mesmo quando zerados.
+#
+# ✅ CORREÇÃO PRINCIPAL (BUG):
+#    Se vierem user_ids, o backend SEMPRE prioriza user_ids (seleção manual),
+#    mesmo que scope venha errado/ausente.
+#
+# ✅ fetch=1 ou XHR:
+#    - não faz redirect em erro
+#    - retorna text/plain com status HTTP
+#
+# ✅ Extras para o modal:
+#   - /user_info_report_count
+#   - /user_info_report_stats  (contagem por tipo no período/escopo)
+#
+# ⚠️ Dependências esperadas no projeto:
+#   app, db, User, Agendamento, sync_tre_user
+# ==========================================
 
-def format_banco_horas(minutos: int) -> str:
-    minutos = minutos or 0
+import io
+import zipfile
+import datetime
+from pathlib import Path
+from typing import Optional, List, Set, Dict, Any
+
+from flask import (
+    request,
+    send_file,
+    render_template,
+    redirect,
+    url_for,
+    flash,
+    current_app,
+    make_response,
+    jsonify,
+)
+from flask_login import login_required, current_user
+from weasyprint import HTML
+from sqlalchemy import func, or_, case
+
+# ✅ IMPORTANTE: você precisa ter isso no seu app
+# from yourapp import app, db
+# from yourapp.models import User, Agendamento
+# from yourapp.services import sync_tre_user
+
+
+# ---------------------------------------------------------------------
+# CONFIG / CONSTANTES
+# ---------------------------------------------------------------------
+REPORT_CODES_ORDER: List[str] = ["AB", "BH", "TRE", "LM", "DL", "DS", "FS", "OUTROS"]
+KNOWN_CODES: Set[str] = set(REPORT_CODES_ORDER)
+
+CODE_LABEL: Dict[str, str] = {
+    "AB": "Abonadas",
+    "BH": "Banco de Horas (usufruído)",
+    "TRE": "TRE",
+    "LM": "Licenças Médicas",
+    "DL": "Dispensa Legal",
+    "DS": "Doação de Sangue",
+    "FS": "Falta Simples",
+    "OUTROS": "Outros",
+}
+
+CODE_TAG: Dict[str, str] = {
+    "AB": "ab",
+    "BH": "bh",
+    "TRE": "tre",
+    "LM": "lm",
+    "DL": "dl",
+    "DS": "ds",
+    "FS": "fs",
+    "OUTROS": "out",
+}
+
+
+# ---------------------------------------------------------------------
+# Helpers (auth / fetch-mode / fail)
+# ---------------------------------------------------------------------
+def _is_admin() -> bool:
+    return getattr(current_user, "tipo", None) == "administrador"
+
+
+def _wants_fetch_mode() -> bool:
+    if request.args.get("fetch") == "1":
+        return True
+    if (request.headers.get("X-Requested-With") or "").lower() == "xmlhttprequest":
+        return True
+    return False
+
+
+def _fail(message: str, category: str = "danger", http_status: int = 400):
+    """
+    - Normal: flash + redirect (HTML)
+    - Fetch/XHR: text/plain + status (SEM redirect)
+    """
+    if _wants_fetch_mode():
+        resp = make_response(message, http_status)
+        resp.headers["Content-Type"] = "text/plain; charset=utf-8"
+        resp.headers["Cache-Control"] = "no-store"
+        return resp
+
+    flash(message, category)
+    return redirect(url_for("user_info_all"))
+
+
+# ---------------------------------------------------------------------
+# Helpers (string/data/saldo)
+# ---------------------------------------------------------------------
+def _clean_str(val) -> str:
+    if val is None:
+        return "—"
+    s = str(val).strip()
+    if not s:
+        return "—"
+    if s.lower() in ("none", "null", "nan", "undefined"):
+        return "—"
+    return s
+
+
+def _fmt_date(dt) -> str:
+    try:
+        return dt.strftime("%d/%m/%Y") if dt else "—"
+    except Exception:
+        return "—"
+
+
+def _parse_date_arg(name: str) -> Optional[datetime.date]:
+    raw = (request.args.get(name) or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.datetime.strptime(raw, "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+
+def _period_label(dt_ini: Optional[datetime.date], dt_fim: Optional[datetime.date]) -> str:
+    if dt_ini and dt_fim:
+        return f"Período do relatório: {_fmt_date(dt_ini)} até {_fmt_date(dt_fim)}"
+    if dt_ini and not dt_fim:
+        return f"Período do relatório: a partir de {_fmt_date(dt_ini)}"
+    if (not dt_ini) and dt_fim:
+        return f"Período do relatório: até {_fmt_date(dt_fim)}"
+    return "Período do relatório: período total"
+
+
+def _format_bh_saldo(minutos: int) -> str:
+    minutos = int(minutos or 0)
     sinal = "-" if minutos < 0 else ""
     m = abs(minutos)
     h = m // 60
     mi = m % 60
-    return f"{sinal}{h}h {mi:02d}min"
+    return f"{sinal}{h}H {mi:02d}MIN"
 
-def get_tre_agendamentos(user_id: int):
-    Ag = Agendamento
-    rows = (
-        Ag.query
-        .filter(Ag.funcionario_id == user_id)
-        .filter(func.lower(Ag.status) == "deferido")
-        .filter(or_(func.upper(Ag.motivo) == "TRE", func.upper(Ag.tipo_folga) == "TRE"))
-        .order_by(Ag.data.asc())
-        .all()
-    )
-    result = []
-    for ag in rows:
-        data_str = ag.data.strftime("%d/%m/%Y") if ag.data else ""
-        situacao = (ag.status or "").capitalize()
-        result.append((data_str, situacao))
-    return result
 
-def get_bh_agendamentos(user_id: int):
-    Ag = Agendamento
-    rows = (
-        Ag.query
-        .filter(Ag.funcionario_id == user_id)
-        .filter(func.lower(Ag.status) == "deferido")
-        .filter(or_(func.upper(Ag.motivo) == "BH", func.upper(Ag.tipo_folga) == "BH"))
-        .order_by(Ag.data.asc())
-        .all()
-    )
-    result = []
-    for ag in rows:
-        data_str = ag.data.strftime("%d/%m/%Y") if ag.data else ""
-        situacao = (ag.status or "").capitalize()
-        result.append((data_str, situacao))
-    return result
+def _format_tempo_bh(h, m) -> str:
+    h = int(h or 0)
+    m = int(m or 0)
+    parts = []
+    if h > 0:
+        parts.append(f"{h}h")
+    if m > 0:
+        parts.append(f"{m}min")
+    return " ".join(parts) if parts else "0min"
 
-def draw_header_footer(c, width, height):
-    margin_x = 20 * mm
-    margin_right = width - margin_x
 
-    header_center_y = height - 22 * mm
-    azul_linha = colors.HexColor("#1a73e8")
-    texto_cor = colors.HexColor("#111827")
+def _motivo_code(ag) -> str:
+    m = (getattr(ag, "motivo", "") or "").strip().upper()
+    t = (getattr(ag, "tipo_folga", "") or "").strip().upper()
+    code = (t or m or "OUTROS").upper()
+    return code if code in KNOWN_CODES else "OUTROS"
 
-    logo_h = 16 * mm
-    escola_logo = find_logo("escola.png")
-    municipio_logo = find_logo("municipio.png")
-    logo_y = header_center_y - logo_h / 2
 
-    if escola_logo:
-        c.drawImage(escola_logo, margin_x, logo_y, width=logo_h, height=logo_h, preserveAspectRatio=True, mask="auto")
-    if municipio_logo:
-        c.drawImage(municipio_logo, margin_right - logo_h, logo_y, width=logo_h, height=logo_h, preserveAspectRatio=True, mask="auto")
+def _detalhes_ag(ag, code: str) -> str:
+    det = []
 
-    titulo_y = header_center_y + 6 * mm
-    subtitulo_y = header_center_y
-    data_y = header_center_y + 12 * mm
+    if code == "BH":
+        det.append(f"Tempo: {_format_tempo_bh(getattr(ag,'horas',0), getattr(ag,'minutos',0))}")
+        dt_ref = getattr(ag, "data_referencia", None)
+        if dt_ref:
+            det.append("Ref.: " + _fmt_date(dt_ref))
 
-    c.setFont("Helvetica-Bold", 13)
-    c.setFillColor(texto_cor)
-    c.drawCentredString(width / 2, titulo_y, "FICHA CADASTRAL DO SERVIDOR")
+    sub = (getattr(ag, "nome_substituto", None) or "").strip()
+    if sub:
+        det.append(f"Subst.: {sub}")
 
-    c.setFont("Helvetica", 9)
-    c.setFillColor(colors.HexColor("#4b5563"))
-    c.drawCentredString(width / 2, subtitulo_y, "Portal do Servidor — Gestão de Ponto")
+    return " • ".join(det) if det else "—"
 
-    c.setFont("Helvetica", 8)
-    c.setFillColor(colors.HexColor("#6b7280"))
-    c.drawRightString(margin_right, data_y, datetime.datetime.now().strftime("Emitido em %d/%m/%Y %H:%M"))
 
-    line_y = header_center_y - 10 * mm
-    c.setStrokeColor(azul_linha)
-    c.setLineWidth(0.8)
-    c.line(margin_x, line_y, margin_right, line_y)
+def _get_logo_uri() -> Optional[str]:
+    try:
+        logo_path = Path(current_app.root_path) / "static" / "img" / "logo.png"
+        if logo_path.exists():
+            return logo_path.resolve().as_uri()
+    except Exception:
+        current_app.logger.exception("Falha ao montar logo_uri")
+    return None
 
-    footer_base_y = 15 * mm
-    footer_line_y = footer_base_y + 4 * mm
 
-    c.setStrokeColor(colors.lightgrey)
-    c.setLineWidth(0.6)
-    c.line(margin_x, footer_line_y, margin_right, footer_line_y)
+def _safe_filename(s: str) -> str:
+    s = (s or "").strip()
+    if not s:
+        return "servidor"
+    for ch in ['/', '\\', ':', '*', '?', '"', '<', '>', '|']:
+        s = s.replace(ch, "-")
+    s = " ".join(s.split())
+    return s[:120] if len(s) > 120 else s
 
-    c.setFont("Helvetica", 8)
-    c.setFillColor(colors.grey)
-    footer_text = "E.M. José Padin Mouta • R. Bororós, 150 - Vila Tupi, Praia Grande - SP, 11703-390"
-    c.drawCentredString(width / 2, footer_base_y + 1 * mm, footer_text)
 
-    c.drawRightString(margin_right, footer_base_y - 2 * mm, f"Página {c.getPageNumber()}")
+# ---------------------------------------------------------------------
+# Parsing de filtros (types / user_ids / scope / output / download)
+# ---------------------------------------------------------------------
+def _parse_types() -> Set[str]:
+    """
+    Aceita:
+      - types=AB&types=BH...
+      - types=AB,BH,TRE
+    Default: TODOS.
+    """
+    types = request.args.getlist("types")
+    if not types:
+        raw = (request.args.get("types") or "").strip()
+        if raw:
+            types = [p.strip() for p in raw.split(",") if p.strip()]
 
-    content_start_y = line_y - 12 * mm
-    return content_start_y
+    if not types:
+        return set(REPORT_CODES_ORDER)
 
-def draw_simple_table(c, x, y, col_widths, headers, rows):
-    row_height = 6 * mm
-    total_width = sum(col_widths)
-    total_rows = 1 + len(rows)
-    table_height = total_rows * row_height
+    normalized: Set[str] = set()
+    for t in types:
+        t = (t or "").strip().upper()
+        if not t:
+            continue
+        if t not in KNOWN_CODES:
+            t = "OUTROS"
+        normalized.add(t)
 
-    c.setStrokeColor(colors.HexColor("#d1d5db"))
-    c.setLineWidth(0.6)
-    c.rect(x, y - table_height, total_width, table_height, stroke=1, fill=0)
+    return normalized or set(REPORT_CODES_ORDER)
 
-    header_bg_color = colors.HexColor("#eff6ff")
-    c.setFillColor(header_bg_color)
-    c.rect(x, y - row_height, total_width, row_height, stroke=0, fill=1)
 
-    c.setStrokeColor(colors.HexColor("#e5e7eb"))
-    for i in range(total_rows + 1):
-        c.line(x, y - i * row_height, x + total_width, y - i * row_height)
+def _parse_user_ids() -> List[int]:
+    """
+    Aceita:
+      - user_ids=1&user_ids=2
+      - user_ids=1,2,3
+    """
+    vals = request.args.getlist("user_ids")
+    if not vals:
+        raw = (request.args.get("user_ids") or "").strip()
+        if raw:
+            vals = [p.strip() for p in raw.split(",") if p.strip()]
 
-    running_x = x
-    for w in col_widths[:-1]:
-        running_x += w
-        c.line(running_x, y, running_x, y - table_height)
+    out: List[int] = []
+    for v in vals:
+        try:
+            out.append(int(v))
+        except Exception:
+            pass
 
-    c.setFont("Helvetica-Bold", 8)
-    c.setFillColor(colors.HexColor("#111827"))
-    header_y = y - 0.75 * row_height
-    col_x = x + 2 * mm
-    for idx, h in enumerate(headers):
-        c.drawString(col_x, header_y, h)
-        col_x += col_widths[idx]
+    seen = set()
+    uniq: List[int] = []
+    for x in out:
+        if x not in seen:
+            seen.add(x)
+            uniq.append(x)
+    return uniq
 
-    c.setFont("Helvetica", 8)
-    c.setFillColor(colors.black)
-    for idx, row in enumerate(rows):
-        row_y = y - (idx + 1.75) * row_height
-        col_x = x + 2 * mm
-        for col_idx, value in enumerate(row):
-            c.drawString(col_x, row_y, str(value))
-            col_x += col_widths[col_idx]
 
-    return y - table_height
+def _parse_scope() -> str:
+    """
+    selected | filtered_all | ativos_all | all
+    Default: filtered_all.
+    """
+    scope = (request.args.get("scope") or "filtered_all").strip().lower()
+    if scope not in ("selected", "filtered_all", "ativos_all", "all"):
+        scope = "filtered_all"
+    return scope
 
-def _truncate_text(c, text, max_width, font_name="Helvetica-Bold", font_size=9):
-    c.setFont(font_name, font_size)
-    if not text:
-        return ""
-    text = str(text)
-    w = c.stringWidth(text, font_name, font_size)
-    if w <= max_width:
-        return text
-    ellipsis_w = c.stringWidth("...", font_name, font_size)
-    max_content_width = max_width - ellipsis_w
-    for i in range(len(text), 0, -1):
-        chunk = text[:i]
-        if c.stringWidth(chunk, font_name, font_size) <= max_content_width:
-            return chunk + "..."
-    return text
 
-def draw_user_page(c: canvas.Canvas, user: User, width, height):
-    margin_left = 20 * mm
-    margin_right = width - 20 * mm
-    content_width = margin_right - margin_left
+def _parse_output() -> str:
+    """
+    pdf | zip (apenas para o lote)
+    """
+    out = (request.args.get("output") or "pdf").strip().lower()
+    return "zip" if out == "zip" else "pdf"
 
-    azul = colors.HexColor("#1a73e8")
-    roxo = colors.HexColor("#2563eb")
 
-    y = draw_header_footer(c, width, height)
+def _parse_download() -> bool:
+    """
+    download=1 -> baixa (as_attachment=True)
+    download=0 -> tenta abrir no navegador (as_attachment=False)
+    Default: 1
+    """
+    raw = (request.args.get("download") or "1").strip().lower()
+    return raw not in ("0", "false", "f", "nao", "não", "n")
 
-    y -= 6 * mm
 
-    c.setFont("Helvetica-Bold", 11)
-    c.setFillColor(colors.HexColor("#111827"))
-    c.drawString(margin_left, y, "Dados do servidor")
+# ---------------------------------------------------------------------
+# Resolver usuários conforme "scope"
+# ---------------------------------------------------------------------
+def _users_filtered_all(q: str, status: str):
+    user_q = User.query
 
-    y -= 5 * mm
+    if hasattr(User, "ativo"):
+        if status == "ativos":
+            user_q = user_q.filter(User.ativo.is_(True))
+        elif status == "inativos":
+            user_q = user_q.filter(User.ativo.is_(False))
 
-    campos_esquerda = [
-        ("Servidor", user.nome or "—"),
-        ("CPF", user.cpf or "—"),
-        ("Data de nascimento", user.data_nascimento.strftime("%d/%m/%Y") if user.data_nascimento else "—"),
-        ("Data emissão RG", user.data_emissao_rg.strftime("%d/%m/%Y") if user.data_emissao_rg else "—"),
-        ("Celular", user.celular or "—"),
-        ("Graduação", user.graduacao or "—"),
-    ]
+    if q:
+        user_q = user_q.filter(User.nome.ilike(f"%{q}%"))
 
-    campos_direita = [
-        ("Registro funcional", user.registro or "—"),
-        ("Cargo", user.cargo or "—"),
-        ("RG", user.rg or "—"),
-        ("Órgão emissor", user.orgao_emissor or "—"),
-        ("E-mail", user.email or "—"),
-    ]
+    return user_q.order_by(User.nome.asc())
 
-    n_linhas = max(len(campos_esquerda), len(campos_direita))
-    row_height = 5 * mm
-    padding_top = 6 * mm
-    padding_bottom = 6 * mm
 
-    card_height = padding_top + n_linhas * row_height + padding_bottom
-    card_top_y = y
-    card_bottom_y = card_top_y - card_height
+def _resolve_users_for_batch(scope: str) -> List["User"]:
+    """
+    ✅ Prioriza user_ids sempre que existirem (seleção manual).
+    """
+    selected_ids = _parse_user_ids()
+    if selected_ids:
+        return (
+            User.query
+            .filter(User.id.in_(selected_ids))
+            .order_by(User.nome.asc())
+            .all()
+        )
 
-    c.setFillColor(colors.white)
-    c.setStrokeColor(colors.HexColor("#d0d7e2"))
-    c.setLineWidth(0.9)
-    c.roundRect(margin_left, card_bottom_y, content_width, card_height, 4 * mm, stroke=1, fill=1)
+    if scope == "selected":
+        return []
 
-    col_width = content_width / 2.0
-    c.setStrokeColor(colors.HexColor("#e5e7eb"))
-    c.setLineWidth(0.6)
-    c.line(margin_left + col_width, card_top_y - 2 * mm, margin_left + col_width, card_bottom_y + 2 * mm)
+    if scope == "ativos_all":
+        if hasattr(User, "ativo"):
+            return User.query.filter(User.ativo.is_(True)).order_by(User.nome.asc()).all()
+        return User.query.order_by(User.nome.asc()).all()
 
-    inner_top_y = card_top_y - padding_top
-    for i in range(n_linhas + 1):
-        y_line = inner_top_y - i * row_height
-        c.setStrokeColor(colors.HexColor("#edf2f7"))
-        c.line(margin_left + 2 * mm, y_line, margin_right - 2 * mm, y_line)
+    if scope == "all":
+        return User.query.order_by(User.nome.asc()).all()
 
-    label_left_x = margin_left + 3 * mm
-    value_left_x = margin_left + 32 * mm
-    label_right_x = margin_left + col_width + 3 * mm
-    value_right_x = margin_left + col_width + 32 * mm
+    q = (request.args.get("q") or "").strip()
+    status = (request.args.get("status") or "ativos").strip().lower()
+    if status not in ("ativos", "inativos", "todos"):
+        status = "ativos"
 
-    current_y = inner_top_y - (row_height * 0.7)
+    return _users_filtered_all(q, status).all()
 
-    font_label = "Helvetica-Bold"
-    font_valor = "Helvetica"
-    size_label = 8.5
-    size_valor = 8.5
 
-    for idx in range(n_linhas):
-        if idx < len(campos_esquerda):
-            label, valor = campos_esquerda[idx]
-            c.setFont(font_label, size_label)
-            c.setFillColor(colors.HexColor("#4b5563"))
-            c.drawString(label_left_x, current_y, f"{label}:")
-            max_w = col_width - (value_left_x - margin_left) - 4 * mm
-            text_valor = _truncate_text(c, valor, max_w, font_name=font_valor, font_size=size_valor)
-            c.setFont(font_valor, size_valor)
-            c.setFillColor(colors.HexColor("#111827"))
-            c.drawString(value_left_x, current_y, text_valor)
+def _effective_scope(scope: str) -> str:
+    return "selected" if _parse_user_ids() else scope
 
-        if idx < len(campos_direita):
-            label, valor = campos_direita[idx]
-            c.setFont(font_label, size_label)
-            c.setFillColor(colors.HexColor("#4b5563"))
-            c.drawString(label_right_x, current_y, f"{label}:")
-            max_w = col_width - (value_right_x - (margin_left + col_width)) - 4 * mm
-            text_valor = _truncate_text(c, valor, max_w, font_name=font_valor, font_size=size_valor)
-            c.setFont(font_valor, size_valor)
-            c.setFillColor(colors.HexColor("#111827"))
-            c.drawString(value_right_x, current_y, text_valor)
 
-        current_y -= row_height
+# ---------------------------------------------------------------------
+# Query de agendamentos (1 query) + build items (template)
+# ---------------------------------------------------------------------
+def _fetch_agendamentos_deferidos(
+    user_ids: List[int],
+    dt_ini: Optional[datetime.date],
+    dt_fim: Optional[datetime.date],
+    selected_types: Set[str],
+) -> List["Agendamento"]:
+    if not user_ids:
+        return []
 
-    y = card_bottom_y - 10 * mm
-
-    total_tre = user.tre_total or 0
-    usadas_tre = user.tre_usufruidas or 0
-    saldo_tre = max(total_tre - usadas_tre, 0)
-
-    c.setFont("Helvetica-Bold", 10)
-    c.setFillColor(azul)
-    c.drawString(margin_left, y, "FOLGAS TRE (TRIBUNAL REGIONAL ELEITORAL)")
-    y -= 4.5 * mm
-
-    c.setFont("Helvetica-Bold", 9)
-    c.setFillColor(colors.HexColor("#111827"))
-    resumo_tre = f"Total: {total_tre} dia(s)  •  A usufruir: {saldo_tre} dia(s)  •  Usadas: {usadas_tre} dia(s)"
-    c.drawString(margin_left, y, resumo_tre)
-    y -= 7 * mm
-
-    tre_rows = get_tre_agendamentos(user.id)
-    if tre_rows:
-        y = draw_simple_table(c, margin_left, y, [35 * mm, content_width - 35 * mm], ["Data", "Situação"], tre_rows)
-        y -= 10 * mm
-    else:
-        c.setFont("Helvetica-Oblique", 8)
-        c.setFillColor(colors.HexColor("#6b7280"))
-        c.drawString(margin_left, y, "Nenhum agendamento TRE deferido cadastrado.")
-        y -= 10 * mm
-
-    c.setStrokeColor(colors.HexColor("#e5e7eb"))
-    c.setLineWidth(0.6)
-    c.line(margin_left, y, margin_right, y)
-    y -= 7 * mm
-
-    c.setFont("Helvetica-Bold", 10)
-    c.setFillColor(roxo)
-    c.drawString(margin_left, y, "BANCO DE HORAS")
-    y -= 5 * mm
-
-    saldo_min = user.banco_horas or 0
-    saldo_bh_str = format_banco_horas(saldo_min)
-
-    c.setFont("Helvetica-Bold", 9)
-    c.setFillColor(colors.HexColor("#111827"))
-    c.drawString(margin_left, y, f"Saldo atual: {saldo_bh_str}")
-    y -= 8 * mm
-
-    bh_rows = get_bh_agendamentos(user.id)
-    if bh_rows:
-        y = draw_simple_table(c, margin_left, y, [35 * mm, content_width - 35 * mm], ["Data", "Situação"], bh_rows)
-    else:
-        c.setFont("Helvetica-Oblique", 8)
-        c.setFillColor(colors.HexColor("#6b7280"))
-        c.drawString(margin_left, y, "Nenhum agendamento BH deferido cadastrado.")
-
-@app.route('/user_info_report')
-@login_required
-def user_info_report():
-    if getattr(current_user, 'tipo', None) != 'administrador':
-        flash("Acesso negado. Esta página é exclusiva para administradores.", "danger")
-        return redirect(url_for('index'))
-
-    users = (
-        User.query
-        .filter_by(ativo=True)
-        .order_by(User.nome.asc())
-        .all()
+    q = (
+        Agendamento.query
+        .filter(Agendamento.funcionario_id.in_(user_ids))
+        .filter(func.lower(Agendamento.status) == "deferido")
     )
 
-    if not users:
-        flash("Nenhum usuário ativo encontrado para gerar o relatório.", "warning")
-        return redirect(url_for('user_info_all'))
+    if dt_ini:
+        q = q.filter(Agendamento.data >= dt_ini)
+    if dt_fim:
+        q = q.filter(Agendamento.data <= dt_fim)
+
+    if "OUTROS" not in selected_types:
+        st = [c for c in selected_types if c in KNOWN_CODES and c != "OUTROS"]
+        if st:
+            q = q.filter(
+                or_(
+                    func.upper(Agendamento.tipo_folga).in_(st),
+                    func.upper(Agendamento.motivo).in_(st),
+                )
+            )
+
+    q = q.order_by(Agendamento.funcionario_id.asc(), Agendamento.data.asc())
+    return q.all()
+
+
+def _build_report_items(
+    users: List["User"],
+    dt_ini: Optional[datetime.date],
+    dt_fim: Optional[datetime.date],
+    selected_types: Set[str],
+) -> List[Dict[str, Any]]:
+    user_ids = [u.id for u in users]
+    ags = _fetch_agendamentos_deferidos(user_ids, dt_ini, dt_fim, selected_types)
+
+    buckets_by_user: Dict[int, Dict[str, List[Dict[str, str]]]] = {
+        uid: {code: [] for code in REPORT_CODES_ORDER} for uid in user_ids
+    }
+
+    for ag in ags:
+        uid = getattr(ag, "funcionario_id", None)
+        if uid not in buckets_by_user:
+            continue
+
+        code = _motivo_code(ag)
+        if code not in selected_types:
+            continue
+
+        buckets_by_user[uid][code].append({
+            "date": _fmt_date(getattr(ag, "data", None)),
+            "category": CODE_LABEL.get(code, "Outros"),
+            "details": _detalhes_ag(ag, code),
+        })
+
+    items: List[Dict[str, Any]] = []
 
     for u in users:
         try:
@@ -6428,26 +6670,414 @@ def user_info_report():
         except Exception:
             current_app.logger.exception("Erro ao sincronizar TRE do usuário %s no relatório.", u.id)
 
-    buffer = io.BytesIO()
-    c = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
+        tre_total = int(getattr(u, "tre_total", 0) or 0)
+        tre_usuf = int(getattr(u, "tre_usufruidas", 0) or 0)
+        tre_saldo = max(tre_total - tre_usuf, 0)
 
-    total = len(users)
-    for idx, user in enumerate(users):
-        draw_user_page(c, user, width, height)
-        if idx < total - 1:
-            c.showPage()
+        bh_min = int(getattr(u, "banco_horas", 0) or 0)
+        bh_saldo_str = _format_bh_saldo(bh_min)
 
-    c.save()
-    buffer.seek(0)
+        dados = {
+            "Servidor": _clean_str(getattr(u, "nome", None)),
+            "Registro": _clean_str(getattr(u, "registro", None)),
+            "Cargo": _clean_str(getattr(u, "cargo", None)),
+            "E-mail": _clean_str(getattr(u, "email", None)),
+            "CPF": _clean_str(getattr(u, "cpf", None)),
+            "RG": _clean_str(getattr(u, "rg", None)),
+            "Nascimento": _fmt_date(getattr(u, "data_nascimento", None)),
+            "Órgão emissor": _clean_str(getattr(u, "orgao_emissor", None)),
+            "Celular": _clean_str(getattr(u, "celular", None)),
+            "Emissão do RG": _fmt_date(getattr(u, "data_emissao_rg", None)),
+            "Graduação": _clean_str(getattr(u, "graduacao", None)),
+        }
 
-    return send_file(
-        buffer,
-        as_attachment=True,
-        download_name="relatorio_servidores.pdf",
-        mimetype="application/pdf"
+        user_buckets = buckets_by_user.get(u.id) or {code: [] for code in REPORT_CODES_ORDER}
+
+        groups = []
+        for code in REPORT_CODES_ORDER:
+            if code not in selected_types:
+                continue
+
+            rows = user_buckets.get(code, [])
+            count = len(rows)
+
+            must_show_due_to_balance = (code in ("BH", "TRE"))
+            if count == 0 and not must_show_due_to_balance:
+                continue
+
+            extra = ""
+            if code == "BH":
+                extra = f"SALDO ATUAL BH: {bh_saldo_str}"
+            elif code == "TRE":
+                extra = f"SALDO DISPONÍVEL TRE: {tre_saldo}"
+
+            groups.append({
+                "code": code,
+                "title": (CODE_LABEL.get(code, "Outros") or "Outros").upper(),
+                "tag": CODE_TAG.get(code, "out"),
+                "count": count,
+                "extra": extra,
+                "rows": rows,
+            })
+
+        summary_rows = []
+        total_qtd = 0
+        for g in groups:
+            summary_rows.append({"tipo": CODE_LABEL.get(g["code"], "Outros"), "qtd": int(g["count"] or 0)})
+            total_qtd += int(g["count"] or 0)
+
+        items.append({
+            "user": u,
+            "dados": dados,
+            "summary_rows": summary_rows,
+            "total_qtd": total_qtd,
+            "groups": groups,
+        })
+
+    return items
+
+
+# ---------------------------------------------------------------------
+# Render + send (PDF/ZIP) — robusto
+# ---------------------------------------------------------------------
+def _render_pdf_from_template(template_name: str, **ctx) -> bytes:
+    html_str = render_template(template_name, **ctx)
+    pdf_bytes = HTML(string=html_str, base_url=current_app.root_path).write_pdf()
+    if not pdf_bytes or not pdf_bytes.lstrip().startswith(b"%PDF"):
+        preview = (pdf_bytes[:300] if pdf_bytes else b"")
+        current_app.logger.error("Relatório: retorno não-PDF. Primeiros bytes: %r", preview)
+        raise RuntimeError("WeasyPrint não retornou um PDF válido.")
+    return pdf_bytes
+
+
+def _send_bytes(payload: bytes, filename: str, mimetype: str, download: bool):
+    bio = io.BytesIO(payload)
+    bio.seek(0)
+
+    resp = send_file(
+        bio,
+        mimetype=mimetype,
+        as_attachment=download,
+        download_name=filename,
+        max_age=0,
+    )
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    resp.headers["Content-Length"] = str(len(payload))
+    return resp
+
+
+def _build_zip_of_individual_pdfs(
+    users: List["User"],
+    dt_ini: Optional[datetime.date],
+    dt_fim: Optional[datetime.date],
+    selected_types: Set[str],
+    logo_uri: Optional[str],
+    emitted_at: str,
+    template_name: str,
+    period_label: str,
+    audit: Dict[str, Any],
+) -> bytes:
+    zbio = io.BytesIO()
+    with zipfile.ZipFile(zbio, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for u in users:
+            items = _build_report_items([u], dt_ini, dt_fim, selected_types)
+            pdf_bytes = _render_pdf_from_template(
+                template_name,
+                items=items,
+                logo_uri=logo_uri,
+                emitted_at=emitted_at,
+                dt_ini=dt_ini,
+                dt_fim=dt_fim,
+                selected_types=sorted(list(selected_types)),
+                period_label=period_label,
+                audit=audit,
+            )
+
+            safe_nome = _safe_filename(_clean_str(getattr(u, "nome", "")))
+            safe_reg = _safe_filename(_clean_str(getattr(u, "registro", "")))
+            pdf_name = f"prontuario_{safe_nome}_{safe_reg}.pdf"
+            zf.writestr(pdf_name, pdf_bytes)
+
+    zbio.seek(0)
+    return zbio.getvalue()
+
+
+# ---------------------------------------------------------------------
+# ENDPOINT AUXILIAR (modal): contagem de usuários por escopo
+# ---------------------------------------------------------------------
+@app.route("/user_info_report_count")
+@login_required
+def user_info_report_count():
+    if not _is_admin():
+        return jsonify(success=False, error="Acesso negado."), 403
+
+    scope = _parse_scope()
+    eff_scope = _effective_scope(scope)
+
+    if eff_scope == "selected":
+        ids = _parse_user_ids()
+        return jsonify(success=True, scope="selected", total=len(ids))
+
+    if eff_scope == "ativos_all":
+        if hasattr(User, "ativo"):
+            total = User.query.filter(User.ativo.is_(True)).count()
+        else:
+            total = User.query.count()
+        return jsonify(success=True, scope="ativos_all", total=int(total))
+
+    if eff_scope == "all":
+        total = User.query.count()
+        return jsonify(success=True, scope="all", total=int(total))
+
+    q = (request.args.get("q") or "").strip()
+    status = (request.args.get("status") or "ativos").strip().lower()
+    if status not in ("ativos", "inativos", "todos"):
+        status = "ativos"
+
+    total = _users_filtered_all(q, status).count()
+    return jsonify(success=True, scope="filtered_all", total=int(total))
+
+
+# ---------------------------------------------------------------------
+# ✅ NOVO: endpoint leve para “estimativa” no modal (registros por tipo)
+# ---------------------------------------------------------------------
+@app.route("/user_info_report_stats")
+@login_required
+def user_info_report_stats():
+    if not _is_admin():
+        return jsonify(success=False, error="Acesso negado."), 403
+
+    scope = _parse_scope()
+    eff_scope = _effective_scope(scope)
+
+    dt_ini = _parse_date_arg("dt_ini")
+    dt_fim = _parse_date_arg("dt_fim")
+
+    if (request.args.get("dt_ini") and dt_ini is None) or (request.args.get("dt_fim") and dt_fim is None):
+        return jsonify(success=False, error="Período inválido. Use AAAA-MM-DD."), 400
+    if dt_ini and dt_fim and dt_ini > dt_fim:
+        return jsonify(success=False, error="Período inválido: data inicial maior que data final."), 400
+
+    selected_types = _parse_types()
+    selected_ids = _parse_user_ids()
+
+    if eff_scope == "selected" and not selected_ids:
+        return jsonify(success=False, error="Nenhum usuário selecionado (scope=selected)."), 400
+
+    users = _resolve_users_for_batch(eff_scope)
+    if not users:
+        return jsonify(success=False, error="Nenhum usuário encontrado para o escopo informado."), 404
+
+    user_ids = [u.id for u in users]
+
+    # Categorização SQL robusta:
+    # - prioriza tipo_folga, depois motivo, fallback OUTROS
+    tipo_clean = func.nullif(func.trim(Agendamento.tipo_folga), "")
+    mot_clean = func.nullif(func.trim(Agendamento.motivo), "")
+    raw_code = func.upper(func.coalesce(tipo_clean, mot_clean, "OUTROS"))
+
+    code_expr = case(
+        (raw_code.in_(list(KNOWN_CODES)), raw_code),
+        else_="OUTROS",
+    ).label("code")
+
+    q = (
+        db.session.query(code_expr, func.count(Agendamento.id).label("qtd"))
+        .filter(Agendamento.funcionario_id.in_(user_ids))
+        .filter(func.lower(Agendamento.status) == "deferido")
     )
 
+    if dt_ini:
+        q = q.filter(Agendamento.data >= dt_ini)
+    if dt_fim:
+        q = q.filter(Agendamento.data <= dt_fim)
+
+    # Se o modal restringiu types, aplica
+    if selected_types and selected_types != set(REPORT_CODES_ORDER):
+        q = q.filter(code_expr.in_(list(selected_types)))
+
+    rows = q.group_by(code_expr).all()
+
+    counts: Dict[str, int] = {c: 0 for c in REPORT_CODES_ORDER}
+    total_reg = 0
+    for code, qtd in rows:
+        c = (code or "OUTROS").upper()
+        if c not in counts:
+            c = "OUTROS"
+        v = int(qtd or 0)
+        counts[c] = v
+        total_reg += v
+
+    return jsonify(
+        success=True,
+        scope=eff_scope,
+        users_total=len(users),
+        records_total=int(total_reg),
+        counts_by_type=counts,
+        dt_ini=(dt_ini.isoformat() if dt_ini else None),
+        dt_fim=(dt_fim.isoformat() if dt_fim else None),
+        selected_types=sorted(list(selected_types)),
+    ), 200
+
+
+# ---------------------------------------------------------------------
+# ROTAS: lote + individual
+# ---------------------------------------------------------------------
+@app.route("/user_info_report")
+@login_required
+def user_info_report():
+    if not _is_admin():
+        return _fail("Acesso negado. Esta página é exclusiva para administradores.", "danger", 403)
+
+    download = _parse_download()
+    scope = _parse_scope()
+    eff_scope = _effective_scope(scope)
+    output = _parse_output()
+
+    dt_ini = _parse_date_arg("dt_ini")
+    dt_fim = _parse_date_arg("dt_fim")
+
+    if (request.args.get("dt_ini") and dt_ini is None) or (request.args.get("dt_fim") and dt_fim is None):
+        return _fail("Período inválido. Use o formato AAAA-MM-DD.", "danger", 400)
+
+    if dt_ini and dt_fim and dt_ini > dt_fim:
+        return _fail("Período inválido: data inicial maior que data final.", "danger", 400)
+
+    selected_types = _parse_types()
+    selected_ids = _parse_user_ids()
+
+    if eff_scope == "selected" and not selected_ids:
+        return _fail("Nenhum usuário selecionado para o relatório.", "warning", 400)
+
+    users = _resolve_users_for_batch(eff_scope)
+    if not users:
+        return _fail("Nenhum usuário encontrado para gerar o relatório.", "warning", 404)
+
+    logo_uri = _get_logo_uri()
+    emitted_at = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+    period_label = _period_label(dt_ini, dt_fim)
+
+    template_name = "relatorio_servidores.html"
+
+    audit = {
+        "generated_by": _clean_str(getattr(current_user, "nome", None)),
+        "generated_by_id": getattr(current_user, "id", None),
+        "scope": eff_scope,
+        "scope_status": (request.args.get("status") or "").strip().lower() if eff_scope == "filtered_all" else "",
+        "scope_q": (request.args.get("q") or "").strip() if eff_scope == "filtered_all" else "",
+        "types": sorted(list(selected_types)),
+        "output": output,
+        "download": bool(download),
+    }
+
+    current_app.logger.info(
+        "RELATORIO: scope=%s output=%s download=%s dt_ini=%s dt_fim=%s types=%s users=%s",
+        eff_scope,
+        output,
+        download,
+        dt_ini.isoformat() if dt_ini else None,
+        dt_fim.isoformat() if dt_fim else None,
+        ",".join(sorted(list(selected_types))),
+        len(users),
+    )
+
+    try:
+        if output == "zip":
+            zip_bytes = _build_zip_of_individual_pdfs(
+                users=users,
+                dt_ini=dt_ini,
+                dt_fim=dt_fim,
+                selected_types=selected_types,
+                logo_uri=logo_uri,
+                emitted_at=emitted_at,
+                template_name=template_name,
+                period_label=period_label,
+                audit=audit,
+            )
+            return _send_bytes(zip_bytes, "relatorios_prontuarios.zip", "application/zip", download)
+
+        items = _build_report_items(users, dt_ini, dt_fim, selected_types)
+
+        pdf_bytes = _render_pdf_from_template(
+            template_name,
+            items=items,
+            logo_uri=logo_uri,
+            emitted_at=emitted_at,
+            dt_ini=dt_ini,
+            dt_fim=dt_fim,
+            selected_types=sorted(list(selected_types)),
+            period_label=period_label,
+            audit=audit,
+        )
+        return _send_bytes(pdf_bytes, "relatorio_servidores.pdf", "application/pdf", download)
+
+    except Exception:
+        current_app.logger.exception("Erro ao gerar relatório (WeasyPrint) — lote.")
+        return _fail("Falha ao gerar o relatório. Verifique logs/dependências do WeasyPrint.", "danger", 500)
+
+
+@app.route("/user_info_report/<int:user_id>")
+@login_required
+def user_info_report_single(user_id: int):
+    if not _is_admin():
+        return _fail("Acesso negado. Esta página é exclusiva para administradores.", "danger", 403)
+
+    download = _parse_download()
+
+    dt_ini = _parse_date_arg("dt_ini")
+    dt_fim = _parse_date_arg("dt_fim")
+
+    if (request.args.get("dt_ini") and dt_ini is None) or (request.args.get("dt_fim") and dt_fim is None):
+        return _fail("Período inválido. Use o formato AAAA-MM-DD.", "danger", 400)
+
+    if dt_ini and dt_fim and dt_ini > dt_fim:
+        return _fail("Período inválido: data inicial maior que data final.", "danger", 400)
+
+    selected_types = _parse_types()
+
+    u = User.query.get(user_id)
+    if not u:
+        return _fail("Usuário não encontrado.", "danger", 404)
+
+    logo_uri = _get_logo_uri()
+    emitted_at = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+    period_label = _period_label(dt_ini, dt_fim)
+
+    safe_nome = _safe_filename(_clean_str(getattr(u, "nome", "")))
+    safe_reg = _safe_filename(_clean_str(getattr(u, "registro", "")))
+    filename = f"prontuario_{safe_nome}_{safe_reg}.pdf"
+
+    audit = {
+        "generated_by": _clean_str(getattr(current_user, "nome", None)),
+        "generated_by_id": getattr(current_user, "id", None),
+        "scope": "single",
+        "types": sorted(list(selected_types)),
+        "output": "pdf",
+        "download": bool(download),
+    }
+
+    try:
+        items = _build_report_items([u], dt_ini, dt_fim, selected_types)
+
+        pdf_bytes = _render_pdf_from_template(
+            "relatorio_servidores.html",
+            items=items,
+            logo_uri=logo_uri,
+            emitted_at=emitted_at,
+            dt_ini=dt_ini,
+            dt_fim=dt_fim,
+            selected_types=sorted(list(selected_types)),
+            period_label=period_label,
+            audit=audit,
+        )
+        return _send_bytes(pdf_bytes, filename, "application/pdf", download)
+
+    except Exception:
+        current_app.logger.exception("Erro ao gerar relatório (WeasyPrint) — individual.")
+        return _fail("Falha ao gerar o prontuário. Verifique logs/dependências do WeasyPrint.", "danger", 500)
+    
 # ===========================================
 # EVENTOS (ADMIN) - CRUD COMPLETO
 # Rotas:
