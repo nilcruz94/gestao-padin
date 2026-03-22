@@ -54,16 +54,22 @@ from markupsafe import Markup
 # ===========================================
 app = Flask(__name__)
 
-# ===========================================
-# Configuração Calendario
-# ===========================================
+# =========================================================
+# ✅ Carrega .env quando você roda "python app.py"
+# (no Render isso não atrapalha; ele já injeta env vars)
+# =========================================================
+try:
+    from dotenv import load_dotenv  # pip install python-dotenv
+    load_dotenv()
+except Exception:
+    pass
 
+# ===========================================
+# Configuração Calendario / Normalização
+# ===========================================
 import re
 
-PT_SMALL_WORDS = {
-    "da", "de", "do", "das", "dos", "e", "d", "del", "della", "di", "du"
-}
-
+PT_SMALL_WORDS = {"da", "de", "do", "das", "dos", "e", "d", "del", "della", "di", "du"}
 ROMAN = {"i","ii","iii","iv","v","vi","vii","viii","ix","x","xi","xii","xiii","xiv","xv"}
 
 def pt_title(s: str) -> str:
@@ -92,7 +98,6 @@ def pt_title(s: str) -> str:
             out.append(w.upper())
             continue
 
-        # Palavra toda como "S." ou iniciais: mantém primeira letra maiúscula
         def cap_basic(tok: str) -> str:
             if not tok:
                 return tok
@@ -137,7 +142,6 @@ def abbr_name(s: str) -> str:
 
     first = parts[0]
     initial = ""
-
     for w in parts[1:]:
         w_clean = w.lower().strip(".")
         if w_clean in PT_SMALL_WORDS:
@@ -147,25 +151,17 @@ def abbr_name(s: str) -> str:
 
     return f"{first} {initial}".strip()
 
-import os
-from pathlib import Path
-
-from markupsafe import Markup
-from flask_wtf.csrf import CSRFProtect, generate_csrf
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_login import LoginManager
-
 # =========================================================
-# CONFIG BÁSICA (Render / Prod / Dev)
+# ✅ CONFIG BÁSICA (Render / Prod / Dev) — BANCO + SEGURANÇA
 # - Cole após: app = Flask(__name__)
 # - Cole antes: db = SQLAlchemy(app)
 # =========================================================
+from pathlib import Path
+from urllib.parse import urlparse, parse_qsl, urlencode
 
 def _is_truthy(v: str) -> bool:
     return str(v or "").strip().lower() in ("1", "true", "t", "sim", "s", "yes", "y", "on")
 
-# Render geralmente expõe uma dessas variáveis
 IS_RENDER = bool(os.environ.get("RENDER")) or bool(os.environ.get("RENDER_SERVICE_ID"))
 ENV_NAME = (os.environ.get("FLASK_ENV") or os.environ.get("ENV") or "").strip().lower()
 IS_PROD = IS_RENDER or (ENV_NAME == "production")
@@ -173,23 +169,50 @@ IS_PROD = IS_RENDER or (ENV_NAME == "production")
 # =========================
 # Banco (PostgreSQL)
 # =========================
+# ✅ Render usa DATABASE_URL. Local você pode colocar DATABASE_URL no .env.
 db_url = (os.environ.get("DATABASE_URL") or os.environ.get("SQLALCHEMY_DATABASE_URI") or "").strip()
 
-# compatibilidade com provedores que usam postgres://
+# compatibilidade com alguns provedores que usam postgres://
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-# Em produção (Render), NÃO pode ficar vazio (evita cair em sqlite sem perceber)
+# ✅ Se a URL for do Render (ou dpg-), força sslmode=require (sem quebrar sqlite/local)
+def _ensure_sslmode_require(url: str) -> str:
+    try:
+        p = urlparse(url)
+        if p.scheme not in ("postgresql", "postgres"):
+            return url
+        host = (p.hostname or "")
+        is_renderish = ("render.com" in host) or host.startswith("dpg-")
+        if not is_renderish:
+            return url
+
+        qs = dict(parse_qsl(p.query, keep_blank_values=True))
+        if "sslmode" not in qs:
+            qs["sslmode"] = "require"
+            new_query = urlencode(qs)
+            return p._replace(query=new_query).geturl()
+        return url
+    except Exception:
+        return url
+
+if db_url:
+    db_url = _ensure_sslmode_require(db_url)
+
+# Em produção, NÃO pode ficar vazio (evita cair em sqlite sem perceber)
 if not db_url:
     if IS_PROD:
-        raise RuntimeError("DATABASE_URL não configurada em produção (Render). Configure a env var DATABASE_URL.")
-    # Dev/local: fallback SQLite
-    db_url = "sqlite:///local.db"
+        raise RuntimeError(
+            "DATABASE_URL não configurada em produção (Render). "
+            "Configure a env var DATABASE_URL com a *Internal Database URL* do Render."
+        )
+    # Dev/local: fallback SQLite (use seu arquivo local se quiser)
+    db_url = "sqlite:///instance/folgas.db"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Engine options (pool) — aplique só em Postgres (evita confusão no SQLite)
+# Engine options (pool) — aplique só em Postgres
 if not db_url.startswith("sqlite"):
     pool_recycle = int(os.environ.get("SQLALCHEMY_POOL_RECYCLE", "299"))
     pool_timeout = int(os.environ.get("SQLALCHEMY_POOL_TIMEOUT", "30"))
@@ -209,10 +232,9 @@ if not secret_key:
     secret_key = "dev-secret-CHANGE-ME"
 app.config["SECRET_KEY"] = secret_key
 
-# Proteções de cookie/sessão recomendadas
+# Proteções de cookie/sessão
 app.config["SESSION_COOKIE_SAMESITE"] = (os.environ.get("SESSION_COOKIE_SAMESITE") or "Lax").strip()
 
-# Secure cookie: em produção (HTTPS) True; em dev/local default False (pra não “matar” login)
 secure_default = "True" if IS_PROD else "False"
 app.config["SESSION_COOKIE_SECURE"] = _is_truthy(os.environ.get("SESSION_COOKIE_SECURE", secure_default))
 
@@ -223,7 +245,6 @@ app.config["WTF_CSRF_ENABLED"] = True
 app.config["WTF_CSRF_TIME_LIMIT"] = 60 * 60 * 8  # 8 horas
 csrf = CSRFProtect(app)
 
-# Torna csrf_token() e csrf_field() disponíveis nos templates Jinja
 @app.context_processor
 def inject_csrf_token():
     return dict(
@@ -246,7 +267,7 @@ app.config["SECURITY_PASSWORD_SALT"] = pwd_salt
 app.config["PREFERRED_URL_SCHEME"] = (os.environ.get("PREFERRED_URL_SCHEME") or ("https" if IS_PROD else "http")).strip()
 
 # =========================
-# Filtros Jinja (precisa existir pt_title / abbr_name)
+# Filtros Jinja
 # =========================
 @app.template_filter("pt_title")
 def _pt_title_filter(value):
@@ -258,7 +279,7 @@ def _abbr_name_filter(value):
 
 # ===========================================
 # Config Uploads (TRE persistente)
-# - Render Disk: defina UPLOAD_FOLDER=/var/data/uploads/tre (exemplo)
+# - Render Disk: defina UPLOAD_FOLDER=/var/data/uploads/tre
 # ===========================================
 ALLOWED_EXTENSIONS = {"pdf"}
 
