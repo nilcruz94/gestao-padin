@@ -49,6 +49,15 @@ from flask_wtf.csrf import CSRFProtect, generate_csrf
 from markupsafe import Markup
 
 # ===========================================
+# ✅ EXTENSÕES (instância ÚNICA)
+# - NÃO faça db = SQLAlchemy(app) em outro lugar
+# ===========================================
+db = SQLAlchemy()
+migrate = Migrate()
+login_manager = LoginManager()
+csrf = CSRFProtect()
+
+# ===========================================
 # Configuração principal do app
 # ===========================================
 app = Flask(__name__)
@@ -74,7 +83,7 @@ except Exception:
 import re
 
 PT_SMALL_WORDS = {"da", "de", "do", "das", "dos", "e", "d", "del", "della", "di", "du"}
-ROMAN = {"i","ii","iii","iv","v","vi","vii","viii","ix","x","xi","xii","xiii","xiv","xv"}
+ROMAN = {"i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii", "xiii", "xiv", "xv"}
 
 def pt_title(s: str) -> str:
     s = (s or "").strip()
@@ -89,7 +98,6 @@ def pt_title(s: str) -> str:
             continue
 
         wl = w.lower()
-
         if wl.strip(".") in ROMAN:
             out.append(w.upper())
             continue
@@ -140,7 +148,7 @@ def abbr_name(s: str) -> str:
     return f"{first} {initial}".strip()
 
 # ===========================================
-# Filtros Jinja
+# Filtros Jinja (defina 1x só)
 # ===========================================
 @app.template_filter("pt_title")
 def _pt_title_filter(value):
@@ -168,8 +176,7 @@ IS_PROD = IS_RENDER or (ENV_NAME == "production")
 # ===========================================
 db_url = (os.environ.get("DATABASE_URL") or os.environ.get("SQLALCHEMY_DATABASE_URI") or "").strip()
 
-# ✅ Correção defensiva: se você colou errado no Render tipo:
-# DATABASE_URL="DATABASE_URL=postgresql://...."
+# ✅ Correção defensiva: se colaram "DATABASE_URL=postgresql://...." como valor
 if db_url.startswith("DATABASE_URL="):
     db_url = db_url.split("=", 1)[1].strip()
 if db_url.startswith("SQLALCHEMY_DATABASE_URI="):
@@ -245,7 +252,7 @@ app.config["SESSION_COOKIE_SECURE"] = _is_truthy(os.environ.get("SESSION_COOKIE_
 # ===========================================
 app.config["WTF_CSRF_ENABLED"] = True
 app.config["WTF_CSRF_TIME_LIMIT"] = 60 * 60 * 8
-csrf = CSRFProtect(app)
+csrf.init_app(app)
 
 @app.context_processor
 def inject_csrf_token():
@@ -262,7 +269,7 @@ def inject_csrf_token():
 pwd_salt = (os.environ.get("SECURITY_PASSWORD_SALT") or "").strip()
 if not pwd_salt:
     if IS_PROD:
-        raise RuntimeError("SECURITY_PASSWORD_SALT não configurado em produção (Render). Configure essa env var.")
+        raise RuntimeError("SECURITY_PASSWORD_SALT não configurada em produção (Render). Configure essa env var.")
     pwd_salt = "dev-salt-CHANGE-ME"
 
 app.config["SECURITY_PASSWORD_SALT"] = pwd_salt
@@ -287,37 +294,6 @@ def _dbg_forbidden(e):
     return e, 403
 
 # ===========================================
-# Healthcheck DB (p/ testar Render)
-# ===========================================
-@app.get("/__health/db")
-def health_db():
-    try:
-        v = db.session.execute(text("select 1")).scalar()
-        return {"ok": True, "db": v}, 200
-    except Exception as ex:
-        current_app.logger.exception("DB health failed")
-        return {"ok": False, "error": str(ex)}, 500
-
-# ===========================================
-# Extensões (TEM que vir depois da config)
-# ===========================================
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-login_manager = LoginManager(app)
-login_manager.login_view = "login"
-
-# =========================
-# Filtros Jinja
-# =========================
-@app.template_filter("pt_title")
-def _pt_title_filter(value):
-    return pt_title(value)
-
-@app.template_filter("abbr_name")
-def _abbr_name_filter(value):
-    return abbr_name(value)
-
-# ===========================================
 # Config Uploads (TRE persistente)
 # - Render Disk: defina UPLOAD_FOLDER=/var/data/uploads/tre
 # ===========================================
@@ -338,12 +314,24 @@ app.config["UPLOAD_FOLDER"] = str(BASE_UPLOAD_DIR)
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024  # 20MB
 
 # ===========================================
-# Extensões (TEM que vir depois da config)
+# ✅ Inicializa extensões (DEPOIS da config)
 # ===========================================
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-login_manager = LoginManager(app)
+db.init_app(app)
+migrate.init_app(app, db)
+login_manager.init_app(app)
 login_manager.login_view = "login"
+
+# ===========================================
+# Healthcheck DB (p/ testar Render)
+# ===========================================
+@app.get("/__health/db")
+def health_db():
+    try:
+        v = db.session.execute(text("select 1")).scalar()
+        return {"ok": True, "db": v}, 200
+    except Exception as ex:
+        current_app.logger.exception("DB health failed")
+        return {"ok": False, "error": str(ex)}, 500
 
 # ===========================================
 # Configurações de Email (SMTP)
