@@ -5922,25 +5922,40 @@ from pathlib import Path
 from typing import Optional
 from flask import current_app
 
+from pathlib import Path
+from typing import Optional
+import os
+from flask import current_app
+
 # ===========================================
 # Config Uploads (TRE / Protocolos persistentes)
 # Render Disk:
 #   - Mount Path: /var/data
-#   - Env var: UPLOAD_FOLDER=/var/data/uploads
+#   - Env var (recomendado): UPLOAD_FOLDER=/var/data/uploads/tre
+#     (vai gerar: /var/data/uploads/tre/tre  e  /var/data/uploads/tre/protocolos/agendamentos)
+#
+# Se você preferir NÃO ter "tre/tre", use:
+#   UPLOAD_FOLDER=/var/data/uploads
+#   (vai gerar: /var/data/uploads/tre  e  /var/data/uploads/protocolos/agendamentos)
 # ===========================================
 ALLOWED_EXTENSIONS = {"pdf"}
 
 _raw_env_upload = os.getenv("UPLOAD_FOLDER", "").strip()
 if _raw_env_upload:
     _env_upload = _raw_env_upload
-    if not _env_upload.startswith("/"):
-        # se alguém setou relativo por engano
-        _env_upload = "/" + _env_upload.lstrip("/")
+    if _env_upload.startswith("UPLOAD_FOLDER="):  # defesa
+        _env_upload = _env_upload.split("=", 1)[1].strip()
 else:
     # local/dev
     _env_upload = "uploads"
 
-BASE_UPLOAD_DIR = Path(_env_upload).resolve()
+# Base do upload (se relativo, ancora no projeto)
+_base_path = Path(_env_upload)
+if not _base_path.is_absolute():
+    BASE_UPLOAD_DIR = (Path(app.root_path) / _base_path).resolve()
+else:
+    BASE_UPLOAD_DIR = _base_path.resolve()
+
 BASE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 app.config["UPLOAD_FOLDER"] = str(BASE_UPLOAD_DIR)
@@ -5957,14 +5972,16 @@ def allowed_file(filename: str) -> bool:
 def _upload_base_dir() -> Path:
     """
     Base absoluta do upload.
-    No Render: /var/data/uploads
-    No local: <root>/uploads (ou o que você setar)
+    No Render: /var/data/... (Disk)
+    No local: <root>/uploads/... (se UPLOAD_FOLDER relativo)
     """
-    base = current_app.config.get("UPLOAD_FOLDER", "uploads")
+    base = (current_app.config.get("UPLOAD_FOLDER") or "uploads").strip()
     p = Path(base)
     if not p.is_absolute():
-        p = Path(current_app.root_path) / p
-    return p.resolve()
+        p = (Path(current_app.root_path) / p).resolve()
+    else:
+        p = p.resolve()
+    return p
 
 
 def _ensure_upload_subdir(subpath: str) -> Path:
@@ -5977,23 +5994,39 @@ def _ensure_upload_subdir(subpath: str) -> Path:
     return p
 
 
+# ✅ Convenções finais
+def _tre_dir() -> Path:
+    return _ensure_upload_subdir("tre")
+
+
+def _protocolos_dir() -> Path:
+    return _ensure_upload_subdir("protocolos/agendamentos")
+
+
+# ✅ ESTA é a função que sua rota /adicionar_tre chama
+def _ensure_upload_dir() -> Path:
+    return _tre_dir()
+
+
 def _candidate_dirs_for_download(subpath: str) -> list[Path]:
     """
     Locais prováveis para buscar arquivos, com prioridade:
-    1) UPLOAD_FOLDER/subpath (Render disk)
+    1) UPLOAD_FOLDER/subpath (Render disk / padrão atual)
     2) caminhos legados locais
+    3) fallback explícito do Render Disk
     """
     dirs: list[Path] = []
 
-    # 1) caminho correto (Render disk ou local atual)
+    # 1) caminho correto
     dirs.append(_ensure_upload_subdir(subpath))
 
-    # 2) legados comuns (caso existam)
+    # 2) legados comuns
     dirs.append((Path(current_app.root_path) / "uploads" / subpath).resolve())
     dirs.append((Path(current_app.root_path) / subpath).resolve())
 
-    # 3) fallback explícito do Render Disk (caso alguém use sem UPLOAD_FOLDER)
+    # 3) fallback do Render Disk (se alguém usar sem UPLOAD_FOLDER)
     dirs.append((Path("/var/data/uploads") / subpath).resolve())
+    dirs.append((Path("/var/data/uploads/tre") / subpath).resolve())
 
     # dedupe
     seen = set()
@@ -6012,7 +6045,6 @@ def _resolve_pdf_path(filename: Optional[str], subpath: str = "tre") -> Optional
     subpath:
       - 'tre'
       - 'protocolos/agendamentos'
-      - etc.
     """
     if not filename:
         return None
@@ -6032,8 +6064,7 @@ def _protocolo_agendamento_abs_path(agendamento_id: int) -> str:
     Caminho ABSOLUTO do PDF do protocolo.
     Vai para: UPLOAD_FOLDER/protocolos/agendamentos/
     """
-    pasta = _ensure_upload_subdir("protocolos/agendamentos")
-    return str(pasta / f"protocolo_agendamento_{agendamento_id}.pdf")
+    return str(_protocolos_dir() / f"protocolo_agendamento_{agendamento_id}.pdf")
 
 # ------------------------------------------
 # ✅ SYNC TRE (CORRIGIDO)
