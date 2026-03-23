@@ -319,7 +319,12 @@ else:
     # local/dev: fica dentro do projeto
     base_dir = (Path(app.root_path) / "uploads" / "tre").resolve()
 
+# cria o base
 base_dir.mkdir(parents=True, exist_ok=True)
+
+# ✅ FORÇA as subpastas usadas no sistema (evita debug "exists=false")
+(base_dir / "tre").mkdir(parents=True, exist_ok=True)
+(base_dir / "protocolos" / "agendamentos").mkdir(parents=True, exist_ok=True)
 
 app.config["UPLOAD_FOLDER"] = str(base_dir)
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024  # 20MB
