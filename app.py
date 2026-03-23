@@ -6351,10 +6351,19 @@ def admin_tre_lancar():
 #   - /user_info_report_count
 #   - /user_info_report_stats  (contagem por tipo no período/escopo)
 #
+# ✅ OTIMIZAÇÃO (GARGALO ZIP):
+#   - Reduz custo de CPU do ZIP com compresslevel baixo (default=1)
+#   - Pode desativar compressão (ZIP_STORED) via env:
+#       REPORT_ZIP_COMPRESSION=stored
+#     ou manter deflate com nível baixo:
+#       REPORT_ZIP_COMPRESSION=deflated
+#       REPORT_ZIP_COMPRESSLEVEL=1
+#
 # ⚠️ Dependências esperadas no projeto:
 #   app, db, User, Agendamento, sync_tre_user
 # ==========================================
 
+import os
 import io
 import zipfile
 import datetime
@@ -6375,12 +6384,6 @@ from flask import (
 from flask_login import login_required, current_user
 from weasyprint import HTML
 from sqlalchemy import func, or_, case
-
-# ✅ IMPORTANTE: você precisa ter isso no seu app
-# from yourapp import app, db
-# from yourapp.models import User, Agendamento
-# from yourapp.services import sync_tre_user
-
 
 # ---------------------------------------------------------------------
 # CONFIG / CONSTANTES
@@ -6410,6 +6413,23 @@ CODE_TAG: Dict[str, str] = {
     "OUTROS": "out",
 }
 
+# ---------------------------------------------------------------------
+# ZIP tuning (reduz gargalo de CPU)
+# ---------------------------------------------------------------------
+def _truthy(v: str) -> bool:
+    return str(v or "").strip().lower() in ("1", "true", "t", "yes", "y", "sim", "s", "on")
+
+_ZIP_MODE = (os.environ.get("REPORT_ZIP_COMPRESSION") or "deflated").strip().lower()
+if _ZIP_MODE in ("store", "stored", "none", "off", "0"):
+    ZIP_COMPRESSION = zipfile.ZIP_STORED
+else:
+    ZIP_COMPRESSION = zipfile.ZIP_DEFLATED
+
+# compresslevel só é aplicado quando DEFLATED
+try:
+    ZIP_COMPRESSLEVEL = int(os.environ.get("REPORT_ZIP_COMPRESSLEVEL", "1"))
+except Exception:
+    ZIP_COMPRESSLEVEL = 1
 
 # ---------------------------------------------------------------------
 # Helpers (auth / fetch-mode / fail)
@@ -6828,7 +6848,7 @@ def _build_report_items(
 
 
 # ---------------------------------------------------------------------
-# Render + send (PDF/ZIP) — robusto
+# Render + send (PDF/ZIP)
 # ---------------------------------------------------------------------
 def _render_pdf_from_template(template_name: str, **ctx) -> bytes:
     html_str = render_template(template_name, **ctx)
@@ -6869,10 +6889,29 @@ def _build_zip_of_individual_pdfs(
     period_label: str,
     audit: Dict[str, Any],
 ) -> bytes:
+    """
+    ✅ OTIMIZAÇÃO: reduz gargalo de CPU do ZIP
+      - compresslevel baixo (default=1) quando DEFLATED
+      - ou sem compressão (STORED) via env REPORT_ZIP_COMPRESSION=stored
+    """
     zbio = io.BytesIO()
-    with zipfile.ZipFile(zbio, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+
+    sorted_types = sorted(list(selected_types))
+
+    zip_kwargs = dict(
+        mode="w",
+        compression=ZIP_COMPRESSION,
+        allowZip64=True,
+    )
+
+    # compresslevel existe no Python 3.10+ e só faz sentido no DEFLATED
+    if ZIP_COMPRESSION == zipfile.ZIP_DEFLATED:
+        zip_kwargs["compresslevel"] = max(0, min(int(ZIP_COMPRESSLEVEL), 9))
+
+    with zipfile.ZipFile(zbio, **zip_kwargs) as zf:
         for u in users:
             items = _build_report_items([u], dt_ini, dt_fim, selected_types)
+
             pdf_bytes = _render_pdf_from_template(
                 template_name,
                 items=items,
@@ -6880,7 +6919,7 @@ def _build_zip_of_individual_pdfs(
                 emitted_at=emitted_at,
                 dt_ini=dt_ini,
                 dt_fim=dt_fim,
-                selected_types=sorted(list(selected_types)),
+                selected_types=sorted_types,
                 period_label=period_label,
                 audit=audit,
             )
@@ -6888,6 +6927,8 @@ def _build_zip_of_individual_pdfs(
             safe_nome = _safe_filename(_clean_str(getattr(u, "nome", "")))
             safe_reg = _safe_filename(_clean_str(getattr(u, "registro", "")))
             pdf_name = f"prontuario_{safe_nome}_{safe_reg}.pdf"
+
+            # writestr já vai usar o compression configurado no ZipFile
             zf.writestr(pdf_name, pdf_bytes)
 
     zbio.seek(0)
@@ -6931,7 +6972,7 @@ def user_info_report_count():
 
 
 # ---------------------------------------------------------------------
-# ✅ NOVO: endpoint leve para “estimativa” no modal (registros por tipo)
+# ✅ endpoint leve para “estimativa” no modal (registros por tipo)
 # ---------------------------------------------------------------------
 @app.route("/user_info_report_stats")
 @login_required
@@ -6962,8 +7003,6 @@ def user_info_report_stats():
 
     user_ids = [u.id for u in users]
 
-    # Categorização SQL robusta:
-    # - prioriza tipo_folga, depois motivo, fallback OUTROS
     tipo_clean = func.nullif(func.trim(Agendamento.tipo_folga), "")
     mot_clean = func.nullif(func.trim(Agendamento.motivo), "")
     raw_code = func.upper(func.coalesce(tipo_clean, mot_clean, "OUTROS"))
@@ -6984,7 +7023,6 @@ def user_info_report_stats():
     if dt_fim:
         q = q.filter(Agendamento.data <= dt_fim)
 
-    # Se o modal restringiu types, aplica
     if selected_types and selected_types != set(REPORT_CODES_ORDER):
         q = q.filter(code_expr.in_(list(selected_types)))
 
@@ -7060,10 +7098,12 @@ def user_info_report():
         "types": sorted(list(selected_types)),
         "output": output,
         "download": bool(download),
+        "zip_compression": "stored" if ZIP_COMPRESSION == zipfile.ZIP_STORED else "deflated",
+        "zip_level": (None if ZIP_COMPRESSION == zipfile.ZIP_STORED else int(ZIP_COMPRESSLEVEL)),
     }
 
     current_app.logger.info(
-        "RELATORIO: scope=%s output=%s download=%s dt_ini=%s dt_fim=%s types=%s users=%s",
+        "RELATORIO: scope=%s output=%s download=%s dt_ini=%s dt_fim=%s types=%s users=%s zip=%s level=%s",
         eff_scope,
         output,
         download,
@@ -7071,6 +7111,8 @@ def user_info_report():
         dt_fim.isoformat() if dt_fim else None,
         ",".join(sorted(list(selected_types))),
         len(users),
+        audit.get("zip_compression"),
+        audit.get("zip_level"),
     )
 
     try:
