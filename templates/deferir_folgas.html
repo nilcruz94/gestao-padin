@@ -132,6 +132,17 @@
     .content-title i { color: var(--primary); }
     .content-subtitle { font-size: 0.88rem; color: var(--text-muted); margin: 0 0 14px; }
 
+    .hint-pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px; border-radius:14px;
+      border:1px solid rgba(13,110,253,.18);
+      background:linear-gradient(180deg,#fbfdff,#f5f9ff);
+      color:#0f172a;
+      font-size:.82rem; font-weight:700;
+      margin: 10px 0 0;
+    }
+    .hint-pill i{ color: var(--primary); }
+
     /* ===== ALERTA DE CONFLITOS ===== */
     .conflito-alert {
       margin: 0 auto 18px; padding: 14px 16px; border-radius: 14px; max-width: 980px;
@@ -172,14 +183,17 @@
     .table-container {
       overflow-x: auto; border-radius: 12px; border: 1px solid var(--border-soft); box-shadow: 0 10px 24px rgba(15,23,42,0.08); background-color: #ffffff;
     }
-    .table-container table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 720px; }
+    .table-container table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 860px; }
     thead { background: linear-gradient(to right, #eff6ff, #e0ecff); }
     th, td { padding: 9px 10px; border-bottom: 1px solid #e5e7eb; text-align: left; vertical-align: middle; }
     th {
       font-weight: 700; color: #1f2933; font-size: 0.86rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
     }
-    td:nth-child(2), td:nth-child(3), td:nth-child(4), td:nth-child(5),
-    th:nth-child(2), th:nth-child(3), th:nth-child(4), th:nth-child(5) { text-align: center; }
+
+    /* Centraliza colunas específicas */
+    td:nth-child(2), td:nth-child(3), td:nth-child(4), td:nth-child(5), td:nth-child(6),
+    th:nth-child(2), th:nth-child(3), th:nth-child(4), th:nth-child(5), th:nth-child(6) { text-align: center; }
+
     tbody tr:nth-child(even) { background-color: #f9fafb; }
     tbody tr:hover { background-color: #eef2ff; }
 
@@ -191,6 +205,38 @@
     .status-em-espera { background-color: var(--warning-soft); color: #9a3412; border: 1px solid #fed7aa; }
     .status-deferido { background-color: var(--success-soft); color: #166534; border: 1px solid #bbf7d0; }
     .status-indeferido { background-color: var(--danger-soft); color: #991b1b; border: 1px solid #fecaca; }
+
+    /* ===== PERÍODO (novo) ===== */
+    .period-pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px; border-radius:999px;
+      border:1px solid rgba(13,110,253,.20);
+      background:#f5f9ff;
+      color:#0d6efd;
+      font-weight:800;
+      font-size:.78rem;
+      white-space:nowrap;
+    }
+    .period-pill i{ font-size:.85rem; }
+
+    .period-range{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+    .period-range .dates{
+      font-weight:900;
+      color:#0f172a;
+      white-space:nowrap;
+    }
+    .period-range .muted{
+      font-weight:800;
+      color:#64748b;
+      font-size:.78rem;
+      white-space:nowrap;
+    }
 
     /* ===== BADGES ===== */
     .badge {
@@ -233,7 +279,7 @@
 
     /* ===== AJUSTES PARA MOBILE ===== */
     @media (max-width: 640px) {
-      .table-container table { min-width: 640px; }
+      .table-container table { min-width: 820px; }
       th, td { padding: 8px 6px; font-size: 0.8rem; }
       .button { padding: 5px 8px; font-size: 0.78rem; }
     }
@@ -283,6 +329,19 @@
   <main>
     <div class="shell">
 
+      <!-- Header card da página -->
+      <div class="page-header-card">
+        <div class="page-header-icon">
+          <i class="fas fa-calendar-check"></i>
+        </div>
+        <div class="page-header-content">
+          <p class="page-header-title">Deferir Folgas</p>
+          <p class="page-header-subtitle">
+            Folgas pendentes organizadas por cargo. Agora o sistema suporta <strong>período</strong> (Data início e Data fim) para comunicações como <strong>LM</strong>.
+          </p>
+        </div>
+      </div>
+
       <!-- Alerta de conflitos -->
       {% if avisos %}
         <section class="conflito-alert">
@@ -321,18 +380,25 @@
       <!-- Card principal -->
       <div class="content-card">
         <h2 class="content-title">
-          <i class="fas fa-calendar-check"></i>
-          Deferir Folgas
+          <i class="fas fa-clipboard-list"></i>
+          Solicitações pendentes
         </h2>
         <p class="content-subtitle">
-          Visualize abaixo as folgas pendentes organizadas por cargo. Utilize os botões para
-          <strong>deferir</strong> ou <strong>indeferir</strong> cada solicitação.
+          Clique em <strong>Deferir</strong> ou <strong>Indeferir</strong> para registrar a decisão no sistema.
         </p>
+
+        <div class="hint-pill" aria-label="Ajuda">
+          <i class="fas fa-circle-info"></i>
+          <span>
+            Se o registro tiver <strong>Data fim</strong>, a decisão vale para <strong>todo o período</strong>.
+          </span>
+        </div>
 
         {% if folgas_por_cargo %}
           {% for cargo, lista_folgas in folgas_por_cargo.items() %}
             <div class="cargo-block">
               <h3 class="cargo-header">{{ cargo or 'Sem Cargo Definido' }}</h3>
+
               <div class="table-card">
                 <div class="table-container">
                   <table>
@@ -341,16 +407,32 @@
                         <th>Funcionário</th>
                         <th>Motivo</th>
                         <th>Status</th>
-                        <th>Data da Folga</th>
+                        <th>Período</th>
                         <th>Data de Referência</th>
                         <th>Ação</th>
                       </tr>
                     </thead>
+
                     <tbody>
                       {% for folga in lista_folgas %}
+
+                        {% set dt_ini = folga.data %}
+                        {% set dt_fim = folga.data_fim if folga.data_fim else None %}
+                        {% set has_range = (dt_fim is not none) and (dt_fim != dt_ini) %}
+
                         <tr>
                           <td>{{ folga.funcionario.nome }}</td>
-                          <td>{{ folga.motivo }}</td>
+
+                          <td>
+                            {% if has_range %}
+                              <span class="period-pill" title="Registro por período">
+                                <i class="fas fa-calendar-days"></i> {{ folga.motivo }}
+                              </span>
+                            {% else %}
+                              {{ folga.motivo }}
+                            {% endif %}
+                          </td>
+
                           <td>
                             {% if folga.status == 'em_espera' %}
                               <span class="status-pill status-em-espera">Em espera</span>
@@ -362,7 +444,22 @@
                               {{ folga.status }}
                             {% endif %}
                           </td>
-                          <td>{{ folga.data.strftime('%d/%m/%Y') }}</td>
+
+                          <td>
+                            {% if has_range %}
+                              {# Número de dias (inclusivo) #}
+                              {% set dias = (dt_fim - dt_ini).days + 1 %}
+                              <div class="period-range">
+                                <span class="dates">
+                                  {{ dt_ini.strftime('%d/%m/%Y') }} → {{ dt_fim.strftime('%d/%m/%Y') }}
+                                </span>
+                                <span class="muted">({{ dias }} dia{% if dias != 1 %}s{% endif %})</span>
+                              </div>
+                            {% else %}
+                              {{ dt_ini.strftime('%d/%m/%Y') }}
+                            {% endif %}
+                          </td>
+
                           <td>
                             {% if folga.motivo == 'BH' %}
                               {% if folga.data_referencia %}
@@ -374,26 +471,26 @@
                               N/A
                             {% endif %}
                           </td>
+
                           <td>
-                            <!-- Se sua rota POST é a mesma URL, pode omitir action -->
                             <form method="POST" class="form-acoes" action="">
                               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                               <input type="hidden" name="folga_id" value="{{ folga.id }}" />
                               <div class="buttons">
                                 <button type="submit" name="status" value="deferido" class="button deferir">
-                                  <i class="fas fa-check"></i>
-                                  Deferir
+                                  <i class="fas fa-check"></i> Deferir
                                 </button>
                                 <button type="submit" name="status" value="indeferido" class="button indeferir">
-                                  <i class="fas fa-times"></i>
-                                  Indeferir
+                                  <i class="fas fa-times"></i> Indeferir
                                 </button>
                               </div>
                             </form>
                           </td>
                         </tr>
+
                       {% endfor %}
                     </tbody>
+
                   </table>
                 </div>
               </div>

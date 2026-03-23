@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
@@ -10,11 +10,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
 
   <script>
-    // Exibe / esconde Data de Referência + Horas/Minutos quando motivo = BH
+    // ==========================
+    // Campos dinâmicos por motivo
+    // ==========================
     function toggleDataReferencia() {
-      var motivo = document.getElementById("motivo").value;
+      var motivo = document.getElementById("motivo")?.value;
+
       var dataReferenciaGroup = document.getElementById("data_banco_horas");
       var dataReferenciaInput = document.getElementById("data_referencia");
+
       var horasGroup = document.getElementById("horas_group");
       var minutosGroup = document.getElementById("minutos_group");
       var horasInput = document.getElementById("quantidade_horas");
@@ -50,6 +54,49 @@
       }
     }
 
+    // Mostra / esconde período LM (período + lote) — LM sempre conta todos os dias (inclusive sáb/dom/feriados)
+    function togglePeriodoLM() {
+      var motivo = document.getElementById("motivo")?.value;
+
+      var singleGroup = document.getElementById("data_single_group");
+      var singleInput = document.getElementById("data");
+
+      var periodoGroup = document.getElementById("periodo_lm_group");
+      var dtIni = document.getElementById("data_inicio");
+      var dtFim = document.getElementById("data_fim");
+
+      var preview = document.getElementById("lm_preview");
+
+      if (motivo === "LM") {
+        if (singleGroup) singleGroup.style.display = "none";
+        if (singleInput) {
+          singleInput.removeAttribute("required");
+          // fica no DOM e será preenchido via JS com data_inicio no submit
+        }
+
+        if (periodoGroup) periodoGroup.style.display = "block";
+        if (dtIni) dtIni.setAttribute("required", "true");
+        if (dtFim) dtFim.setAttribute("required", "true");
+
+        if (preview) preview.style.display = "block";
+        updateLMPreview();
+      } else {
+        if (periodoGroup) periodoGroup.style.display = "none";
+        if (dtIni) { dtIni.removeAttribute("required"); dtIni.value = ""; }
+        if (dtFim) { dtFim.removeAttribute("required"); dtFim.value = ""; }
+
+        if (preview) preview.style.display = "none";
+
+        if (singleGroup) singleGroup.style.display = "block";
+        if (singleInput) singleInput.setAttribute("required", "true");
+      }
+    }
+
+    function toggleMotivoFields() {
+      toggleDataReferencia();
+      togglePeriodoLM();
+    }
+
     // Mostra / esconde campo "Nome do Substituto" e exige quando "Sim"
     function toggleSubstituto() {
       var select = document.getElementById("havera_substituicao");
@@ -62,31 +109,101 @@
         if (input) input.setAttribute("required", "true");
       } else {
         group.style.display = "none";
-        if (input) input.removeAttribute("required");
+        if (input) {
+          input.removeAttribute("required");
+          input.value = "";
+        }
       }
     }
 
-    // Validação básica antes de enviar
+    function _parseYMD(v){
+      if (!v) return null;
+      var parts = v.split("-");
+      if (parts.length !== 3) return null;
+      var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10), d = parseInt(parts[2], 10);
+      if (!y || !m || !d) return null;
+      return new Date(y, m - 1, d);
+    }
+
+    function _daysBetweenInclusive(a, b){
+      var ms = b.getTime() - a.getTime();
+      var days = Math.floor(ms / (24 * 60 * 60 * 1000));
+      return days + 1;
+    }
+
+    function updateLMPreview(){
+      var motivo = document.getElementById("motivo")?.value;
+      if (motivo !== "LM") return;
+
+      var dtIni = document.getElementById("data_inicio")?.value || "";
+      var dtFim = document.getElementById("data_fim")?.value || "";
+
+      var out = document.getElementById("lm_preview_text");
+      if (!out) return;
+
+      var a = _parseYMD(dtIni);
+      var b = _parseYMD(dtFim);
+
+      if (!a || !b){
+        out.textContent = "Informe a data inicial e a data final do período.";
+        return;
+      }
+      if (b < a){
+        out.textContent = "Período inválido: a data final é menor que a inicial.";
+        return;
+      }
+
+      var total = _daysBetweenInclusive(a, b);
+      out.textContent = "Total de dias no período: " + total + " dia(s).";
+    }
+
+    // Validação antes de enviar
     function validateForm(event) {
-      var motivo = document.getElementById("motivo").value;
-      var dataReferenciaInput = document.getElementById("data_referencia");
-      var horasInput = document.getElementById("quantidade_horas");
-      var minutosInput = document.getElementById("quantidade_minutos");
+      var motivo = document.getElementById("motivo")?.value || "";
       var tipoFolgaField = document.getElementById("tipo_folga");
       var dataFolgaInput = document.getElementById("data");
 
-      // Preenche tipo_folga com o mesmo valor do motivo (caso backend use)
-      if (tipoFolgaField) {
-        tipoFolgaField.value = motivo;
+      if (tipoFolgaField) tipoFolgaField.value = motivo;
+
+      // ===== LM (período) =====
+      if (motivo === "LM") {
+        var dtIniEl = document.getElementById("data_inicio");
+        var dtFimEl = document.getElementById("data_fim");
+
+        var dtIni = (dtIniEl?.value || "").trim();
+        var dtFim = (dtFimEl?.value || "").trim();
+
+        if (!dtIni || !dtFim) {
+          alert("Para Licença Médica (LM), informe a data inicial e a data final do período.");
+          if (event) event.preventDefault();
+          return false;
+        }
+
+        if (dtIni > dtFim) {
+          alert("Período inválido: a data final não pode ser menor que a data inicial.");
+          if (event) event.preventDefault();
+          return false;
+        }
+
+        // Compatibilidade: backend lê 'data' como início (sempre)
+        if (dataFolgaInput) dataFolgaInput.value = dtIni;
+
+        // Backend lê 'data_fim' diretamente (input já existe com name="data_fim")
+        return true;
       }
 
-      if (motivo === "BH" && dataReferenciaInput && !dataReferenciaInput.value) {
-        alert("A data de referência é obrigatória quando o motivo for Banco de Horas.");
-        if (event) event.preventDefault();
-        return false;
-      }
-
+      // ===== BH =====
       if (motivo === "BH") {
+        var dataReferenciaInput = document.getElementById("data_referencia");
+        var horasInput = document.getElementById("quantidade_horas");
+        var minutosInput = document.getElementById("quantidade_minutos");
+
+        if (dataReferenciaInput && !dataReferenciaInput.value) {
+          alert("A data de referência é obrigatória quando o motivo for Banco de Horas.");
+          if (event) event.preventDefault();
+          return false;
+        }
+
         var h = parseInt(horasInput && horasInput.value ? horasInput.value : "0", 10);
         var m = parseInt(minutosInput && minutosInput.value ? minutosInput.value : "0", 10);
 
@@ -111,14 +228,29 @@
             return false;
           }
         }
+
+        return true;
       }
+
+      // ===== Outros motivos (data única) =====
+      if (!dataFolgaInput || !dataFolgaInput.value) {
+        alert("Informe a data da folga.");
+        if (event) event.preventDefault();
+        return false;
+      }
+
       return true;
     }
 
-    // Ajusta campos iniciais ao carregar
     window.addEventListener("load", function () {
-      toggleDataReferencia();
+      toggleMotivoFields();
       toggleSubstituto();
+
+      var dtIniEl = document.getElementById("data_inicio");
+      var dtFimEl = document.getElementById("data_fim");
+
+      if (dtIniEl) dtIniEl.addEventListener("change", updateLMPreview);
+      if (dtFimEl) dtFimEl.addEventListener("change", updateLMPreview);
     });
   </script>
 
@@ -133,11 +265,8 @@
       --radius:18px;
     }
 
-    * , *::before, *::after {
-      box-sizing: border-box;
-    }
+    * , *::before, *::after { box-sizing: border-box; }
 
-    /* ===== BASE / LAYOUT GERAL ===== */
     html, body {
       margin: 0;
       padding: 0;
@@ -167,215 +296,179 @@
     }
 
     @media (min-width:769px){
-      main{
-        padding:30px 24px 90px;
-      }
+      main{ padding:30px 24px 90px; }
     }
 
     /* ===== HEADER (padrão) ===== */
-    .header-desktop, .header-mobile {
-      display: none;
-      flex-shrink: 0;
-    }
+    .header-desktop, .header-mobile { display: none; flex-shrink: 0; }
 
-    /* Desktop */
     @media (min-width: 769px) {
-      .header-desktop {
-        display: flex;
-        background-color: #007bff;
-        padding: 15px 30px;
-        width: 100%;
-        align-items: center;
-        justify-content: space-between;
-        box-sizing: border-box;
-        min-height: 110px;
-        position: relative;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        color: white;
+      .header-desktop{
+        display:flex;
+        background-color:#007bff;
+        padding:15px 30px;
+        width:100%;
+        align-items:center;
+        justify-content:space-between;
+        box-sizing:border-box;
+        min-height:110px;
+        position:relative;
+        box-shadow:0 2px 6px rgba(0, 0, 0, 0.15);
+        color:white;
       }
-
-      .left-section {
-        display: flex;
-        align-items: center;
-        gap: 20px;
+      .left-section{ display:flex; align-items:center; gap:20px; }
+      .logo{
+        width:80px; height:80px;
+        object-fit:contain;
+        border-radius:10px;
+        background-color:white;
+        padding:6px;
       }
-
-      .logo {
-        width: 80px;
-        height: 80px;
-        object-fit: contain;
-        border-radius: 10px;
-        background-color: white;
-        padding: 6px;
+      .text-container{
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        text-align:left;
+        color:white;
       }
-
-      .text-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        text-align: left;
-        color: white;
+      .escola-nome{
+        font-weight:700;
+        font-size:1.6rem;
+        margin:0;
+        line-height:1.1;
       }
-
-      .escola-nome {
-        font-weight: 700;
-        font-size: 1.6rem;
-        margin: 0;
-        line-height: 1.1;
+      .escola-subtitulo{
+        font-weight:600;
+        font-size:1.1rem;
+        margin-top:4px;
       }
-
-      .escola-subtitulo {
-        font-weight: 600;
-        font-size: 1.1rem;
-        margin-top: 4px;
+      .header-center-text-container{
+        position:absolute;
+        left:50%;
+        top:50%;
+        transform:translate(-50%, -50%);
+        font-weight:800;
+        font-size:1.9rem;
+        color:white;
+        letter-spacing:5px;
+        user-select:none;
+        white-space:nowrap;
+        z-index:1;
+        text-shadow:0 2px 5px rgba(0,0,0,0.3);
       }
-
-      .header-center-text-container {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        font-weight: 800;
-        font-size: 1.9rem;
-        color: white;
-        letter-spacing: 5px;
-        user-select: none;
-        white-space: nowrap;
-        z-index: 1;
-        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      .header-center-text{ font-family:'Montserrat',sans-serif; }
+      .btn-home{
+        background-color:#0fb300;
+        color:white;
+        padding:6px 14px;
+        border-radius:6px;
+        font-weight:700;
+        font-size:1.5rem;
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        gap:8px;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);
+        transition:background-color 0.3s ease;
+        position:absolute;
+        right:30px;
+        top:50%;
+        transform:translateY(-50%);
+        z-index:2;
       }
-
-      .header-center-text {
-        font-family: 'Montserrat', sans-serif;
-      }
-
-      .btn-home {
-        background-color: #0fb300;
-        color: white;
-        padding: 6px 14px;
-        border-radius: 6px;
-        font-weight: 700;
-        font-size: 1.5rem;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-        transition: background-color 0.3s ease;
-        position: absolute;
-        right: 30px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 2;
-      }
-
-      .btn-home:hover {
-        background-color: #0d8a00;
-      }
+      .btn-home:hover{ background-color:#0d8a00; }
     }
 
-    /* Mobile */
     @media (max-width: 768px) {
-      .header-mobile {
-        display: block;
-        width: 100%;
-        box-sizing: border-box;
-        color: white;
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        background-color: #007bff;
+      .header-mobile{
+        display:block;
+        width:100%;
+        box-sizing:border-box;
+        color:white;
+        position:sticky;
+        top:0;
+        z-index:1000;
+        box-shadow:0 2px 6px rgba(0, 0, 0, 0.15);
+        background-color:#007bff;
       }
-
-      .header-top {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 15px;
-        padding: 10px 15px;
-        background-color: #007bff;
-        text-align: center;
+      .header-top{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:15px;
+        padding:10px 15px;
+        background-color:#007bff;
+        text-align:center;
       }
-
-      .logo {
-        width: 48px;
-        height: 48px;
-        object-fit: contain;
-        border-radius: 10px;
-        background-color: white;
-        padding: 6px;
+      .logo{
+        width:48px; height:48px;
+        object-fit:contain;
+        border-radius:10px;
+        background-color:white;
+        padding:6px;
       }
-
-      .text-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        color: white;
-        text-align: center;
+      .text-container{
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        color:white;
+        text-align:center;
       }
-
-      .escola-nome {
-        font-weight: 700;
-        font-size: 1.3rem;
-        margin: 0;
-        line-height: 1.1;
+      .escola-nome{
+        font-weight:700;
+        font-size:1.3rem;
+        margin:0;
+        line-height:1.1;
       }
-
-      .escola-subtitulo {
-        font-weight: 600;
-        font-size: 1rem;
-        margin-top: 2px;
+      .escola-subtitulo{
+        font-weight:600;
+        font-size:1rem;
+        margin-top:2px;
       }
-
-      .header-bottom {
-        background-color: #0056b3;
-        text-align: center;
-        padding: 12px 10px;
-        font-weight: 800;
-        font-size: 1rem;
-        letter-spacing: 4px;
-        user-select: none;
-        color: white;
-        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 12px;
-        white-space: nowrap;
+      .header-bottom{
+        background-color:#0056b3;
+        text-align:center;
+        padding:12px 10px;
+        font-weight:800;
+        font-size:1rem;
+        letter-spacing:4px;
+        user-select:none;
+        color:white;
+        box-shadow:inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        gap:12px;
+        white-space:nowrap;
       }
-
-      .btn-home-mobile {
-        background-color: #0fb300;
-        color: white;
-        padding: 6px 10px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 1rem;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 6px rgba(15,179,0,0.8);
-        transition: background-color 0.3s ease;
+      .btn-home-mobile{
+        background-color:#0fb300;
+        color:white;
+        padding:6px 10px;
+        border-radius:6px;
+        font-weight:600;
+        font-size:1rem;
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);
+        transition:background-color 0.3s ease;
       }
-
-      .btn-home-mobile:hover {
-        background-color: #0d8a00;
-      }
+      .btn-home-mobile:hover{ background-color:#0d8a00; }
     }
 
     /* ===== FLASH ERRO ===== */
-    .danger {
-      color: #721c24;
-      background-color: #f8d7da;
-      padding: 10px 14px;
-      border: 1px solid #f5c6cb;
-      border-radius: 10px;
-      margin: 0 auto 14px;
-      max-width: 900px;
-      box-sizing: border-box;
-      font-size: 0.9rem;
+    .danger{
+      color:#721c24;
+      background-color:#f8d7da;
+      padding:10px 14px;
+      border:1px solid #f5c6cb;
+      border-radius:10px;
+      margin:0 auto 14px;
+      max-width:900px;
+      box-sizing:border-box;
+      font-size:0.9rem;
       display:flex;
       align-items:center;
       gap:8px;
@@ -407,311 +500,252 @@
       box-shadow:0 4px 12px rgba(37,99,235,.45);
       color:#2563eb;
     }
-
     .page-header-icon i{ font-size:22px; }
+    .page-header-content{ display:flex; flex-direction:column; gap:4px; }
+    .page-header-title{ font-size:1.15rem; font-weight:800; margin:0; color:var(--ink); }
+    .page-header-subtitle{ font-size:0.9rem; margin:0; color:var(--muted); }
 
-    .page-header-content{
+    @media (max-width:600px){
+      .page-header-card{ padding:12px 14px; }
+      .page-header-title{ font-size:1.05rem; }
+      .page-header-subtitle{ font-size:0.82rem; }
+    }
+
+    /* ===== CARD PRINCIPAL DO FORMULÁRIO ===== */
+    .card-agendar{
+      width:100%;
+      background:#ffffff;
+      border-radius:var(--radius);
+      box-shadow:var(--card-shadow);
+      padding:18px 18px 20px;
+      border:1px solid rgba(148,163,184,0.25);
+      box-sizing:border-box;
+      margin:0 auto 18px;
+    }
+
+    .card-agendar-header{ margin-bottom:14px; }
+
+    .card-agendar-header h1{
+      margin:0 0 4px;
+      font-size:1.25rem;
+      color:#0f172a;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      font-weight:800;
+    }
+    .card-agendar-header h1 i{ font-size:1.4rem; color:#2563eb; }
+    .card-agendar-header p{ margin:0; font-size:0.9rem; color:#6b7280; }
+
+    /* ===== FORM / INPUTS ===== */
+    .form-grid{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      margin-top:4px;
+    }
+
+    .input-group, .form-group{
       display:flex;
       flex-direction:column;
       gap:4px;
     }
 
-    .page-header-title{
-      font-size:1.15rem;
-      font-weight:800;
-      margin:0;
-      color:var(--ink);
+    .input-group label, .form-group label{
+      font-weight:600;
+      font-size:0.95rem;
+      color:#374151;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
     }
 
-    .page-header-subtitle{
-      font-size:0.9rem;
-      margin:0;
-      color:var(--muted);
-    }
+    .input-group label i, .form-group label i{ color:#007bff; }
 
-    @media (max-width:600px){
-      .page-header-card{
-        padding:12px 14px;
-      }
-      .page-header-title{
-        font-size:1.05rem;
-      }
-      .page-header-subtitle{
-        font-size:0.82rem;
-      }
-    }
-
-    /* ===== CARD PRINCIPAL DO FORMULÁRIO ===== */
-    .card-agendar {
-      width: 100%;
-      background: #ffffff;
-      border-radius: var(--radius);
-      box-shadow: var(--card-shadow);
-      padding: 18px 18px 20px;
-      border: 1px solid rgba(148,163,184,0.25);
-      box-sizing: border-box;
-      margin: 0 auto 18px;
-    }
-
-    .card-agendar-header {
-      margin-bottom: 14px;
-    }
-
-    .card-agendar-header h1 {
-      margin: 0 0 4px;
-      font-size: 1.25rem;
-      color: #0f172a;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-weight:800;
-    }
-
-    .card-agendar-header h1 i {
-      font-size: 1.4rem;
-      color:#2563eb;
-    }
-
-    .card-agendar-header p {
-      margin: 0;
-      font-size: 0.9rem;
-      color: #6b7280;
-    }
-
-    /* ===== FORM / INPUTS ===== */
-    .form-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      margin-top:4px;
-    }
-
-    .input-group,
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .input-group label,
-    .form-group label {
-      font-weight: 600;
-      font-size: 0.95rem;
-      color: #374151;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .input-group label i,
-    .form-group label i {
-      color: #007bff;
-    }
-
-    .input-group input,
-    .input-group select,
-    .form-group input {
-      padding: 9px 10px;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-      font-size: 0.95rem;
-      box-sizing: border-box;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
-      background-color: #ffffff;
+    .input-group input, .input-group select, .form-group input{
+      padding:9px 10px;
+      border-radius:8px;
+      border:1px solid #d1d5db;
+      font-size:0.95rem;
+      box-sizing:border-box;
+      outline:none;
+      transition:border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+      background-color:#ffffff;
     }
 
     .input-group input:focus,
     .input-group select:focus,
-    .form-group input:focus {
-      border-color: #0d6efd;
-      box-shadow: 0 0 0 2px rgba(13,110,253,0.15);
+    .form-group input:focus{
+      border-color:#0d6efd;
+      box-shadow:0 0 0 2px rgba(13,110,253,0.15);
     }
 
-    /* Inputs somente leitura (nome / registro) visualmente bloqueados */
-    .input-group input[readonly] {
-      background-color: #e5e7eb;
-      color: #4b5563;
-      cursor: not-allowed;
-      border-color: #d1d5db;
-      box-shadow: none;
+    .input-group input[readonly]{
+      background-color:#e5e7eb;
+      color:#4b5563;
+      cursor:not-allowed;
+      border-color:#d1d5db;
+      box-shadow:none;
     }
-
-    .input-group input[readonly]:focus {
-      border-color: #d1d5db;
-      box-shadow: none;
-    }
+    .input-group input[readonly]:focus{ border-color:#d1d5db; box-shadow:none; }
 
     /* Horas / minutos grupo */
-    .horas-minutos-wrapper {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    .horas-minutos-wrapper{ display:flex; flex-direction:column; gap:8px; }
+    .horas-minutos-group{ display:flex; gap:12px; flex-wrap:wrap; }
+    .horas-minutos-group .input-group{ flex:1; margin-bottom:0; }
+    .horas-minutos-group input{ max-width:160px; }
+
+    @media (max-width:768px){
+      .horas-minutos-group{ flex-direction:column; }
+      .horas-minutos-group input{ max-width:100%; }
     }
 
-    .horas-minutos-group {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
+    /* Período LM (mais limpo / menos confuso) */
+    .lm-card{
+      margin-top:8px;
+      padding:12px;
+      border-radius:14px;
+      border:1px solid rgba(148,163,184,0.28);
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      box-shadow: 0 10px 22px rgba(15,23,42,.06);
     }
 
-    .horas-minutos-group .input-group {
-      flex: 1;
-      margin-bottom: 0;
+    .lm-title{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-weight:900;
+      color:#0f172a;
+      margin:0 0 6px 0;
+      font-size:0.95rem;
     }
 
-    .horas-minutos-group input {
-      max-width: 160px;
+    .lm-sub{
+      margin:0 0 10px 0;
+      color:#64748b;
+      font-weight:700;
+      font-size:0.85rem;
+      line-height:1.35;
     }
 
-    @media (max-width: 768px) {
-      .horas-minutos-group {
-        flex-direction: column;
-      }
-
-      .horas-minutos-group input {
-        max-width: 100%;
-      }
+    .periodo-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      align-items:end;
+    }
+    @media (max-width: 720px){
+      .periodo-grid{ grid-template-columns: 1fr; }
     }
 
-    /* Wrapper do botão para centralizar e controlar o espaço */
-    .submit-row {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 10px;
+    .lm-preview{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(13,110,253,.18);
+      background:#ffffff;
+      font-weight:900;
+      font-size:0.88rem;
+      color:#111827;
+      display:none;
     }
 
-    .submit-btn {
-      background: linear-gradient(135deg,#0d6efd,#0b5ed7);
-      border: none;
-      color: #fff;
-      font-weight: 700;
-      border-radius: 999px;
-      padding: 9px 22px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      cursor: pointer;
-      box-shadow: 0 8px 18px rgba(13,110,253,0.35);
-      transition: background-color 0.2s ease, box-shadow 0.2s ease;
-      font-size: 0.95rem;
-      white-space: nowrap;
+    /* Botão */
+    .submit-row{ display:flex; justify-content:flex-end; margin-top:10px; }
+    .submit-btn{
+      background:linear-gradient(135deg,#0d6efd,#0b5ed7);
+      border:none;
+      color:#fff;
+      font-weight:700;
+      border-radius:999px;
+      padding:9px 22px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      cursor:pointer;
+      box-shadow:0 8px 18px rgba(13,110,253,0.35);
+      transition:background-color 0.2s ease, box-shadow 0.2s ease;
+      font-size:0.95rem;
+      white-space:nowrap;
     }
-
-    .submit-btn i {
-      font-size: 1rem;
+    .submit-btn i{ font-size:1rem; }
+    .submit-btn:hover{
+      background:#0fb300;
+      box-shadow:0 8px 18px rgba(15,179,0,0.45);
     }
+    .submit-btn:active{ box-shadow:0 4px 10px rgba(15,179,0,0.35); }
 
-    .submit-btn:hover {
-      background: #0fb300;
-      box-shadow: 0 8px 18px rgba(15,179,0,0.45);
-    }
-
-    .submit-btn:active {
-      box-shadow: 0 4px 10px rgba(15,179,0,0.35);
-    }
-
-    @media (max-width:768px) {
-      .submit-row {
-        justify-content: stretch;
-      }
-      .submit-btn {
-        width: 100%;
-      }
+    @media (max-width:768px){
+      .submit-row{ justify-content:stretch; }
+      .submit-btn{ width:100%; }
     }
 
     /* ===== SEÇÃO INFORMATIVA ===== */
-    .info-section {
-      background-color: #ffffff;
-      padding: 16px 16px 18px;
-      margin: 0 auto 15px;
-      border-radius: var(--radius);
-      max-width: 900px;
-      box-shadow: var(--card-shadow);
-      border: 1px solid rgba(148,163,184,0.25);
-      box-sizing: border-box;
-      font-size: 0.93rem;
+    .info-section{
+      background-color:#ffffff;
+      padding:16px 16px 18px;
+      margin:0 auto 15px;
+      border-radius:var(--radius);
+      max-width:900px;
+      box-shadow:var(--card-shadow);
+      border:1px solid rgba(148,163,184,0.25);
+      box-sizing:border-box;
+      font-size:0.93rem;
     }
 
-    .info-section h2 {
-      margin: 0 0 6px;
-      color: #0f172a;
-      font-size: 1.02rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+    .info-section h2{
+      margin:0 0 6px;
+      color:#0f172a;
+      font-size:1.02rem;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
       font-weight:800;
     }
-
-    .info-section h2 i {
-      color: #2563eb;
+    .info-section h2 i{ color:#2563eb; }
+    .info-section p{
+      margin:6px 0;
+      line-height:1.5;
+      color:#374151;
     }
-
-    .info-section p {
-      margin: 6px 0;
-      line-height: 1.5;
-      color: #374151;
-    }
-
-    .info-section ul {
-      margin: 6px 0 4px 20px;
-      padding: 0;
-    }
-
-    .info-section ul li {
-      margin-bottom: 4px;
-    }
-
-    .info-section a {
-      color: #2563eb;
-      text-decoration: none;
-      font-weight: 600;
-    }
-
-    .info-section a:hover {
-      text-decoration: underline;
-    }
+    .info-section ul{ margin:6px 0 4px 20px; padding:0; }
+    .info-section ul li{ margin-bottom:4px; }
+    .info-section a{ color:#2563eb; text-decoration:none; font-weight:600; }
+    .info-section a:hover{ text-decoration:underline; }
 
     /* ===== LINK VOLTAR ===== */
-    .voltar-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: #2563eb;
-      font-size: 0.96rem;
-      text-decoration: none;
-      margin: 0 auto;
-      padding-top: 4px;
+    .voltar-link{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      color:#2563eb;
+      font-size:0.96rem;
+      text-decoration:none;
+      margin:0 auto;
+      padding-top:4px;
       font-weight:600;
     }
-
-    .voltar-link:hover {
-      text-decoration: underline;
-    }
-
-    .voltar-link i {
-      font-size: 0.9rem;
-    }
-
-    .voltar-wrapper {
-      width: 100%;
-      max-width: 900px;
-      margin: 0 auto;
-      text-align: left;
+    .voltar-link:hover{ text-decoration:underline; }
+    .voltar-link i{ font-size:0.9rem; }
+    .voltar-wrapper{
+      width:100%;
+      max-width:900px;
+      margin:0 auto;
+      text-align:left;
     }
 
     /* ===== FOOTER ===== */
-    footer {
-      background: linear-gradient(to right, #222, #444);
-      color: #ddd;
-      text-align: center;
-      padding: 15px 0;
-      font-size: 14px;
-      border-top: 2px solid #555;
-      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
-      width: 100%;
-      flex-shrink: 0;
+    footer{
+      background:linear-gradient(to right, #222, #444);
+      color:#ddd;
+      text-align:center;
+      padding:15px 0;
+      font-size:14px;
+      border-top:2px solid #555;
+      box-shadow:0px -2px 10px rgba(0, 0, 0, 0.3);
+      width:100%;
+      flex-shrink:0;
     }
   </style>
 </head>
@@ -753,7 +787,6 @@
     </div>
   </header>
 
-  <!-- Conteúdo principal -->
   <main>
     <div class="shell">
 
@@ -779,7 +812,7 @@
         <div class="page-header-content">
           <p class="page-header-title">Agendar Folga</p>
           <p class="page-header-subtitle">
-            Solicite sua folga indicando o motivo, data e demais informações necessárias.
+            Selecione o motivo e informe as datas necessárias para registrar sua solicitação.
           </p>
         </div>
       </div>
@@ -788,12 +821,10 @@
       <div class="card-agendar">
         <div class="card-agendar-header">
           <h1><i class="fas fa-edit"></i> Dados do Agendamento</h1>
-          <p>Revise os dados antes de enviar. Campos marcados como obrigatórios devem ser preenchidos.</p>
+          <p>Preencha os campos e clique em <strong>Solicitar Agendamento</strong>.</p>
         </div>
 
-        <!-- Mantido SEM action (POST para a própria URL/endpoint existente) -->
         <form method="POST" onsubmit="return validateForm(event)">
-          <!-- CSRF obrigatório -->
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
           <div class="form-grid">
@@ -810,16 +841,10 @@
               <input type="text" id="registro" name="registro" value="{{ current_user.registro }}" readonly />
             </div>
 
-            <!-- Data da folga -->
-            <div class="input-group">
-              <label for="data"><i class="fas fa-calendar-alt"></i> Data da Folga</label>
-              <input type="date" id="data" name="data" required />
-            </div>
-
             <!-- Motivo -->
             <div class="input-group">
               <label for="motivo"><i class="fas fa-list-alt"></i> Motivo da Ausência</label>
-              <select id="motivo" name="motivo" required onchange="toggleDataReferencia()">
+              <select id="motivo" name="motivo" required onchange="toggleMotivoFields()">
                 <option value="AB">Abonada (AB)</option>
                 <option value="BH">Banco de Horas (BH)</option>
                 <option value="DL">Dispensa Legal (DL)</option>
@@ -828,6 +853,39 @@
                 <option value="LM">Licença Médica (LM)</option>
                 <option value="FS">Falta Simples (FS)</option>
               </select>
+            </div>
+
+            <!-- Data única (padrão) -->
+            <div class="input-group" id="data_single_group">
+              <label for="data"><i class="fas fa-calendar-alt"></i> Data da Folga</label>
+              <input type="date" id="data" name="data" required />
+            </div>
+
+            <!-- Período LM (mais simples e direto) -->
+            <div class="input-group" id="periodo_lm_group" style="display:none;">
+              <div class="lm-card">
+                <div class="lm-title">
+                  <i class="fas fa-notes-medical" style="color:#2563eb;"></i>
+                  Licença Médica (LM) — Período
+                </div>
+                <p class="lm-sub">Informe a data de início e a data de término do afastamento.</p>
+
+                <div class="periodo-grid">
+                  <div class="input-group">
+                    <label for="data_inicio">Data inicial</label>
+                    <input type="date" id="data_inicio" name="data_inicio" />
+                  </div>
+
+                  <div class="input-group">
+                    <label for="data_fim">Data final</label>
+                    <input type="date" id="data_fim" name="data_fim" />
+                  </div>
+                </div>
+
+                <div class="lm-preview" id="lm_preview">
+                  <div id="lm_preview_text">Informe a data inicial e a data final do período.</div>
+                </div>
+              </div>
             </div>
 
             <!-- Haverá substituição -->
@@ -847,7 +905,7 @@
 
             <!-- Data de referência BH -->
             <div class="form-group" id="data_banco_horas" style="display: none;">
-              <label for="data_referencia"><i class="fas fa-calendar-day"></i> Data de Referência (dia em que o banco foi acumulado)</label>
+              <label for="data_referencia"><i class="fas fa-calendar-day"></i> Data de Referência (BH)</label>
               <input type="date" id="data_referencia" name="data_referencia" />
             </div>
 
@@ -869,7 +927,6 @@
             <!-- Tipo folga (hidden) -->
             <input type="hidden" id="tipo_folga" name="tipo_folga" value="" />
 
-            <!-- Botão -->
             <div class="submit-row">
               <button type="submit" class="submit-btn">
                 <i class="fas fa-calendar-check"></i> Solicitar Agendamento

@@ -1,29 +1,27 @@
-version: '3.8'
-
 services:
-  db:
-    image: postgres:latest
-    container_name: gestao-padin
-    restart: always
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: neto1536
-      POSTGRES_DB: folgas
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
   app:
-    build: .
+    build:
+      context: .
     container_name: folgas-app
-    restart: always
-    depends_on:
-      - db
     ports:
       - "8000:8000"
-    environment:
-      DATABASE_URL: postgresql://folgas_user:1xrBtiUdWBbWnzW2gxY2h8CU2PRhQEir@dpg-cueaq3d2ng1s7386b3dg-a/folgas
 
-volumes:
-  postgres_data:
+    # Carrega variáveis do seu .env (NÃO COMMITAR)
+    env_file:
+      - .env
+
+    # Monta seu código dentro do container (mudou arquivo => reflete na hora)
+    volumes:
+      - .:/app
+
+      # (Opcional, mas recomendo MUITO)
+      # Simula o Render Disk localmente, mantendo uploads persistentes fora do container:
+      - ./render_disk:/var/data
+
+    # DEV: Flask com reloader (não precisa rebuild pra mudar template/js/css)
+    command: >
+      sh -c "python -m flask --app app.py run --host=0.0.0.0 --port ${PORT:-8000} --debug"
+
+    # Alternativa (se você preferir gunicorn mesmo em dev):
+    # command: >
+    #   sh -c "gunicorn -b 0.0.0.0:${PORT:-8000} app:app --reload --workers 1 --threads 4 --timeout 1800 --access-logfile - --error-logfile -"

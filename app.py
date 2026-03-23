@@ -389,36 +389,33 @@ TERMO_VERSION = "2025-01-15"
 # MODELOS
 # ===========================================
 import datetime
-from sqlalchemy import CheckConstraint, Index
 from flask_login import UserMixin
+from sqlalchemy import CheckConstraint, Index
+
+# (assumindo que você já tem db = SQLAlchemy(app))
 
 class User(UserMixin, db.Model):
-    __tablename__ = "user"  # mantém compatibilidade com FKs existentes (ex.: 'user.id')
+    __tablename__ = "user"
 
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(150), nullable=False)
     registro = db.Column(db.String(150), nullable=False, unique=True, index=True)
     email = db.Column(db.String(150), nullable=False, unique=True, index=True)
     senha = db.Column(db.String(256), nullable=False)
-    tipo = db.Column(db.String(20), nullable=False)  # 'funcionario' ou 'administrador'
-    status = db.Column(db.String(20), default='pendente', nullable=False)  # 'pendente', 'aprovado', 'rejeitado'
+    tipo = db.Column(db.String(20), nullable=False)  # funcionario | administrador
+    status = db.Column(db.String(20), default="pendente", nullable=False)
 
-    # Controle de ativo na unidade (soft delete)
     ativo = db.Column(db.Boolean, nullable=False, default=True, index=True)
 
-    # Campos para TRE
     tre_total = db.Column(db.Integer, default=0, nullable=False)
     tre_usufruidas = db.Column(db.Integer, default=0, nullable=False)
     cargo = db.Column(db.String(100), nullable=True)
 
-    # Banco de horas em minutos
     banco_horas = db.Column(db.Integer, default=0, nullable=False)
 
-    # Contato/pessoais
     celular = db.Column(db.String(20), nullable=True)
     data_nascimento = db.Column(db.Date, nullable=True)
 
-    # Documentos
     cpf = db.Column(db.String(14), nullable=False, unique=True, index=True)
     rg = db.Column(db.String(20), nullable=False, unique=True, index=True)
     data_emissao_rg = db.Column(db.Date, nullable=True)
@@ -426,167 +423,176 @@ class User(UserMixin, db.Model):
 
     graduacao = db.Column(db.String(50), nullable=True)
 
-    # Termos
     aceitou_termo = db.Column(db.Boolean, default=False, nullable=False)
     versao_termo = db.Column(db.String(20), default=None)
 
-    # Relacionamentos
     agendamentos = db.relationship(
-        'Agendamento',
-        backref=db.backref('user_funcionario', lazy=True),
+        "Agendamento",
+        backref=db.backref("user_funcionario", lazy=True),
         lazy=True,
-        foreign_keys='Agendamento.funcionario_id',
-        overlaps="funcionario,agendamentos_funcionario"
+        foreign_keys="Agendamento.funcionario_id",
+        overlaps="funcionario,agendamentos_funcionario",
     )
 
-    # Eventos criados (admin)
     eventos_criados = db.relationship(
-        'Evento',
-        backref=db.backref('criado_por', lazy=True),
+        "Evento",
+        backref=db.backref("criado_por", lazy=True),
         lazy=True,
-        foreign_keys='Evento.criado_por_id'
+        foreign_keys="Evento.criado_por_id",
     )
 
-    # Evento visto
     eventos_vistos = db.relationship(
-        'EventoVisto',
-        backref=db.backref('usuario', lazy=True),
+        "EventoVisto",
+        backref=db.backref("usuario", lazy=True),
         lazy=True,
-        foreign_keys='EventoVisto.user_id',
-        cascade="all, delete-orphan"
+        foreign_keys="EventoVisto.user_id",
+        cascade="all, delete-orphan",
     )
 
-    # ==============================
-    # NOVO: Patch Notes lidos
-    # ==============================
     release_reads = db.relationship(
-        'ReleaseNoteRead',
-        backref=db.backref('usuario', lazy=True),
+        "ReleaseNoteRead",
+        backref=db.backref("usuario", lazy=True),
         lazy=True,
-        foreign_keys='ReleaseNoteRead.user_id',
-        cascade="all, delete-orphan"
+        foreign_keys="ReleaseNoteRead.user_id",
+        cascade="all, delete-orphan",
     )
 
 
 class Agendamento(db.Model):
-    __tablename__ = 'agendamento'
+    __tablename__ = "agendamento"
 
     id = db.Column(db.Integer, primary_key=True)
-    funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    funcionario_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+
     status = db.Column(db.String(50), nullable=False, index=True)
+
+    # dia do registro (um por dia)
     data = db.Column(db.Date, nullable=False, index=True)
+
+    # NOVO: fim do período (ex.: LM), opcional
+    data_fim = db.Column(db.Date, nullable=True, index=True)
+
+    # NOVO: id do lote (LM por período gera vários registros vinculados)
+    lote_id = db.Column(db.String(64), nullable=True, index=True)
+
     motivo = db.Column(db.String(100), nullable=False)
     tipo_folga = db.Column(db.String(50))
+
     data_referencia = db.Column(db.Date)
+
     horas = db.Column(db.Integer, nullable=True)
     minutos = db.Column(db.Integer, nullable=True)
+
     substituicao = db.Column(db.String(3), nullable=False, default="Não")
     nome_substituto = db.Column(db.String(255), nullable=True)
+
     conferido = db.Column(db.Boolean, default=False, nullable=False)
 
     funcionario = db.relationship(
-        'User',
-        backref=db.backref('agendamentos_funcionario', lazy=True),
+        "User",
+        backref=db.backref("agendamentos_funcionario", lazy=True),
         lazy=True,
         foreign_keys=[funcionario_id],
-        overlaps="agendamentos,user_funcionario"
+        overlaps="agendamentos,user_funcionario",
     )
 
 
 class Folga(db.Model):
-    __tablename__ = 'folga'
+    __tablename__ = "folga"
 
     id = db.Column(db.Integer, primary_key=True)
-    funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    funcionario_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
     data = db.Column(db.Date, nullable=False, index=True)
     motivo = db.Column(db.String(50), nullable=False)
     status = db.Column(db.String(50), default="Pendente", nullable=False, index=True)
 
-    funcionario = db.relationship('User', backref=db.backref('folgas', lazy=True))
+    funcionario = db.relationship("User", backref=db.backref("folgas", lazy=True))
 
 
 class BancoDeHoras(db.Model):
-    __tablename__ = 'banco_de_horas'
+    __tablename__ = "banco_de_horas"
 
     id = db.Column(db.Integer, primary_key=True)
-    funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    funcionario_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+
     horas = db.Column(db.Integer, nullable=False)
     minutos = db.Column(db.Integer, nullable=False)
     total_minutos = db.Column(db.Integer, default=0, nullable=False)
+
     data_realizacao = db.Column(db.Date, nullable=False, index=True)
     status = db.Column(db.String(50), default="Horas a Serem Deferidas", nullable=False, index=True)
+
+    # ✅ IMPORTANTE: nada posicional indevido aqui (só tipo + kwargs)
     data_criacao = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
-    data_atualizacao = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
+    data_atualizacao = db.Column(
+        db.DateTime,
+        default=datetime.datetime.utcnow,
+        onupdate=datetime.datetime.utcnow,
+        nullable=False,
+    )
+
     motivo = db.Column(db.String(40), nullable=True)
     usufruido = db.Column(db.Boolean, default=False, nullable=False)
 
-    funcionario = db.relationship('User', backref='banco_de_horas')
+    funcionario = db.relationship("User", backref="banco_de_horas")
 
 
 class EsquecimentoPonto(db.Model):
-    __tablename__ = 'esquecimento_ponto'
+    __tablename__ = "esquecimento_ponto"
 
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(150), nullable=False)
     registro = db.Column(db.String(150), nullable=False)
     data_esquecimento = db.Column(db.Date, nullable=False, index=True)
+
     hora_primeira_entrada = db.Column(db.Time, nullable=True)
     hora_primeira_saida = db.Column(db.Time, nullable=True)
     hora_segunda_entrada = db.Column(db.Time, nullable=True)
     hora_segunda_saida = db.Column(db.Time, nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
     conferido = db.Column(db.Boolean, default=False, nullable=False)
     motivo = db.Column(db.Text, nullable=True)
 
-    usuario = db.relationship('User', backref=db.backref('esquecimentos_ponto', lazy=True))
+    usuario = db.relationship("User", backref=db.backref("esquecimentos_ponto", lazy=True))
 
 
 class TRE(db.Model):
-    __tablename__ = 'tre'
+    __tablename__ = "tre"
 
     id = db.Column(db.Integer, primary_key=True)
-    funcionario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    funcionario_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
 
-    # ✅ pode ser positivo (crédito) ou negativo (débito) em ajustes admin
     dias_folga = db.Column(db.Integer, nullable=False)
-
-    # ✅ agora pode ser NULL para ajustes administrativos (sem PDF)
     arquivo_pdf = db.Column(db.String(255), nullable=True)
 
     data_envio = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
 
-    status = db.Column(db.String(20), default='pendente', nullable=False, index=True)
-    # ✅ em ajustes admin, você pode gravar aqui o valor final (inclusive negativo)
+    status = db.Column(db.String(20), default="pendente", nullable=False, index=True)
     dias_validados = db.Column(db.Integer, nullable=True)
     parecer_admin = db.Column(db.Text, nullable=True)
     validado_em = db.Column(db.DateTime, nullable=True)
-    validado_por_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    validado_por_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True, index=True)
 
-    # ✅ novo: origem do registro (upload do servidor x ajuste do admin)
-    origem = db.Column(db.String(20), nullable=False, default='upload', index=True)  # upload|admin_ajuste
-
-    # ✅ opcional: descrição curta do ajuste
+    origem = db.Column(db.String(20), nullable=False, default="upload", index=True)  # upload | admin_ajuste
     descricao = db.Column(db.String(255), nullable=True)
 
     funcionario = db.relationship(
-        'User',
-        backref=db.backref('tres', lazy=True),
+        "User",
+        backref=db.backref("tres", lazy=True),
         foreign_keys=[funcionario_id],
-        lazy=True
+        lazy=True,
     )
     validador = db.relationship(
-        'User',
-        backref=db.backref('tres_validadas', lazy=True),
+        "User",
+        backref=db.backref("tres_validadas", lazy=True),
         foreign_keys=[validado_por_id],
-        lazy=True
+        lazy=True,
     )
 
 
-# ===========================================
-# EVENTOS DA ESCOLA (ADMIN)
-# ===========================================
 class Evento(db.Model):
-    __tablename__ = 'evento'
+    __tablename__ = "evento"
 
     id = db.Column(db.Integer, primary_key=True)
 
@@ -601,7 +607,7 @@ class Evento(db.Model):
     hora_inicio = db.Column(db.Time, nullable=True)
     hora_fim = db.Column(db.Time, nullable=True)
 
-    criado_por_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    criado_por_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True, index=True)
     ativo = db.Column(db.Boolean, nullable=False, default=True, index=True)
     cor = db.Column(db.String(20), nullable=True)
 
@@ -609,21 +615,21 @@ class Evento(db.Model):
     atualizado_em = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
 
     vistos = db.relationship(
-        'EventoVisto',
-        backref=db.backref('evento', lazy=True),
+        "EventoVisto",
+        backref=db.backref("evento", lazy=True),
         lazy=True,
-        foreign_keys='EventoVisto.evento_id',
-        cascade="all, delete-orphan"
+        foreign_keys="EventoVisto.evento_id",
+        cascade="all, delete-orphan",
     )
 
     __table_args__ = (
         CheckConstraint(
             "(data_inicio IS NULL OR data_fim IS NULL) OR (data_fim >= data_inicio)",
-            name="ck_evento_periodo_valido"
+            name="ck_evento_periodo_valido",
         ),
         CheckConstraint(
             "(hora_inicio IS NULL OR hora_fim IS NULL) OR (hora_fim >= hora_inicio)",
-            name="ck_evento_horario_valido"
+            name="ck_evento_horario_valido",
         ),
         Index("ix_evento_datas", "data_evento", "data_inicio", "data_fim"),
     )
@@ -634,18 +640,8 @@ class EventoVisto(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
-    )
-    evento_id = db.Column(
-        db.Integer,
-        db.ForeignKey("evento.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
-    )
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    evento_id = db.Column(db.Integer, db.ForeignKey("evento.id", ondelete="CASCADE"), nullable=False, index=True)
 
     visto_em = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
 
@@ -655,24 +651,15 @@ class EventoVisto(db.Model):
     )
 
 
-# ===========================================
-# NOVO: PATCH NOTES / RELEASE NOTES
-# ===========================================
 class ReleaseNote(db.Model):
-    """
-    Patch notes / release notes do sistema.
-
-    - Somente admins visualizam no login.
-    - Só aparece se is_published = True e o admin ainda não marcou como lido.
-    """
     __tablename__ = "release_note"
 
     id = db.Column(db.Integer, primary_key=True)
 
-    version = db.Column(db.String(40), nullable=False, index=True)     # ex: 2026.02.07.1
+    version = db.Column(db.String(40), nullable=False, index=True)
     title = db.Column(db.String(180), nullable=False)
-    body = db.Column(db.Text, nullable=False)                          # texto puro (render no front com \n -> <br>)
-    severity = db.Column(db.String(20), nullable=False, default="info")# info|improvement|fix|breaking
+    body = db.Column(db.Text, nullable=False)
+    severity = db.Column(db.String(20), nullable=False, default="info")  # info|improvement|fix|breaking
 
     is_published = db.Column(db.Boolean, nullable=False, default=False, index=True)
 
@@ -684,38 +671,25 @@ class ReleaseNote(db.Model):
         backref=db.backref("release", lazy=True),
         lazy=True,
         foreign_keys="ReleaseNoteRead.release_id",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
 
     __table_args__ = (
         CheckConstraint(
             "severity IN ('info','improvement','fix','breaking')",
-            name="ck_release_note_severity"
+            name="ck_release_note_severity",
         ),
         Index("ix_release_note_pub_created", "is_published", "created_at"),
     )
 
 
 class ReleaseNoteRead(db.Model):
-    """
-    Controle de leitura do patch note por usuário (admin).
-    """
     __tablename__ = "release_note_read"
 
     id = db.Column(db.Integer, primary_key=True)
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
-    )
-    release_id = db.Column(
-        db.Integer,
-        db.ForeignKey("release_note.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
-    )
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    release_id = db.Column(db.Integer, db.ForeignKey("release_note.id", ondelete="CASCADE"), nullable=False, index=True)
 
     read_at = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
 
@@ -723,6 +697,7 @@ class ReleaseNoteRead(db.Model):
         db.UniqueConstraint("user_id", "release_id", name="uq_release_note_read_user_release"),
         Index("ix_release_note_read_user_release", "user_id", "release_id"),
     )
+
 
 # ===========================================
 # E-MAIL — Função genérica (corrigida e robusta)
@@ -1762,8 +1737,12 @@ def agendamento_protocolo(agendamento_id):
     return resp
 
 # ===========================================
-# AGENDAR FOLGA
+# AGENDAR FOLGA (com período LM -> cria N registros + 1 e-mail)
 # ===========================================
+import uuid
+import datetime
+from sqlalchemy import func
+
 @app.route('/agendar', methods=['GET', 'POST'])
 @login_required
 def agendar():
@@ -1773,7 +1752,8 @@ def agendar():
 
         # Valores do formulário
         tipo_folga = request.form.get('tipo_folga')      # ex.: 'AB', 'BH', 'DS', 'TRE', 'LM', 'FS', 'DL'
-        data_folga = request.form.get('data')
+        data_folga = request.form.get('data')            # início (sempre)
+        data_fim_str = request.form.get('data_fim')      # ✅ novo (opção 2) - só para LM
         motivo = request.form.get('motivo')              # deve espelhar o select
         data_referencia = request.form.get('data_referencia')
 
@@ -1828,14 +1808,28 @@ def agendar():
             'DL':  'Dispensa Legal',
         }.get(tipo_folga, 'Agendamento')
 
-        # ---- Validação e parsing da data da folga ----
+        # ---- Validação e parsing da data da folga (INÍCIO) ----
         try:
             data_folga = datetime.datetime.strptime(data_folga, '%Y-%m-%d').date()
         except (TypeError, ValueError):
             flash("Data inválida.", "danger")
             return redirect(url_for('agendar'))
 
+        # ✅ NOVO: período para LM (data_fim)
+        data_fim = None
+        if tipo_folga == 'LM' and data_fim_str:
+            try:
+                data_fim = datetime.datetime.strptime(data_fim_str, '%Y-%m-%d').date()
+            except (TypeError, ValueError):
+                flash("Data final inválida.", "danger")
+                return redirect(url_for('agendar'))
+
+            if data_fim < data_folga:
+                flash("Período inválido: a data final não pode ser menor que a data inicial.", "danger")
+                return redirect(url_for('agendar'))
+
         # ---- Regras específicas AB (1 por mês; 6 deferidas por ano) ----
+        # (mantém exatamente como era; data_fim NÃO entra aqui)
         if tipo_folga == 'AB':
             agendamento_existente = Agendamento.query.filter(
                 Agendamento.funcionario_id == current_user.id,
@@ -1885,7 +1879,7 @@ def agendar():
                 flash("Informe um tempo válido para Banco de Horas (minutos entre 0 e 59 e total > 0).", "danger")
                 return redirect(url_for('agendar'))
 
-            # Data de referência não pode ser posterior à data da folga
+            # Data de referência não pode ser posterior à data da folga (início)
             if data_referencia and data_referencia > data_folga:
                 flash("A data de referência do Banco de Horas não pode ser posterior à data da folga.", "danger")
                 return redirect(url_for('agendar'))
@@ -1899,37 +1893,97 @@ def agendar():
             horas = 0
             minutos = 0
 
-        # ---- Criação do agendamento ----
-        novo_agendamento = Agendamento(
+        # ==========================================================
+        # ✅ IMPLEMENTAÇÃO: LM por período => cria 1 registro por dia
+        # - 1 e-mail
+        # - 1 protocolo (do "registro principal")
+        # - N linhas no banco com mesmo lote_id
+        # ==========================================================
+        base_kwargs = dict(
             funcionario_id=current_user.id,
             status='em_espera',
-            data=data_folga,
             motivo=tipo_folga,
             tipo_folga=tipo_folga,
             data_referencia=data_referencia,
             horas=horas,
             minutos=minutos,
             substituicao=substituicao,
-            nome_substituto=nome_substituto
+            nome_substituto=nome_substituto,
         )
 
-        try:
-            db.session.add(novo_agendamento)
-            db.session.commit()
+        has_data_fim = hasattr(Agendamento, "data_fim")
+        has_lote_id = hasattr(Agendamento, "lote_id")
 
-            # ✅ gera/salva protocolo PDF (status inicial: EM ESPERA)
+        agendamentos_criados = []
+        ag_principal = None
+
+        try:
+            # Se for LM e veio data_fim válida (período inclusive)
+            if tipo_folga == "LM" and data_fim:
+                lote_id = uuid.uuid4().hex if has_lote_id else None
+
+                dia = data_folga
+                while dia <= data_fim:
+                    kw = dict(base_kwargs)
+                    kw["data"] = dia
+
+                    # grava data_fim em TODOS (para o front/email poder mostrar o período em qualquer linha)
+                    if has_data_fim:
+                        kw["data_fim"] = data_fim
+
+                    if has_lote_id:
+                        # lote só faz sentido como "período" (data_fim >= data_inicio)
+                        kw["lote_id"] = lote_id
+
+                    ag = Agendamento(**kw)
+                    agendamentos_criados.append(ag)
+
+                    dia = dia + datetime.timedelta(days=1)
+
+                db.session.add_all(agendamentos_criados)
+                db.session.commit()
+
+                ag_principal = agendamentos_criados[0]  # representa o período
+            else:
+                # comportamento antigo (1 registro)
+                kw = dict(base_kwargs)
+                kw["data"] = data_folga
+
+                # só LM pode gravar data_fim; outros ficam NULL
+                if has_data_fim:
+                    kw["data_fim"] = data_fim if (tipo_folga == "LM") else None
+
+                # lote_id não é necessário no modo antigo (mantém sem)
+                if has_lote_id:
+                    kw["lote_id"] = None
+
+                ag = Agendamento(**kw)
+                db.session.add(ag)
+                db.session.commit()
+                ag_principal = ag
+
+            # ✅ gera/salva protocolo PDF (1x)
             try:
-                gerar_protocolo_agendamento_pdf(novo_agendamento, current_user)
+                gerar_protocolo_agendamento_pdf(ag_principal, current_user)
             except Exception:
-                current_app.logger.exception("Falha ao gerar protocolo PDF do agendamento %s", novo_agendamento.id)
+                current_app.logger.exception("Falha ao gerar protocolo PDF do agendamento %s", ag_principal.id)
                 flash("Agendamento registrado, mas não foi possível gerar o protocolo em PDF neste momento.", "warning")
 
             # =========================
             # E-MAILS PERSONALIZADOS
             # =========================
             nome = (current_user.nome or "").strip() or "Servidor(a)"
-            data_str = novo_agendamento.data.strftime('%d/%m/%Y')
             status_label = "EM ESPERA"
+
+            dt_ini = ag_principal.data
+            dt_fim = getattr(ag_principal, "data_fim", None)
+
+            if dt_fim and dt_fim != dt_ini:
+                data_str = f"{dt_ini.strftime('%d/%m/%Y')} → {dt_fim.strftime('%d/%m/%Y')}"
+                data_label = "Período"
+            else:
+                data_str = dt_ini.strftime('%d/%m/%Y')
+                data_label = "Data"
 
             def _format_tempo_bh(h, m):
                 h = int(h or 0)
@@ -1941,8 +1995,8 @@ def agendar():
                     parts.append(f"{m}min")
                 return " ".join(parts) if parts else "0min"
 
-            tempo_bh = _format_tempo_bh(novo_agendamento.horas, novo_agendamento.minutos)
-            data_ref_str = novo_agendamento.data_referencia.strftime('%d/%m/%Y') if novo_agendamento.data_referencia else None
+            tempo_bh = _format_tempo_bh(getattr(ag_principal, "horas", 0), getattr(ag_principal, "minutos", 0))
+            data_ref_str = ag_principal.data_referencia.strftime('%d/%m/%Y') if ag_principal.data_referencia else None
 
             def _escape(s):
                 if s is None:
@@ -1955,23 +2009,16 @@ def agendar():
                         .replace("'", "&#39;"))
 
             def build_email_html(title, greeting_name, lead, paragraphs, summary_rows, note_lines=None):
-                """
-                Layout compatível com a maioria dos clientes de e-mail (table-based).
-                """
                 greeting_name = _escape(greeting_name)
                 title = _escape(title)
-                # ✅ CORREÇÃO: NÃO ESCAPAR O LEAD (ele contém HTML <strong> etc. "controlado" por você)
-                # lead = _escape(lead)  <-- removido propositalmente
                 note_lines = note_lines or []
 
-                # Monta parágrafos (já são HTML controlado)
                 p_html = ""
                 for p in paragraphs:
                     if not p:
                         continue
                     p_html += f'<p style="margin:0 0 12px 0;">{p}</p>'
 
-                # Monta linhas do resumo (tabela)
                 rows_html = ""
                 for k, v in summary_rows:
                     if v is None or v == "":
@@ -1987,7 +2034,6 @@ def agendar():
                       </tr>
                     """
 
-                # Notas finais
                 notes_html = ""
                 if note_lines:
                     li = "".join([f"<li style='margin:0 0 6px 0;'>{x}</li>" for x in note_lines if x])
@@ -2089,10 +2135,9 @@ def agendar():
                 lines.append("E.M José Padin Mouta")
                 return "\n".join(lines)
 
-            # Itens comuns do resumo
             resumo = [
                 ("Motivo", f"<strong>{_escape(descricao_motivo)}</strong>"),
-                ("Data", f"<strong>{_escape(data_str)}</strong>"),
+                (data_label, f"<strong>{_escape(data_str)}</strong>"),
                 ("Status no sistema", f"<span style='font-weight:800;color:#D97706;'>{_escape(status_label)}</span>"),
             ]
 
@@ -2111,7 +2156,10 @@ def agendar():
             if tipo_folga == "LM":
                 assunto = "E.M José Padin Mouta – Comunicação de Licença Médica registrada"
                 title = "Comunicação de Licença Médica (LM)"
-                lead = f"Registramos sua comunicação de <strong>Licença Médica (LM)</strong> para <strong>{_escape(data_str)}</strong>."
+                if dt_fim and dt_fim != dt_ini:
+                    lead = f"Registramos sua comunicação de <strong>Licença Médica (LM)</strong> para o período <strong>{_escape(data_str)}</strong>."
+                else:
+                    lead = f"Registramos sua comunicação de <strong>Licença Médica (LM)</strong> para <strong>{_escape(data_str)}</strong>."
                 paragraphs = [
                     "Este registro serve para <strong>ciência da direção e organização interna</strong> (cobertura/substituição), <strong>não sendo um pedido de autorização</strong>.",
                     "<strong>Importante:</strong> a concessão, homologação e eventual indeferimento de Licença Médica são de responsabilidade da <strong>Prefeitura/órgão central</strong>. A escola <strong>não defere nem indefere</strong> licenças médicas.",
@@ -2217,7 +2265,7 @@ def agendar():
                 ],
                 summary_rows=[
                     ("Motivo", descricao_motivo),
-                    ("Data", data_str),
+                    (data_label, data_str),
                     ("Status no sistema", status_label),
                     ("Tempo lançado", tempo_bh if tipo_folga == "BH" else ""),
                     ("Data de referência", data_ref_str if tipo_folga == "BH" else ""),
@@ -2232,13 +2280,13 @@ def agendar():
                 ]
             )
 
-            # ✅ Envia e-mail (sem derrubar o agendamento se o e-mail falhar)
+            # ✅ Envia e-mail (1x)
             try:
                 enviar_email(current_user.email, assunto, mensagem_html, mensagem_texto)
                 flash("Agendamento realizado com sucesso. Você receberá um e-mail de confirmação.", "success")
             except Exception:
                 current_app.logger.exception(
-                    "Falha ao enviar e-mail de confirmação para o agendamento %s", novo_agendamento.id
+                    "Falha ao enviar e-mail de confirmação do agendamento principal %s", ag_principal.id
                 )
                 flash(
                     "Agendamento realizado com sucesso, mas não foi possível enviar o e-mail de confirmação neste momento.",
@@ -2252,6 +2300,7 @@ def agendar():
         return redirect(url_for('index'))
 
     return render_template('agendar.html')
+
 
 from functools import wraps
 import datetime
@@ -3224,14 +3273,62 @@ def atualizar_conferido():
     })
 
 # ===========================================
-# DEFERIR FOLGAS
+# DEFERIR FOLGAS (com lote_id para LM por período)
+# - Se o agendamento tiver lote_id (LM), deferir/indeferir 1 vez atualiza TODOS do lote
+# - Envia 1 e-mail (do lote) e gera 1 protocolo (do “registro principal”)
 # ===========================================
+import datetime
 from collections import defaultdict
+
+from sqlalchemy import asc, func
 
 @app.route('/deferir_folgas', methods=['GET', 'POST'])
 @login_required
 def deferir_folgas():
+    # ---------- helpers ----------
+    def _get_dt_ini(ag):
+        return getattr(ag, "data", None)
+
+    def _get_dt_fim(ag):
+        return getattr(ag, "data_fim", None) or getattr(ag, "data", None)
+
+    def _fmt_periodo(dt_ini, dt_fim):
+        if not dt_ini:
+            return "Sem data"
+        if not dt_fim or dt_fim == dt_ini:
+            return dt_ini.strftime("%d/%m/%Y")
+        return f"{dt_ini.strftime('%d/%m/%Y')} → {dt_fim.strftime('%d/%m/%Y')}"
+
+    def _has_lote_support():
+        return hasattr(Agendamento, "lote_id")
+
+    def _is_lote_lm(ag):
+        if not _has_lote_support():
+            return False
+        lote = getattr(ag, "lote_id", None)
+        return bool(lote) and (getattr(ag, "motivo", "").upper() == "LM")
+
+    def _load_lote_regs(ag):
+        """
+        Carrega TODOS os agendamentos do mesmo lote (para LM por período).
+        Restringe por funcionario_id + lote_id + motivo=LM.
+        """
+        lote_id = getattr(ag, "lote_id", None)
+        if not lote_id:
+            return []
+        return (
+            Agendamento.query
+            .filter(
+                Agendamento.funcionario_id == ag.funcionario_id,
+                Agendamento.lote_id == lote_id,
+                Agendamento.motivo == "LM"
+            )
+            .order_by(asc(Agendamento.data))
+            .all()
+        )
+
     def buscar_folgas():
+        # mantém exatamente o mesmo comportamento (admin vê tudo; user vê só dele)
         if current_user.tipo == 'administrador':
             folgas_query = (
                 db.session.query(Agendamento)
@@ -3252,76 +3349,109 @@ def deferir_folgas():
         return folgas_query.all()
 
     def gerar_avisos(folgas_em_espera):
+        """
+        Detecta conflito por SOBREPOSIÇÃO de período:
+          outro.data <= fim_atual  AND  coalesce(outro.data_fim, outro.data) >= ini_atual
+
+        ✅ Dedup de avisos para LM em lote (para não repetir o mesmo alerta 8x).
+        """
         avisos = []
-        if current_user.tipo == 'administrador':
-            for folga_espera in folgas_em_espera:
-                cargo = folga_espera.funcionario.cargo or 'Sem Cargo Definido'
-                data = folga_espera.data
+        if current_user.tipo != 'administrador':
+            return avisos
 
-                conflitos = (
-                    db.session.query(User.nome)
-                    .join(Agendamento, Agendamento.funcionario_id == User.id)
-                    .filter(
-                        User.cargo == cargo,
-                        Agendamento.data == data,
-                        Agendamento.id != folga_espera.id,
-                        Agendamento.status.in_(["deferido", "em_espera", "pendente"])
-                    )
-                    .all()
+        seen_lotes = set()  # (funcionario_id, lote_id)
+
+        for folga_espera in folgas_em_espera:
+            # dedup para lote LM
+            if _is_lote_lm(folga_espera):
+                key = (folga_espera.funcionario_id, getattr(folga_espera, "lote_id", None))
+                if key in seen_lotes:
+                    continue
+                seen_lotes.add(key)
+
+            cargo = folga_espera.funcionario.cargo or 'Sem Cargo Definido'
+
+            dt_ini = _get_dt_ini(folga_espera)
+            dt_fim = _get_dt_fim(folga_espera)
+
+            if not dt_ini:
+                continue
+
+            other_end = func.coalesce(Agendamento.data_fim, Agendamento.data)
+
+            conflitos = (
+                db.session.query(
+                    User.nome,
+                    Agendamento.data.label("dt_ini"),
+                    other_end.label("dt_fim"),
                 )
+                .join(Agendamento, Agendamento.funcionario_id == User.id)
+                .filter(
+                    User.cargo == cargo,
+                    Agendamento.id != folga_espera.id,
+                    Agendamento.status.in_(["deferido", "em_espera", "pendente"]),
+                    Agendamento.data <= dt_fim,
+                    other_end >= dt_ini,
+                )
+                .all()
+            )
 
-                if conflitos:
-                    linhas = ""
+            if conflitos:
+                linhas = ""
+
+                linhas += f"""
+                <tr>
+                    <td>
+                        <span class="status-dot dot-warning"></span> {folga_espera.funcionario.nome}
+                    </td>
+                    <td>{cargo}</td>
+                    <td>{_fmt_periodo(dt_ini, dt_fim)}</td>
+                    <td><span class="badge bg-warning text-dark">Em espera</span></td>
+                </tr>
+                """
+
+                for (nome, c_ini, c_fim) in conflitos:
                     linhas += f"""
                     <tr>
                         <td>
-                            <span class="status-dot dot-warning"></span> {folga_espera.funcionario.nome}
+                            <span class="status-dot dot-success"></span> {nome}
                         </td>
                         <td>{cargo}</td>
-                        <td>{data.strftime('%d/%m/%Y')}</td>
-                        <td><span class="badge bg-warning text-dark">Em espera</span></td>
+                        <td>{_fmt_periodo(c_ini, c_fim)}</td>
+                        <td><span class="badge bg-success">Agendado</span></td>
                     </tr>
                     """
-                    for (nome,) in conflitos:
-                        linhas += f"""
-                        <tr>
-                            <td>
-                                <span class="status-dot dot-success"></span> {nome}
-                            </td>
-                            <td>{cargo}</td>
-                            <td>{data.strftime('%d/%m/%Y')}</td>
-                            <td><span class="badge bg-success">Agendado</span></td>
-                        </tr>
-                        """
 
-                    mensagem = f"""
-                    <div class="card shadow-sm border-0 mb-3 premium-alert">
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-sm table-striped mb-0 align-middle">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Funcionário</th>
-                                            <th>Cargo</th>
-                                            <th>Data</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {linhas}
-                                    </tbody>
-                                </table>
-                            </div>
+                mensagem = f"""
+                <div class="card shadow-sm border-0 mb-3 premium-alert">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped mb-0 align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Funcionário</th>
+                                        <th>Cargo</th>
+                                        <th>Período</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {linhas}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    """
-                    avisos.append(mensagem)
+                </div>
+                """
+                avisos.append(mensagem)
 
         return avisos
 
+    # ---------- GET ----------
     folgas = buscar_folgas()
     avisos = gerar_avisos(folgas)
 
+    # ---------- POST ----------
     if request.method == 'POST':
         folga_id = request.form.get('folga_id')
         novo_status = (request.form.get('status') or "").strip().lower()
@@ -3337,8 +3467,26 @@ def deferir_folgas():
 
         usuario = User.query.get(folga.funcionario_id)
 
-        # Banco de horas: ao deferir, debita saldo e registra movimento
-        if folga.motivo == 'BH' and novo_status == 'deferido':
+        # ==========================================================
+        # ✅ NOVO: se for LM em LOTE => atualiza TODOS do lote
+        # - 1 commit
+        # - 1 protocolo (registro principal)
+        # - 1 e-mail
+        # ==========================================================
+        lote_regs = []
+        if _is_lote_lm(folga):
+            lote_regs = _load_lote_regs(folga)
+
+        # Decide quem representa o “registro principal” (para protocolo/e-mail)
+        folga_principal = None
+        if lote_regs:
+            folga_principal = lote_regs[0]
+        else:
+            folga_principal = folga
+
+        # Banco de horas: ao deferir, debita saldo e registra movimento (mantém como era)
+        # (não aplica para lote LM)
+        if not lote_regs and folga.motivo == 'BH' and novo_status == 'deferido':
             total_minutos = (folga.horas or 0) * 60 + (folga.minutos or 0)
             if (usuario.banco_horas or 0) >= total_minutos:
                 usuario.banco_horas -= total_minutos
@@ -3357,29 +3505,45 @@ def deferir_folgas():
                 flash("O funcionário não tem horas suficientes no banco de horas para este agendamento.", "danger")
                 return redirect(url_for('deferir_folgas'))
 
-        # Atualiza status
-        folga.status = novo_status
+        # Atualiza status (single ou lote)
+        if lote_regs:
+            for ag in lote_regs:
+                ag.status = novo_status
+        else:
+            folga.status = novo_status
 
         try:
             db.session.commit()
 
-            # ✅ Após mudar o status, REGERA/SOBRESCREVE o protocolo PDF com o status atualizado
+            # ✅ Protocolo: 1x (para o principal)
             try:
-                gerar_protocolo_agendamento_pdf(folga, usuario)
+                gerar_protocolo_agendamento_pdf(folga_principal, usuario)
             except Exception:
-                current_app.logger.exception("Falha ao regenerar protocolo PDF do agendamento %s", folga.id)
+                current_app.logger.exception("Falha ao regenerar protocolo PDF do agendamento %s", folga_principal.id)
                 flash("Status atualizado, mas não foi possível atualizar o protocolo em PDF.", "warning")
 
-            if folga.motivo == 'TRE':
+            # TRE sync (mantém como era; lote não é TRE)
+            if not lote_regs and folga.motivo == 'TRE':
                 sync_tre_user(usuario.id)
 
-            flash(
-                f"A folga de {folga.funcionario.nome} foi {novo_status} com sucesso!",
-                "success" if novo_status == 'deferido' else "danger"
-            )
+            # Flash (mantém padrão; se lote LM, fala “período”)
+            if lote_regs:
+                dt_ini_l = min([x.data for x in lote_regs if x.data])
+                dt_fim_l = max([(getattr(x, "data_fim", None) or x.data) for x in lote_regs if x.data])
+                periodo_l = _fmt_periodo(dt_ini_l, dt_fim_l)
+                flash(
+                    f"A Licença Médica de {folga_principal.funcionario.nome} ({periodo_l}) foi {novo_status} com sucesso!",
+                    "success" if novo_status == 'deferido' else "danger"
+                )
+            else:
+                flash(
+                    f"A folga de {folga.funcionario.nome} foi {novo_status} com sucesso!",
+                    "success" if novo_status == 'deferido' else "danger"
+                )
 
             # =========================
             # E-mails de notificação (PADRÃO PREMIUM)
+            # ✅ LOTE LM: 1 e-mail (usa folga_principal + período do lote)
             # =========================
             def _escape(s):
                 if s is None:
@@ -3537,12 +3701,21 @@ def deferir_folgas():
                 'LM':  'Licença Médica (LM)',
                 'FS':  'Falta Simples (FS)',
                 'DL':  'Dispensa Legal (DL)',
-            }.get(folga.motivo, 'Agendamento')
+            }.get(folga_principal.motivo, 'Agendamento')
 
-            data_str = folga.data.strftime('%d/%m/%Y')
-            tempo_bh = _format_tempo_bh(folga.horas, folga.minutos)
-            data_ref_str = folga.data_referencia.strftime('%d/%m/%Y') if getattr(folga, "data_referencia", None) else None
-            nome_substituto = getattr(folga, "nome_substituto", None)
+            # Período (single ou lote)
+            if lote_regs:
+                dt_ini = min([x.data for x in lote_regs if x.data])
+                dt_fim = max([(getattr(x, "data_fim", None) or x.data) for x in lote_regs if x.data])
+            else:
+                dt_ini = _get_dt_ini(folga_principal)
+                dt_fim = _get_dt_fim(folga_principal)
+
+            periodo_str = _fmt_periodo(dt_ini, dt_fim)
+
+            tempo_bh = _format_tempo_bh(folga_principal.horas, folga_principal.minutos)
+            data_ref_str = folga_principal.data_referencia.strftime('%d/%m/%Y') if getattr(folga_principal, "data_referencia", None) else None
+            nome_substituto = getattr(folga_principal, "nome_substituto", None)
             cargo_usuario = getattr(usuario, "cargo", None) or "—"
             decisao = "DEFERIDO" if novo_status == "deferido" else "INDEFERIDO"
 
@@ -3553,15 +3726,15 @@ def deferir_folgas():
             )
 
             resumo = [
-                ("Protocolo", f"<strong>#{_escape(folga.id)}</strong>"),
+                ("Protocolo", f"<strong>#{_escape(folga_principal.id)}</strong>"),
                 ("Servidor(a)", f"<strong>{_escape(usuario.nome)}</strong>"),
                 ("Cargo", _escape(cargo_usuario)),
                 ("Motivo", f"<strong>{_escape(descricao_motivo)}</strong>"),
-                ("Data", f"<strong>{_escape(data_str)}</strong>"),
+                ("Período", f"<strong>{_escape(periodo_str)}</strong>"),
                 ("Decisão", badge_decisao),
             ]
 
-            if folga.motivo == "BH":
+            if folga_principal.motivo == "BH":
                 resumo.append(("Tempo (BH)", f"<strong>{_escape(tempo_bh)}</strong>"))
                 if data_ref_str:
                     resumo.append(("Data de referência", _escape(data_ref_str)))
@@ -3572,19 +3745,16 @@ def deferir_folgas():
             else:
                 resumo.append(("Substituição", "Não"))
 
-            # Conteúdo por motivo + decisão
             notes = []
-
-            # Motivos “comunicação / ciência / sinalização”
-            motivo_comunicacao = folga.motivo in ("LM", "DL", "DS", "FS")
+            motivo_comunicacao = folga_principal.motivo in ("LM", "DL", "DS", "FS")
 
             if novo_status == "deferido":
-                if folga.motivo == "LM":
+                if folga_principal.motivo == "LM":
                     assunto = "E.M José Padin Mouta – Ciência de Licença Médica (LM) registrada"
                     title = "Ciência administrativa – Licença Médica (LM)"
                     lead = (
                         f"A direção <strong>tomou ciência</strong> da sua comunicação de "
-                        f"<strong>Licença Médica (LM)</strong> para <strong>{_escape(data_str)}</strong>."
+                        f"<strong>Licença Médica (LM)</strong> para o período <strong>{_escape(periodo_str)}</strong>."
                     )
                     paragraphs = [
                         "Este retorno é <strong>administrativo</strong>, para organização interna (cobertura/substituição).",
@@ -3592,89 +3762,42 @@ def deferir_folgas():
                         "A escola <strong>não defere nem indefere</strong> Licença Médica.",
                         "No sistema, o status <strong style='color:#16A34A;'>DEFERIDO</strong> indica apenas <strong>ciência administrativa</strong>."
                     ]
-
-                elif folga.motivo == "DL":
-                    assunto = "E.M José Padin Mouta – Ciência de Dispensa Legal (DL) registrada"
-                    title = "Ciência administrativa – Dispensa Legal (DL)"
-                    lead = (
-                        f"A direção <strong>tomou ciência</strong> da sua comunicação de "
-                        f"<strong>Dispensa Legal (DL)</strong> para <strong>{_escape(data_str)}</strong>."
-                    )
-                    paragraphs = [
-                        "Este retorno é <strong>administrativo</strong>, para organização interna (cobertura/serviço).",
-                        "<strong>Importante:</strong> quando aplicável, DL decorre de norma e "
-                        "<strong>não depende de deferimento/indeferimento pela escola</strong>. "
-                        "O status no sistema serve como <strong>sinalização</strong>.",
-                    ]
-
-                elif folga.motivo == "DS":
-                    assunto = "E.M José Padin Mouta – Ciência de Doação de Sangue (DS) registrada"
-                    title = "Ciência administrativa – Doação de Sangue (DS)"
-                    lead = (
-                        f"A direção <strong>tomou ciência</strong> da sua comunicação de "
-                        f"<strong>Doação de Sangue (DS)</strong> para <strong>{_escape(data_str)}</strong>."
-                    )
-                    paragraphs = [
-                        "Este retorno é <strong>administrativo</strong>, para organização interna (cobertura/substituição).",
-                        "O status <strong style='color:#16A34A;'>DEFERIDO</strong>, quando aplicado no fluxo, "
-                        "serve como <strong>sinalização</strong> no sistema.",
-                    ]
-
-                elif folga.motivo == "FS":
-                    assunto = "E.M José Padin Mouta – Ciência de Falta Simples (FS) registrada"
-                    title = "Ciência administrativa – Falta Simples (FS)"
-                    lead = (
-                        f"A unidade escolar foi <strong>notificada</strong> da sua "
-                        f"<strong>Falta Simples (FS)</strong> no dia <strong>{_escape(data_str)}</strong>."
-                    )
-                    paragraphs = [
-                        "Este retorno é <strong>administrativo</strong>, para organização interna (cobertura/rotina).",
-                        "O status <strong style='color:#16A34A;'>DEFERIDO</strong>, quando aplicado no fluxo, "
-                        "serve como <strong>sinalização</strong> no sistema.",
-                    ]
-
                 else:
-                    # Motivos “solicitação” (AB/BH/TRE etc.)
-                    assunto = "E.M José Padin Mouta – Solicitação deferida"
-                    title = "Solicitação deferida"
+                    assunto = "E.M José Padin Mouta – Solicitação deferida" if not motivo_comunicacao else "E.M José Padin Mouta – Ciência registrada"
+                    title = "Solicitação deferida" if not motivo_comunicacao else "Ciência administrativa"
                     lead = (
                         f"Sua solicitação de <strong>{_escape(descricao_motivo)}</strong> "
-                        f"para <strong>{_escape(data_str)}</strong> foi <strong style='color:#16A34A;'>DEFERIDA</strong>."
+                        f"para o período <strong>{_escape(periodo_str)}</strong> foi <strong style='color:#16A34A;'>DEFERIDA</strong>."
                     )
-                    paragraphs = [
-                        "Caso precise de ajustes, procure a secretaria da unidade.",
-                    ]
+                    paragraphs = ["Caso precise de ajustes, procure a secretaria da unidade."]
 
                 if nome_substituto:
                     notes.append(f"Substituição registrada: <strong>{_escape(nome_substituto)}</strong>.")
 
             else:
-                # INDEFERIDO
                 if motivo_comunicacao:
                     assunto = "E.M José Padin Mouta – Atualização de registro (indeferido)"
                     title = "Atualização de registro – Indeferido"
                     lead = (
-                        f"Seu registro de <strong>{_escape(descricao_motivo)}</strong> para "
-                        f"<strong>{_escape(data_str)}</strong> foi marcado como <strong style='color:#DC2626;'>INDEFERIDO</strong> no sistema."
+                        f"Seu registro de <strong>{_escape(descricao_motivo)}</strong> para o período "
+                        f"<strong>{_escape(periodo_str)}</strong> foi marcado como <strong style='color:#DC2626;'>INDEFERIDO</strong> no sistema."
                     )
                     paragraphs = [
                         "Este retorno é administrativo. Se houver necessidade de correção/reenvio de informação, "
                         "favor entrar em contato com a secretaria da unidade.",
                     ]
-                    if folga.motivo == "LM":
+                    if folga_principal.motivo == "LM":
                         notes.append("Licença Médica: concessão/homologação é responsabilidade do órgão central. A escola não concede LM.")
-                    if folga.motivo in ("DL", "DS", "FS"):
+                    if folga_principal.motivo in ("DL", "DS", "FS"):
                         notes.append("Quando aplicável, o status no sistema é apenas sinalização/organização interna.")
                 else:
                     assunto = "E.M José Padin Mouta – Solicitação indeferida"
                     title = "Solicitação indeferida"
                     lead = (
-                        f"Sua solicitação de <strong>{_escape(descricao_motivo)}</strong> para "
-                        f"<strong>{_escape(data_str)}</strong> foi <strong style='color:#DC2626;'>INDEFERIDA</strong>."
+                        f"Sua solicitação de <strong>{_escape(descricao_motivo)}</strong> para o período "
+                        f"<strong>{_escape(periodo_str)}</strong> foi <strong style='color:#DC2626;'>INDEFERIDA</strong>."
                     )
-                    paragraphs = [
-                        "Para esclarecimentos, procure a direção/secretaria da unidade."
-                    ]
+                    paragraphs = ["Para esclarecimentos, procure a direção/secretaria da unidade."]
 
             mensagem_html = build_email_html(
                 title=title,
@@ -3688,7 +3811,7 @@ def deferir_folgas():
             mensagem_texto = build_email_text(
                 subject_title=title,
                 greeting_name=usuario.nome,
-                lead=f"Atualização do seu registro: {descricao_motivo} em {data_str} – {decisao}.",
+                lead=f"Atualização do seu registro: {descricao_motivo} – {periodo_str} – {decisao}.",
                 paragraphs=[
                     "Este e-mail é uma notificação automática do sistema.",
                     ("LM/DL/DS/FS: o fluxo no sistema é administrativo (ciência/sinalização)."
@@ -3696,25 +3819,24 @@ def deferir_folgas():
                      "Solicitações: o status indica decisão administrativa no sistema.")
                 ],
                 summary_rows=[
-                    ("Protocolo", f"#{folga.id}"),
+                    ("Protocolo", f"#{folga_principal.id}"),
                     ("Motivo", descricao_motivo),
-                    ("Data", data_str),
+                    ("Período", periodo_str),
                     ("Decisão", decisao),
-                    ("Tempo (BH)", tempo_bh if folga.motivo == "BH" else ""),
-                    ("Data de referência", data_ref_str if folga.motivo == "BH" else ""),
+                    ("Tempo (BH)", tempo_bh if folga_principal.motivo == "BH" else ""),
+                    ("Data de referência", data_ref_str if folga_principal.motivo == "BH" else ""),
                     ("Substituição", "Sim" if nome_substituto else "Não"),
                     ("Substituto", nome_substituto or ""),
                 ],
                 note_lines=[
-                    ("Licença Médica: concessão/homologação é responsabilidade do órgão central." if folga.motivo == "LM" else None),
+                    ("Licença Médica: concessão/homologação é responsabilidade do órgão central." if folga_principal.motivo == "LM" else None),
                 ]
             )
 
-            # ✅ Envia e-mail (sem desfazer decisão se falhar)
             try:
                 enviar_email(usuario.email, assunto, mensagem_html, mensagem_texto)
             except Exception:
-                current_app.logger.exception("Falha ao enviar e-mail de decisão do agendamento %s", folga.id)
+                current_app.logger.exception("Falha ao enviar e-mail de decisão do agendamento %s", folga_principal.id)
                 flash("Status atualizado, mas não foi possível enviar o e-mail de notificação neste momento.", "warning")
 
         except Exception as e:
@@ -3724,6 +3846,7 @@ def deferir_folgas():
         folgas = buscar_folgas()
         avisos = gerar_avisos(folgas)
 
+    # agrupamento por cargo (igual)
     folgas_por_cargo = defaultdict(list)
     for f in folgas:
         cargo = f.funcionario.cargo or "Sem Cargo Definido"
