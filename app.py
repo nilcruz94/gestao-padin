@@ -293,24 +293,35 @@ def _dbg_forbidden(e):
     )
     return e, 403
 
+from pathlib import Path
+import os
+
 # ===========================================
 # Config Uploads (TRE persistente)
 # - Render Disk: defina UPLOAD_FOLDER=/var/data/uploads/tre
 # ===========================================
 ALLOWED_EXTENSIONS = {"pdf"}
 
-_raw_env_upload = os.getenv("UPLOAD_FOLDER")
+_raw_env_upload = (os.getenv("UPLOAD_FOLDER") or "").strip()
+
+# defesa: se alguém colar errado tipo "UPLOAD_FOLDER=/var/data/uploads/tre"
+if _raw_env_upload.startswith("UPLOAD_FOLDER="):
+    _raw_env_upload = _raw_env_upload.split("=", 1)[1].strip()
+
 if _raw_env_upload:
-    _env_upload = _raw_env_upload.strip()
-    if not _env_upload.startswith("/"):
-        _env_upload = "/" + _env_upload.lstrip("/")
+    base_dir = Path(_raw_env_upload)
+    # se veio relativo, vira absoluto dentro do projeto
+    if not base_dir.is_absolute():
+        base_dir = (Path(app.root_path) / base_dir).resolve()
+    else:
+        base_dir = base_dir.resolve()
 else:
-    _env_upload = "uploads/tre"  # local
+    # local/dev: fica dentro do projeto
+    base_dir = (Path(app.root_path) / "uploads" / "tre").resolve()
 
-BASE_UPLOAD_DIR = Path(_env_upload).resolve()
-BASE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+base_dir.mkdir(parents=True, exist_ok=True)
 
-app.config["UPLOAD_FOLDER"] = str(BASE_UPLOAD_DIR)
+app.config["UPLOAD_FOLDER"] = str(base_dir)
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024  # 20MB
 
 # ===========================================
@@ -1398,19 +1409,26 @@ def _motivo_legivel(motivo: str) -> str:
     }.get(m, m or "Agendamento")
 
 
+from pathlib import Path
+import os
+from flask import current_app
+
 def _protocolo_agendamento_abs_path(agendamento_id: int) -> str:
     """
     Caminho ABSOLUTO do PDF do protocolo.
-    Usa UPLOAD_FOLDER (ideal se ele apontar para o Render Disk).
+    Usa UPLOAD_FOLDER (ideal apontar para o Render Disk).
     """
-    base = current_app.config.get("UPLOAD_FOLDER", "uploads")
+    base = (current_app.config.get("UPLOAD_FOLDER") or "uploads").strip()
+
+    # Se for relativo, cai no root_path (local/dev).
+    # No Render, configure UPLOAD_FOLDER absoluto (/var/data/...)
     if not os.path.isabs(base):
         base = os.path.join(current_app.root_path, base)
 
-    pasta = os.path.join(base, "protocolos", "agendamentos")
-    os.makedirs(pasta, exist_ok=True)
+    pasta = Path(base) / "protocolos" / "agendamentos"
+    pasta.mkdir(parents=True, exist_ok=True)
 
-    return os.path.join(pasta, f"protocolo_agendamento_{agendamento_id}.pdf")
+    return str(pasta / f"protocolo_agendamento_{agendamento_id}.pdf")
 
 
 def _clamp_radius(w, h, r):
@@ -5894,22 +5912,35 @@ def admin_users_search():
         "has_more": bool(has_more),
     }), 200
 
-# ==========================================
-# AUXILIARES TRE / UPLOAD  (CORRIGIDO)
-# - sync_tre_user mais robusto (motivo OU tipo_folga, status case-insensitive)
-# - suporta TRE admin sem PDF (arquivo_pdf pode ser NULL)
-# - suporta ajuste admin negativo (remover dias) via dias_folga negativo
-# ==========================================
-
-from pathlib import Path
 import os
-import datetime
-from datetime import date
+from pathlib import Path
+from typing import Optional
+from flask import current_app
 
-from flask import current_app, flash, redirect, url_for, request, send_file, render_template, jsonify
-from flask_login import login_required, current_user
-from werkzeug.utils import secure_filename
-from sqlalchemy import func, case, or_
+# ===========================================
+# Config Uploads (TRE / Protocolos persistentes)
+# Render Disk:
+#   - Mount Path: /var/data
+#   - Env var: UPLOAD_FOLDER=/var/data/uploads
+# ===========================================
+ALLOWED_EXTENSIONS = {"pdf"}
+
+_raw_env_upload = os.getenv("UPLOAD_FOLDER", "").strip()
+if _raw_env_upload:
+    _env_upload = _raw_env_upload
+    if not _env_upload.startswith("/"):
+        # se alguém setou relativo por engano
+        _env_upload = "/" + _env_upload.lstrip("/")
+else:
+    # local/dev
+    _env_upload = "uploads"
+
+BASE_UPLOAD_DIR = Path(_env_upload).resolve()
+BASE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+app.config["UPLOAD_FOLDER"] = str(BASE_UPLOAD_DIR)
+app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024  # 20MB
+
 
 # ------------------------------------------
 # Helpers de arquivo
@@ -5917,27 +5948,51 @@ from sqlalchemy import func, case, or_
 def allowed_file(filename: str) -> bool:
     return bool(filename) and "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def _ensure_upload_dir() -> Path:
-    base_dir = Path(current_app.config.get("UPLOAD_FOLDER", "uploads/tre")).resolve()
-    base_dir.mkdir(parents=True, exist_ok=True)
-    return base_dir
 
-def _candidate_dirs_for_download() -> list[Path]:
-    dirs = []
-    cfg = Path(current_app.config.get("UPLOAD_FOLDER", "uploads/tre")).resolve()
-    dirs.append(cfg)
+def _upload_base_dir() -> Path:
+    """
+    Base absoluta do upload.
+    No Render: /var/data/uploads
+    No local: <root>/uploads (ou o que você setar)
+    """
+    base = current_app.config.get("UPLOAD_FOLDER", "uploads")
+    p = Path(base)
+    if not p.is_absolute():
+        p = Path(current_app.root_path) / p
+    return p.resolve()
 
-    legacy_app = Path(current_app.root_path, "uploads", "tre").resolve()
-    dirs.append(legacy_app)
 
-    legacy_rel = Path("uploads/tre").resolve()
-    dirs.append(legacy_rel)
+def _ensure_upload_subdir(subpath: str) -> Path:
+    """
+    Garante subpasta dentro do UPLOAD_FOLDER (ex.: 'tre', 'protocolos/agendamentos').
+    """
+    base = _upload_base_dir()
+    p = (base / subpath).resolve()
+    p.mkdir(parents=True, exist_ok=True)
+    return p
 
-    # Render disk (se você usa)
-    dirs.append(Path("/var/data/tre"))
 
+def _candidate_dirs_for_download(subpath: str) -> list[Path]:
+    """
+    Locais prováveis para buscar arquivos, com prioridade:
+    1) UPLOAD_FOLDER/subpath (Render disk)
+    2) caminhos legados locais
+    """
+    dirs: list[Path] = []
+
+    # 1) caminho correto (Render disk ou local atual)
+    dirs.append(_ensure_upload_subdir(subpath))
+
+    # 2) legados comuns (caso existam)
+    dirs.append((Path(current_app.root_path) / "uploads" / subpath).resolve())
+    dirs.append((Path(current_app.root_path) / subpath).resolve())
+
+    # 3) fallback explícito do Render Disk (caso alguém use sem UPLOAD_FOLDER)
+    dirs.append((Path("/var/data/uploads") / subpath).resolve())
+
+    # dedupe
     seen = set()
-    uniq = []
+    uniq: list[Path] = []
     for p in dirs:
         rp = str(Path(p).resolve())
         if rp not in seen:
@@ -5945,16 +6000,35 @@ def _candidate_dirs_for_download() -> list[Path]:
             seen.add(rp)
     return uniq
 
-def _resolve_pdf_path(filename: str | None) -> Path | None:
+
+def _resolve_pdf_path(filename: Optional[str], subpath: str = "tre") -> Optional[Path]:
+    """
+    Resolve o caminho absoluto do arquivo salvo.
+    subpath:
+      - 'tre'
+      - 'protocolos/agendamentos'
+      - etc.
+    """
     if not filename:
         return None
     safe_name = os.path.basename(filename)
-    for base in _candidate_dirs_for_download():
-        candidate = (base / safe_name)
+    for base in _candidate_dirs_for_download(subpath):
+        candidate = base / safe_name
         if candidate.is_file():
             return candidate.resolve()
     return None
 
+
+# ------------------------------------------
+# Protocolos (agendamentos)
+# ------------------------------------------
+def _protocolo_agendamento_abs_path(agendamento_id: int) -> str:
+    """
+    Caminho ABSOLUTO do PDF do protocolo.
+    Vai para: UPLOAD_FOLDER/protocolos/agendamentos/
+    """
+    pasta = _ensure_upload_subdir("protocolos/agendamentos")
+    return str(pasta / f"protocolo_agendamento_{agendamento_id}.pdf")
 
 # ------------------------------------------
 # ✅ SYNC TRE (CORRIGIDO)
@@ -7707,6 +7781,51 @@ def admin_patch_notes_delete(release_id):
 @app.get("/healthz")
 def healthz():
     return "ok", 200
+
+import os
+from pathlib import Path
+from flask import jsonify
+from flask_login import login_required, current_user
+
+@app.get("/__debug/uploads")
+@login_required
+def debug_uploads():
+    if getattr(current_user, "tipo", None) != "administrador":
+        return jsonify(ok=False, error="Acesso negado"), 403
+
+    base = Path(current_app.config.get("UPLOAD_FOLDER", "uploads"))
+    if not base.is_absolute():
+        base = Path(current_app.root_path) / base
+    base = base.resolve()
+
+    tre_dir = (base / "tre").resolve()
+    proto_dir = (base / "protocolos" / "agendamentos").resolve()
+
+    def list_files(p: Path, limit=50):
+        if not p.exists():
+            return []
+        out = []
+        for f in sorted(p.glob("*"))[:limit]:
+            if f.is_file():
+                out.append({
+                    "name": f.name,
+                    "bytes": f.stat().st_size,
+                    "mtime": int(f.stat().st_mtime),
+                    "path": str(f),
+                })
+        return out
+
+    return jsonify(
+        ok=True,
+        upload_folder=str(base),
+        is_render_disk=str(base).startswith("/var/data"),
+        tre_dir=str(tre_dir),
+        tre_exists=tre_dir.exists(),
+        protocolos_dir=str(proto_dir),
+        protocolos_exists=proto_dir.exists(),
+        tre_files=list_files(tre_dir),
+        protocolo_files=list_files(proto_dir),
+    )
 
 # ===========================================
 # MAIN
