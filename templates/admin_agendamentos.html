@@ -195,9 +195,27 @@
     /* Resultados */
     #resultadoAgendamentos { margin-top: 10px; }
     .loading { text-align: center; color: var(--text-muted); padding: 18px 4px 6px; font-size: 0.9rem; font-weight: 700; }
+    .page-empty-note {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      color: #475569;
+      text-align: center;
+      font-size: 0.88rem;
+      font-weight: 800;
+    }
 
     /* Cards de funcionário */
-    .employee-card { margin-bottom: 14px; border-radius: 14px; background: #ffffff; border: 1px solid var(--border-soft); box-shadow: 0 10px 24px rgba(15,23,42,.12); overflow: hidden; }
+    .employee-card {
+      margin-bottom: 14px;
+      border-radius: 14px;
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      box-shadow: 0 10px 24px rgba(15,23,42,.12);
+      overflow: hidden;
+    }
     .employee-header {
       width: 100%;
       padding: 12px 14px;
@@ -215,9 +233,40 @@
     .employee-header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .employee-avatar { width: 32px; height: 32px; border-radius: 999px; background: radial-gradient(circle at 30% 30%, #eff6ff 0, #bfdbfe 60%, #93c5fd 100%); display: flex; align-items: center; justify-content: center; color: #1d4ed8; font-size: 0.9rem; flex: 0 0 auto; }
     .employee-name { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .employee-header-right { display: flex; align-items: center; gap: 10px; font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; flex: 0 0 auto; }
+    .employee-header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      flex: 0 0 auto;
+    }
+    .employee-role {
+      max-width: 240px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .employee-count-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      padding:4px 10px;
+      border-radius:999px;
+      background:#eff6ff;
+      color:#1d4ed8;
+      border:1px solid #bfdbfe;
+      font-weight:900;
+      font-size:.74rem;
+      text-transform:none;
+      letter-spacing:normal;
+      white-space:nowrap;
+    }
     .employee-header-right i { transition: transform 0.25s ease; font-size: 0.85rem; color: #64748b; }
-    .employee-header.open i { transform: rotate(180deg); }
+    .employee-header.open i.chevron-toggle { transform: rotate(180deg); }
 
     .employee-details { display: none; padding: 10px 12px 12px; background: #f9fafb; }
     .employee-table-wrapper { overflow-x: auto; border-radius: 12px; background: #ffffff; box-shadow: inset 0 0 0 1px #e5e7eb; }
@@ -355,7 +404,7 @@
       .sub-btn, .submit-btn { padding: 8px 10px; font-size: 0.78rem; }
     }
 
-    /* ✅ NOVO: Paginação POR SERVIDOR (dentro do card) */
+    /* ✅ Paginação POR SERVIDOR */
     .emp-pager {
       margin-top: 10px;
       padding: 10px 10px;
@@ -620,6 +669,18 @@
       font-size: 14px; border-top: 2px solid #555; box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3); flex-shrink: 0; width: 100%;
     }
     footer p { margin: 5px 0; font-size: 15px; font-weight: 300; }
+
+    @media (max-width: 768px){
+      .employee-header-right{
+        gap: 8px;
+      }
+      .employee-role{
+        max-width: 130px;
+      }
+      .employee-count-badge{
+        display:none;
+      }
+    }
   </style>
 </head>
 
@@ -838,8 +899,8 @@
     let lastSignature = "";
     const DEBOUNCE_MS = 300;
 
-    // ✅ NOVO: armazenamento (dados + paginação por funcionário)
-    const EMP_STORE = new Map(); // empId -> { ags:[], page:1, perPage:10, rendered:false }
+    // empId -> { ags:[], page:1, perPage:10 }
+    const EMP_STORE = new Map();
 
     function showAlert(message, type="success") {
       const alertContainer = document.getElementById("alertContainer");
@@ -978,8 +1039,15 @@
       }
     }
 
-    // ✅ NOVO: cria uma linha da tabela (uma única)
-    function buildRowHTML(ag) {
+    function updateEmployeeCount(empId) {
+      const el = document.getElementById(`empCount-${empId}`);
+      const store = EMP_STORE.get(empId);
+      if (!el || !store) return;
+      const total = store.ags.length;
+      el.innerHTML = `<i class="fas fa-layer-group"></i> ${total} agendamento(s)`;
+    }
+
+    function buildRowHTML(ag, empId) {
       const st = (ag.status || "").toLowerCase();
       let cls = "", icon = "", label = ag.status || "";
       if (st.startsWith("deferido")) {
@@ -998,7 +1066,7 @@
       const info = `${ag.data || ""} — ${ag.motivo || ""}`;
 
       return `
-        <tr data-ag-id="${ag.id}" data-sub-nome-uri="${safeEncode(nomeSub)}" data-info="${escapeHtml(info)}">
+        <tr data-ag-id="${ag.id}" data-emp-id="${empId}" data-sub-nome-uri="${safeEncode(nomeSub)}" data-info="${escapeHtml(info)}">
           <td>${escapeHtml(ag.data || "")}</td>
           <td>${escapeHtml(ag.motivo || "")}</td>
           <td><span class="${cls}">${icon} ${escapeHtml(label)}</span></td>
@@ -1019,7 +1087,6 @@
       `;
     }
 
-    // ✅ NOVO: paginação por servidor (render)
     function renderEmployee(empId, pageOverride = null) {
       const store = EMP_STORE.get(empId);
       if (!store) return;
@@ -1045,10 +1112,11 @@
       if (total === 0) {
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#6b7280;padding:14px;font-weight:800;">Nenhum agendamento.</td></tr>`;
       } else {
-        tbody.innerHTML = slice.map(buildRowHTML).join('');
+        tbody.innerHTML = slice.map(ag => buildRowHTML(ag, empId)).join('');
       }
 
-      // monta botões de páginas (janela curta)
+      updateEmployeeCount(empId);
+
       const maxBtns = 5;
       let pStart = Math.max(1, safePage - 2);
       let pEnd = Math.min(totalPages, pStart + (maxBtns - 1));
@@ -1110,12 +1178,53 @@
       renderEmployee(empId, 1);
     }
 
+    function updateContainerEmptyState() {
+      const container = document.getElementById("resultadoAgendamentos");
+      if (!container) return;
+
+      const cards = container.querySelectorAll(".employee-card");
+      const existingNote = container.querySelector(".page-empty-note");
+
+      if (cards.length === 0) {
+        if (!existingNote) {
+          const note = document.createElement("div");
+          note.className = "page-empty-note";
+          note.textContent = "Nenhum agendamento restante nesta página. Ajuste os filtros ou use a paginação para continuar.";
+          container.prepend(note);
+        }
+      } else if (existingNote) {
+        existingNote.remove();
+      }
+    }
+
+    function removeAgendamentoLocally(agId) {
+      for (const [empId, store] of EMP_STORE.entries()) {
+        const idx = store.ags.findIndex(ag => String(ag.id) === String(agId));
+        if (idx >= 0) {
+          store.ags.splice(idx, 1);
+
+          if (store.ags.length === 0) {
+            EMP_STORE.delete(empId);
+            const card = document.querySelector(`.employee-card[data-emp-id="${empId}"]`);
+            if (card) card.remove();
+            updateContainerEmptyState();
+            return { removed: true, empId, empty: true };
+          }
+
+          const totalPages = Math.max(1, Math.ceil(store.ags.length / store.perPage));
+          if (store.page > totalPages) store.page = totalPages;
+          renderEmployee(empId, store.page);
+          return { removed: true, empId, empty: false };
+        }
+      }
+      return { removed: false };
+    }
+
     async function carregarAgendamentos(page = 1) {
       const { nome, status, cargo } = getFilters();
       const signature = buildSignature({nome, status, cargo}, page);
       lastSignature = signature;
 
-      // limpa dados anteriores ao recarregar filtros/página
       EMP_STORE.clear();
 
       if (currentController) currentController.abort();
@@ -1151,11 +1260,10 @@
               return getItemDateMillis(b) - getItemDateMillis(a);
             });
 
-            // guarda em memória (não renderiza tudo no DOM)
             EMP_STORE.set(f.id, { ags: agsSorted, page: 1, perPage: 10 });
 
             html += `
-              <article class="employee-card">
+              <article class="employee-card" data-emp-id="${f.id}">
                 <button
                   type="button"
                   class="employee-header"
@@ -1168,8 +1276,11 @@
                     <p class="employee-name">${escapeHtml(f.funcionario)}</p>
                   </div>
                   <div class="employee-header-right">
-                    <span>${escapeHtml(f.cargo || "")}</span>
-                    <i class="fas fa-chevron-down"></i>
+                    <span class="employee-count-badge" id="empCount-${f.id}">
+                      <i class="fas fa-layer-group"></i> ${agsSorted.length} agendamento(s)
+                    </span>
+                    <span class="employee-role">${escapeHtml(f.cargo || "")}</span>
+                    <i class="fas fa-chevron-down chevron-toggle"></i>
                   </div>
                 </button>
 
@@ -1201,7 +1312,6 @@
             `;
           });
 
-          // paginação GLOBAL
           if (data.pages && data.pages > 1) {
             html += `<div class="pagination">`;
             if (data.has_prev) html += `<a onclick="carregarAgendamentos(${data.prev_num})">&laquo; Anterior</a>`;
@@ -1217,6 +1327,7 @@
         }
 
         container.innerHTML = html;
+        updateContainerEmptyState();
       } catch (err) {
         if (err.name === "AbortError") return;
         container.innerHTML = `<p class="loading" style="color:#b91c1c;">Falha na conexão.</p>`;
@@ -1235,8 +1346,14 @@
         const data = await res.json();
 
         if (data.success) {
+          const result = removeAgendamentoLocally(id);
+
+          if (!result.removed) {
+            // fallback seguro, se não achar no DOM/STORE
+            scheduleLoad(1);
+          }
+
           showAlert(data.message || "Agendamento excluído com sucesso.", "success");
-          scheduleLoad(1);
         } else {
           showAlert(data.error || "Não foi possível excluir.", "error");
         }
@@ -1245,7 +1362,6 @@
       }
     }
 
-    // ✅ toggleDetails agora renderiza a primeira página do servidor quando abre
     function toggleDetails(id, headerEl, empId) {
       const content = document.getElementById(id);
       if (!content) return;
@@ -1259,7 +1375,7 @@
       }
 
       if (willOpen && typeof empId === 'number') {
-        renderEmployee(empId, 1);
+        renderEmployee(empId, EMP_STORE.get(empId)?.page || 1);
       }
     }
 
@@ -1343,7 +1459,7 @@
       btnSave.disabled = true;
 
       const obj = { M: inpM.value, I: inpI.value, T: inpT.value, N: inpN.value };
-      const serialized = serializeSubstituto(obj); // "M: ...; I: ...; ..."
+      const serialized = serializeSubstituto(obj);
 
       try {
         const csrf = getCSRFToken();
@@ -1369,6 +1485,15 @@
         if (row) {
           row.setAttribute('data-sub-nome-uri', safeEncode(serialized));
           setSubCellHTML(row, serialized);
+        }
+
+        // também atualiza no store
+        for (const [, store] of EMP_STORE.entries()) {
+          const ag = store.ags.find(x => String(x.id) === String(subCurrentAgId));
+          if (ag) {
+            ag.nome_substituto = serialized;
+            break;
+          }
         }
 
         showAlert("Substituição atualizada com sucesso.", "success");

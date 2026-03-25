@@ -5,12 +5,11 @@
   <title>Relatório de Horas Extras - E.M José Padin Mouta</title>
 
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, maximum-scale=3, minimum-scale=1" />
-  <!-- CSRF para eventuais requisições (AJAX/futuros formulários) -->
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet" />
 
   <style>
     :root {
@@ -28,88 +27,276 @@
       --warning-soft: #fef3c7;
       --danger: #dc2626;
       --danger-soft: #fee2e2;
-
       --card-shadow: 0 14px 34px rgba(15,23,42,.1), 0 2px 4px rgba(15,23,42,.06);
       --radius: 18px;
+      --focus: 0 0 0 3px rgba(37,99,235,.18);
     }
 
     *, *::before, *::after { box-sizing: border-box; }
 
     html, body {
-      margin: 0; padding: 0; height: 100%;
+      margin: 0;
+      padding: 0;
+      height: 100%;
       font-family: 'Montserrat', sans-serif;
       background: radial-gradient(circle at top, #e0f2ff 0, #f9fafb 45%, #eef2ff 100%);
       background-attachment: fixed;
       color: var(--text-main);
     }
 
-    body { display: flex; flex-direction: column; min-height: 100vh; }
-    main { flex: 1 0 auto; padding: 24px 12px 60px; box-sizing: border-box; }
-    .shell { width: 100%; max-width: 980px; margin: 0 auto; }
-    @media (min-width: 769px) { main { padding: 30px 24px 80px; } }
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    main {
+      flex: 1 0 auto;
+      padding: 24px 12px 60px;
+      box-sizing: border-box;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 769px) {
+      main { padding: 30px 24px 80px; }
+    }
+
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+    }
 
     /* ===== Cabeçalhos ===== */
     .header-desktop, .header-mobile { display: none; flex-shrink: 0; }
 
     @media (min-width: 769px) {
       .header-desktop {
-        display: flex; background-color: #007bff; padding: 15px 30px; width: 100%;
-        align-items: center; justify-content: space-between; box-sizing: border-box;
-        min-height: 110px; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,.15); color: #fff;
+        display: flex;
+        background-color: #007bff;
+        padding: 15px 30px;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+        min-height: 110px;
+        position: relative;
+        box-shadow: 0 2px 6px rgba(0,0,0,.15);
+        color: #fff;
       }
-      .left-section { display: flex; align-items: center; gap: 20px; }
-      .logo { width: 80px; height: 80px; object-fit: contain; border-radius: 10px; background:#fff; padding:6px; }
-      .text-container { display:flex; flex-direction:column; justify-content:center; text-align:left; color:#fff; }
-      .escola-nome { font-weight: 700; font-size: 1.6rem; margin: 0; line-height: 1.1; }
-      .escola-subtitulo { font-weight: 600; font-size: 1.1rem; margin-top: 4px; }
+
+      .left-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 10px;
+        background: #fff;
+        padding: 6px;
+      }
+
+      .text-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+        color: #fff;
+      }
+
+      .escola-nome {
+        font-weight: 700;
+        font-size: 1.6rem;
+        margin: 0;
+        line-height: 1.1;
+      }
+
+      .escola-subtitulo {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-top: 4px;
+      }
+
       .header-center-text-container {
-        position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
-        font-weight: 800; font-size: 1.9rem; color: #fff; letter-spacing: 5px; user-select: none; white-space: nowrap; z-index: 1;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%,-50%);
+        font-weight: 800;
+        font-size: 1.9rem;
+        color: #fff;
+        letter-spacing: 5px;
+        user-select: none;
+        white-space: nowrap;
+        z-index: 1;
         text-shadow: 0 2px 5px rgba(0,0,0,.3);
       }
+
       .header-center-text { font-family: 'Montserrat', sans-serif; }
+
       .btn-home {
-        background: #0fb300; color: #fff; padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 1.5rem;
-        text-decoration: none; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(15,179,0,.8);
-        transition: .3s background-color; position: absolute; right: 30px; top: 50%; transform: translateY(-50%); z-index: 2;
+        background: #0fb300;
+        color: #fff;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 6px rgba(15,179,0,.8);
+        transition: .3s background-color;
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
       }
+
       .btn-home:hover { background: #0d8a00; }
     }
 
     @media (max-width: 768px) {
       .header-mobile {
-        display:block; width:100%; box-sizing:border-box; color:#fff; position:sticky; top:0; z-index:1000;
-        box-shadow:0 2px 6px rgba(0,0,0,.15); background:#007bff;
+        display:block;
+        width:100%;
+        box-sizing:border-box;
+        color:#fff;
+        position:sticky;
+        top:0;
+        z-index:1000;
+        box-shadow:0 2px 6px rgba(0,0,0,.15);
+        background:#007bff;
       }
-      .header-top { display:flex; align-items:center; justify-content:center; gap:15px; padding:10px 15px; background:#007bff; }
-      .logo { width:48px; height:48px; object-fit:contain; border-radius:10px; background:#fff; padding:6px; }
-      .text-container { display:flex; flex-direction:column; justify-content:center; color:#fff; text-align:center; }
-      .escola-nome { font-weight:700; font-size:1.3rem; margin:0; line-height:1.1; }
-      .escola-subtitulo { font-weight:600; font-size:1rem; margin-top:2px; }
+
+      .header-top {
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:15px;
+        padding:10px 15px;
+        background:#007bff;
+      }
+
+      .logo {
+        width:48px;
+        height:48px;
+        object-fit:contain;
+        border-radius:10px;
+        background:#fff;
+        padding:6px;
+      }
+
+      .text-container {
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        color:#fff;
+        text-align:center;
+      }
+
+      .escola-nome {
+        font-weight:700;
+        font-size:1.3rem;
+        margin:0;
+        line-height:1.1;
+      }
+
+      .escola-subtitulo {
+        font-weight:600;
+        font-size:1rem;
+        margin-top:2px;
+      }
+
       .header-bottom {
-        background:#0056b3; text-align:center; padding:12px 10px; font-weight:800; font-size:1rem; letter-spacing:4px; user-select:none;
-        color:#fff; box-shadow: inset 0 -2px 5px rgba(0,0,0,.2); display:flex; justify-content:center; align-items:center; gap:12px; white-space:nowrap;
+        background:#0056b3;
+        text-align:center;
+        padding:12px 10px;
+        font-weight:800;
+        font-size:1rem;
+        letter-spacing:4px;
+        user-select:none;
+        color:#fff;
+        box-shadow: inset 0 -2px 5px rgba(0,0,0,.2);
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        gap:12px;
+        white-space:nowrap;
       }
+
       .btn-home-mobile {
-        background:#0fb300; color:#fff; padding:6px 10px; border-radius:6px; font-weight:600; font-size:1rem; text-decoration:none;
-        display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(15,179,0,.8); transition:.3s background-color;
+        background:#0fb300;
+        color:#fff;
+        padding:6px 10px;
+        border-radius:6px;
+        font-weight:600;
+        font-size:1rem;
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        box-shadow:0 2px 6px rgba(15,179,0,.8);
+        transition:.3s background-color;
       }
+
       .btn-home-mobile:hover { background:#0d8a00; }
     }
 
     /* ===== Header card ===== */
     .page-header-card {
-      background:#fff; border-radius:var(--radius); padding:16px 18px; margin:0 auto 18px; display:flex; align-items:center; gap:16px;
-      box-shadow: var(--card-shadow); border-left: 5px solid var(--primary);
+      background:#fff;
+      border-radius:var(--radius);
+      padding:16px 18px;
+      margin:0 auto 18px;
+      display:flex;
+      align-items:center;
+      gap:16px;
+      box-shadow: var(--card-shadow);
+      border-left: 5px solid var(--primary);
     }
+
     .page-header-icon {
-      display:inline-flex; align-items:center; justify-content:center; width:42px; height:42px; border-radius:999px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:42px;
+      height:42px;
+      border-radius:999px;
       background: radial-gradient(circle at 30% 30%, #fff 0%, #e0edff 60%, #c7d9ff 100%);
-      box-shadow: 0 4px 12px rgba(37,99,235,.45); color:#2563eb;
+      box-shadow: 0 4px 12px rgba(37,99,235,.45);
+      color:#2563eb;
+      flex-shrink: 0;
     }
+
     .page-header-icon i { font-size:22px; }
-    .page-header-title { font-size:1.15rem; font-weight:800; margin:0; color:var(--text-main); }
-    .page-header-subtitle { font-size:.9rem; margin:0; color:var(--text-muted); }
+
+    .page-header-title {
+      font-size:1.15rem;
+      font-weight:800;
+      margin:0;
+      color:var(--text-main);
+    }
+
+    .page-header-subtitle {
+      font-size:.9rem;
+      margin:0;
+      color:var(--text-muted);
+      line-height: 1.4;
+    }
+
     @media (max-width: 600px) {
       .page-header-card { padding:12px 14px; }
       .page-header-title { font-size:1.05rem; }
@@ -118,52 +305,234 @@
 
     /* ===== Card principal ===== */
     .content-card {
-      width:100%; margin:0 auto 30px; background:var(--surface); border-radius:16px;
-      box-shadow:0 18px 40px rgba(15,23,42,.12); padding:18px 18px 22px;
-      border:1px solid rgba(148,163,184,.35); backdrop-filter: blur(8px);
+      width:100%;
+      margin:0 auto 30px;
+      background:var(--surface);
+      border-radius:16px;
+      box-shadow:0 18px 40px rgba(15,23,42,.12);
+      padding:18px 18px 22px;
+      border:1px solid rgba(148,163,184,.35);
+      backdrop-filter: blur(8px);
     }
-    .content-title { font-size:1.05rem; font-weight:700; margin:0 0 6px; color:var(--text-main); display:flex; align-items:center; gap:8px; }
-    .content-title i { color: var(--primary); }
-    .content-subtitle { font-size:.88rem; color:var(--text-muted); margin:0 0 16px; }
 
-    /* ===== Busca ===== */
-    .search-container { width:100%; margin-bottom:16px; }
-    .search-input-wrapper { position:relative; display:flex; align-items:center; }
-    .search-input-wrapper i { position:absolute; left:12px; font-size:.9rem; color:var(--text-muted); }
-    .search-container input {
-      width:100%; padding:9px 10px 9px 32px; font-size:.9rem; border-radius:999px; border:1px solid var(--border-soft);
-      background:#f9fafb; outline:none; transition:.15s border-color, .15s box-shadow, .15s background-color; font-family:'Montserrat', sans-serif;
+    .content-title {
+      font-size:1.05rem;
+      font-weight:700;
+      margin:0 0 6px;
+      color:var(--text-main);
+      display:flex;
+      align-items:center;
+      gap:8px;
     }
-    .search-container input:focus { background:#fff; border-color:var(--primary); box-shadow:0 0 0 2px rgba(37,99,235,.18); }
+
+    .content-title i { color: var(--primary); }
+
+    .content-subtitle {
+      font-size:.88rem;
+      color:var(--text-muted);
+      margin:0 0 16px;
+      line-height: 1.45;
+    }
+
+    /* ===== Painel de filtros ===== */
+    .filters-panel {
+      margin-bottom: 16px;
+      padding: 14px;
+      border: 1px solid rgba(148,163,184,.28);
+      border-radius: 16px;
+      background: linear-gradient(180deg,#fbfdff,#f8fbff);
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: 2fr 1.1fr 1fr 1fr 1.2fr 1fr 1fr auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .filter-label {
+      font-size: .78rem;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border-soft);
+      background: #fff;
+      color: var(--text-main);
+      font-size: .9rem;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(37,99,235,.18);
+      background: #fff;
+    }
+
+    .form-actions {
+      display: flex;
+      align-items: end;
+    }
+
+    .btn-clear {
+      height: 42px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: none;
+      background: #111827;
+      color: #fff;
+      font-size: .84rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      white-space: nowrap;
+      box-shadow: 0 8px 18px rgba(17,24,39,.18);
+      transition: background-color .15s ease, transform .1s ease;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .btn-clear:hover {
+      background: #0b1220;
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 1180px) {
+      .filters-grid {
+        grid-template-columns: 1.6fr 1fr 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .filters-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-actions,
+      .btn-clear {
+        width: 100%;
+      }
+
+      .btn-clear {
+        height: 44px;
+      }
+    }
+
+    /* ===== Resumo ===== */
+    .summary-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .summary-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--border-soft);
+      box-shadow: 0 6px 14px rgba(15,23,42,.06);
+      font-size: .82rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .summary-pill i {
+      color: var(--primary);
+      font-size: .9rem;
+    }
 
     /* ===== Tabela ===== */
     .table-card { margin-top: 4px; }
-    .table-container { overflow-x:auto; border-radius:12px; border:1px solid var(--border-soft); box-shadow:0 10px 24px rgba(15,23,42,.08); background:#fff; }
-    table { width:100%; border-collapse:collapse; font-size:.9rem; }
-    thead { background: linear-gradient(to right, #eff6ff, #e0ecff); }
+
+    .table-container {
+      overflow-x:auto;
+      border-radius:12px;
+      border:1px solid var(--border-soft);
+      box-shadow:0 10px 24px rgba(15,23,42,.08);
+      background:#fff;
+    }
+
+    table {
+      width:100%;
+      border-collapse:collapse;
+      font-size:.9rem;
+    }
+
+    thead {
+      background: linear-gradient(to right, #eff6ff, #e0ecff);
+    }
+
     th, td {
       padding:9px 10px;
       border-bottom:1px solid #e5e7eb;
-      text-align:center;            /* CENTRALIZAÇÃO GLOBAL */
+      text-align:center;
       vertical-align:middle;
     }
-    th { font-weight:700; color:#1f2933; font-size:.86rem; text-transform:uppercase; letter-spacing:.04em; }
+
+    th {
+      font-weight:700;
+      color:#1f2933;
+      font-size:.86rem;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      white-space: nowrap;
+    }
+
     tbody tr:nth-child(even) { background:#f9fafb; }
     tbody tr:hover { background:#eef2ff; }
-    td.hours-cell { font-weight:600; color:var(--primary-dark); white-space:nowrap; }
 
-    /* Detalhes (linha expansível) */
+    td.hours-cell {
+      font-weight:700;
+      color:var(--primary-dark);
+      white-space:nowrap;
+    }
+
+    td.col-name {
+      text-align: left;
+      font-weight: 700;
+    }
+
+    td.col-email {
+      text-align: left;
+      word-break: break-word;
+    }
+
+    /* Detalhes */
     .details-row { background:#f8fafc; }
     .details-wrapper { padding: 12px 6px 8px; }
 
-    /* métricas (cadastradas/usufruídas/saldo) */
     .metrics {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
       margin: 2px 0 14px;
     }
-    @media (max-width: 640px) { .metrics { grid-template-columns: 1fr; } }
+
+    @media (max-width: 640px) {
+      .metrics { grid-template-columns: 1fr; }
+    }
 
     .metric {
       background: #fff;
@@ -171,8 +540,9 @@
       border-radius: 12px;
       box-shadow: 0 6px 14px rgba(15,23,42,.08);
       padding: 12px 14px;
-      text-align: center;           /* Centraliza valores das métricas */
+      text-align: center;
     }
+
     .metric .label {
       font-size: .78rem;
       color: var(--text-muted);
@@ -182,6 +552,7 @@
       margin-bottom: 6px;
       display: block;
     }
+
     .metric .value {
       font-size: 1.15rem;
       font-weight: 800;
@@ -197,50 +568,173 @@
       align-items: center;
       gap: 8px;
     }
+
     .details-block-title i { color: var(--primary); }
 
-    .subtable { width:100%; border-collapse: collapse; font-size:.88rem; }
+    .subtable {
+      width:100%;
+      border-collapse: collapse;
+      font-size:.88rem;
+    }
+
     .subtable th, .subtable td {
       padding:8px 8px;
       border-bottom:1px dashed #e5e7eb;
-      text-align: center;           /* CENTRALIZAÇÃO EM TODAS AS SUBTABELAS */
+      text-align: center;
       vertical-align: middle;
     }
-    .subtable th { background:#f3f4f6; font-size:.78rem; letter-spacing:.03em; }
+
+    .subtable th {
+      background:#f3f4f6;
+      font-size:.78rem;
+      letter-spacing:.03em;
+    }
+
     .subtable tr:hover { background: #f1f5f9; }
-    .empty { text-align:center; color:var(--text-muted); font-style:italic; padding:10px 0; }
+
+    .empty {
+      text-align:center;
+      color:var(--text-muted);
+      font-style:italic;
+      padding:10px 0;
+    }
 
     .btn-details {
-      padding:6px 10px; border-radius:999px; border:1px solid var(--primary); background:#fff; color: var(--primary);
-      cursor:pointer; font-size:.82rem; font-weight:700; display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--primary);
+      background:#fff;
+      color: var(--primary);
+      cursor:pointer;
+      font-size:.82rem;
+      font-weight:700;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
       transition:.15s background-color, .15s color, .15s box-shadow, .1s transform;
+      font-family: 'Montserrat', sans-serif;
     }
-    .btn-details:hover { background:var(--primary); color:#fff; box-shadow:0 4px 10px rgba(37,99,235,.4); transform: translateY(-1px); }
+
+    .btn-details:hover {
+      background:var(--primary);
+      color:#fff;
+      box-shadow:0 4px 10px rgba(37,99,235,.4);
+      transform: translateY(-1px);
+    }
+
     .btn-details i { font-size:.9rem; }
 
     /* Status badge */
-    .status-badge { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:999px; font-weight:700; font-size:.78rem; border:1px solid transparent; white-space:nowrap; }
-    .status-deferido { background:var(--success-soft); color:#166534; border-color:#bbf7d0; }
-    .status-aguardo  { background:var(--warning-soft); color:#92400e; border-color:#facc15; }
-    .status-indeferido { background:var(--danger-soft); color:#b91c1c; border-color:#fecaca; }
+    .status-badge {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:3px 10px;
+      border-radius:999px;
+      font-weight:700;
+      font-size:.78rem;
+      border:1px solid transparent;
+      white-space:nowrap;
+    }
+
+    .status-deferido {
+      background:var(--success-soft);
+      color:#166534;
+      border-color:#bbf7d0;
+    }
+
+    .status-aguardo  {
+      background:var(--warning-soft);
+      color:#92400e;
+      border-color:#facc15;
+    }
+
+    .status-indeferido {
+      background:var(--danger-soft);
+      color:#b91c1c;
+      border-color:#fecaca;
+    }
 
     /* ===== Paginação ===== */
-    .pagination { display:flex; justify-content:center; align-items:center; gap:6px; flex-wrap:wrap; margin-top:14px; }
+    .pagination {
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:6px;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
+
     .pagination button {
-      border:1px solid var(--primary); background:#fff; color: var(--primary); padding:5px 11px; border-radius:999px;
-      cursor:pointer; font-size:.82rem; font-family:'Montserrat', sans-serif; font-weight:600;
+      border:1px solid var(--primary);
+      background:#fff;
+      color: var(--primary);
+      padding:5px 11px;
+      border-radius:999px;
+      cursor:pointer;
+      font-size:.82rem;
+      font-family:'Montserrat', sans-serif;
+      font-weight:600;
       transition:.15s background-color, .15s color, .15s box-shadow, .1s transform;
     }
-    .pagination button:hover:not(.active):not(:disabled) { background:var(--primary); color:#fff; box-shadow:0 4px 10px rgba(37,99,235,.4); transform: translateY(-1px); }
-    .pagination button.active { background:var(--primary); color:#fff; font-weight:700; box-shadow:0 4px 10px rgba(37,99,235,.4); }
-    .pagination button:disabled { opacity:.45; cursor:default; box-shadow:none; transform:none; }
-    .pagination span { font-size:.82rem; color:var(--text-muted); user-select:none; }
+
+    .pagination button:hover:not(.active):not(:disabled) {
+      background:var(--primary);
+      color:#fff;
+      box-shadow:0 4px 10px rgba(37,99,235,.4);
+      transform: translateY(-1px);
+    }
+
+    .pagination button.active {
+      background:var(--primary);
+      color:#fff;
+      font-weight:700;
+      box-shadow:0 4px 10px rgba(37,99,235,.4);
+    }
+
+    .pagination button:disabled {
+      opacity:.45;
+      cursor:default;
+      box-shadow:none;
+      transform:none;
+    }
+
+    .pagination span {
+      font-size:.82rem;
+      color:var(--text-muted);
+      user-select:none;
+    }
+
+    .empty-state {
+      display: none;
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      color: #475569;
+      text-align: center;
+      font-size: .88rem;
+      font-weight: 700;
+    }
+
+    .empty-state.show {
+      display: block;
+    }
 
     /* ===== Rodapé ===== */
     footer {
-      background: linear-gradient(to right, #222, #444); color:#ddd; text-align:center; padding:15px 0; font-size:14px;
-      border-top:2px solid #555; box-shadow:0 -2px 10px rgba(0,0,0,.3); flex-shrink:0; width:100%;
+      background: linear-gradient(to right, #222, #444);
+      color:#ddd;
+      text-align:center;
+      padding:15px 0;
+      font-size:14px;
+      border-top:2px solid #555;
+      box-shadow:0 -2px 10px rgba(0,0,0,.3);
+      flex-shrink:0;
+      width:100%;
     }
+
     footer p { margin:5px 0; font-size:15px; font-weight:300; }
     footer a { color:#fff; text-decoration:none; font-weight:500; transition:.3s color; }
     footer a:hover { color:#00aaff; }
@@ -282,11 +776,9 @@
     </div>
   </header>
 
-  <!-- Conteúdo principal -->
   <main>
     <div class="shell">
 
-      <!-- Header card da página -->
       <div class="page-header-card">
         <div class="page-header-icon">
           <i class="fas fa-file-alt"></i>
@@ -294,25 +786,87 @@
         <div class="page-header-content">
           <p class="page-header-title">Relatório de Horas Extras</p>
           <p class="page-header-subtitle">
-            Consulte o total disponível por servidor, os registros detalhados (data e motivo) e as horas usufruídas via agendamento BH.
+            Consulte o total disponível por servidor, os registros detalhados e as horas usufruídas via agendamento BH.
           </p>
         </div>
       </div>
 
-      <!-- Card principal -->
       <div class="content-card">
         <h2 class="content-title">
           <i class="fas fa-user-clock"></i>
           Servidores com banco de horas disponível
         </h2>
         <p class="content-subtitle">
-          Use o campo abaixo para localizar rapidamente um servidor pelo nome. Os resultados são exibidos em páginas de até 10 servidores.
+          Use os filtros abaixo para pesquisar por nome, registro e faixa de saldo, além de ordenar a listagem.
         </p>
 
-        <div class="search-container">
-          <div class="search-input-wrapper">
-            <i class="fas fa-search"></i>
-            <input type="text" id="searchInput" placeholder="Digite um nome para filtrar..." />
+        <div class="filters-panel">
+          <div class="filters-grid">
+            <div class="filter-group">
+              <label class="filter-label" for="searchInput">Busca geral</label>
+              <input type="text" id="searchInput" class="form-control" placeholder="Nome, registro ou e-mail..." />
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label" for="registroInput">Registro</label>
+              <input type="text" id="registroInput" class="form-control" placeholder="Ex.: 12345" />
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label" for="saldoMinInput">Saldo mínimo (h)</label>
+              <input type="number" id="saldoMinInput" class="form-control" min="0" step="0.5" placeholder="0" />
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label" for="saldoMaxInput">Saldo máximo (h)</label>
+              <input type="number" id="saldoMaxInput" class="form-control" min="0" step="0.5" placeholder="999" />
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label" for="sortBy">Ordenar por</label>
+              <select id="sortBy" class="form-control">
+                <option value="nome">Nome</option>
+                <option value="registro">Registro</option>
+                <option value="saldo">Total disponível</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label" for="sortDir">Direção</label>
+              <select id="sortDir" class="form-control">
+                <option value="asc">Crescente</option>
+                <option value="desc">Decrescente</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label" for="rowsPerPageSelect">Linhas por página</label>
+              <select id="rowsPerPageSelect" class="form-control">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="9999">Todas</option>
+              </select>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" id="clearFiltersBtn" class="btn-clear">
+                <i class="fas fa-eraser"></i>
+                Limpar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-strip">
+          <div class="summary-pill">
+            <i class="fas fa-users"></i>
+            <span>Visíveis: <strong id="visibleUsersCount">0</strong></span>
+          </div>
+          <div class="summary-pill">
+            <i class="fas fa-hourglass-half"></i>
+            <span>Saldo visível: <strong id="visibleBalanceSum">0h 00m</strong></span>
           </div>
         </div>
 
@@ -328,28 +882,37 @@
                   <th style="width: 1%; white-space: nowrap;">Detalhes</th>
                 </tr>
               </thead>
-              <tbody>
-                {# 'usuarios' deve conter: id, nome, registro, email, horas, minutos, registros (lista), total_cadastradas_min, total_usufruidas_min, agendamentos_bh (lista) #}
+              <tbody id="usuariosTableBody">
                 {% for usuario in usuarios %}
-                  <tr class="user-row" data-user-id="{{ usuario.id }}">
-                    <td class="col-nome">{{ usuario.nome }}</td>
+                  {% set total_min = (usuario.horas|default(0) * 60) + (usuario.minutos|default(0)) %}
+                  <tr
+                    class="user-row"
+                    data-user-id="{{ usuario.id }}"
+                    data-name="{{ (usuario.nome or '')|lower }}"
+                    data-registro="{{ usuario.registro or '' }}"
+                    data-email="{{ (usuario.email or '')|lower }}"
+                    data-total-min="{{ total_min }}"
+                  >
+                    <td class="col-name">{{ usuario.nome }}</td>
                     <td>{{ usuario.registro }}</td>
-                    <td>{{ usuario.email }}</td>
+                    <td class="col-email">{{ usuario.email }}</td>
                     <td class="hours-cell">{{ usuario.horas }}h {{ "%02d"|format(usuario.minutos|default(0)) }}m</td>
                     <td>
                       <button class="btn-details" type="button" onclick="toggleDetails({{ usuario.id }}, this)">
-                        <i class="fas fa-chevron-down"></i> Ver detalhes
+                        <i class="fas fa-chevron-down"></i>
+                        <span class="btn-text">Ver detalhes</span>
                       </button>
                     </td>
                   </tr>
+
                   <tr class="details-row" data-user-id="{{ usuario.id }}" style="display:none;">
                     <td colspan="5">
                       <div class="details-wrapper">
 
-                        {# ================= RESUMO: Cadastradas / Usufruídas / Saldo ================= #}
                         {% set cad_min = usuario.total_cadastradas_min|default(0) %}
                         {% set usu_min = usuario.total_usufruidas_min|default(0) %}
                         {% set sal_min = cad_min - usu_min %}
+
                         <div class="metrics">
                           <div class="metric">
                             <span class="label">Horas cadastradas</span>
@@ -371,7 +934,6 @@
                           </div>
                         </div>
 
-                        {# ================= REGISTROS DE BANCO DE HORAS (CADASTRADAS) ================= #}
                         <div class="details-block-title">
                           <i class="fas fa-clipboard-list"></i> Registros de Banco de Horas
                         </div>
@@ -417,7 +979,6 @@
                           </tbody>
                         </table>
 
-                        {# ================= USUFRUTO BH (AGENDAMENTOS motivo='BH') ================= #}
                         <div class="details-block-title" style="margin-top:14px;">
                           <i class="fas fa-hourglass-end"></i> Agendamentos BH (Horas usufruídas)
                         </div>
@@ -471,144 +1032,47 @@
           </div>
         </div>
 
-        <!-- Paginação -->
+        <div id="emptyState" class="empty-state">
+          Nenhum servidor corresponde aos filtros aplicados.
+        </div>
+
         <div id="pagination" class="pagination"></div>
       </div>
 
     </div>
   </main>
 
-  <!-- Rodapé -->
   <footer>
     <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
   </footer>
 
   <script>
     const searchInput = document.getElementById('searchInput');
-    const table = document.getElementById('usuariosTable');
-    const tbody = table.querySelector('tbody');
+    const registroInput = document.getElementById('registroInput');
+    const saldoMinInput = document.getElementById('saldoMinInput');
+    const saldoMaxInput = document.getElementById('saldoMaxInput');
+    const sortBy = document.getElementById('sortBy');
+    const sortDir = document.getElementById('sortDir');
+    const rowsPerPageSelect = document.getElementById('rowsPerPageSelect');
+    const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 
-    // Linhas-resumo (uma por servidor) e mapa para suas linhas de detalhes
-    const allSummaryRows = Array.from(tbody.querySelectorAll('tr.user-row'));
-    const detailsRowsMap = {};
-    allSummaryRows.forEach(row => {
-      const id = row.getAttribute('data-user-id');
-      const details = tbody.querySelector(`tr.details-row[data-user-id="${id}"]`);
-      detailsRowsMap[id] = details;
-    });
+    const visibleUsersCount = document.getElementById('visibleUsersCount');
+    const visibleBalanceSum = document.getElementById('visibleBalanceSum');
+    const emptyState = document.getElementById('emptyState');
+    const pagination = document.getElementById('pagination');
+    const tbody = document.getElementById('usuariosTableBody');
 
-    const rowsPerPage = 10;
-    let filteredSummaryRows = [...allSummaryRows];
     let currentPage = 1;
+    let filteredPairs = [];
 
-    function toggleDetails(id, btn) {
-      const details = detailsRowsMap[id];
-      if (!details) return;
-      const visible = details.style.display !== 'none';
-      details.style.display = visible ? 'none' : '';
-      if (btn) {
-        const icon = btn.querySelector('i');
-        if (icon) icon.className = visible ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
-        btn.innerHTML = btn.innerHTML.replace(visible ? 'Ocultar detalhes' : 'Ver detalhes',
-                                              visible ? 'Ver detalhes' : 'Ocultar detalhes');
-      }
+    function normalizeText(value) {
+      return String(value || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
     }
 
-    function renderPagination() {
-      const pagination = document.getElementById('pagination');
-      pagination.innerHTML = '';
-
-      const total = filteredSummaryRows.length;
-      const totalPages = Math.max(1, Math.ceil(total / rowsPerPage));
-
-      const prevBtn = document.createElement('button');
-      prevBtn.textContent = '«';
-      prevBtn.disabled = currentPage === 1;
-      prevBtn.addEventListener('click', () => {
-        if (currentPage > 1) {
-          currentPage--;
-          renderTable();
-        }
-      });
-      pagination.appendChild(prevBtn);
-
-      for (let p = 1; p <= totalPages; p++) {
-        if (p === 1 || p === totalPages || (p >= currentPage - 2 && p <= currentPage + 2)) {
-          const btn = document.createElement('button');
-          btn.textContent = p;
-          if (p === currentPage) btn.classList.add('active');
-          btn.addEventListener('click', () => {
-            currentPage = p;
-            renderTable();
-          });
-          pagination.appendChild(btn);
-        } else if (p === currentPage - 3 || p === currentPage + 3) {
-          const span = document.createElement('span');
-          span.textContent = '...';
-          pagination.appendChild(span);
-        }
-      }
-
-      const nextBtn = document.createElement('button');
-      nextBtn.textContent = '»';
-      nextBtn.disabled = currentPage === totalPages;
-      nextBtn.addEventListener('click', () => {
-        if (currentPage < totalPages) {
-          currentPage++;
-          renderTable();
-        }
-      });
-      pagination.appendChild(nextBtn);
-    }
-
-    function renderTable() {
-      // Esconde tudo inicialmente
-      allSummaryRows.forEach(row => row.style.display = 'none');
-      Object.values(detailsRowsMap).forEach(row => { if (row) row.style.display = 'none'; });
-
-      const start = (currentPage - 1) * rowsPerPage;
-      const end = start + rowsPerPage;
-      const pageRows = filteredSummaryRows.slice(start, end);
-
-      // Mostra apenas os servidores da página atual; mantém detalhes fechados por padrão
-      pageRows.forEach(row => {
-        row.style.display = '';
-        const id = row.getAttribute('data-user-id');
-        const btn = row.querySelector('.btn-details');
-        if (btn) {
-          const icon = btn.querySelector('i');
-          if (icon) icon.className = 'fas fa-chevron-down';
-          btn.innerHTML = btn.innerHTML.replace('Ocultar detalhes', 'Ver detalhes');
-        }
-      });
-
-      renderPagination();
-    }
-
-    function applyFilter() {
-      const filter = (searchInput.value || '').trim().toLowerCase();
-
-      if (!filter) {
-        filteredSummaryRows = [...allSummaryRows];
-      } else {
-        filteredSummaryRows = allSummaryRows.filter(row => {
-          const nameCell = row.querySelector('.col-nome');
-          const textValue = (nameCell?.textContent || nameCell?.innerText || '').toLowerCase();
-          return textValue.includes(filter);
-        });
-      }
-
-      currentPage = 1;
-      renderTable();
-    }
-
-    searchInput.addEventListener('keyup', applyFilter);
-
-    /* ====== Normalização de nomes (Title Case “inteligente”) ======
-       - Primeira e última palavras sempre em maiúscula inicial
-       - Preposições/artigos comuns em minúsculas (quando no meio)
-       - Suporte básico a nomes hifenizados
-    */
     function smartTitleCase(str) {
       if (!str) return str;
       const lowers = new Set(['da','de','do','das','dos','e','em','no','na','nos','nas','para','por','com','del','di','du','la','le','van','von']);
@@ -619,13 +1083,16 @@
         .split(' ');
 
       return words.map((w, idx) => {
-        const first = idx === 0, last = idx === words.length - 1;
+        const first = idx === 0;
+        const last = idx === words.length - 1;
+
         const parts = w.split('-').map(p => {
           if (!p) return p;
           const keepLower = !first && !last && lowers.has(p);
           if (keepLower) return p;
           return p.charAt(0).toUpperCase() + p.slice(1);
         });
+
         let out = parts.join('-');
         if (!first && !last && lowers.has(w)) out = w;
         return out;
@@ -633,14 +1100,284 @@
     }
 
     function normalizeAllNames() {
-      document.querySelectorAll('.col-nome').forEach(td => {
+      document.querySelectorAll('.col-name').forEach(td => {
         td.textContent = smartTitleCase(td.textContent || '');
       });
     }
 
+    function formatMinutes(totalMin) {
+      const safe = Math.max(0, Number(totalMin) || 0);
+      const h = Math.floor(safe / 60);
+      const m = safe % 60;
+      return `${h}h ${String(m).padStart(2, '0')}m`;
+    }
+
+    function setDetailsButtonState(btn, opened) {
+      if (!btn) return;
+      const icon = btn.querySelector('i');
+      const text = btn.querySelector('.btn-text');
+
+      if (icon) {
+        icon.className = opened ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+      }
+
+      if (text) {
+        text.textContent = opened ? 'Ocultar detalhes' : 'Ver detalhes';
+      }
+    }
+
+    const rowPairs = [];
+    const pairMap = new Map();
+
+    function initializePairs() {
+      const summaryRows = Array.from(tbody.querySelectorAll('tr.user-row'));
+
+      summaryRows.forEach(summaryRow => {
+        const id = summaryRow.getAttribute('data-user-id');
+        const detailsRow = tbody.querySelector(`tr.details-row[data-user-id="${id}"]`);
+
+        const pair = {
+          id,
+          summaryRow,
+          detailsRow,
+          open: false,
+          get name() {
+            return normalizeText(this.summaryRow.getAttribute('data-name'));
+          },
+          get registro() {
+            return String(this.summaryRow.getAttribute('data-registro') || '');
+          },
+          get email() {
+            return normalizeText(this.summaryRow.getAttribute('data-email'));
+          },
+          get totalMin() {
+            return parseInt(this.summaryRow.getAttribute('data-total-min') || '0', 10) || 0;
+          },
+          get totalHours() {
+            return this.totalMin / 60;
+          }
+        };
+
+        rowPairs.push(pair);
+        pairMap.set(String(id), pair);
+      });
+    }
+
+    function getRowsPerPage() {
+      const value = parseInt(rowsPerPageSelect.value, 10);
+      return Number.isFinite(value) ? value : 10;
+    }
+
+    function compareValues(a, b, field, dir) {
+      let result = 0;
+
+      if (field === 'saldo') {
+        result = (Number(a) || 0) - (Number(b) || 0);
+      } else {
+        result = String(a || '').localeCompare(String(b || ''), 'pt-BR', {
+          numeric: true,
+          sensitivity: 'base'
+        });
+      }
+
+      return dir === 'asc' ? result : -result;
+    }
+
+    function sortPairs(pairs) {
+      const field = sortBy.value;
+      const dir = sortDir.value;
+
+      pairs.sort((pairA, pairB) => {
+        let valA = '';
+        let valB = '';
+
+        if (field === 'nome') {
+          valA = pairA.name;
+          valB = pairB.name;
+        } else if (field === 'registro') {
+          valA = pairA.registro;
+          valB = pairB.registro;
+        } else if (field === 'saldo') {
+          valA = pairA.totalMin;
+          valB = pairB.totalMin;
+        }
+
+        return compareValues(valA, valB, field, dir);
+      });
+    }
+
+    function renderSummary(pairs) {
+      visibleUsersCount.textContent = String(pairs.length);
+
+      const totalMinutes = pairs.reduce((acc, pair) => acc + pair.totalMin, 0);
+      visibleBalanceSum.textContent = formatMinutes(totalMinutes);
+    }
+
+    function renderPagination(totalPages) {
+      pagination.innerHTML = '';
+
+      if (totalPages <= 1) return;
+
+      const createButton = (label, page, opts = {}) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = label;
+
+        if (opts.active) btn.classList.add('active');
+        if (opts.disabled) btn.disabled = true;
+
+        btn.addEventListener('click', () => {
+          if (btn.disabled) return;
+          currentPage = page;
+          renderTable();
+        });
+
+        return btn;
+      };
+
+      pagination.appendChild(
+        createButton('«', Math.max(1, currentPage - 1), { disabled: currentPage === 1 })
+      );
+
+      for (let p = 1; p <= totalPages; p++) {
+        const nearCurrent = p >= currentPage - 2 && p <= currentPage + 2;
+        const edge = p === 1 || p === totalPages;
+
+        if (edge || nearCurrent) {
+          pagination.appendChild(createButton(String(p), p, { active: p === currentPage }));
+        } else if (p === currentPage - 3 || p === currentPage + 3) {
+          const span = document.createElement('span');
+          span.textContent = '...';
+          pagination.appendChild(span);
+        }
+      }
+
+      pagination.appendChild(
+        createButton('»', Math.min(totalPages, currentPage + 1), { disabled: currentPage === totalPages })
+      );
+    }
+
+    function closePairsOutsideCurrentPage(currentPairs) {
+      const visibleIds = new Set(currentPairs.map(pair => String(pair.id)));
+
+      rowPairs.forEach(pair => {
+        if (!visibleIds.has(String(pair.id))) {
+          pair.open = false;
+          pair.detailsRow.style.display = 'none';
+          const btn = pair.summaryRow.querySelector('.btn-details');
+          setDetailsButtonState(btn, false);
+        }
+      });
+    }
+
+    function renderTable() {
+      const perPage = getRowsPerPage();
+      const totalPages = perPage >= 9999 ? 1 : Math.max(1, Math.ceil(filteredPairs.length / perPage));
+
+      currentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+      const start = perPage >= 9999 ? 0 : (currentPage - 1) * perPage;
+      const end = perPage >= 9999 ? filteredPairs.length : start + perPage;
+      const visiblePairs = filteredPairs.slice(start, end);
+
+      closePairsOutsideCurrentPage(visiblePairs);
+
+      tbody.innerHTML = '';
+
+      visiblePairs.forEach(pair => {
+        const btn = pair.summaryRow.querySelector('.btn-details');
+        setDetailsButtonState(btn, pair.open);
+        pair.detailsRow.style.display = pair.open ? '' : 'none';
+
+        tbody.appendChild(pair.summaryRow);
+        tbody.appendChild(pair.detailsRow);
+      });
+
+      renderSummary(filteredPairs);
+      renderPagination(totalPages);
+      emptyState.classList.toggle('show', filteredPairs.length === 0);
+    }
+
+    function applyFilters() {
+      const general = normalizeText(searchInput.value);
+      const registro = normalizeText(registroInput.value);
+      const saldoMinHours = parseFloat(saldoMinInput.value);
+      const saldoMaxHours = parseFloat(saldoMaxInput.value);
+
+      filteredPairs = rowPairs.filter(pair => {
+        const generalPass =
+          !general ||
+          pair.name.includes(general) ||
+          normalizeText(pair.registro).includes(general) ||
+          pair.email.includes(general);
+
+        const registroPass =
+          !registro ||
+          normalizeText(pair.registro).includes(registro);
+
+        const minPass =
+          Number.isNaN(saldoMinHours) ||
+          pair.totalHours >= saldoMinHours;
+
+        const maxPass =
+          Number.isNaN(saldoMaxHours) ||
+          pair.totalHours <= saldoMaxHours;
+
+        return generalPass && registroPass && minPass && maxPass;
+      });
+
+      sortPairs(filteredPairs);
+      currentPage = 1;
+      renderTable();
+    }
+
+    function clearFilters() {
+      searchInput.value = '';
+      registroInput.value = '';
+      saldoMinInput.value = '';
+      saldoMaxInput.value = '';
+      sortBy.value = 'nome';
+      sortDir.value = 'asc';
+      rowsPerPageSelect.value = '10';
+
+      rowPairs.forEach(pair => {
+        pair.open = false;
+      });
+
+      applyFilters();
+    }
+
+    window.toggleDetails = function(id, btn) {
+      const pair = pairMap.get(String(id));
+      if (!pair) return;
+
+      pair.open = !pair.open;
+      pair.detailsRow.style.display = pair.open ? '' : 'none';
+      setDetailsButtonState(btn, pair.open);
+    };
+
+    searchInput.addEventListener('input', applyFilters);
+    registroInput.addEventListener('input', applyFilters);
+    saldoMinInput.addEventListener('input', applyFilters);
+    saldoMaxInput.addEventListener('input', applyFilters);
+    sortBy.addEventListener('change', applyFilters);
+    sortDir.addEventListener('change', applyFilters);
+
+    rowsPerPageSelect.addEventListener('change', () => {
+      currentPage = 1;
+      renderTable();
+    });
+
+    clearFiltersBtn.addEventListener('click', clearFilters);
+
     document.addEventListener('DOMContentLoaded', () => {
       normalizeAllNames();
-      applyFilter();
+      initializePairs();
+      sortBy.value = 'nome';
+      sortDir.value = 'asc';
+      filteredPairs = [...rowPairs];
+      sortPairs(filteredPairs);
+      renderTable();
     });
   </script>
 </body>
