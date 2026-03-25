@@ -5,15 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Informações de Todos os Usuários</title>
 
-  <!-- Estilos globais do projeto -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-  <!-- ✅ CSS específico desta página -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/user_info_all.css') }}">
 
-  <!-- ✅ CSRF token para POST via fetch -->
   <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 
@@ -54,7 +50,6 @@
     </div>
   </header>
 
-  <!-- Toast -->
   <div id="statusAlert" aria-live="polite"></div>
 
   <main role="main">
@@ -72,7 +67,6 @@
         </div>
       </div>
 
-      <!-- Flash -->
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           <ul class="flashes">
@@ -97,6 +91,30 @@
       {% endwith %}
 
       {% set status_filtro = status or 'ativos' %}
+
+      {% set cargos_opcoes = cargos if cargos is defined and cargos else [
+        "Agente Administrativo", "Professor I", "Professor Adjunto",
+        "Professor II", "Professor III", "Professor IV",
+        "Servente I", "Servente II", "Servente",
+        "Diretor de Unidade Escolar", "Assistente de Direção",
+        "Pedagoga Comunitaria", "Assistente Tecnico Pedagogico",
+        "Secretario de Unidade Escolar", "Educador de Desenvolvimento Infanto Juvenil",
+        "Atendente de Educação I", "Atendente de Educação II",
+        "Trabalhador", "Inspetor de Aluno"
+      ] %}
+
+      {% set graduacoes_opcoes = graduacoes if graduacoes is defined and graduacoes else [
+        'Ensino Fundamental',
+        'Ensino Médio',
+        'Técnico',
+        'Tecnólogo',
+        'Bacharelado',
+        'Licenciatura',
+        'Pós Graduação Latu Sensu',
+        'Mestrado',
+        'Doutorado',
+        'Pós Doutorado'
+      ] %}
 
       <!-- Filtros -->
       <section class="content-card filter-card">
@@ -125,9 +143,9 @@
             </div>
 
             <select name="status" class="status-filter" aria-label="Filtrar por status">
-              <option value="ativos"   {% if status_filtro == 'ativos'   %}selected{% endif %}>Somente ativos</option>
+              <option value="ativos" {% if status_filtro == 'ativos' %}selected{% endif %}>Somente ativos</option>
               <option value="inativos" {% if status_filtro == 'inativos' %}selected{% endif %}>Somente inativos</option>
-              <option value="todos"    {% if status_filtro == 'todos'    %}selected{% endif %}>Todos</option>
+              <option value="todos" {% if status_filtro == 'todos' %}selected{% endif %}>Todos</option>
             </select>
 
             <button type="submit">Buscar</button>
@@ -141,7 +159,6 @@
               <i class="fa-solid fa-angles-up"></i> <span>Recolher tudo</span>
             </button>
 
-            <!-- ✅ Relatório completo/detalhado (modal) -->
             <a
               class="btn outline-blue"
               id="btnReport"
@@ -159,7 +176,6 @@
 
       <!-- Resultados -->
       <section class="content-card">
-
         <section class="user-list" id="userList" aria-label="Lista de usuários">
           {% for user in users %}
             {% set r = (resumos[user.id] if (resumos is defined and resumos and user.id in resumos) else {}) %}
@@ -179,6 +195,9 @@
             {% set bh_total_min = user.banco_horas or 0 %}
             {% set bh_horas = (bh_total_min // 60) | int %}
             {% set bh_min   = (bh_total_min % 60) | int %}
+
+            {% set cargo_atual = (user.cargo or '')|trim %}
+            {% set graduacao_atual = (user.graduacao or '')|trim %}
 
             <article class="user-card" data-name="{{ (user.nome or '')|lower }}" data-user-id="{{ user.id }}">
               <div class="user-header" role="button" tabindex="0" aria-expanded="false">
@@ -257,16 +276,92 @@
               </div>
 
               <div class="user-details">
-                <div class="user-details-table-wrapper">
-                  <table aria-label="Detalhes do usuário">
-                    <tr>
-                      <th>Registro</th>
-                      <td>{{ user.registro|default('Não informado') }}</td>
-                    </tr>
+                <!-- Form real dos dados pessoais -->
+                <form
+                  id="userDataForm{{ user.id }}"
+                  method="POST"
+                  action="{{ url_for('admin_atualizar_usuario', user_id=user.id) }}"
+                  autocomplete="off"
+                >
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="page" value="{{ page }}">
+                  <input type="hidden" name="per_page" value="{{ per_page }}">
+                  <input type="hidden" name="q" value="{{ q or '' }}">
+                  <input type="hidden" name="status" value="{{ status_filtro }}">
+                </form>
 
-                    <tr>
-                      <th>E-mail</th>
-                      <td>
+                <div class="inline-user-edit-form" data-form-id="userDataForm{{ user.id }}">
+                  {% if current_user.is_authenticated and current_user.tipo == 'administrador' %}
+                    <div class="inline-edit-toolbar">
+                      <div class="subsection-title">
+                        <i class="fa-solid fa-id-card"></i> Prontuário do servidor
+                      </div>
+
+                      <div class="inline-edit-actions">
+                        <button
+                          type="button"
+                          class="btn-mini outline inline-edit-toggle-btn"
+                          data-user-id="{{ user.id }}"
+                        >
+                          <i class="fa-solid fa-pen"></i> Editar
+                        </button>
+
+                        <button
+                          type="submit"
+                          class="btn-mini ativar inline-save-btn"
+                          data-user-id="{{ user.id }}"
+                          form="userDataForm{{ user.id }}"
+                          hidden
+                        >
+                          <i class="fa-solid fa-floppy-disk"></i> Salvar
+                        </button>
+
+                        <button
+                          type="button"
+                          class="btn-mini outline inline-cancel-btn"
+                          data-user-id="{{ user.id }}"
+                          hidden
+                        >
+                          <i class="fa-solid fa-xmark"></i> Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  {% endif %}
+
+                  <div class="user-prontuario-grid">
+                    <div class="detail-item detail-item-wide">
+                      <div class="detail-label">Nome</div>
+                      <div class="detail-value">
+                        <span class="inline-view-value">{{ user.nome|default('Não informado') }}</span>
+                        <input
+                          type="text"
+                          name="nome"
+                          class="inline-edit-input"
+                          value="{{ user.nome or '' }}"
+                          form="userDataForm{{ user.id }}"
+                          required
+                        >
+                      </div>
+                    </div>
+
+                    <div class="detail-item">
+                      <div class="detail-label">Registro</div>
+                      <div class="detail-value">
+                        <span class="inline-view-value">{{ user.registro|default('Não informado') }}</span>
+                        <input
+                          type="text"
+                          name="registro"
+                          class="inline-edit-input"
+                          value="{{ user.registro or '' }}"
+                          form="userDataForm{{ user.id }}"
+                          required
+                        >
+                      </div>
+                    </div>
+
+                    <div class="detail-item detail-item-wide">
+                      <div class="detail-label">E-mail</div>
+                      <div class="detail-value detail-email-block">
                         <div class="email-line">
                           <span class="email-value">{{ user.email|default('Não informado') }}</span>
 
@@ -303,9 +398,10 @@
                                 class="email-input"
                                 name="novo_email"
                                 placeholder="novo@email.com"
+                                autocomplete="email"
                                 required
                               >
-                              <button type="submit" class="btn-mini ativar" style="min-width:160px;">
+                              <button type="submit" class="btn-mini ativar">
                                 <i class="fa-solid fa-paper-plane"></i> Atualizar e enviar link
                               </button>
                               <button type="button" class="btn-mini outline email-cancel-btn" data-target="emailForm{{ user.id }}">
@@ -318,57 +414,142 @@
                             </div>
                           </form>
                         {% endif %}
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
 
-                    <tr>
-                      <th>Celular</th>
-                      <td>{{ user.celular|default('Não informado') }}</td>
-                    </tr>
-                    <tr>
-                      <th>Data de Nascimento</th>
-                      <td>
-                        {% if user.data_nascimento %}
-                          {{ user.data_nascimento.strftime('%d/%m/%Y') }}
-                        {% else %}
-                          Não informado
-                        {% endif %}
-                      </td>
-                    </tr>
-                    <tr>
-                      <th>CPF</th>
-                      <td>{{ user.cpf|default('Não informado') }}</td>
-                    </tr>
-                    <tr>
-                      <th>RG</th>
-                      <td>{{ user.rg|default('Não informado') }}</td>
-                    </tr>
-                    <tr>
-                      <th>Data Emissão RG</th>
-                      <td>
-                        {% if user.data_emissao_rg %}
-                          {{ user.data_emissao_rg.strftime('%d/%m/%Y') }}
-                        {% else %}
-                          Não informado
-                        {% endif %}
-                      </td>
-                    </tr>
-                    <tr>
-                      <th>Órgão Emissor</th>
-                      <td>{{ user.orgao_emissor|default('Não informado') }}</td>
-                    </tr>
-                    <tr>
-                      <th>Graduação</th>
-                      <td>{{ user.graduacao|default('Não informado') }}</td>
-                    </tr>
-                    <tr>
-                      <th>Cargo</th>
-                      <td>{{ user.cargo|default('Não informado') }}</td>
-                    </tr>
+                    <div class="detail-item">
+                      <div class="detail-label">Celular</div>
+                      <div class="detail-value">
+                        <span class="inline-view-value">{{ user.celular|default('Não informado') }}</span>
+                        <input
+                          type="text"
+                          name="celular"
+                          class="inline-edit-input"
+                          value="{{ user.celular or '' }}"
+                          form="userDataForm{{ user.id }}"
+                        >
+                      </div>
+                    </div>
 
-                    <tr>
-                      <th>Status no sistema</th>
-                      <td>
+                    <div class="detail-item">
+                      <div class="detail-label">Data de Nascimento</div>
+                      <div class="detail-value">
+                        <span class="inline-view-value">
+                          {% if user.data_nascimento %}
+                            {{ user.data_nascimento.strftime('%d/%m/%Y') }}
+                          {% else %}
+                            Não informado
+                          {% endif %}
+                        </span>
+                        <input
+                          type="date"
+                          name="data_nascimento"
+                          class="inline-edit-input"
+                          value="{% if user.data_nascimento %}{{ user.data_nascimento.strftime('%Y-%m-%d') }}{% endif %}"
+                          form="userDataForm{{ user.id }}"
+                        >
+                      </div>
+                    </div>
+
+                    <div class="detail-item">
+                      <div class="detail-label">CPF</div>
+                      <div class="detail-value">
+                        <span class="inline-view-value">{{ user.cpf|default('Não informado') }}</span>
+                        <input
+                          type="text"
+                          name="cpf"
+                          class="inline-edit-input"
+                          value="{{ user.cpf or '' }}"
+                          form="userDataForm{{ user.id }}"
+                        >
+                      </div>
+                    </div>
+
+                    <div class="detail-item">
+                      <div class="detail-label">RG</div>
+                      <div class="detail-value">
+                        <span class="inline-view-value">{{ user.rg|default('Não informado') }}</span>
+                        <input
+                          type="text"
+                          name="rg"
+                          class="inline-edit-input"
+                          value="{{ user.rg or '' }}"
+                          form="userDataForm{{ user.id }}"
+                        >
+                      </div>
+                    </div>
+
+                    <div class="detail-item">
+                      <div class="detail-label">Data Emissão RG</div>
+                      <div class="detail-value">
+                        <span class="inline-view-value">
+                          {% if user.data_emissao_rg %}
+                            {{ user.data_emissao_rg.strftime('%d/%m/%Y') }}
+                          {% else %}
+                            Não informado
+                          {% endif %}
+                        </span>
+                        <input
+                          type="date"
+                          name="data_emissao_rg"
+                          class="inline-edit-input"
+                          value="{% if user.data_emissao_rg %}{{ user.data_emissao_rg.strftime('%Y-%m-%d') }}{% endif %}"
+                          form="userDataForm{{ user.id }}"
+                        >
+                      </div>
+                    </div>
+
+                    <div class="detail-item">
+                      <div class="detail-label">Órgão Emissor</div>
+                      <div class="detail-value">
+                        <span class="inline-view-value">{{ user.orgao_emissor|default('Não informado') }}</span>
+                        <input
+                          type="text"
+                          name="orgao_emissor"
+                          class="inline-edit-input"
+                          value="{{ user.orgao_emissor or '' }}"
+                          form="userDataForm{{ user.id }}"
+                        >
+                      </div>
+                    </div>
+
+                    <div class="detail-item">
+                      <div class="detail-label">Graduação</div>
+                      <div class="detail-value">
+                        <span class="inline-view-value">{{ user.graduacao|default('Não informado') }}</span>
+                        <select
+                          name="graduacao"
+                          class="inline-edit-input inline-edit-select"
+                          form="userDataForm{{ user.id }}"
+                        >
+                          <option value="">Selecione</option>
+                          {% for g in graduacoes_opcoes %}
+                            <option value="{{ g }}" {% if graduacao_atual == g %}selected{% endif %}>{{ g }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="detail-item">
+                      <div class="detail-label">Cargo</div>
+                      <div class="detail-value">
+                        <span class="inline-view-value">{{ user.cargo|default('Não informado') }}</span>
+                        <select
+                          name="cargo"
+                          class="inline-edit-input inline-edit-select"
+                          form="userDataForm{{ user.id }}"
+                        >
+                          <option value="">Selecione</option>
+                          {% for c in cargos_opcoes %}
+                            <option value="{{ c }}" {% if cargo_atual == c %}selected{% endif %}>{{ c }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="detail-item detail-item-wide">
+                      <div class="detail-label">Status no sistema</div>
+                      <div class="detail-value">
                         <div class="status-wrapper">
                           <span class="status-pill {% if user.ativo %}status-ativo{% else %}status-inativo{% endif %}" data-user-id="{{ user.id }}">
                             <i class="fa-solid fa-circle{% if user.ativo %}-check{% else %}-minus{% endif %}"></i>
@@ -392,9 +573,9 @@
                             </button>
                           {% endif %}
                         </div>
-                      </td>
-                    </tr>
-                  </table>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="tre-details">
@@ -498,7 +679,7 @@
     </div>
   </div>
 
-  <!-- ✅ Modal de relatório completo -->
+  <!-- Modal relatório -->
   <div id="reportModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal-box lg">
       <div class="report-head">
@@ -515,7 +696,6 @@
 
       <div class="report-scroll" id="reportScroll">
         <div class="report-grid">
-          <!-- Período -->
           <div class="report-panel">
             <h3 class="panel-title"><i class="fa-solid fa-calendar-days"></i> Período</h3>
 
@@ -543,7 +723,6 @@
             </div>
           </div>
 
-          <!-- Tipos -->
           <div class="report-panel">
             <h3 class="panel-title"><i class="fa-solid fa-sliders"></i> Tipos incluídos</h3>
 
@@ -573,7 +752,6 @@
             </div>
           </div>
 
-          <!-- Saída -->
           <div class="report-panel">
             <h3 class="panel-title"><i class="fa-solid fa-file-export"></i> Modo de saída</h3>
 
@@ -618,7 +796,6 @@
             </div>
           </div>
 
-          <!-- Preview -->
           <div class="report-panel">
             <h3 class="panel-title"><i class="fa-solid fa-chart-simple"></i> Prévia (estimativa)</h3>
 
@@ -637,7 +814,6 @@
             </div>
           </div>
 
-          <!-- Usuários (escopo + manual) -->
           <div class="report-panel" style="grid-column: 1 / -1;">
             <h3 class="panel-title"><i class="fa-solid fa-users"></i> Usuários</h3>
 
@@ -771,7 +947,7 @@
     </div>
   </div>
 
-  <!-- ✅ MODAL PROGRESSO (novo) -->
+  <!-- Modal progresso -->
   <div id="progressModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal-box progress" role="document">
       <div class="progress-head">
@@ -809,7 +985,6 @@
     </div>
   </div>
 
-  <!-- ✅ JS específico desta página (carrega por último) -->
   <script src="{{ url_for('static', filename='js/user_info_all.js') }}" defer></script>
 </body>
 </html>

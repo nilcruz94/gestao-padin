@@ -5,9 +5,20 @@
   <title>Relatório de Controle Interno — Ficha do Servidor</title>
 
   <style>
+    /* ============================================================
+       ✅ PAGES / FOOTER (WeasyPrint-safe)
+       - Rodapé repetido em TODAS as páginas via margin-box
+       - Conteúdo NUNCA passa por cima do rodapé (margem inferior reserva espaço)
+       ============================================================ */
     @page{
       size: A4;
-      margin: 10mm 10mm 19mm 10mm; /* um pouco maior p/ rodapé fixo */
+      margin: 10mm 10mm 24mm 10mm; /* ✅ reserva real para o rodapé */
+      @bottom-left{
+        content: element(page-footer);
+        width: 100%;
+      }
+      @bottom-center{ content: none; }
+      @bottom-right{ content: none; }
     }
 
     :root{
@@ -41,6 +52,16 @@
 
     .page{ page-break-after: always; }
     .page:last-child{ page-break-after: auto; }
+
+    /* ============================================================
+       ✅ FOOTER HOLDER (para o rodapé existir ANTES da página 1)
+       - Evita o bug de só aparecer na última página.
+       - Não ocupa espaço no conteúdo.
+       ============================================================ */
+    .footer-holder{
+      height: 0;
+      overflow: hidden;
+    }
 
     /* ===== Cabeçalho ===== */
     .report-header{
@@ -81,8 +102,6 @@
       margin:0;
     }
     .hdr-title .l1{ display:block; }
-
-    /* ✅ força a 2ª linha a NÃO quebrar (fica em uma linha abaixo) */
     .hdr-title .l2{
       display:block;
       margin-top:2px;
@@ -114,30 +133,17 @@
       line-height:1.25;
     }
 
-    /* ✅ Período “humano” */
+    /* ✅ Período no cabeçalho (SEM quebrar) */
     .hdr-period{
       margin-top:7px;
       font-size:10px;
       font-weight:900;
       letter-spacing:.12px;
-      text-transform:none;
       opacity:.96;
+      white-space:nowrap; /* ✅ não quebra */
     }
     .hdr-period .lbl{ font-weight:900; opacity:.92; }
     .hdr-period .val{ font-weight:800; opacity:.98; }
-
-    /* ✅ Auditoria enxuta (sem tipos) */
-    .hdr-audit{
-      margin-top:6px;
-      font-size:9.2px;
-      font-weight:800;
-      opacity:.95;
-      line-height:1.25;
-      text-align:center;
-    }
-    .hdr-audit .row{ display:block; margin-top:2px; }
-    .hdr-audit .k{ font-weight:900; opacity:.92; }
-    .hdr-audit .v{ font-weight:800; opacity:.98; }
 
     /* ===== Seções / tabelas ===== */
     .section-title{
@@ -201,21 +207,29 @@
       font-weight:900;
     }
 
+    /* ✅ primeira coluna: NÃO quebra e NÃO trunca */
     .hist td.c-date{
-      width:18%;
+      width:26%;
       text-align:center;
       font-weight:900;
       white-space:nowrap;
+      overflow:visible;
+      text-overflow:clip;
+      word-break:normal;
+      overflow-wrap:normal;
+      hyphens:none;
+      font-size:10px;
+      line-height:1.1;
     }
 
     .hist tr.item td.c-cat{
-      width:32%;
+      width:28%;
       text-align:center;
       font-weight:800;
     }
 
     .hist td.c-det{
-      width:50%;
+      width:46%;
       text-align:center;
       font-weight:800;
     }
@@ -260,16 +274,11 @@
     .g-fs   .gband{ background: var(--fs-bg);  border-bottom:1px solid var(--fs-bd); }
     .g-out  .gband{ background: var(--out-bg); border-bottom:1px solid var(--out-bd); }
 
-    .hist tbody tr.item:nth-child(even) td{
-      background:#fbfdff;
-    }
+    .hist tbody tr.item:nth-child(even) td{ background:#fbfdff; }
 
     tr{ break-inside:avoid; page-break-inside:avoid; }
 
-    .muted{
-      color:#475569;
-      font-weight:800;
-    }
+    .muted{ color:#475569; font-weight:800; }
 
     .no-items td{
       text-align:center;
@@ -295,62 +304,55 @@
     }
 
     /* ============================================================
-       ✅ Rodapé “faixa” full width (mais elegante)
+       ✅ Rodapé (running element) — full width dentro das margens
        ============================================================ */
-    .footer-fixed{
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
+    .footer-run{
+      position: running(page-footer);
+      width: 100%;
+    }
 
-      height: 8mm;
-      padding: 0 10mm;
-
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10mm;
-
-      background: linear-gradient(90deg,
-        rgba(2,6,23,.82),
-        rgba(15,23,42,.70)
-      );
+    .footer-bar{
+      width: 100%;
+      background: linear-gradient(90deg, rgba(2,6,23,.86), rgba(15,23,42,.78));
       border-top: 0.25mm solid rgba(255,255,255,.18);
-
-      color: rgba(255,255,255,.92);
-      font-size: 9px;
-      font-weight: 800;
-      letter-spacing: .12px;
-
+      color: rgba(255,255,255,.94);
+      padding: 2.8mm 6mm;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
 
-    .footer-fixed .f-left,
-    .footer-fixed .f-center,
-    .footer-fixed .f-right{
-      min-width: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      padding-top: .2mm;
+    .footer-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 6mm;
+      width:100%;
     }
 
-    .footer-fixed .f-left{ flex: 1 1 40%; text-align:left; opacity:.95; }
-    .footer-fixed .f-center{
-      flex: 0 0 auto;
+    .fcell{
+      min-width:0;
+      white-space:nowrap;
+      overflow:visible;
+      text-overflow:clip;
+      font-size: 9.2px;
+      font-weight: 800;
+      letter-spacing: .12px;
+      line-height: 1.15;
+    }
+
+    .f-left{ flex: 0 0 auto; text-align:left; }
+    .f-center{
+      flex: 1 1 auto;
       text-align:center;
-      font-weight: 900;
-      opacity:.92;
-      letter-spacing:.18px;
-      text-transform:none;
+      font-weight: 700;
+      font-size: 8.9px;
+      letter-spacing: .08px;
     }
-    .footer-fixed .f-right{ flex: 1 1 40%; text-align:right; opacity:.95; }
+    .f-right{ flex: 0 0 auto; text-align:right; }
 
-    .footer-fixed .page-counter::after{
+    .page-counter::after{
       content: "Página " counter(page) " de " counter(pages);
       font-weight: 900;
-      opacity: .96;
     }
   </style>
 </head>
@@ -358,11 +360,6 @@
 <body>
   {# ============================================================
      NORMALIZAÇÃO (apenas visual, não altera o banco)
-     - Corrige ALL CAPS em nome/cargo/graduação
-     - Mantém siglas (ex.: SSP/SP) em UPPER
-     - Mantém email em lower
-     - “de/da/do/dos/das/e” em minúsculas no meio do texto
-     - Ajusta numerais romanos comuns (II, III, IV...)
      ============================================================ #}
 
   {% macro _clean(v) -%}
@@ -376,8 +373,6 @@
       —
     {%- else -%}
       {%- set t = s|lower|title -%}
-
-      {# conectivos em minúsculas (meio) #}
       {%- set t = t
         |replace(' Da ', ' da ')
         |replace(' De ', ' de ')
@@ -386,8 +381,6 @@
         |replace(' Dos ', ' dos ')
         |replace(' E ', ' e ')
       -%}
-
-      {# conectivos no início (caso venha) #}
       {%- set t = t
         |replace('Da ', 'da ')
         |replace('De ', 'de ')
@@ -395,8 +388,6 @@
         |replace('Das ', 'das ')
         |replace('Dos ', 'dos ')
       -%}
-
-      {# numerais romanos mais comuns (evita Ii, Iii, Iv...) #}
       {%- set t = t
         |replace(' Ii ', ' II ')
         |replace(' Iii ', ' III ')
@@ -417,7 +408,6 @@
         |replace(' Xi', ' XI')
         |replace(' Xii', ' XII')
       -%}
-
       {{ t }}
     {%- endif -%}
   {%- endmacro %}
@@ -436,7 +426,6 @@
     {%- if (not s) or s == '—' -%}
       —
     {%- else -%}
-      {# Se tem “/” (SSP/SP) ou é curtinho, mantém como sigla #}
       {%- if ('/' in s) or (s|length <= 6) -%}
         {{ s|upper }}
       {%- else -%}
@@ -444,6 +433,19 @@
       {%- endif -%}
     {%- endif -%}
   {%- endmacro %}
+
+  <!-- ✅ Rodapé precisa existir ANTES da página 1 para aparecer em todas -->
+  <div class="footer-holder" aria-hidden="true">
+    <div class="footer-run">
+      <div class="footer-bar">
+        <div class="footer-row">
+          <div class="fcell f-left">E.M. José Padin Mouta</div>
+          <div class="fcell f-center">R. Bororós, 150 - Vila Tupi, Praia Grande - SP, 11703-390</div>
+          <div class="fcell f-right"><span class="page-counter"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   {% for it in items %}
   <section class="page">
@@ -491,17 +493,6 @@
                 {% endif %}
               </span>
             </div>
-
-            {% if generated_by or scope_label %}
-              <div class="hdr-audit">
-                {% if generated_by %}
-                  <span class="row"><span class="k">Gerado por:</span> <span class="v">{{ norm_nome(generated_by) }}</span></span>
-                {% endif %}
-                {% if scope_label %}
-                  <span class="row"><span class="k">Escopo:</span> <span class="v">{{ scope_label }}</span></span>
-                {% endif %}
-              </div>
-            {% endif %}
           </td>
 
           <td class="hdr-right">
@@ -569,18 +560,23 @@
     <table class="grid hist">
       <thead>
         <tr>
-          <th style="width:18%;">Data</th>
-          <th style="width:32%;">Categoria</th>
-          <th style="width:50%;">Detalhes</th>
+          <th style="width:26%;">Data / Período</th>
+          <th style="width:28%;">Categoria</th>
+          <th style="width:46%;">Detalhes</th>
         </tr>
       </thead>
 
       <tbody>
         {% for g in it.groups %}
+
+          {% set _count_label =
+            (g.count_label if (g.count_label is defined and g.count_label) else (g.count ~ ' registro(s)'))
+          %}
+
           <tr class="ghead-merged g-{{ g.tag }}">
             <td colspan="3">
               <div class="gband">
-                <div class="left">{{ g.title }} — {{ g.count }} registro(s)</div>
+                <div class="left">{{ g.title }} — {{ _count_label }}</div>
                 <div class="right">{{ g.extra }}</div>
               </div>
             </td>
@@ -592,10 +588,36 @@
             </tr>
           {% else %}
             {% for row in g.rows %}
+
+              {% set _date_disp = (row.period if (row.period is defined and row.period) else row.date) %}
+
+              {# ==========================================================
+                 ✅ CORREÇÃO PEDIDA:
+                 Para LM de 1 dia, não mostrar "—" no Detalhes.
+                 - Se backend já mandou "X dia(s)" -> mantém
+                 - Se vier "—" (ou vazio) em LM -> força "1 dia(s)"
+                 ========================================================== #}
+              {% set _is_lm = (g.tag == 'lm') or ('licen' in (row.category|lower)) %}
+              {% set _raw_details = (row.details if row.details is defined else '—') %}
+              {% set _raw_details_trim = (_raw_details|string)|trim %}
+
+              {% if row.days is defined and row.days %}
+                {% set _det =
+                  ((row.details ~ " • ") if (row.details is defined and row.details and row.details != '—') else "")
+                  ~ (row.days ~ " dia(s)")
+                %}
+              {% else %}
+                {% if _is_lm and (_raw_details_trim in ['—','-','']) %}
+                  {% set _det = "1 dia(s)" %}
+                {% else %}
+                  {% set _det = _raw_details %}
+                {% endif %}
+              {% endif %}
+
               <tr class="item">
-                <td class="c-date">{{ row.date }}</td>
+                <td class="c-date">{{ _date_disp }}</td>
                 <td class="c-cat">{{ row.category }}</td>
-                <td class="c-det">{{ row.details }}</td>
+                <td class="c-det">{{ _det }}</td>
               </tr>
             {% endfor %}
           {% endif %}
@@ -609,12 +631,5 @@
 
   </section>
   {% endfor %}
-
-  <!-- ✅ Rodapé full width (todas as páginas) -->
-  <div class="footer-fixed" aria-hidden="true">
-    <div class="f-left">E.M. José Padin Mouta</div>
-    <div class="f-center">Relatório de Controle Interno</div>
-    <div class="f-right"><span class="page-counter"></span></div>
-  </div>
 </body>
 </html>

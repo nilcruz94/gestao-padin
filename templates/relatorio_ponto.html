@@ -5,13 +5,11 @@
   <title>Relatório de Ponto</title>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- CSRF para POSTs/Fetch -->
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
-  <!-- Assets globais -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet" />
 
   <style>
     :root{
@@ -21,191 +19,784 @@
       --bg:#f4f6f9;
       --surface:#ffffff;
       --border-soft:rgba(148,163,184,.35);
+      --border-strong:rgba(148,163,184,.5);
       --text-main:#111827;
       --text-muted:#6b7280;
+
       --success:#16a34a;
       --success-soft:#dcfce7;
+      --danger:#dc2626;
+      --danger-soft:#fee2e2;
+      --warning:#d97706;
+      --warning-soft:#fef3c7;
+      --info:#2563eb;
+      --info-soft:#dbeafe;
 
       --card-shadow:0 14px 34px rgba(15,23,42,.1),0 2px 4px rgba(15,23,42,.06);
       --radius:18px;
+      --focus:0 0 0 3px rgba(13,110,253,.18);
     }
 
-    *,.*,*::before,*::after{box-sizing:border-box;}
+    *, *::before, *::after { box-sizing:border-box; }
 
     html, body{
-      margin:0; padding:0; height:100%;
+      margin:0;
+      padding:0;
+      height:100%;
       font-family:'Montserrat',sans-serif;
       background:radial-gradient(circle at top,#e0f2ff 0,#f9fafb 45%,#eef2ff 100%);
       background-attachment:fixed;
       color:var(--text-main);
     }
 
-    body{display:flex; flex-direction:column; min-height:100vh;}
-    main{flex:1 0 auto; padding:24px 12px 60px; box-sizing:border-box;}
-    @media (min-width:769px){ main{ padding:30px 24px 80px; } }
+    body{
+      display:flex;
+      flex-direction:column;
+      min-height:100vh;
+    }
+
+    main{
+      flex:1 0 auto;
+      padding:24px 12px 60px;
+      box-sizing:border-box;
+    }
+
+    @media (min-width:769px){
+      main{ padding:30px 24px 80px; }
+    }
+
+    button, input, select{
+      font-family:inherit;
+    }
 
     /* ===== CABEÇALHOS ===== */
     .header-desktop,.header-mobile{flex-shrink:0;}
-    .header-desktop{display:none;} .header-mobile{display:none;}
+    .header-desktop{display:none;}
+    .header-mobile{display:none;}
 
     @media (min-width:769px){
       .header-desktop{
-        display:flex; background-color:#007bff; padding:15px 30px; width:100%;
-        align-items:center; justify-content:space-between; box-sizing:border-box;
-        min-height:110px; position:relative; box-shadow:0 2px 6px rgba(0,0,0,0.15); color:white;
+        display:flex;
+        background-color:#007bff;
+        padding:15px 30px;
+        width:100%;
+        align-items:center;
+        justify-content:space-between;
+        box-sizing:border-box;
+        min-height:110px;
+        position:relative;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);
+        color:white;
       }
       .left-section{display:flex; align-items:center; gap:20px;}
-      .logo{width:80px; height:80px; object-fit:contain; border-radius:10px; background-color:white; padding:6px;}
-      .text-container{display:flex; flex-direction:column; justify-content:center; text-align:left; color:white;}
-      .escola-nome{font-weight:700; font-size:1.6rem; margin:0; line-height:1.1;}
-      .escola-subtitulo{font-weight:600; font-size:1.1rem; margin-top:4px;}
+      .logo{
+        width:80px; height:80px; object-fit:contain;
+        border-radius:10px; background-color:white; padding:6px;
+      }
+      .text-container{
+        display:flex; flex-direction:column; justify-content:center; text-align:left; color:white;
+      }
+      .escola-nome{
+        font-weight:700; font-size:1.6rem; margin:0; line-height:1.1;
+      }
+      .escola-subtitulo{
+        font-weight:600; font-size:1.1rem; margin-top:4px;
+      }
       .header-center-text-container{
         position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-        font-weight:800; font-size:1.9rem; color:white; letter-spacing:5px; user-select:none; white-space:nowrap; z-index:1;
+        font-weight:800; font-size:1.9rem; color:white; letter-spacing:5px;
+        user-select:none; white-space:nowrap; z-index:1;
         text-shadow:0 2px 5px rgba(0,0,0,0.3);
       }
-      .header-center-text{font-family:'Montserrat',sans-serif;}
       .btn-home{
-        background-color:#0fb300; color:white; padding:6px 14px; border-radius:6px; font-weight:700; font-size:1.5rem;
-        text-decoration:none; display:flex; align-items:center; gap:8px; box-shadow:0 2px 6px rgba(15,179,0,0.8);
-        transition:background-color 0.3s ease; position:absolute; right:30px; top:50%; transform:translateY(-50%); z-index:2;
+        background-color:#0fb300;
+        color:white;
+        padding:6px 14px;
+        border-radius:6px;
+        font-weight:700;
+        font-size:1.5rem;
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        gap:8px;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);
+        transition:background-color 0.3s ease;
+        position:absolute;
+        right:30px;
+        top:50%;
+        transform:translateY(-50%);
+        z-index:2;
       }
-      .btn-home:hover{background-color:#0d8a00;}
+      .btn-home:hover{ background-color:#0d8a00; }
     }
 
     @media (max-width:768px){
       .header-mobile{
-        display:block; width:100%; box-sizing:border-box; color:white; position:sticky; top:0; z-index:1000;
-        box-shadow:0 2px 6px rgba(0,0,0,0.15); background-color:#007bff;
+        display:block;
+        width:100%;
+        box-sizing:border-box;
+        color:white;
+        position:sticky;
+        top:0;
+        z-index:1000;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);
+        background-color:#007bff;
       }
-      .header-top{display:flex; align-items:center; justify-content:center; gap:15px; padding:10px 15px; background-color:#007bff; text-align:center;}
-      .logo{width:48px; height:48px; object-fit:contain; border-radius:10px; background-color:white; padding:6px;}
-      .text-container{display:flex; flex-direction:column; justify-content:center; color:white; text-align:center;}
-      .escola-nome{font-weight:700; font-size:1.3rem; margin:0; line-height:1.1;}
-      .escola-subtitulo{font-weight:600; font-size:1rem; margin-top:2px;}
+      .header-top{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:15px;
+        padding:10px 15px;
+        background-color:#007bff;
+        text-align:center;
+      }
+      .logo{
+        width:48px; height:48px; object-fit:contain;
+        border-radius:10px; background-color:white; padding:6px;
+      }
+      .text-container{
+        display:flex; flex-direction:column; justify-content:center; color:white; text-align:center;
+      }
+      .escola-nome{
+        font-weight:700; font-size:1.3rem; margin:0; line-height:1.1;
+      }
+      .escola-subtitulo{
+        font-weight:600; font-size:1rem; margin-top:2px;
+      }
       .header-bottom{
-        background-color:#0056b3; text-align:center; padding:12px 10px; font-weight:800; font-size:1rem; letter-spacing:4px; user-select:none;
-        color:white; box-shadow:inset 0 -2px 5px rgba(0,0,0,0.2); display:flex; justify-content:center; align-items:center; gap:12px; box-sizing:border-box; white-space:nowrap;
+        background-color:#0056b3;
+        text-align:center;
+        padding:12px 10px;
+        font-weight:800;
+        font-size:1rem;
+        letter-spacing:3px;
+        user-select:none;
+        color:white;
+        box-shadow:inset 0 -2px 5px rgba(0,0,0,0.2);
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        gap:12px;
+        box-sizing:border-box;
+        white-space:nowrap;
       }
       .btn-home-mobile{
-        background-color:#0fb300; color:white; padding:6px 10px; border-radius:6px; font-weight:600; font-size:1rem; text-decoration:none;
-        display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(15,179,0,0.8); transition:background-color 0.3s ease;
+        background-color:#0fb300;
+        color:white;
+        padding:6px 10px;
+        border-radius:6px;
+        font-weight:600;
+        font-size:1rem;
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        box-shadow:0 2px 6px rgba(15,179,0,0.8);
+        transition:background-color 0.3s ease;
       }
-      .btn-home-mobile:hover{background-color:#0d8a00;}
+      .btn-home-mobile:hover{ background-color:#0d8a00; }
     }
 
     /* ===== WRAPPER ===== */
-    .page{width:100%; max-width:1100px; margin:0 auto;}
+    .page{
+      width:100%;
+      max-width:1180px;
+      margin:0 auto;
+    }
 
     /* ===== HEADER CARD ===== */
     .page-header-card{
-      background:#ffffff; border-radius:var(--radius); padding:16px 18px; margin:18px auto 20px;
-      display:flex; align-items:center; gap:16px; box-shadow:var(--card-shadow); border-left:5px solid var(--primary);
+      background:#ffffff;
+      border-radius:var(--radius);
+      padding:16px 18px;
+      margin:18px auto 20px;
+      display:flex;
+      align-items:center;
+      gap:16px;
+      box-shadow:var(--card-shadow);
+      border-left:5px solid var(--primary);
     }
+
     .page-header-icon{
-      display:inline-flex; align-items:center; justify-content:center; width:42px; height:42px; border-radius:999px;
-      background:radial-gradient(circle at 30% 30%,#ffffff 0%,#e0edff 60%,#c7d9ff 100%); box-shadow:0 4px 12px rgba(37,99,235,.45); color:#2563eb; flex-shrink:0;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:42px;
+      height:42px;
+      border-radius:999px;
+      background:radial-gradient(circle at 30% 30%,#ffffff 0%,#e0edff 60%,#c7d9ff 100%);
+      box-shadow:0 4px 12px rgba(37,99,235,.45);
+      color:#2563eb;
+      flex-shrink:0;
     }
-    .page-header-icon i{font-size:22px;}
-    .page-header-content{display:flex; flex-direction:column; gap:4px;}
-    .page-header-title{font-size:1.15rem; font-weight:800; margin:0; color:var(--text-main);}
-    .page-header-subtitle{font-size:.9rem; margin:0; color:var(--text-muted);}
+
+    .page-header-icon i{ font-size:22px; }
+
+    .page-header-title{
+      font-size:1.15rem;
+      font-weight:800;
+      margin:0;
+      color:var(--text-main);
+    }
+
+    .page-header-subtitle{
+      font-size:.9rem;
+      margin:0;
+      color:var(--text-muted);
+    }
+
     @media (max-width:600px){
-      .page-header-card{padding:12px 14px;}
-      .page-header-title{font-size:1.05rem;}
-      .page-header-subtitle{font-size:.82rem;}
+      .page-header-card{ padding:12px 14px; }
+      .page-header-title{ font-size:1.05rem; }
+      .page-header-subtitle{ font-size:.82rem; }
     }
 
-    /* ===== CARDS ===== */
+    /* ===== CARD BASE ===== */
     .content-card{
-      width:100%; margin:0 auto 24px; background:var(--surface); border-radius:16px; box-shadow:var(--card-shadow);
-      padding:18px 18px 22px; border:1px solid var(--border-soft); backdrop-filter:blur(8px); box-sizing:border-box;
+      width:100%;
+      margin:0 auto 24px;
+      background:var(--surface);
+      border-radius:16px;
+      box-shadow:var(--card-shadow);
+      padding:18px 18px 22px;
+      border:1px solid var(--border-soft);
+      box-sizing:border-box;
     }
-    .content-title{font-size:1.05rem; font-weight:700; margin:0 0 6px; color:var(--text-main); display:flex; align-items:center; gap:8px;}
-    .content-title i{color:var(--primary);}
-    .content-subtitle{font-size:.88rem; color:var(--text-muted); margin:0 0 14px;}
-    .filter-card{margin-bottom:22px; width:100%;}
 
+    .content-title{
+      font-size:1.05rem;
+      font-weight:800;
+      margin:0 0 6px;
+      color:var(--text-main);
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .content-title i{ color:var(--primary); }
+
+    .content-subtitle{
+      font-size:.88rem;
+      color:var(--text-muted);
+      margin:0 0 14px;
+      line-height:1.45;
+    }
+
+    .filter-card{ margin-bottom:22px; }
+
+    /* ===== BOTÕES ===== */
     .btn{
-      border-radius:12px; border:1px solid rgba(148,163,184,.45); background:#fff; padding:9px 14px; font-size:.9rem; font-weight:700;
-      cursor:pointer; display:inline-flex; align-items:center; gap:6px; text-decoration:none; color:#111827;
-      box-shadow:0 2px 6px rgba(15,23,42,.06); transition:background .15s ease, transform .05s ease;
+      border-radius:12px;
+      border:1px solid rgba(148,163,184,.45);
+      background:#fff;
+      padding:10px 14px;
+      font-size:.9rem;
+      font-weight:700;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      text-decoration:none;
+      color:#111827;
+      box-shadow:0 2px 6px rgba(15,23,42,.06);
+      transition:background .18s ease,border-color .18s ease,transform .08s ease;
     }
-    .btn:active{transform:translateY(1px); box-shadow:0 1px 3px rgba(15,23,42,.12);}
-    .btn-primary{
-      background:linear-gradient(135deg,#0d6efd,#0b5ed7); color:#fff; border-color:#0d6efd; box-shadow:0 10px 22px rgba(13,110,253,.24);
-    }
-    .btn-primary:hover{background:#0b5ed7;}
 
-    /* ===== FORM DE FILTRO ===== */
-    .filter-form{margin-top:10px;}
-    .filter-row{display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;}
-    .filter-group{display:flex; flex-direction:column; flex:1 1 220px;}
-    .filter-label{font-size:.8rem; font-weight:600; color:var(--text-muted); margin-bottom:4px;}
-    .form-select{
-      width:100%; padding:11px 14px; border-radius:12px; border:1px solid #d1d5db; font-size:.95rem; outline:none;
-      transition:border-color .15s ease, box-shadow .15s ease; background:#fff;
+    .btn:hover{ background:#f8fbff; }
+    .btn:active{ transform:translateY(1px); }
+    .btn:focus-visible,
+    .form-select:focus-visible,
+    .form-input:focus-visible{
+      outline:none;
+      box-shadow:var(--focus);
     }
-    .form-select:focus{border-color:#2563eb; box-shadow:0 0 0 2px rgba(37,99,235,.25);}
-    .btn-filter{min-width:150px; justify-content:center; font-size:.95rem;}
+
+    .btn-primary{
+      background:linear-gradient(135deg,#0d6efd,#0b5ed7);
+      color:#fff;
+      border-color:#0d6efd;
+      box-shadow:0 10px 22px rgba(13,110,253,.24);
+    }
+
+    .btn-primary:hover{ background:#0b5ed7; }
+
+    .btn-outline{
+      background:#f8fbff;
+      color:var(--primary);
+      border-color:#bfd6ff;
+    }
+
+    .btn-outline:hover{ background:#eef5ff; }
+
+    /* ===== FILTRO DO PERÍODO ===== */
+    .filter-form{ margin-top:10px; }
+    .filter-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      align-items:flex-end;
+    }
+
+    .filter-group{
+      display:flex;
+      flex-direction:column;
+      flex:1 1 220px;
+      min-width:0;
+    }
+
+    .filter-label{
+      font-size:.8rem;
+      font-weight:700;
+      color:var(--text-muted);
+      margin-bottom:6px;
+    }
+
+    .form-select,
+    .form-input{
+      width:100%;
+      padding:11px 14px;
+      border-radius:12px;
+      border:1px solid #d1d5db;
+      font-size:.95rem;
+      outline:none;
+      transition:border-color .15s ease, box-shadow .15s ease;
+      background:#fff;
+      color:#111827;
+    }
+
+    .form-select:focus,
+    .form-input:focus{
+      border-color:#2563eb;
+      box-shadow:0 0 0 2px rgba(37,99,235,.20);
+    }
+
+    .btn-filter{
+      min-width:160px;
+      height:46px;
+    }
+
+    /* ===== TOOLBAR DA TABELA ===== */
+    .toolbar-shell{
+      margin:16px 0 14px;
+      padding:14px;
+      border:1px solid rgba(148,163,184,.24);
+      border-radius:16px;
+      background:linear-gradient(180deg,#fbfdff,#f8fbff);
+    }
+
+    .toolbar-main-grid{
+      display:grid;
+      grid-template-columns:2.1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+      gap:12px;
+      align-items:end;
+    }
+
+    .toolbar-group{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:0;
+    }
+
+    .toolbar-bottom-row{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding-top:14px;
+      margin-top:14px;
+      border-top:1px dashed rgba(148,163,184,.32);
+    }
+
+    .toolbar-quick{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      justify-content:center;
+      width:100%;
+    }
+
+    .toolbar-quick-label{
+      font-size:.82rem;
+      font-weight:800;
+      color:var(--text-muted);
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      white-space:nowrap;
+    }
+
+    .toolbar-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .toolbar-hint{
+      font-size:.8rem;
+      color:var(--text-muted);
+      margin:0 0 10px;
+      text-align:center;
+    }
+
+    @media (max-width:1100px){
+      .toolbar-main-grid{
+        grid-template-columns:repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width:768px){
+      .filter-row{
+        display:grid;
+        grid-template-columns:1fr;
+      }
+
+      .toolbar-main-grid{
+        grid-template-columns:1fr;
+      }
+
+      .toolbar-quick{
+        flex-direction:column;
+        align-items:stretch;
+      }
+
+      .toolbar-actions{
+        width:100%;
+        justify-content:stretch;
+      }
+
+      .toolbar-actions .btn{
+        width:100%;
+      }
+
+      .btn-filter{
+        width:100%;
+      }
+    }
 
     /* ===== RESUMO ===== */
     .summary-box{
-      margin:4px 0 16px; padding:12px 14px; border-radius:14px; border:1px dashed var(--primary-soft);
-      background:linear-gradient(135deg,#f9fafb,#e5edff); display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:center;
+      margin:4px 0 16px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px dashed var(--primary-soft);
+      background:linear-gradient(135deg,#f9fafb,#e5edff);
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:flex-start;
     }
+
     .summary-item{
-      display:inline-flex; align-items:center; gap:6px; font-size:.85rem; font-weight:600; padding:6px 10px; border-radius:999px; background:#fff;
-      box-shadow:0 2px 6px rgba(148,163,184,.35);
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      font-size:.84rem;
+      font-weight:700;
+      padding:7px 11px;
+      border-radius:999px;
+      background:#fff;
+      box-shadow:0 2px 6px rgba(148,163,184,.28);
+      white-space:nowrap;
     }
-    .summary-item i{font-size:.9rem; color:#2563eb;}
+
+    .summary-item i{ color:#2563eb; }
+
     @media (max-width:600px){
-      .summary-box{flex-direction:column; align-items:center;}
-      .summary-item{width:100%; justify-content:center;}
+      .summary-box{
+        flex-direction:column;
+        align-items:stretch;
+      }
+      .summary-item{
+        width:100%;
+        justify-content:center;
+      }
     }
 
     /* ===== TABELA ===== */
     .table-wrapper{
-      width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:12px; border:1px solid #e5e7eb;
-      box-shadow:0 10px 24px rgba(15,23,42,0.08); background-color:#ffffff;
+      width:100%;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      border-radius:14px;
+      border:1px solid #e5e7eb;
+      box-shadow:0 10px 24px rgba(15,23,42,0.08);
+      background-color:#ffffff;
     }
-    table.ponto-table{width:100%; min-width:900px; border-collapse:collapse;}
+
+    table.ponto-table{
+      width:100%;
+      min-width:1120px;
+      border-collapse:collapse;
+    }
+
     .ponto-table thead th{
-      background:linear-gradient(to right,#eff6ff,#e0ecff); color:#0f172a; font-weight:800; border-bottom:1px solid #e5e7eb;
-      white-space:nowrap; text-align:center; font-size:.86rem; text-transform:uppercase; letter-spacing:.04em; padding:10px 8px;
+      background:linear-gradient(to right,#eff6ff,#e0ecff);
+      color:#0f172a;
+      font-weight:800;
+      border-bottom:1px solid #e5e7eb;
+      text-align:center;
+      font-size:.82rem;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      padding:0;
+      white-space:nowrap;
     }
+
+    .th-sort{
+      appearance:none;
+      border:0;
+      background:transparent;
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:11px 8px;
+      font:inherit;
+      color:inherit;
+      cursor:pointer;
+      font-weight:800;
+      text-transform:inherit;
+      letter-spacing:inherit;
+    }
+
+    .th-sort:hover{
+      background:rgba(255,255,255,.4);
+    }
+
+    .th-sort .sort-icon{
+      font-size:.8rem;
+      opacity:.7;
+    }
+
     .ponto-table td{
-      font-size:.88rem; text-align:center; padding:9px 8px; border-bottom:1px solid #e5e7eb;
+      font-size:.87rem;
+      text-align:center;
+      padding:10px 8px;
+      border-bottom:1px solid #e5e7eb;
+      vertical-align:middle;
     }
-    .ponto-table tr:last-child td{border-bottom:none;}
-    .ponto-row{cursor:pointer; transition:background .15s ease, box-shadow .15s ease;}
-    .ponto-row:hover{background:#f7fbff;}
-    .ponto-row.conferido{background:var(--success-soft) !important; box-shadow:inset 3px 0 0 #16a34a;}
-    .col-tipo{white-space:nowrap;}
+
+    .ponto-table tr:last-child td{ border-bottom:none; }
+
+    .ponto-row{
+      cursor:pointer;
+      transition:background .15s ease, box-shadow .15s ease;
+    }
+
+    .ponto-row:hover{ background:#f7fbff; }
+
+    .ponto-row.conferido{
+      background:var(--success-soft) !important;
+      box-shadow:inset 3px 0 0 #16a34a;
+    }
+
+    .col-nome,
+    .col-motivo{
+      text-align:left !important;
+    }
+
+    .col-tipo,
+    .col-conferido{
+      text-align:center !important;
+    }
+
+    .col-motivo{
+      max-width:260px;
+      word-break:break-word;
+    }
+
+    .status-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:.75rem;
+      font-weight:800;
+      white-space:nowrap;
+      border:1px solid transparent;
+      margin-inline:auto;
+    }
+
+    .status-badge.conferido{
+      background:var(--success-soft);
+      color:#166534;
+      border-color:#bbf7d0;
+    }
+
+    .status-badge.pendente{
+      background:var(--warning-soft);
+      color:#92400e;
+      border-color:#fde68a;
+    }
+
+    .tipo-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      padding:6px 12px;
+      border-radius:999px;
+      font-size:.75rem;
+      font-weight:800;
+      white-space:nowrap;
+      border:1px solid transparent;
+      margin-inline:auto;
+      min-width:150px;
+      text-align:center;
+    }
+
+    .tipo-badge.agendamento{
+      background:#e0edff;
+      color:#1d4ed8;
+      border-color:#bfdbfe;
+    }
+
+    .tipo-badge.esquecimento{
+      background:#fff4e5;
+      color:#9a3412;
+      border-color:#fed7aa;
+    }
+
+    .empty-filter-state{
+      display:none;
+      margin-top:14px;
+      padding:14px 16px;
+      border-radius:12px;
+      background:#f8fafc;
+      border:1px dashed #cbd5e1;
+      color:#475569;
+      font-size:.9rem;
+      text-align:center;
+      font-weight:600;
+    }
+
+    .empty-filter-state.show{ display:block; }
+
     .no-records-msg{
-      margin:8px 0 0; padding:10px 12px; border-radius:10px; background:#fee2e2; color:#991b1b; font-size:.9rem; display:flex; align-items:center; gap:8px;
+      margin:8px 0 0;
+      padding:12px 14px;
+      border-radius:12px;
+      background:#fee2e2;
+      color:#991b1b;
+      font-size:.9rem;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      text-align:center;
+      font-weight:700;
     }
-    .no-records-msg i{color:#b91c1c;}
+
+    /* ===== PAGINAÇÃO FRONT ===== */
+    .table-meta-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      margin:14px 0 0;
+    }
+
+    .table-meta-text{
+      font-size:.86rem;
+      color:var(--text-muted);
+      font-weight:700;
+    }
+
+    .pagination-container{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .pagination-btn,
+    .pagination-ellipsis{
+      min-width:38px;
+      height:38px;
+      padding:0 10px;
+      border-radius:10px;
+      border:1px solid #dbe3ef;
+      background:#fff;
+      color:#0f172a;
+      font-size:.84rem;
+      font-weight:800;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .pagination-btn{
+      cursor:pointer;
+      transition:background .15s ease, transform .08s ease, border-color .15s ease;
+    }
+
+    .pagination-btn:hover{
+      background:#f8fbff;
+      border-color:#bfd6ff;
+    }
+
+    .pagination-btn.active{
+      background:linear-gradient(135deg,#0d6efd,#0b5ed7);
+      color:#fff;
+      border-color:#0d6efd;
+      box-shadow:0 8px 18px rgba(13,110,253,.22);
+    }
+
+    .pagination-btn:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+    }
+
+    .pagination-ellipsis{
+      background:transparent;
+      border-color:transparent;
+      color:#94a3b8;
+    }
+
+    @media (max-width:640px){
+      .table-meta-row{
+        flex-direction:column;
+        align-items:stretch;
+      }
+      .pagination-container{
+        justify-content:center;
+      }
+    }
 
     /* ===== FOOTER ===== */
     footer{
-      background:linear-gradient(to right,#222,#444); color:#ddd; text-align:center; padding:15px 0; font-size:14px;
-      border-top:2px solid #555; box-shadow:0 -2px 10px rgba(0,0,0,0.3); flex-shrink:0; width:100%;
+      background:linear-gradient(to right,#222,#444);
+      color:#ddd;
+      text-align:center;
+      padding:15px 0;
+      font-size:14px;
+      border-top:2px solid #555;
+      box-shadow:0px -2px 10px rgba(0,0,0,0.3);
+      flex-shrink:0;
+      width:100%;
     }
-    footer p{margin:5px 0; font-size:15px; font-weight:300;}
-    footer a{color:#fff; text-decoration:none; font-weight:500; transition:color .3s ease-in-out;}
-    footer a:hover{color:#00aaff;}
 
-    /* ===== MOBILE ===== */
-    @media (max-width:768px){
-      .filter-card{max-width:480px; margin-inline:auto;}
-      .filter-row{display:block;}
-      .filter-row .filter-group{margin-bottom:10px;}
-      .filter-card .btn-filter{width:100%; display:block; margin-top:0;}
+    footer p{
+      margin:5px 0;
+      font-size:15px;
+      font-weight:300;
     }
   </style>
 </head>
 <body>
+
+  {% set meses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"] %}
 
   <!-- Cabeçalho Desktop -->
   <header class="header-desktop">
@@ -244,19 +835,24 @@
   <main>
     <div class="page">
 
-      <!-- Header card da página -->
       <div class="page-header-card">
-        <div class="page-header-icon"><i class="fa-solid fa-calendar-check"></i></div>
+        <div class="page-header-icon">
+          <i class="fa-solid fa-calendar-check"></i>
+        </div>
         <div class="page-header-content">
           <p class="page-header-title">Relatório de Ponto</p>
-          <p class="page-header-subtitle">Consulte e marque como conferidos os registros de ponto por período de pagamento.</p>
+          <p class="page-header-subtitle">
+            Consulte, filtre, organize e marque como conferidos os registros de ponto por período de pagamento.
+          </p>
         </div>
       </div>
 
-      <!-- Card de filtro -->
+      <!-- Card de filtro do período -->
       <section class="content-card filter-card">
         <h2 class="content-title"><i class="fa-solid fa-filter"></i> Filtro de pagamento</h2>
-        <p class="content-subtitle">Selecione o mês e o ano de pagamento para listar os registros correspondentes ao período.</p>
+        <p class="content-subtitle">
+          Selecione o mês e o ano de pagamento para listar os registros correspondentes ao período.
+        </p>
 
         <form action="{{ url_for('relatorio_ponto') }}" method="GET" class="filter-form">
           <div class="filter-row">
@@ -264,7 +860,6 @@
               <label for="mes" class="filter-label">Pagamento (mês)</label>
               <select name="mes" id="mes" class="form-select" required>
                 <option value="" disabled {% if not mes_selecionado %}selected{% endif %}>Selecione o mês</option>
-                {% set meses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"] %}
                 {% for i in range(1, 13) %}
                   <option value="{{ i }}" {% if i == mes_selecionado %}selected{% endif %}>{{ meses[i-1] }}</option>
                 {% endfor %}
@@ -273,76 +868,217 @@
 
             <div class="filter-group">
               <label for="ano" class="filter-label">Pagamento (ano)</label>
-              <!-- data-selected recebe o ano selecionado pelo backend; JS popula e aplica o selected -->
-              <select name="ano" id="ano" class="form-select" data-selected="{{ ano_selecionado or '' }}" required>
-                <!-- opções geradas via JS para garantir funcionamento mesmo sem variável de backend -->
-              </select>
+              <select name="ano" id="ano" class="form-select" data-selected="{{ ano_selecionado or '' }}" required></select>
             </div>
 
             <button type="submit" class="btn btn-primary btn-filter">
-              <i class="fa-solid fa-filter"></i> Filtrar
+              <i class="fa-solid fa-filter"></i> Filtrar período
             </button>
           </div>
         </form>
       </section>
 
       {% if mes_selecionado and ano_selecionado %}
-        <!-- Card principal com tabela -->
         <section class="content-card">
           <h2 class="content-title"><i class="fa-solid fa-list-check"></i> Registros de ponto do período</h2>
           <p class="content-subtitle">
             Pagamento de <strong>{{ meses[mes_selecionado - 1] }}/{{ ano_selecionado }}</strong> —
             período de <strong>{{ periodo_inicio.strftime('%d/%m/%Y') }}</strong> a
             <strong>{{ periodo_fim.strftime('%d/%m/%Y') }}</strong>.
-            Clique sobre uma linha para marcar ou desmarcar como conferida.
+            Você pode pesquisar, filtrar, ordenar e clicar em uma linha para marcar ou desmarcar como conferida.
           </p>
 
           {% if registros %}
-            <!-- Resumo -->
-            <div class="summary-box">
+            <div class="summary-box" id="summaryBox">
               <div class="summary-item">
                 <i class="fa-solid fa-clipboard-list"></i>
-                <span>Total de registros: <strong>{{ registros|length }}</strong></span>
+                <span>Visíveis: <strong id="sumVisiveis">{{ registros|length }}</strong></span>
+              </div>
+              <div class="summary-item">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>Conferidos: <strong id="sumConferidos">0</strong></span>
+              </div>
+              <div class="summary-item">
+                <i class="fa-solid fa-clock"></i>
+                <span>Pendentes: <strong id="sumPendentes">0</strong></span>
               </div>
               <div class="summary-item">
                 <i class="fa-solid fa-triangle-exclamation"></i>
-                <span>Esquecimentos: <strong>{{ registros|selectattr('tipo', 'equalto', 'Esquecimento de Ponto')|list|length }}</strong></span>
+                <span>Esquecimentos: <strong id="sumEsquecimentos">0</strong></span>
               </div>
               <div class="summary-item">
                 <i class="fa-solid fa-calendar-plus"></i>
-                <span>Agendamentos: <strong>{{ registros|selectattr('tipo', 'equalto', 'Agendamento')|list|length }}</strong></span>
+                <span>Agendamentos: <strong id="sumAgendamentos">0</strong></span>
               </div>
             </div>
 
-            <!-- Tabela -->
+            <div class="toolbar-shell">
+              <div class="toolbar-main-grid">
+                <div class="toolbar-group">
+                  <label for="buscaGeral" class="filter-label">Pesquisar</label>
+                  <input
+                    type="text"
+                    id="buscaGeral"
+                    class="form-input"
+                    placeholder="Nome, RF, tipo, motivo ou data..."
+                    autocomplete="off"
+                    value="{{ q or '' }}"
+                  >
+                </div>
+
+                <div class="toolbar-group">
+                  <label for="filtroTipo" class="filter-label">Tipo</label>
+                  <select id="filtroTipo" class="form-select" data-selected="{{ tipo_filtro or 'todos' }}">
+                    <option value="todos">Todos</option>
+                  </select>
+                </div>
+
+                <div class="toolbar-group">
+                  <label for="filtroConferido" class="filter-label">Conferência</label>
+                  <select id="filtroConferido" class="form-select">
+                    <option value="todos" {% if (conferido_filtro or 'todos') == 'todos' %}selected{% endif %}>Todos</option>
+                    <option value="conferido" {% if conferido_filtro == 'conferido' %}selected{% endif %}>Somente conferidos</option>
+                    <option value="pendente" {% if conferido_filtro == 'pendente' %}selected{% endif %}>Somente pendentes</option>
+                  </select>
+                </div>
+
+                <div class="toolbar-group">
+                  <label for="filtroMotivo" class="filter-label">Motivo</label>
+                  <input
+                    type="text"
+                    id="filtroMotivo"
+                    class="form-input"
+                    placeholder="Filtrar motivo..."
+                    autocomplete="off"
+                    value="{{ motivo_filtro or '' }}"
+                  >
+                </div>
+
+                <div class="toolbar-group">
+                  <label for="ordenacao" class="filter-label">Ordenar por</label>
+                  <select id="ordenacao" class="form-select">
+                    <option value="data" {% if (ordenar_por or 'data') == 'data' %}selected{% endif %}>Data</option>
+                    <option value="nome" {% if ordenar_por == 'nome' %}selected{% endif %}>Nome</option>
+                    <option value="registro" {% if ordenar_por == 'registro' %}selected{% endif %}>RF</option>
+                    <option value="tipo" {% if ordenar_por == 'tipo' %}selected{% endif %}>Tipo</option>
+                    <option value="motivo" {% if ordenar_por == 'motivo' %}selected{% endif %}>Motivo</option>
+                  </select>
+                </div>
+
+                <div class="toolbar-group">
+                  <label for="direcaoOrdenacao" class="filter-label">Direção</label>
+                  <select id="direcaoOrdenacao" class="form-select">
+                    <option value="desc" {% if (direcao or 'desc') == 'desc' %}selected{% endif %}>Decrescente</option>
+                    <option value="asc" {% if direcao == 'asc' %}selected{% endif %}>Crescente</option>
+                  </select>
+                </div>
+
+                <div class="toolbar-group">
+                  <label for="linhasPorPagina" class="filter-label">Linhas por página</label>
+                  <select id="linhasPorPagina" class="form-select">
+                    <option value="10">10</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="9999">Todas</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="toolbar-bottom-row">
+                <div class="toolbar-quick">
+                  <span class="toolbar-quick-label">
+                    <i class="fa-solid fa-bolt"></i> Ações rápidas
+                  </span>
+
+                  <div class="toolbar-actions">
+                    <button type="button" class="btn btn-outline" id="limparFiltrosBtn">
+                      <i class="fa-solid fa-eraser"></i> Limpar filtros
+                    </button>
+                    <button type="button" class="btn btn-outline" id="mostrarConferidosBtn">
+                      <i class="fa-solid fa-circle-check"></i> Só conferidos
+                    </button>
+                    <button type="button" class="btn btn-outline" id="mostrarPendentesBtn">
+                      <i class="fa-solid fa-clock"></i> Só pendentes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p class="toolbar-hint">
+              Dica: você também pode clicar no título das colunas principais para trocar a ordenação rapidamente.
+            </p>
+
             <div class="table-wrapper">
               <table class="ponto-table">
                 <thead>
                   <tr>
-                    <th>Registro</th>
-                    <th>Nome</th>
-                    <th>Tipo</th>
-                    <th>Data</th>
-                    <th>Motivo</th>
+                    <th>
+                      <button type="button" class="th-sort" data-sort="registro">
+                        <span>Registro</span><i class="fa-solid fa-sort sort-icon"></i>
+                      </button>
+                    </th>
+                    <th>
+                      <button type="button" class="th-sort" data-sort="nome">
+                        <span>Nome</span><i class="fa-solid fa-sort sort-icon"></i>
+                      </button>
+                    </th>
+                    <th>
+                      <button type="button" class="th-sort" data-sort="tipo">
+                        <span>Tipo</span><i class="fa-solid fa-sort sort-icon"></i>
+                      </button>
+                    </th>
+                    <th>
+                      <button type="button" class="th-sort" data-sort="data">
+                        <span>Data</span><i class="fa-solid fa-sort sort-icon"></i>
+                      </button>
+                    </th>
+                    <th>
+                      <button type="button" class="th-sort" data-sort="motivo">
+                        <span>Motivo</span><i class="fa-solid fa-sort sort-icon"></i>
+                      </button>
+                    </th>
                     <th>1ª Entrada</th>
                     <th>1ª Saída</th>
                     <th>2ª Entrada</th>
                     <th>2ª Saída</th>
+                    <th>Conferência</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody id="pontoTableBody">
                   {% for item in registros %}
+                  {% set nome_usuario = item.usuario.nome.title() if item.usuario else 'Sem Nome' %}
+                  {% set data_formatada = item.data.strftime('%d/%m/%Y') if item.data else 'Sem Data' %}
+                  {% set data_iso = item.data.strftime('%Y-%m-%d') if item.data else '' %}
+                  {% set motivo_texto = item.motivo if item.motivo else 'Sem Motivo' %}
+                  {% set tipo_slug = item.tipo_slug if item.tipo_slug is defined else ('agendamento' if item.tipo == 'Agendamento' else 'esquecimento') %}
                   <tr
                     data-id="{{ item.id }}"
                     data-tipo="{{ item.tipo }}"
+                    data-tipo-slug="{{ tipo_slug }}"
                     data-conferido="{{ 'true' if item.conferido else 'false' }}"
+                    data-registro="{{ item.registro }}"
+                    data-nome="{{ nome_usuario|lower }}"
+                    data-data="{{ data_iso }}"
+                    data-motivo="{{ motivo_texto|lower }}"
+                    data-busca="{{ (item.registro ~ ' ' ~ nome_usuario ~ ' ' ~ item.tipo ~ ' ' ~ motivo_texto ~ ' ' ~ data_formatada)|lower }}"
                     class="ponto-row {% if item.conferido %}conferido{% endif %}"
                   >
                     <td>{{ item.registro }}</td>
-                    <td>{{ item.usuario.nome.title() if item.usuario else 'Sem Nome' }}</td>
-                    <td class="col-tipo">{{ item.tipo }}</td>
-                    <td>{{ item.data.strftime('%d/%m/%Y') if item.data else 'Sem Data' }}</td>
-                    <td>{{ item.motivo if item.motivo else 'Sem Motivo' }}</td>
+                    <td class="col-nome">{{ nome_usuario }}</td>
+                    <td class="col-tipo">
+                      <span class="tipo-badge {{ tipo_slug }}">
+                        {% if item.tipo == 'Agendamento' %}
+                          <i class="fa-solid fa-calendar-plus"></i>
+                        {% else %}
+                          <i class="fa-solid fa-triangle-exclamation"></i>
+                        {% endif %}
+                        {{ item.tipo }}
+                      </span>
+                    </td>
+                    <td>{{ data_formatada }}</td>
+                    <td class="col-motivo">{{ motivo_texto }}</td>
 
                     {% if item.tipo == 'Esquecimento de Ponto' %}
                       <td>{{ item.horapentrada }}</td>
@@ -350,12 +1086,39 @@
                       <td>{{ item.horasentrada }}</td>
                       <td>{{ item.horassaida }}</td>
                     {% else %}
-                      <td colspan="4" style="text-align:center;">—</td>
+                      <td>—</td>
+                      <td>—</td>
+                      <td>—</td>
+                      <td>—</td>
                     {% endif %}
+
+                    <td class="col-conferido">
+                      {% if item.conferido %}
+                        <span class="status-badge conferido">
+                          <i class="fa-solid fa-circle-check"></i> Conferido
+                        </span>
+                      {% else %}
+                        <span class="status-badge pendente">
+                          <i class="fa-solid fa-clock"></i> Pendente
+                        </span>
+                      {% endif %}
+                    </td>
                   </tr>
                   {% endfor %}
                 </tbody>
               </table>
+            </div>
+
+            <div class="empty-filter-state" id="emptyFilterState">
+              <i class="fa-solid fa-circle-info"></i>
+              Nenhum registro corresponde aos filtros atuais.
+            </div>
+
+            <div class="table-meta-row">
+              <div class="table-meta-text" id="tableMetaText">
+                Exibindo 0 registro(s).
+              </div>
+              <div class="pagination-container" id="paginationContainer"></div>
             </div>
           {% else %}
             <div class="no-records-msg">
@@ -365,7 +1128,6 @@
           {% endif %}
         </section>
       {% endif %}
-
     </div>
   </main>
 
@@ -374,20 +1136,16 @@
   </footer>
 
   <script>
-    // Popula o select de ANO dinamicamente e aplica o selecionado vindo do backend (data-selected)
     (function fillYearSelect(){
       const sel = document.getElementById('ano');
       if(!sel) return;
 
-      // intervalo padrão: (ano atual - 5) até (ano atual + 1), decrescente
       const selectedFromBackend = sel.dataset.selected || '';
       const now = new Date();
       const current = now.getFullYear();
-      const start = current + 1;    // permite filtrar previsões/lançamentos adiantados, se necessário
+      const start = current + 1;
       const end = current - 5;
 
-      // Caso o backend tenha fornecido uma lista 'anos_disponiveis', renderize-as server-side e remova este trecho.
-      // Aqui garantimos fallback universal no front-end.
       let html = '<option value="" disabled>Selecione o ano</option>';
       for(let y = start; y >= end; y--){
         const isSelected = (String(y) === String(selectedFromBackend)) || (!selectedFromBackend && y === current);
@@ -396,17 +1154,330 @@
       sel.innerHTML = html;
     })();
 
-    // Marcação de conferido com CSRF
     document.addEventListener("DOMContentLoaded", function () {
-      const linhas = document.querySelectorAll("tbody tr.ponto-row");
+      const tbody = document.getElementById("pontoTableBody");
+      if (!tbody) return;
+
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-      linhas.forEach((linha) => {
+      const buscaGeral = document.getElementById("buscaGeral");
+      const filtroTipo = document.getElementById("filtroTipo");
+      const filtroConferido = document.getElementById("filtroConferido");
+      const filtroMotivo = document.getElementById("filtroMotivo");
+      const ordenacao = document.getElementById("ordenacao");
+      const direcaoOrdenacao = document.getElementById("direcaoOrdenacao");
+      const linhasPorPagina = document.getElementById("linhasPorPagina");
+
+      const limparFiltrosBtn = document.getElementById("limparFiltrosBtn");
+      const mostrarConferidosBtn = document.getElementById("mostrarConferidosBtn");
+      const mostrarPendentesBtn = document.getElementById("mostrarPendentesBtn");
+
+      const sumVisiveis = document.getElementById("sumVisiveis");
+      const sumConferidos = document.getElementById("sumConferidos");
+      const sumPendentes = document.getElementById("sumPendentes");
+      const sumEsquecimentos = document.getElementById("sumEsquecimentos");
+      const sumAgendamentos = document.getElementById("sumAgendamentos");
+
+      const emptyFilterState = document.getElementById("emptyFilterState");
+      const tableMetaText = document.getElementById("tableMetaText");
+      const paginationContainer = document.getElementById("paginationContainer");
+
+      const headerSortButtons = Array.from(document.querySelectorAll(".th-sort"));
+      const allRows = Array.from(tbody.querySelectorAll("tr.ponto-row"));
+      const originalOrderMap = new Map(allRows.map((row, index) => [row, index]));
+
+      let currentPage = 1;
+
+      (function fillTipoOptions(){
+        const tipos = [...new Set(allRows.map(row => (row.getAttribute("data-tipo") || "").trim()).filter(Boolean))];
+        const selectedTipo = filtroTipo?.dataset.selected || "todos";
+
+        tipos.sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+
+        tipos.forEach(tipo => {
+          const opt = document.createElement("option");
+          opt.value = tipo;
+          opt.textContent = tipo;
+          if (tipo === selectedTipo) opt.selected = true;
+          filtroTipo.appendChild(opt);
+        });
+      })();
+
+      function getRowsPerPage() {
+        const value = parseInt(linhasPorPagina?.value || "25", 10);
+        return Number.isFinite(value) ? value : 25;
+      }
+
+      function getSortField() {
+        return (ordenacao?.value || "data").trim();
+      }
+
+      function getSortDir() {
+        return (direcaoOrdenacao?.value || "desc").trim();
+      }
+
+      function normalizeText(value) {
+        return String(value || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .trim();
+      }
+
+      function getRowFieldValue(row, field) {
+        switch (field) {
+          case "registro":
+            return String(row.getAttribute("data-registro") || "").trim();
+          case "nome":
+            return normalizeText(row.getAttribute("data-nome"));
+          case "tipo":
+            return normalizeText(row.getAttribute("data-tipo"));
+          case "motivo":
+            return normalizeText(row.getAttribute("data-motivo"));
+          case "data":
+          default:
+            return row.getAttribute("data-data") || "";
+        }
+      }
+
+      function compareValues(a, b, field, dir) {
+        let result = 0;
+
+        if (field === "data") {
+          const timeA = a ? new Date(a + "T00:00:00").getTime() : 0;
+          const timeB = b ? new Date(b + "T00:00:00").getTime() : 0;
+          result = timeA - timeB;
+        } else if (field === "registro") {
+          const numA = parseInt(a, 10);
+          const numB = parseInt(b, 10);
+
+          if (!Number.isNaN(numA) && !Number.isNaN(numB)) {
+            result = numA - numB;
+          } else {
+            result = String(a || "").localeCompare(String(b || ""), 'pt-BR', { numeric: true, sensitivity: 'base' });
+          }
+        } else {
+          result = String(a || "").localeCompare(String(b || ""), 'pt-BR', { numeric: true, sensitivity: 'base' });
+        }
+
+        return dir === "asc" ? result : -result;
+      }
+
+      function rowPassesFilters(row) {
+        const q = normalizeText(buscaGeral?.value);
+        const tipo = (filtroTipo?.value || "todos").trim();
+        const conferido = (filtroConferido?.value || "todos").trim();
+        const motivo = normalizeText(filtroMotivo?.value);
+
+        const haystack = normalizeText(row.getAttribute("data-busca"));
+        const rowTipo = (row.getAttribute("data-tipo") || "").trim();
+        const rowConferido = row.getAttribute("data-conferido") === "true" ? "conferido" : "pendente";
+        const rowMotivo = normalizeText(row.getAttribute("data-motivo"));
+
+        const passBusca = !q || haystack.includes(q);
+        const passTipo = tipo === "todos" || rowTipo === tipo;
+        const passConferido = conferido === "todos" || rowConferido === conferido;
+        const passMotivo = !motivo || rowMotivo.includes(motivo);
+
+        return passBusca && passTipo && passConferido && passMotivo;
+      }
+
+      function sortRows(rows) {
+        const field = getSortField();
+        const dir = getSortDir();
+
+        rows.sort((rowA, rowB) => {
+          const valA = getRowFieldValue(rowA, field);
+          const valB = getRowFieldValue(rowB, field);
+          const primary = compareValues(valA, valB, field, dir);
+
+          if (primary !== 0) return primary;
+
+          const idxA = originalOrderMap.get(rowA) ?? 0;
+          const idxB = originalOrderMap.get(rowB) ?? 0;
+          return idxA - idxB;
+        });
+      }
+
+      function updateHeaderSortIcons() {
+        const activeField = getSortField();
+        const dir = getSortDir();
+
+        headerSortButtons.forEach(btn => {
+          const icon = btn.querySelector(".sort-icon");
+          const field = btn.getAttribute("data-sort");
+          if (!icon) return;
+
+          if (field === activeField) {
+            icon.className = dir === "asc"
+              ? "fa-solid fa-arrow-up-wide-short sort-icon"
+              : "fa-solid fa-arrow-down-wide-short sort-icon";
+          } else {
+            icon.className = "fa-solid fa-sort sort-icon";
+          }
+        });
+      }
+
+      function updateSummary(filteredRows) {
+        const total = filteredRows.length;
+        const conferidos = filteredRows.filter(row => row.getAttribute("data-conferido") === "true").length;
+        const pendentes = total - conferidos;
+        const esquecimentos = filteredRows.filter(row => (row.getAttribute("data-tipo") || "") === "Esquecimento de Ponto").length;
+        const agendamentos = filteredRows.filter(row => (row.getAttribute("data-tipo") || "") === "Agendamento").length;
+
+        if (sumVisiveis) sumVisiveis.textContent = String(total);
+        if (sumConferidos) sumConferidos.textContent = String(conferidos);
+        if (sumPendentes) sumPendentes.textContent = String(pendentes);
+        if (sumEsquecimentos) sumEsquecimentos.textContent = String(esquecimentos);
+        if (sumAgendamentos) sumAgendamentos.textContent = String(agendamentos);
+      }
+
+      function renderPagination(totalPages) {
+        if (!paginationContainer) return;
+        paginationContainer.innerHTML = "";
+
+        if (totalPages <= 1) return;
+
+        const createButton = (label, page, opts = {}) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "pagination-btn";
+          btn.textContent = label;
+
+          if (opts.active) btn.classList.add("active");
+          if (opts.disabled) btn.disabled = true;
+
+          btn.addEventListener("click", () => {
+            if (btn.disabled) return;
+            currentPage = page;
+            renderTable();
+          });
+
+          return btn;
+        };
+
+        paginationContainer.appendChild(createButton("«", Math.max(1, currentPage - 1), { disabled: currentPage === 1 }));
+
+        for (let page = 1; page <= totalPages; page++) {
+          const nearCurrent = page >= currentPage - 2 && page <= currentPage + 2;
+          const edge = page === 1 || page === totalPages;
+
+          if (edge || nearCurrent) {
+            paginationContainer.appendChild(createButton(String(page), page, { active: page === currentPage }));
+          } else if (page === currentPage - 3 || page === currentPage + 3) {
+            const span = document.createElement("span");
+            span.className = "pagination-ellipsis";
+            span.textContent = "…";
+            paginationContainer.appendChild(span);
+          }
+        }
+
+        paginationContainer.appendChild(createButton("»", Math.min(totalPages, currentPage + 1), { disabled: currentPage === totalPages }));
+      }
+
+      function renderTable(resetPage = false) {
+        if (resetPage) currentPage = 1;
+
+        const rows = [...allRows];
+        const filteredRows = rows.filter(rowPassesFilters);
+        sortRows(filteredRows);
+
+        const perPage = getRowsPerPage();
+        const totalPages = perPage >= 9999 ? 1 : Math.max(1, Math.ceil(filteredRows.length / perPage));
+        currentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+        const start = perPage >= 9999 ? 0 : (currentPage - 1) * perPage;
+        const end = perPage >= 9999 ? filteredRows.length : start + perPage;
+        const visibleSlice = filteredRows.slice(start, end);
+        const visibleSet = new Set(visibleSlice);
+        const filteredSet = new Set(filteredRows);
+
+        const hiddenRows = rows.filter(row => !filteredSet.has(row));
+        const orderedRows = [...filteredRows, ...hiddenRows];
+
+        orderedRows.forEach(row => {
+          tbody.appendChild(row);
+          row.style.display = visibleSet.has(row) ? "" : "none";
+        });
+
+        updateSummary(filteredRows);
+        updateHeaderSortIcons();
+        renderPagination(totalPages);
+
+        if (tableMetaText) {
+          if (!filteredRows.length) {
+            tableMetaText.textContent = "Nenhum registro visível com os filtros atuais.";
+          } else if (perPage >= 9999) {
+            tableMetaText.textContent = `Exibindo todos os ${filteredRows.length} registro(s).`;
+          } else {
+            tableMetaText.textContent = `Exibindo ${visibleSlice.length} de ${filteredRows.length} registro(s) — página ${currentPage} de ${totalPages}.`;
+          }
+        }
+
+        if (emptyFilterState) {
+          emptyFilterState.classList.toggle("show", filteredRows.length === 0);
+        }
+      }
+
+      function clearFilters() {
+        if (buscaGeral) buscaGeral.value = "";
+        if (filtroTipo) filtroTipo.value = "todos";
+        if (filtroConferido) filtroConferido.value = "todos";
+        if (filtroMotivo) filtroMotivo.value = "";
+        if (ordenacao) ordenacao.value = "data";
+        if (direcaoOrdenacao) direcaoOrdenacao.value = "desc";
+        if (linhasPorPagina) linhasPorPagina.value = "25";
+        renderTable(true);
+      }
+
+      [buscaGeral, filtroTipo, filtroConferido, filtroMotivo, ordenacao, direcaoOrdenacao, linhasPorPagina]
+        .filter(Boolean)
+        .forEach(el => {
+          const evt = el.tagName === "INPUT" ? "input" : "change";
+          el.addEventListener(evt, () => renderTable(true));
+        });
+
+      if (limparFiltrosBtn) {
+        limparFiltrosBtn.addEventListener("click", clearFilters);
+      }
+
+      if (mostrarConferidosBtn) {
+        mostrarConferidosBtn.addEventListener("click", function () {
+          if (filtroConferido) filtroConferido.value = "conferido";
+          renderTable(true);
+        });
+      }
+
+      if (mostrarPendentesBtn) {
+        mostrarPendentesBtn.addEventListener("click", function () {
+          if (filtroConferido) filtroConferido.value = "pendente";
+          renderTable(true);
+        });
+      }
+
+      headerSortButtons.forEach(btn => {
+        btn.addEventListener("click", function () {
+          const field = btn.getAttribute("data-sort") || "data";
+
+          if (ordenacao.value === field) {
+            direcaoOrdenacao.value = direcaoOrdenacao.value === "asc" ? "desc" : "asc";
+          } else {
+            ordenacao.value = field;
+            direcaoOrdenacao.value = field === "data" ? "desc" : "asc";
+          }
+
+          renderTable(true);
+        });
+      });
+
+      allRows.forEach((linha) => {
         const registroId = linha.getAttribute("data-id");
         const tipo = linha.getAttribute("data-tipo");
         if (!registroId || !tipo) return;
 
-        linha.addEventListener("click", function () {
+        linha.addEventListener("click", function (event) {
+          if (event.target.closest(".th-sort") || event.target.closest("button") || event.target.closest("a")) return;
+
           const novoStatus = !linha.classList.contains("conferido");
 
           fetch("/atualizar_conferido", {
@@ -424,16 +1495,20 @@
           })
           .then(async (response) => {
             let data = {};
-            try { data = await response.json(); } catch (e) { /* ignora resposta não JSON */ }
+            try { data = await response.json(); } catch (e) {}
 
             if (response.ok && data.success) {
-              if (novoStatus) {
-                linha.classList.add("conferido");
-                linha.setAttribute("data-conferido", "true");
-              } else {
-                linha.classList.remove("conferido");
-                linha.setAttribute("data-conferido", "false");
+              linha.classList.toggle("conferido", novoStatus);
+              linha.setAttribute("data-conferido", novoStatus ? "true" : "false");
+
+              const badgeCell = linha.querySelector(".col-conferido");
+              if (badgeCell) {
+                badgeCell.innerHTML = novoStatus
+                  ? `<span class="status-badge conferido"><i class="fa-solid fa-circle-check"></i> Conferido</span>`
+                  : `<span class="status-badge pendente"><i class="fa-solid fa-clock"></i> Pendente</span>`;
               }
+
+              renderTable(false);
             } else {
               alert(data.error || "Erro ao atualizar conferência.");
             }
@@ -444,6 +1519,8 @@
           });
         });
       });
+
+      renderTable(true);
     });
   </script>
 </body>

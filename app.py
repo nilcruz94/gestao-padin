@@ -2301,9 +2301,12 @@ def agendar():
 
     return render_template('agendar.html')
 
+# ROTA AGENDAR PARA
 
 from functools import wraps
 import datetime
+import uuid
+
 from flask import request, render_template, redirect, url_for, flash, current_app
 from flask_login import current_user
 from sqlalchemy import func
@@ -2316,6 +2319,7 @@ def admin_required(f):
             return redirect(url_for("index"))
         return f(*args, **kwargs)
     return wrapper
+
 
 @app.route('/admin/agendar_para', methods=['GET', 'POST'])
 @login_required
@@ -2340,7 +2344,8 @@ def admin_agendar_para():
 
         # Valores do formulário (mesmos nomes que sua rota /agendar)
         tipo_folga = request.form.get('tipo_folga')
-        data_folga = request.form.get('data')
+        data_folga_str = request.form.get('data')         # início (sempre)
+        data_fim_str = request.form.get('data_fim')       # ✅ novo: período LM
         motivo = request.form.get('motivo')
         data_referencia = request.form.get('data_referencia')
 
@@ -2394,20 +2399,34 @@ def admin_agendar_para():
             'DL':  'Dispensa Legal',
         }.get(tipo_folga, 'Agendamento')
 
-        # ---- Validação e parsing da data da folga ----
+        # ---- Validação e parsing da data INICIAL ----
         try:
-            data_folga = datetime.datetime.strptime(data_folga, '%Y-%m-%d').date()
+            data_ini = datetime.datetime.strptime(data_folga_str, '%Y-%m-%d').date()
         except (TypeError, ValueError):
             flash("Data inválida.", "danger")
             return redirect(url_for('admin_agendar_para'))
 
+        # ✅ Período LM (gera 1 registro por dia no intervalo) — SEM checkbox (sempre inclui tudo)
+        data_fim = None
+        if tipo_folga == "LM" and data_fim_str:
+            try:
+                data_fim = datetime.datetime.strptime(data_fim_str, '%Y-%m-%d').date()
+            except (TypeError, ValueError):
+                flash("Data final inválida.", "danger")
+                return redirect(url_for('admin_agendar_para'))
+
+            if data_fim < data_ini:
+                flash("Período inválido: a data final não pode ser menor que a data inicial.", "danger")
+                return redirect(url_for('admin_agendar_para'))
+
         # ---- Regras específicas AB (do ALVO) ----
+        # (mantém exatamente como era)
         if tipo_folga == 'AB':
             agendamento_existente = Agendamento.query.filter(
                 Agendamento.funcionario_id == usuario_alvo.id,
                 Agendamento.motivo == 'AB',
-                func.extract('year', Agendamento.data) == data_folga.year,
-                func.extract('month', Agendamento.data) == data_folga.month
+                func.extract('year', Agendamento.data) == data_ini.year,
+                func.extract('month', Agendamento.data) == data_ini.month
             ).first()
             if agendamento_existente and agendamento_existente.status != 'indeferido':
                 flash("Este usuário já possui um agendamento 'AB' aprovado ou em análise neste mês.", "danger")
@@ -2416,7 +2435,7 @@ def admin_agendar_para():
             agendamentos_ab_deferidos = Agendamento.query.filter(
                 Agendamento.funcionario_id == usuario_alvo.id,
                 Agendamento.motivo == 'AB',
-                func.extract('year', Agendamento.data) == data_folga.year,
+                func.extract('year', Agendamento.data) == data_ini.year,
                 Agendamento.status == 'deferido'
             ).count()
 
@@ -2436,8 +2455,8 @@ def admin_agendar_para():
 
         # Horas/minutos (para BH; para outros motivos mantém 0/0)
         try:
-            horas = int(request.form.get('quantidade_horas', '0').strip() or 0)
-            minutos = int(request.form.get('quantidade_minutos', '0').strip() or 0)
+            horas = int((request.form.get('quantidade_horas', '0') or "0").strip() or 0)
+            minutos = int((request.form.get('quantidade_minutos', '0') or "0").strip() or 0)
         except ValueError:
             flash("Horas ou minutos inválidos.", "danger")
             return redirect(url_for('admin_agendar_para'))
@@ -2449,7 +2468,7 @@ def admin_agendar_para():
                 flash("Informe um tempo válido para Banco de Horas (minutos entre 0 e 59 e total > 0).", "danger")
                 return redirect(url_for('admin_agendar_para'))
 
-            if data_referencia and data_referencia > data_folga:
+            if data_referencia and data_referencia > data_ini:
                 flash("A data de referência do Banco de Horas não pode ser posterior à data da folga.", "danger")
                 return redirect(url_for('admin_agendar_para'))
 
@@ -2463,61 +2482,118 @@ def admin_agendar_para():
 
         # ==========================================================
         # ✅ ADMIN LANÇA E JÁ DEIXA DEFERIDO (SEM PENDÊNCIA)
+        # ✅ LM por período: cria N registros (1 por dia) + lote_id + 1 e-mail
         # ==========================================================
-        novo_agendamento = Agendamento(
-            funcionario_id=usuario_alvo.id,
-            status='deferido',
-            data=data_folga,
-            motivo=tipo_folga,
-            tipo_folga=tipo_folga,
-            data_referencia=data_referencia,
-            horas=horas,
-            minutos=minutos,
-            substituicao=substituicao,
-            nome_substituto=nome_substituto,
-            conferido=True  # ✅ opcional, mas faz sentido pro admin
-        )
-
         try:
-            # ✅ Se BH, aplica o mesmo efeito do /deferir_folgas:
-            # debita saldo e cria registro em BancoDeHoras
-            if tipo_folga == 'BH':
-                usuario_alvo.banco_horas = int(usuario_alvo.banco_horas or 0) - int(total_minutos)
+            registros_criados = []
+            lote_id = None
 
-                novo_banco_horas = BancoDeHoras(
+            # LM por período
+            if tipo_folga == "LM" and data_fim and data_fim >= data_ini:
+                lote_id = uuid.uuid4().hex
+
+                # inclui tudo (dias corridos)
+                dia = data_ini
+                while dia <= data_fim:
+                    ag_kwargs = dict(
+                        funcionario_id=usuario_alvo.id,
+                        status='deferido',
+                        data=dia,
+                        motivo=tipo_folga,
+                        tipo_folga=tipo_folga,
+                        data_referencia=None,
+                        horas=0,
+                        minutos=0,
+                        substituicao=substituicao,
+                        nome_substituto=nome_substituto,
+                        conferido=True
+                    )
+
+                    # se o model tiver (evita quebrar se ambiente sem migração)
+                    if hasattr(Agendamento, "data_fim"):
+                        ag_kwargs["data_fim"] = data_fim
+                    if hasattr(Agendamento, "lote_id"):
+                        ag_kwargs["lote_id"] = lote_id
+
+                    ag = Agendamento(**ag_kwargs)
+                    db.session.add(ag)
+                    registros_criados.append(ag)
+                    dia = dia + datetime.timedelta(days=1)
+
+                # BH/TRE não entram aqui (LM)
+                db.session.commit()
+
+                primeiro = registros_criados[0]
+                dt_ini_email = data_ini
+                dt_fim_email = data_fim
+                data_str = f"{dt_ini_email.strftime('%d/%m/%Y')} → {dt_fim_email.strftime('%d/%m/%Y')}"
+                data_label = "Período"
+
+            else:
+                # Caso padrão (1 registro como sempre)
+                ag_kwargs = dict(
                     funcionario_id=usuario_alvo.id,
-                    horas=horas or 0,
-                    minutos=minutos or 0,
-                    total_minutos=int(total_minutos),
-                    data_realizacao=data_folga,
+                    status='deferido',
+                    data=data_ini,
                     motivo=tipo_folga,
-                    status="Deferida",
-                    data_criacao=datetime.datetime.utcnow(),
+                    tipo_folga=tipo_folga,
+                    data_referencia=data_referencia,
+                    horas=horas,
+                    minutos=minutos,
+                    substituicao=substituicao,
+                    nome_substituto=nome_substituto,
+                    conferido=True
                 )
-                db.session.add(novo_banco_horas)
 
-            db.session.add(novo_agendamento)
-            db.session.commit()
+                # se LM sem data_fim, mantém comportamento antigo:
+                if tipo_folga == "LM" and hasattr(Agendamento, "data_fim"):
+                    ag_kwargs["data_fim"] = None
 
-            # ✅ Após deferir TRE via agendamento, sincroniza saldo
-            if tipo_folga == 'TRE':
-                try:
-                    sync_tre_user(usuario_alvo.id)
-                except Exception:
-                    current_app.logger.exception("Falha ao sincronizar TRE do usuário %s após deferimento", usuario_alvo.id)
+                novo_agendamento = Agendamento(**ag_kwargs)
 
-            # ✅ gera/salva protocolo PDF já com status DEFERIDO
+                # ✅ Se BH, aplica o mesmo efeito do /deferir_folgas:
+                if tipo_folga == 'BH':
+                    usuario_alvo.banco_horas = int(usuario_alvo.banco_horas or 0) - int(total_minutos)
+
+                    novo_banco_horas = BancoDeHoras(
+                        funcionario_id=usuario_alvo.id,
+                        horas=horas or 0,
+                        minutos=minutos or 0,
+                        total_minutos=int(total_minutos),
+                        data_realizacao=data_ini,
+                        motivo=tipo_folga,
+                        status="Deferida",
+                        data_criacao=datetime.datetime.utcnow(),
+                    )
+                    db.session.add(novo_banco_horas)
+
+                db.session.add(novo_agendamento)
+                db.session.commit()
+
+                # ✅ Após deferir TRE via agendamento, sincroniza saldo
+                if tipo_folga == 'TRE':
+                    try:
+                        sync_tre_user(usuario_alvo.id)
+                    except Exception:
+                        current_app.logger.exception(
+                            "Falha ao sincronizar TRE do usuário %s após deferimento", usuario_alvo.id
+                        )
+
+                primeiro = novo_agendamento
+                data_str = primeiro.data.strftime('%d/%m/%Y')
+                data_label = "Data"
+
+            # ✅ gera/salva protocolo PDF (1 vez)
             try:
-                gerar_protocolo_agendamento_pdf(novo_agendamento, usuario_alvo)
+                gerar_protocolo_agendamento_pdf(primeiro, usuario_alvo)
             except Exception:
-                current_app.logger.exception("Falha ao gerar protocolo PDF do agendamento %s", novo_agendamento.id)
+                current_app.logger.exception("Falha ao gerar protocolo PDF do agendamento %s", getattr(primeiro, "id", None))
                 flash("Agendamento deferido e registrado, mas não foi possível gerar o protocolo em PDF neste momento.", "warning")
 
             # =========================
-            # E-MAIL para o USUÁRIO ALVO (texto adaptado p/ DEFERIDO)
+            # E-MAIL para o USUÁRIO ALVO (1 e-mail só; período para LM)
             # =========================
             nome = (usuario_alvo.nome or "").strip() or "Servidor(a)"
-            data_str = novo_agendamento.data.strftime('%d/%m/%Y')
             status_label = "DEFERIDO"
             admin_nome = (current_user.nome or "").strip() or "Administração"
 
@@ -2531,8 +2607,8 @@ def admin_agendar_para():
                     parts.append(f"{m}min")
                 return " ".join(parts) if parts else "0min"
 
-            tempo_bh = _format_tempo_bh(novo_agendamento.horas, novo_agendamento.minutos)
-            data_ref_str = novo_agendamento.data_referencia.strftime('%d/%m/%Y') if novo_agendamento.data_referencia else None
+            tempo_bh = _format_tempo_bh(getattr(primeiro, "horas", 0), getattr(primeiro, "minutos", 0))
+            data_ref_str = primeiro.data_referencia.strftime('%d/%m/%Y') if getattr(primeiro, "data_referencia", None) else None
 
             def _escape(s):
                 if s is None:
@@ -2582,7 +2658,7 @@ def admin_agendar_para():
                       </div>
                     """
 
-                html = f"""
+                return f"""
                 <html>
                   <body style="margin:0;padding:0;background:#F4F6F8;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F4F6F8;padding:24px 0;">
@@ -2634,13 +2710,12 @@ def admin_agendar_para():
                   </body>
                 </html>
                 """
-                return html
 
-            # Resumo
             badge_status = "<span style='font-weight:800;color:#16A34A;'>DEFERIDO</span>"
+
             resumo = [
                 ("Motivo", f"<strong>{_escape(descricao_motivo)}</strong>"),
-                ("Data", f"<strong>{_escape(data_str)}</strong>"),
+                (data_label, f"<strong>{_escape(data_str)}</strong>"),
                 ("Status no sistema", badge_status),
             ]
 
@@ -2688,6 +2763,14 @@ def admin_agendar_para():
             if nome_substituto:
                 notes.append(f"Haverá substituição por: <strong>{_escape(nome_substituto)}</strong>.")
 
+            # Extra opcional: quantos registros LM foram criados
+            if tipo_folga == "LM" and data_fim and data_fim >= data_ini:
+                try:
+                    qtd = len(registros_criados)
+                    notes.append(f"Período registrado com {qtd} dia(s) no sistema.")
+                except Exception:
+                    pass
+
             mensagem_html = build_email_html(
                 title=title,
                 greeting_name=nome,
@@ -2706,10 +2789,13 @@ def admin_agendar_para():
 
             try:
                 enviar_email(usuario_alvo.email, assunto, mensagem_html, mensagem_texto)
-                flash(f"Agendamento DEFERIDO criado para {usuario_alvo.nome} e e-mail enviado.", "success")
+                if tipo_folga == "LM" and data_fim and data_fim >= data_ini:
+                    flash(f"Período de LM DEFERIDO criado para {usuario_alvo.nome} ({len(registros_criados)} dia(s)) e e-mail enviado.", "success")
+                else:
+                    flash(f"Agendamento DEFERIDO criado para {usuario_alvo.nome} e e-mail enviado.", "success")
             except Exception:
-                current_app.logger.exception("Falha ao enviar e-mail para agendamento %s", novo_agendamento.id)
-                flash(f"Agendamento DEFERIDO criado para {usuario_alvo.nome}, mas o e-mail falhou.", "warning")
+                current_app.logger.exception("Falha ao enviar e-mail para agendamento %s", getattr(primeiro, "id", None))
+                flash(f"Agendamento criado para {usuario_alvo.nome}, mas o e-mail falhou.", "warning")
 
             return redirect(url_for('admin_agendar_para'))
 
@@ -3136,6 +3222,35 @@ def _csrf_ok_from_header(req: request) -> bool:
 # ===========================================
 # RELATÓRIO PONTO (10 a 9)
 # ===========================================
+
+from sqlalchemy.orm import joinedload
+
+
+def _relatorio_norm_text(value):
+    return " ".join(str(value or "").strip().split()).casefold()
+
+
+def _relatorio_parse_bool(value):
+    if value is None:
+        return None
+
+    v = str(value).strip().lower()
+    if v in ("", "todos", "all"):
+        return None
+    if v in ("1", "true", "t", "sim", "s", "yes", "y", "conferido", "conferidos"):
+        return True
+    if v in ("0", "false", "f", "nao", "não", "n", "no", "pendente", "pendentes"):
+        return False
+    return None
+
+
+def _relatorio_registro_key(value):
+    s = str(value or "").strip()
+    if s.isdigit():
+        return int(s)
+    return s.casefold()
+
+
 @app.route('/relatorio_ponto')
 @login_required
 def relatorio_ponto():
@@ -3146,8 +3261,23 @@ def relatorio_ponto():
     mes_selecionado = request.args.get('mes', type=int)
     ano_selecionado = request.args.get('ano', type=int) or datetime.datetime.now().year
 
+    # Filtros/ordenação opcionais no backend
+    busca = (request.args.get('q') or "").strip()
+    tipo_filtro = (request.args.get('tipo') or "todos").strip()
+    motivo_filtro = (request.args.get('motivo') or "").strip()
+    conferido_filtro = _relatorio_parse_bool(request.args.get('conferido'))
+    ordenar_por = (request.args.get('ordenar_por') or "data").strip().lower()
+    direcao = (request.args.get('direcao') or "asc").strip().lower()
+
+    if direcao not in ("asc", "desc"):
+        direcao = "asc"
+
+    if ordenar_por not in ("data", "nome", "registro", "tipo", "motivo"):
+        ordenar_por = "data"
+
     registros = []
-    periodo_inicio = periodo_fim = None
+    periodo_inicio = None
+    periodo_fim = None
 
     if mes_selecionado:
         try:
@@ -3156,6 +3286,9 @@ def relatorio_ponto():
             flash("Parâmetros de mês/ano inválidos.", "danger")
             return redirect(url_for('relatorio_ponto'))
 
+        # =========================
+        # AGENDAMENTOS
+        # =========================
         agendamentos = (
             Agendamento.query
             .join(Agendamento.funcionario)
@@ -3165,27 +3298,45 @@ def relatorio_ponto():
                 Agendamento.data >= periodo_inicio,
                 Agendamento.data <= periodo_fim
             )
-            .order_by(Agendamento.data.asc())
             .all()
         )
 
         for ag in agendamentos:
             if not ag.funcionario:
                 continue
+
+            nome_usuario = (getattr(ag.funcionario, "nome", "") or "").strip()
+            registro_usuario = (getattr(ag.funcionario, "registro", "") or "").strip()
+            motivo = (getattr(ag, "motivo", "") or "").strip()
+
             registros.append({
                 'id': ag.id,
                 'usuario': ag.funcionario,
-                'registro': ag.funcionario.registro,
+                'registro': registro_usuario,
                 'tipo': 'Agendamento',
+                'tipo_slug': 'agendamento',
                 'data': ag.data,
-                'motivo': ag.motivo,
+                'motivo': motivo or 'Sem Motivo',
                 'horapentrada': '—',
                 'horapsaida': '—',
                 'horasentrada': '—',
                 'horassaida': '—',
-                'conferido': bool(getattr(ag, "conferido", False))
+                'conferido': bool(getattr(ag, "conferido", False)),
+
+                # chaves normalizadas para filtro/ordenação
+                '_nome_norm': _relatorio_norm_text(nome_usuario),
+                '_registro_key': _relatorio_registro_key(registro_usuario),
+                '_tipo_norm': _relatorio_norm_text('Agendamento'),
+                '_motivo_norm': _relatorio_norm_text(motivo),
+                '_busca_blob': _relatorio_norm_text(
+                    f"{registro_usuario} {nome_usuario} Agendamento {motivo} "
+                    f"{ag.data.strftime('%d/%m/%Y') if ag.data else ''}"
+                ),
             })
 
+        # =========================
+        # ESQUECIMENTOS DE PONTO
+        # =========================
         esquecimentos = (
             EsquecimentoPonto.query
             .join(EsquecimentoPonto.usuario)
@@ -3195,33 +3346,118 @@ def relatorio_ponto():
                 EsquecimentoPonto.data_esquecimento >= periodo_inicio,
                 EsquecimentoPonto.data_esquecimento <= periodo_fim
             )
-            .order_by(EsquecimentoPonto.data_esquecimento.asc())
             .all()
         )
 
         for esc in esquecimentos:
             if not esc.usuario:
                 continue
+
+            nome_usuario = (getattr(esc.usuario, "nome", "") or "").strip()
+            registro_usuario = (getattr(esc.usuario, "registro", "") or "").strip()
+            motivo = (getattr(esc, "motivo", "") or "").strip()
+
             registros.append({
                 'id': esc.id,
                 'usuario': esc.usuario,
-                'registro': esc.usuario.registro,
+                'registro': registro_usuario,
                 'tipo': 'Esquecimento de Ponto',
+                'tipo_slug': 'esquecimento',
                 'data': esc.data_esquecimento,
-                'motivo': esc.motivo,
+                'motivo': motivo or 'Sem Motivo',
                 'horapentrada': esc.hora_primeira_entrada or '—',
                 'horapsaida': esc.hora_primeira_saida or '—',
                 'horasentrada': esc.hora_segunda_entrada or '—',
                 'horassaida': esc.hora_segunda_saida or '—',
-                'conferido': bool(getattr(esc, "conferido", False))
+                'conferido': bool(getattr(esc, "conferido", False)),
+
+                # chaves normalizadas para filtro/ordenação
+                '_nome_norm': _relatorio_norm_text(nome_usuario),
+                '_registro_key': _relatorio_registro_key(registro_usuario),
+                '_tipo_norm': _relatorio_norm_text('Esquecimento de Ponto'),
+                '_motivo_norm': _relatorio_norm_text(motivo),
+                '_busca_blob': _relatorio_norm_text(
+                    f"{registro_usuario} {nome_usuario} Esquecimento de Ponto {motivo} "
+                    f"{esc.data_esquecimento.strftime('%d/%m/%Y') if esc.data_esquecimento else ''}"
+                ),
             })
 
-        registros.sort(
-            key=lambda r: (
-                (r['usuario'].nome or '').casefold().strip(),
-                r['data'] or datetime.datetime.min
+        # =========================
+        # FILTROS OPCIONAIS NO BACKEND
+        # =========================
+        busca_norm = _relatorio_norm_text(busca)
+        tipo_filtro_norm = _relatorio_norm_text(tipo_filtro)
+        motivo_filtro_norm = _relatorio_norm_text(motivo_filtro)
+
+        if busca_norm:
+            registros = [
+                r for r in registros
+                if busca_norm in r.get('_busca_blob', '')
+            ]
+
+        if tipo_filtro_norm and tipo_filtro_norm != "todos":
+            registros = [
+                r for r in registros
+                if r.get('_tipo_norm', '') == tipo_filtro_norm
+            ]
+
+        if motivo_filtro_norm:
+            registros = [
+                r for r in registros
+                if motivo_filtro_norm in r.get('_motivo_norm', '')
+            ]
+
+        if conferido_filtro is not None:
+            registros = [
+                r for r in registros
+                if bool(r.get('conferido', False)) is conferido_filtro
+            ]
+
+        # =========================
+        # ORDENAÇÃO NO BACKEND
+        # =========================
+        if ordenar_por == "nome":
+            registros.sort(
+                key=lambda r: (
+                    r.get('_nome_norm', ''),
+                    r.get('data') or datetime.datetime.min.date()
+                ),
+                reverse=(direcao == "desc")
             )
-        )
+        elif ordenar_por == "registro":
+            registros.sort(
+                key=lambda r: (
+                    r.get('_registro_key', ''),
+                    r.get('data') or datetime.datetime.min.date()
+                ),
+                reverse=(direcao == "desc")
+            )
+        elif ordenar_por == "tipo":
+            registros.sort(
+                key=lambda r: (
+                    r.get('_tipo_norm', ''),
+                    r.get('_nome_norm', ''),
+                    r.get('data') or datetime.datetime.min.date()
+                ),
+                reverse=(direcao == "desc")
+            )
+        elif ordenar_por == "motivo":
+            registros.sort(
+                key=lambda r: (
+                    r.get('_motivo_norm', ''),
+                    r.get('_nome_norm', ''),
+                    r.get('data') or datetime.datetime.min.date()
+                ),
+                reverse=(direcao == "desc")
+            )
+        else:
+            registros.sort(
+                key=lambda r: (
+                    r.get('data') or datetime.datetime.min.date(),
+                    r.get('_nome_norm', '')
+                ),
+                reverse=(direcao == "desc")
+            )
 
     return render_template(
         'relatorio_ponto.html',
@@ -3229,10 +3465,21 @@ def relatorio_ponto():
         mes_selecionado=mes_selecionado,
         ano_selecionado=ano_selecionado,
         periodo_inicio=periodo_inicio,
-        periodo_fim=periodo_fim
+        periodo_fim=periodo_fim,
+
+        # mantém filtros disponíveis no template, se quiser usar depois
+        q=busca,
+        tipo_filtro=tipo_filtro,
+        motivo_filtro=motivo_filtro,
+        conferido_filtro=request.args.get('conferido', 'todos'),
+        ordenar_por=ordenar_por,
+        direcao=direcao,
     )
 
-# Exempt + check manual de CSRF via header
+
+# ===========================================
+# ATUALIZAR CONFERIDO
+# ===========================================
 @csrf.exempt
 @app.route('/atualizar_conferido', methods=['POST'])
 @login_required
@@ -3248,11 +3495,17 @@ def atualizar_conferido():
     tipo = data_json.get("tipo")
     status = data_json.get("conferido")
 
-    if not registro_id or not tipo or status is None:
+    if registro_id in (None, "") or not tipo or status is None:
         return jsonify({"success": False, "error": "Dados inválidos."}), 400
 
+    try:
+        registro_id = int(registro_id)
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "error": "ID inválido."}), 400
+
     tipo_norm = str(tipo).strip().lower()
-    if tipo_norm in ("agendamento",):
+
+    if tipo_norm == "agendamento":
         registro = Agendamento.query.get(registro_id)
     elif tipo_norm in ("esquecimento de ponto", "esquecimento", "esquecimento_ponto"):
         registro = EsquecimentoPonto.query.get(registro_id)
@@ -3262,8 +3515,13 @@ def atualizar_conferido():
     if not registro:
         return jsonify({"success": False, "error": "Registro não encontrado."}), 404
 
-    registro.conferido = bool(status)
-    db.session.commit()
+    try:
+        registro.conferido = bool(status)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("Erro ao atualizar conferido do relatório de ponto: %s", e)
+        return jsonify({"success": False, "error": "Erro ao salvar no banco."}), 500
 
     return jsonify({
         "success": True,
@@ -5572,6 +5830,7 @@ def admin_agendamento_set_substituto(id):
 # ===========================================
 # RESUMO DE USUÁRIOS / SALDOS (ADMIN)
 # + ALTERAR E-MAIL (ADMIN) COM ENVIO DE LINK DE REDEFINIÇÃO
+# + ATUALIZAR DADOS CADASTRAIS DO USUÁRIO (ADMIN)
 #
 # ✅ Suporte ao modal do relatório (user_info_all.html atualizado):
 #   - Envia para o template:
@@ -5588,15 +5847,12 @@ def admin_agendamento_set_substituto(id):
 # ===========================================
 
 import datetime
-
 from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 from flask import request, redirect, url_for, render_template, flash, current_app, jsonify
 from flask_login import login_required, current_user
 
-
 # ✅ Tipos disponíveis para o modal do relatório (frontend)
-# (Use estes "code" para mandar em /user_info_report?types=AB&types=BH...)
 REPORT_TYPES = [
     {"code": "AB", "label": "Abonadas"},
     {"code": "BH", "label": "Banco de Horas"},
@@ -5609,11 +5865,14 @@ REPORT_TYPES = [
 ]
 
 
+# ===========================================
+# HELPERS
+# ===========================================
 def _apply_user_filters(base_query, q: str, status_filtro: str):
     """
     Reaproveita a mesma lógica da tela:
       - status: ativos | inativos | todos
-      - q: filtro por nome
+      - q: filtro por nome/registro/email
     """
     status_filtro = (status_filtro or "ativos").strip().lower()
     if status_filtro not in ("ativos", "inativos", "todos"):
@@ -5628,14 +5887,59 @@ def _apply_user_filters(base_query, q: str, status_filtro: str):
             user_q = user_q.filter(User.ativo.is_(True))
         elif status_filtro == "inativos":
             user_q = user_q.filter(User.ativo.is_(False))
-        # "todos" -> não filtra
 
     if q:
-        user_q = user_q.filter(User.nome.ilike(f"%{q}%"))
+        like = f"%{q}%"
+        user_q = user_q.filter(
+            or_(
+                User.nome.ilike(like),
+                User.registro.ilike(like),
+                User.email.ilike(like),
+            )
+        )
 
     return user_q, status_filtro, q
 
+def _parse_date_field(value):
+    """
+    Aceita:
+      - YYYY-MM-DD (input type="date")
+      - DD/MM/YYYY
+    Retorna date ou None.
+    """
+    value = (value or "").strip()
+    if not value:
+        return None
 
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+        try:
+            return datetime.datetime.strptime(value, fmt).date()
+        except ValueError:
+            pass
+
+    raise ValueError(f'Data inválida: "{value}"')
+
+
+def _redirect_user_info_all_from_form():
+    page = request.form.get("page", 1, type=int)
+    per_page = request.form.get("per_page", 10, type=int)
+    q = request.form.get("q", "", type=str)
+    status = request.form.get("status", "ativos", type=str)
+
+    return redirect(
+        url_for(
+            "user_info_all",
+            page=page,
+            per_page=per_page,
+            q=q,
+            status=status,
+        )
+    )
+
+
+# ===========================================
+# TELA PRINCIPAL
+# ===========================================
 @app.route("/user_info_all", methods=["GET"])
 @login_required
 def user_info_all():
@@ -5655,7 +5959,6 @@ def user_info_all():
     q = (request.args.get("q", "", type=str) or "").strip()
     status_filtro = (request.args.get("status", "ativos", type=str) or "ativos").strip()
 
-    # Query base (com filtros)
     user_q, status_filtro_norm, q_norm = _apply_user_filters(User.query, q, status_filtro)
 
     pagination = user_q.order_by(User.nome.asc()).paginate(
@@ -5666,10 +5969,8 @@ def user_info_all():
     users = pagination.items or []
     user_ids = [u.id for u in users] or [-1]
 
-    # ✅ total do filtro (q+status) SEM limitar pela paginação
     total_filtrado = int(getattr(pagination, "total", 0) or 0)
 
-    # ✅ contagens globais (para modal)
     try:
         total_todos = int(User.query.count() or 0)
     except Exception:
@@ -5685,7 +5986,7 @@ def user_info_all():
             total_ativos = total_todos
             total_inativos = 0
 
-    # Sincroniza TRE (mantém padrão atual)
+    # Sincroniza TRE
     for u in users:
         try:
             sync_tre_user(u.id)
@@ -5695,7 +5996,6 @@ def user_info_all():
     ABONADAS_POR_ANO = 6
     ano_atual = datetime.date.today().year
 
-    # Estrutura base (resumos por usuário na página)
     resumos = {}
     for u in users:
         total_tre = int(getattr(u, "tre_total", 0) or 0)
@@ -5708,22 +6008,16 @@ def user_info_all():
             "abonadas_total": ABONADAS_POR_ANO,
             "abonadas_usadas": 0,
             "abonadas_restantes": ABONADAS_POR_ANO,
-
-            # compat/legado
-            "abonadas": ABONADAS_POR_ANO,
-
+            "abonadas": ABONADAS_POR_ANO,  # compat/legado
             "tre_registros": int(total_tre),
             "tre_saldo_horas": float(saldo_tre),
-
-            # compat/legado (não usado diretamente no template atual)
-            "bh_registros": 0,
-            "bh_saldo_horas": 0.0,
-
+            "bh_registros": 0,             # compat/legado
+            "bh_saldo_horas": 0.0,         # compat/legado
             "tre_agendamentos": [],
             "bh_agendamentos": [],
         }
 
-    # ====== ABONADAS (AGENDAMENTOS DEFERIDOS NO ANO) ======
+    # ====== ABONADAS ======
     try:
         Ag = Agendamento
         ag_uid = getattr(Ag, "funcionario_id")
@@ -5761,7 +6055,7 @@ def user_info_all():
     except Exception as e:
         current_app.logger.exception("Erro ao calcular abonadas: %s", e)
 
-    # ====== TRE (AGENDAMENTOS DEFERIDOS) ======
+    # ====== TRE ======
     try:
         Ag = Agendamento
         ag_uid = getattr(Ag, "funcionario_id")
@@ -5786,7 +6080,7 @@ def user_info_all():
     except Exception as e:
         current_app.logger.exception("Erro ao listar TRE: %s", e)
 
-    # ====== BH (AGENDAMENTOS DEFERIDOS) ======
+    # ====== BH ======
     try:
         Ag = Agendamento
         ag_uid = getattr(Ag, "funcionario_id")
@@ -5818,17 +6112,125 @@ def user_info_all():
         page=pagination.page,
         per_page=pagination.per_page,
         pages=pagination.pages,
-        total=pagination.total,          # (mantém: usado pela paginação antiga)
+        total=pagination.total,
         q=q_norm,
         status=status_filtro_norm,
 
-        # ✅ modal relatório
+        # modal relatório
         report_types=REPORT_TYPES,
-        total_filtrado=total_filtrado,   # total do filtro atual (q+status)
-        total_ativos=total_ativos,        # total de ativos no sistema
-        total_inativos=total_inativos,    # total de inativos no sistema
-        total_todos=total_todos,          # total geral
+        total_filtrado=total_filtrado,
+        total_ativos=total_ativos,
+        total_inativos=total_inativos,
+        total_todos=total_todos,
     )
+
+
+# ===========================================
+# ✅ ATUALIZAR DADOS DO USUÁRIO (ADMIN)
+# compatível com o HTML novo:
+# url_for("admin_atualizar_usuario", user_id=user.id)
+# ===========================================
+@app.route("/admin/usuarios/<int:user_id>/atualizar", methods=["POST"])
+@login_required
+def admin_atualizar_usuario(user_id):
+    if getattr(current_user, "tipo", None) != "administrador":
+        flash("Acesso negado.", "danger")
+        return redirect(url_for("index"))
+
+    usuario = User.query.get_or_404(user_id)
+
+    try:
+        nome = _clean_str(request.form.get("nome"))
+        registro = _clean_str(request.form.get("registro"))
+        celular = _clean_str(request.form.get("celular"))
+        cpf = _clean_str(request.form.get("cpf"))
+        rg = _clean_str(request.form.get("rg"))
+        orgao_emissor = _clean_str(request.form.get("orgao_emissor"), upper=True)
+        graduacao = _clean_str(request.form.get("graduacao"))
+        cargo = _clean_str(request.form.get("cargo"))
+
+        data_nascimento = _parse_date_field(request.form.get("data_nascimento"))
+        data_emissao_rg = _parse_date_field(request.form.get("data_emissao_rg"))
+
+        if not nome:
+            flash("O nome do servidor é obrigatório.", "warning")
+            return _redirect_user_info_all_from_form()
+
+        if not registro:
+            flash("O registro do servidor é obrigatório.", "warning")
+            return _redirect_user_info_all_from_form()
+
+        # duplicidade de registro
+        registro_existente = User.query.filter(
+            User.id != usuario.id,
+            User.registro == registro
+        ).first()
+        if registro_existente:
+            flash("Já existe outro usuário com esse registro.", "danger")
+            return _redirect_user_info_all_from_form()
+
+        # duplicidade de CPF
+        if cpf:
+            cpf_existente = User.query.filter(
+                User.id != usuario.id,
+                User.cpf == cpf
+            ).first()
+            if cpf_existente:
+                flash("Já existe outro usuário com esse CPF.", "danger")
+                return _redirect_user_info_all_from_form()
+
+        # duplicidade de RG
+        if rg:
+            rg_existente = User.query.filter(
+                User.id != usuario.id,
+                User.rg == rg
+            ).first()
+            if rg_existente:
+                flash("Já existe outro usuário com esse RG.", "danger")
+                return _redirect_user_info_all_from_form()
+
+        usuario.nome = nome
+        usuario.registro = registro
+        usuario.celular = celular
+        usuario.data_nascimento = data_nascimento
+        usuario.cpf = cpf
+        usuario.rg = rg
+        usuario.data_emissao_rg = data_emissao_rg
+        usuario.orgao_emissor = orgao_emissor
+        usuario.graduacao = graduacao
+        usuario.cargo = cargo
+
+        db.session.commit()
+
+        current_app.logger.info(
+            "Admin %s (id=%s) atualizou dados do usuário %s (id=%s)",
+            getattr(current_user, "nome", "admin"),
+            getattr(current_user, "id", None),
+            getattr(usuario, "nome", "usuario"),
+            usuario.id,
+        )
+
+        flash(f'Dados de "{usuario.nome}" atualizados com sucesso.', "success")
+        return _redirect_user_info_all_from_form()
+
+    except ValueError as e:
+        db.session.rollback()
+        flash(str(e), "danger")
+        return _redirect_user_info_all_from_form()
+
+    except IntegrityError:
+        db.session.rollback()
+        flash(
+            "Não foi possível salvar os dados. Verifique se registro, CPF ou RG já existem no sistema.",
+            "danger",
+        )
+        return _redirect_user_info_all_from_form()
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("Erro ao atualizar usuário %s: %s", user_id, e)
+        flash(f"Erro ao atualizar usuário: {str(e)}", "danger")
+        return _redirect_user_info_all_from_form()
 
 
 # ===========================================
@@ -5841,7 +6243,7 @@ def admin_alterar_email(user_id):
         flash("Acesso negado.", "danger")
         return redirect(url_for("index"))
 
-    novo_email = (request.form.get("novo_email") or "").strip().lower()
+    novo_email = _clean_str(request.form.get("novo_email"), lower=True)
 
     page = request.form.get("page", 1, type=int)
     per_page = request.form.get("per_page", 10, type=int)
@@ -5857,7 +6259,10 @@ def admin_alterar_email(user_id):
         flash("Usuário não encontrado.", "danger")
         return redirect(url_for("user_info_all", page=page, per_page=per_page, q=q, status=status))
 
-    ja_existe = User.query.filter(func.lower(User.email) == novo_email, User.id != usuario.id).first()
+    ja_existe = User.query.filter(
+        func.lower(User.email) == novo_email,
+        User.id != usuario.id
+    ).first()
     if ja_existe:
         flash("Este e-mail já está em uso por outro usuário.", "danger")
         return redirect(url_for("user_info_all", page=page, per_page=per_page, q=q, status=status))
@@ -5881,14 +6286,20 @@ def admin_alterar_email(user_id):
             send_password_reset_email(usuario)
             flash(f"E-mail atualizado e link de redefinição enviado para {novo_email}.", "success")
         except Exception:
-            current_app.logger.exception("Falha ao enviar e-mail de redefinição após troca de e-mail (admin)")
-            flash("E-mail atualizado, mas não foi possível enviar o link de redefinição agora.", "warning")
+            current_app.logger.exception(
+                "Falha ao enviar e-mail de redefinição após troca de e-mail (admin)"
+            )
+            flash(
+                "E-mail atualizado, mas não foi possível enviar o link de redefinição agora.",
+                "warning",
+            )
 
     except IntegrityError:
         db.session.rollback()
         flash("Não foi possível atualizar: e-mail já existe no sistema.", "danger")
     except Exception as e:
         db.session.rollback()
+        current_app.logger.exception("Erro ao alterar e-mail do usuário %s: %s", user_id, e)
         flash(f"Erro ao atualizar e-mail: {str(e)}", "danger")
 
     return redirect(url_for("user_info_all", page=page, per_page=per_page, q=q, status=status))
@@ -5972,22 +6383,29 @@ def toggle_user_ativo(user_id):
 def check_unique():
     campo = request.args.get("campo")
     valor = (request.args.get("valor", "") or "").strip()
+    exclude_id = request.args.get("exclude_id", type=int)
+
+    q = User.query
+
+    if exclude_id:
+        q = q.filter(User.id != exclude_id)
+
     exists = False
     if campo == "registro":
-        exists = User.query.filter_by(registro=valor).first() is not None
+        exists = q.filter(User.registro == valor).first() is not None
     elif campo == "email":
-        exists = User.query.filter_by(email=valor).first() is not None
+        exists = q.filter(func.lower(User.email) == valor.lower()).first() is not None
     elif campo == "cpf":
-        exists = User.query.filter_by(cpf=valor).first() is not None
+        exists = q.filter(User.cpf == valor).first() is not None
     elif campo == "rg":
-        exists = User.query.filter_by(rg=valor).first() is not None
+        exists = q.filter(User.rg == valor).first() is not None
+
     return jsonify({"exists": exists})
 
 
 # ===========================================
-# ✅ NECESSÁRIO PARA O MODAL “seleção manual”
+# BUSCA DE USUÁRIOS PARA O MODAL DE SELEÇÃO MANUAL
 # /admin/users/search?q=...&status=ativos|inativos|todos&page=1&per_page=40
-# Retorna usuários do sistema inteiro (não depende da paginação do user_info_all)
 # ===========================================
 @app.route("/admin/users/search", methods=["GET"])
 @login_required
@@ -6000,7 +6418,6 @@ def admin_users_search():
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 40, type=int)
 
-    # limites defensivos
     per_page = max(10, min(per_page, 80))
     page = max(1, page)
 
@@ -6011,10 +6428,16 @@ def admin_users_search():
             user_q = user_q.filter(User.ativo.is_(True))
         elif status == "inativos":
             user_q = user_q.filter(User.ativo.is_(False))
-        # "todos" -> sem filtro
 
     if q:
-        user_q = user_q.filter(User.nome.ilike(f"%{q}%"))
+        like = f"%{q}%"
+        user_q = user_q.filter(
+            or_(
+                User.nome.ilike(like),
+                User.registro.ilike(like),
+                User.email.ilike(like),
+            )
+        )
 
     total = int(user_q.count() or 0)
 
@@ -6028,11 +6451,14 @@ def admin_users_search():
     has_more = len(rows) > per_page
     rows = rows[:per_page]
 
-    items = [{
-        "id": u.id,
-        "nome": (u.nome or "").strip() or "Sem nome",
-        "ativo": bool(getattr(u, "ativo", True)),
-    } for u in rows]
+    items = [
+        {
+            "id": u.id,
+            "nome": (u.nome or "").strip() or "Sem nome",
+            "ativo": bool(getattr(u, "ativo", True)),
+        }
+        for u in rows
+    ]
 
     return jsonify({
         "items": items,
@@ -6557,16 +6983,13 @@ def admin_tre_lancar():
 # - /user_info_report               -> lote (admin)  | output=pdf|zip
 # - /user_info_report/<user_id>     -> individual (admin) | sempre PDF
 #
-# ✅ Suporta filtros (modal do user_info_all):
-#   - scope=selected|filtered_all|ativos_all|all
-#   - q=... (quando scope=filtered_all)
-#   - status=ativos|inativos|todos (quando scope=filtered_all)
-#   - user_ids=1&user_ids=2... (quando scope=selected)  (ou "1,2,3")
-#   - dt_ini=YYYY-MM-DD   (opcional)
-#   - dt_fim=YYYY-MM-DD   (opcional)
-#   - types=AB&types=BH... (ou "AB,BH,TRE")  (opcional; default todos)
-#   - output=pdf|zip  (somente no lote; default pdf)
-#   - download=1|0    (1 baixa, 0 abre no navegador quando possível; default 1)
+# ✅ ADAPTAÇÃO (LM por período):
+# - LM agora pode existir como "período" (vários registros diários vinculados por lote_id).
+# - No relatório, LM é AGRUPADA por lote_id, exibindo:
+#     • Data: "dd/mm/aaaa → dd/mm/aaaa"
+#     • Detalhes: "X dia(s)"
+#   evitando listar 120/180 linhas.
+# - No cabeçalho da faixa da LM, mostra "TOTAL DIAS LM: X" (quando houver).
 #
 # ✅ Histórico respeita período + tipos + usuários.
 # ✅ Saldos atuais (TRE/BH) são SEMPRE atuais (independente do período),
@@ -6601,7 +7024,7 @@ import io
 import zipfile
 import datetime
 from pathlib import Path
-from typing import Optional, List, Set, Dict, Any
+from typing import Optional, List, Set, Dict, Any, Tuple
 
 from flask import (
     request,
@@ -6652,13 +7075,13 @@ CODE_TAG: Dict[str, str] = {
 def _truthy(v: str) -> bool:
     return str(v or "").strip().lower() in ("1", "true", "t", "yes", "y", "sim", "s", "on")
 
+
 _ZIP_MODE = (os.environ.get("REPORT_ZIP_COMPRESSION") or "deflated").strip().lower()
 if _ZIP_MODE in ("store", "stored", "none", "off", "0"):
     ZIP_COMPRESSION = zipfile.ZIP_STORED
 else:
     ZIP_COMPRESSION = zipfile.ZIP_DEFLATED
 
-# compresslevel só é aplicado quando DEFLATED
 try:
     ZIP_COMPRESSLEVEL = int(os.environ.get("REPORT_ZIP_COMPRESSLEVEL", "1"))
 except Exception:
@@ -6668,7 +7091,7 @@ except Exception:
 # Helpers (auth / fetch-mode / fail)
 # ---------------------------------------------------------------------
 def _is_admin() -> bool:
-    return getattr(current_user, "tipo", None) == "administrador"
+    return (getattr(current_user, "tipo", None) or "").lower() == "administrador"
 
 
 def _wants_fetch_mode() -> bool:
@@ -6693,18 +7116,21 @@ def _fail(message: str, category: str = "danger", http_status: int = 400):
     flash(message, category)
     return redirect(url_for("user_info_all"))
 
-
 # ---------------------------------------------------------------------
 # Helpers (string/data/saldo)
 # ---------------------------------------------------------------------
-def _clean_str(val) -> str:
-    if val is None:
-        return "—"
-    s = str(val).strip()
-    if not s:
-        return "—"
-    if s.lower() in ("none", "null", "nan", "undefined"):
-        return "—"
+def _clean_str(value, upper=False, lower=False, empty_as="dash"):
+    s = str(value or "").strip()
+
+    if not s or s.lower() in ("none", "null", "nan", "undefined"):
+        return "—" if empty_as == "dash" else None
+
+    if upper:
+        s = s.upper()
+
+    if lower:
+        s = s.lower()
+
     return s
 
 
@@ -6798,16 +7224,107 @@ def _safe_filename(s: str) -> str:
     return s[:120] if len(s) > 120 else s
 
 
+def _scope_label(scope: str) -> str:
+    scope = (scope or "").lower().strip()
+    if scope == "selected":
+        return "Seleção manual (usuários selecionados)"
+    if scope == "filtered_all":
+        q = (request.args.get("q") or "").strip()
+        st = (request.args.get("status") or "").strip().lower()
+        parts = ["Filtrados"]
+        if st:
+            parts.append(f"status={st}")
+        if q:
+            parts.append(f"busca='{q}'")
+        return " • ".join(parts)
+    if scope == "ativos_all":
+        return "Todos os usuários ativos"
+    if scope == "all":
+        return "Todos os usuários"
+    if scope == "single":
+        return "Individual"
+    return scope or "—"
+
+# ---------------------------------------------------------------------
+# ✅ LM: agrupar por lote_id e exibir período + dias
+# ---------------------------------------------------------------------
+def _aggregate_lm_rows(
+    ag_list: List["Agendamento"],
+    dt_ini: Optional[datetime.date],
+    dt_fim: Optional[datetime.date],
+) -> Tuple[List[Dict[str, str]], int, int]:
+    """
+    Retorna:
+      rows: [{date, category, details}, ...]  (1 row por lote)
+      count_rows: quantidade de linhas (períodos)
+      total_days: soma dos dias (por período) conforme regra
+    Regra do total_days:
+      - Se relatório NÃO tem filtro de período (dt_ini/dt_fim vazios): usa data_fim (se houver) para contar dias completos.
+      - Se TEM filtro: conta apenas os dias presentes no recorte (qtd de datas únicas no ag_list daquele lote).
+    """
+    if not ag_list:
+        return [], 0, 0
+
+    use_full_period = (dt_ini is None and dt_fim is None)
+
+    groups: Dict[str, List["Agendamento"]] = {}
+    for ag in ag_list:
+        lote = (getattr(ag, "lote_id", None) or "").strip()
+        if lote:
+            key = f"lote:{lote}"
+        else:
+            key = f"single:{getattr(ag,'id',None)}"
+        groups.setdefault(key, []).append(ag)
+
+    rows: List[Dict[str, str]] = []
+    total_days = 0
+
+    ordered = sorted(
+        groups.values(),
+        key=lambda xs: min([getattr(x, "data", None) for x in xs if getattr(x, "data", None)] or [datetime.date.min]),
+    )
+
+    for gs in ordered:
+        dates = sorted({d for d in (getattr(x, "data", None) for x in gs) if d})
+        if not dates:
+            continue
+
+        start = dates[0]
+
+        if use_full_period:
+            ends = []
+            for x in gs:
+                df = getattr(x, "data_fim", None)
+                ends.append(df if df else getattr(x, "data", None))
+            end = max([e for e in ends if e] or [start])
+            if end < start:
+                end = start
+            days = (end - start).days + 1
+        else:
+            end = dates[-1]
+            days = len(dates)
+
+        total_days += int(days or 0)
+
+        if start == end:
+            date_str = _fmt_date(start)
+            det = "—"
+        else:
+            date_str = f"{_fmt_date(start)} → {_fmt_date(end)}"
+            det = f"{days} dia(s)"
+
+        rows.append({
+            "date": date_str,
+            "category": CODE_LABEL.get("LM", "Licenças Médicas"),
+            "details": det,
+        })
+
+    return rows, len(rows), total_days
+
 # ---------------------------------------------------------------------
 # Parsing de filtros (types / user_ids / scope / output / download)
 # ---------------------------------------------------------------------
 def _parse_types() -> Set[str]:
-    """
-    Aceita:
-      - types=AB&types=BH...
-      - types=AB,BH,TRE
-    Default: TODOS.
-    """
     types = request.args.getlist("types")
     if not types:
         raw = (request.args.get("types") or "").strip()
@@ -6830,11 +7347,6 @@ def _parse_types() -> Set[str]:
 
 
 def _parse_user_ids() -> List[int]:
-    """
-    Aceita:
-      - user_ids=1&user_ids=2
-      - user_ids=1,2,3
-    """
     vals = request.args.getlist("user_ids")
     if not vals:
         raw = (request.args.get("user_ids") or "").strip()
@@ -6858,10 +7370,6 @@ def _parse_user_ids() -> List[int]:
 
 
 def _parse_scope() -> str:
-    """
-    selected | filtered_all | ativos_all | all
-    Default: filtered_all.
-    """
     scope = (request.args.get("scope") or "filtered_all").strip().lower()
     if scope not in ("selected", "filtered_all", "ativos_all", "all"):
         scope = "filtered_all"
@@ -6869,19 +7377,11 @@ def _parse_scope() -> str:
 
 
 def _parse_output() -> str:
-    """
-    pdf | zip (apenas para o lote)
-    """
     out = (request.args.get("output") or "pdf").strip().lower()
     return "zip" if out == "zip" else "pdf"
 
 
 def _parse_download() -> bool:
-    """
-    download=1 -> baixa (as_attachment=True)
-    download=0 -> tenta abrir no navegador (as_attachment=False)
-    Default: 1
-    """
     raw = (request.args.get("download") or "1").strip().lower()
     return raw not in ("0", "false", "f", "nao", "não", "n")
 
@@ -6905,9 +7405,6 @@ def _users_filtered_all(q: str, status: str):
 
 
 def _resolve_users_for_batch(scope: str) -> List["User"]:
-    """
-    ✅ Prioriza user_ids sempre que existirem (seleção manual).
-    """
     selected_ids = _parse_user_ids()
     if selected_ids:
         return (
@@ -6941,7 +7438,7 @@ def _effective_scope(scope: str) -> str:
 
 
 # ---------------------------------------------------------------------
-# Query de agendamentos (1 query) + build items (template)
+# Query de agendamentos deferidos + build items (template)
 # ---------------------------------------------------------------------
 def _fetch_agendamentos_deferidos(
     user_ids: List[int],
@@ -6986,7 +7483,8 @@ def _build_report_items(
     user_ids = [u.id for u in users]
     ags = _fetch_agendamentos_deferidos(user_ids, dt_ini, dt_fim, selected_types)
 
-    buckets_by_user: Dict[int, Dict[str, List[Dict[str, str]]]] = {
+    # raw buckets (Agendamento) -> para podermos agrupar LM por lote_id
+    buckets_by_user: Dict[int, Dict[str, List["Agendamento"]]] = {
         uid: {code: [] for code in REPORT_CODES_ORDER} for uid in user_ids
     }
 
@@ -6999,15 +7497,12 @@ def _build_report_items(
         if code not in selected_types:
             continue
 
-        buckets_by_user[uid][code].append({
-            "date": _fmt_date(getattr(ag, "data", None)),
-            "category": CODE_LABEL.get(code, "Outros"),
-            "details": _detalhes_ag(ag, code),
-        })
+        buckets_by_user[uid][code].append(ag)
 
     items: List[Dict[str, Any]] = []
 
     for u in users:
+        # saldos atuais SEMPRE atuais
         try:
             sync_tre_user(u.id)
         except Exception:
@@ -7041,33 +7536,61 @@ def _build_report_items(
             if code not in selected_types:
                 continue
 
-            rows = user_buckets.get(code, [])
-            count = len(rows)
+            ag_list = user_buckets.get(code, []) or []
+
+            lm_total_days = 0  # ✅ usado no resumo quando code == LM
+
+            if code == "LM":
+                lm_rows, lm_count, lm_total_days = _aggregate_lm_rows(ag_list, dt_ini, dt_fim)
+                rows = lm_rows
+                count = lm_count
+                extra = (f"TOTAL DIAS LM: {lm_total_days}" if lm_total_days > 0 else "")
+            else:
+                ag_list_sorted = sorted(ag_list, key=lambda x: getattr(x, "data", datetime.date.min) or datetime.date.min)
+                rows = [{
+                    "date": _fmt_date(getattr(ag, "data", None)),
+                    "category": CODE_LABEL.get(code, "Outros"),
+                    "details": _detalhes_ag(ag, code),
+                } for ag in ag_list_sorted]
+                count = len(rows)
+
+                extra = ""
+                if code == "BH":
+                    extra = f"SALDO ATUAL BH: {bh_saldo_str}"
+                elif code == "TRE":
+                    extra = f"SALDO DISPONÍVEL TRE: {tre_saldo}"
 
             must_show_due_to_balance = (code in ("BH", "TRE"))
             if count == 0 and not must_show_due_to_balance:
                 continue
 
-            extra = ""
-            if code == "BH":
-                extra = f"SALDO ATUAL BH: {bh_saldo_str}"
-            elif code == "TRE":
-                extra = f"SALDO DISPONÍVEL TRE: {tre_saldo}"
-
             groups.append({
                 "code": code,
                 "title": (CODE_LABEL.get(code, "Outros") or "Outros").upper(),
                 "tag": CODE_TAG.get(code, "out"),
-                "count": count,
+                "count": int(count or 0),              # ✅ para o histórico (linhas/períodos)
+                "lm_total_days": int(lm_total_days),   # ✅ para o resumo (dias)
                 "extra": extra,
                 "rows": rows,
             })
 
+        # ==========================================================
+        # ✅ CORREÇÃO PEDIDA:
+        # No RESUMO, LM deve contabilizar DIAS (lm_total_days), não "count" de períodos.
+        # ==========================================================
         summary_rows = []
         total_qtd = 0
         for g in groups:
-            summary_rows.append({"tipo": CODE_LABEL.get(g["code"], "Outros"), "qtd": int(g["count"] or 0)})
-            total_qtd += int(g["count"] or 0)
+            code = g.get("code")
+
+            if code == "LM":
+                lm_days = int(g.get("lm_total_days") or 0)
+                summary_rows.append({"tipo": "Licenças Médicas (dias)", "qtd": lm_days})
+                total_qtd += lm_days
+            else:
+                qtd = int(g.get("count") or 0)
+                summary_rows.append({"tipo": CODE_LABEL.get(code, "Outros"), "qtd": qtd})
+                total_qtd += qtd
 
         items.append({
             "user": u,
@@ -7078,7 +7601,6 @@ def _build_report_items(
         })
 
     return items
-
 
 # ---------------------------------------------------------------------
 # Render + send (PDF/ZIP)
@@ -7121,6 +7643,8 @@ def _build_zip_of_individual_pdfs(
     template_name: str,
     period_label: str,
     audit: Dict[str, Any],
+    scope_label: str,
+    generated_by: str,
 ) -> bytes:
     """
     ✅ OTIMIZAÇÃO: reduz gargalo de CPU do ZIP
@@ -7128,7 +7652,6 @@ def _build_zip_of_individual_pdfs(
       - ou sem compressão (STORED) via env REPORT_ZIP_COMPRESSION=stored
     """
     zbio = io.BytesIO()
-
     sorted_types = sorted(list(selected_types))
 
     zip_kwargs = dict(
@@ -7136,8 +7659,6 @@ def _build_zip_of_individual_pdfs(
         compression=ZIP_COMPRESSION,
         allowZip64=True,
     )
-
-    # compresslevel existe no Python 3.10+ e só faz sentido no DEFLATED
     if ZIP_COMPRESSION == zipfile.ZIP_DEFLATED:
         zip_kwargs["compresslevel"] = max(0, min(int(ZIP_COMPRESSLEVEL), 9))
 
@@ -7155,18 +7676,17 @@ def _build_zip_of_individual_pdfs(
                 selected_types=sorted_types,
                 period_label=period_label,
                 audit=audit,
+                scope_label=scope_label,
+                generated_by=generated_by,
             )
 
             safe_nome = _safe_filename(_clean_str(getattr(u, "nome", "")))
             safe_reg = _safe_filename(_clean_str(getattr(u, "registro", "")))
             pdf_name = f"prontuario_{safe_nome}_{safe_reg}.pdf"
-
-            # writestr já vai usar o compression configurado no ZipFile
             zf.writestr(pdf_name, pdf_bytes)
 
     zbio.seek(0)
     return zbio.getvalue()
-
 
 # ---------------------------------------------------------------------
 # ENDPOINT AUXILIAR (modal): contagem de usuários por escopo
@@ -7202,7 +7722,6 @@ def user_info_report_count():
 
     total = _users_filtered_all(q, status).count()
     return jsonify(success=True, scope="filtered_all", total=int(total))
-
 
 # ---------------------------------------------------------------------
 # ✅ endpoint leve para “estimativa” no modal (registros por tipo)
@@ -7282,7 +7801,6 @@ def user_info_report_stats():
         selected_types=sorted(list(selected_types)),
     ), 200
 
-
 # ---------------------------------------------------------------------
 # ROTAS: lote + individual
 # ---------------------------------------------------------------------
@@ -7322,10 +7840,14 @@ def user_info_report():
 
     template_name = "relatorio_servidores.html"
 
+    generated_by = _clean_str(getattr(current_user, "nome", None))
+    scope_label = _scope_label(eff_scope)
+
     audit = {
-        "generated_by": _clean_str(getattr(current_user, "nome", None)),
+        "generated_by": generated_by,
         "generated_by_id": getattr(current_user, "id", None),
         "scope": eff_scope,
+        "scope_label": scope_label,
         "scope_status": (request.args.get("status") or "").strip().lower() if eff_scope == "filtered_all" else "",
         "scope_q": (request.args.get("q") or "").strip() if eff_scope == "filtered_all" else "",
         "types": sorted(list(selected_types)),
@@ -7360,6 +7882,8 @@ def user_info_report():
                 template_name=template_name,
                 period_label=period_label,
                 audit=audit,
+                scope_label=scope_label,
+                generated_by=generated_by,
             )
             return _send_bytes(zip_bytes, "relatorios_prontuarios.zip", "application/zip", download)
 
@@ -7375,6 +7899,8 @@ def user_info_report():
             selected_types=sorted(list(selected_types)),
             period_label=period_label,
             audit=audit,
+            scope_label=scope_label,
+            generated_by=generated_by,
         )
         return _send_bytes(pdf_bytes, "relatorio_servidores.pdf", "application/pdf", download)
 
@@ -7414,10 +7940,14 @@ def user_info_report_single(user_id: int):
     safe_reg = _safe_filename(_clean_str(getattr(u, "registro", "")))
     filename = f"prontuario_{safe_nome}_{safe_reg}.pdf"
 
+    generated_by = _clean_str(getattr(current_user, "nome", None))
+    scope_label = _scope_label("single")
+
     audit = {
-        "generated_by": _clean_str(getattr(current_user, "nome", None)),
+        "generated_by": generated_by,
         "generated_by_id": getattr(current_user, "id", None),
         "scope": "single",
+        "scope_label": scope_label,
         "types": sorted(list(selected_types)),
         "output": "pdf",
         "download": bool(download),
@@ -7436,13 +7966,15 @@ def user_info_report_single(user_id: int):
             selected_types=sorted(list(selected_types)),
             period_label=period_label,
             audit=audit,
+            scope_label=scope_label,
+            generated_by=generated_by,
         )
         return _send_bytes(pdf_bytes, filename, "application/pdf", download)
 
     except Exception:
         current_app.logger.exception("Erro ao gerar relatório (WeasyPrint) — individual.")
         return _fail("Falha ao gerar o prontuário. Verifique logs/dependências do WeasyPrint.", "danger", 500)
-    
+
 # ===========================================
 # EVENTOS (ADMIN) - CRUD COMPLETO
 # Rotas:

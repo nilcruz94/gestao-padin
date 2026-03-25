@@ -12,11 +12,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
 
   <script>
-    // Exibe / esconde Data de Referência + Horas/Minutos quando motivo = BH
+    // ==========================
+    // Campos dinâmicos por motivo
+    // ==========================
     function toggleDataReferencia() {
-      var motivo = document.getElementById("motivo").value;
+      var motivo = document.getElementById("motivo")?.value;
+
       var dataReferenciaGroup = document.getElementById("data_banco_horas");
       var dataReferenciaInput = document.getElementById("data_referencia");
+
       var horasGroup = document.getElementById("horas_group");
       var minutosGroup = document.getElementById("minutos_group");
       var horasInput = document.getElementById("quantidade_horas");
@@ -52,6 +56,46 @@
       }
     }
 
+    // Mostra / esconde período LM (ADMIN) + mantém "data" como início (compatibilidade backend)
+    function togglePeriodoLM() {
+      var motivo = document.getElementById("motivo")?.value;
+
+      var singleGroup = document.getElementById("data_single_group");
+      var singleInput = document.getElementById("data");
+
+      var periodoGroup = document.getElementById("periodo_lm_group");
+      var dtIni = document.getElementById("data_inicio");
+      var dtFim = document.getElementById("data_fim");
+
+      var preview = document.getElementById("lm_preview");
+
+      if (motivo === "LM") {
+        if (singleGroup) singleGroup.style.display = "none";
+        if (singleInput) singleInput.removeAttribute("required");
+
+        if (periodoGroup) periodoGroup.style.display = "block";
+        if (dtIni) dtIni.setAttribute("required", "true");
+        if (dtFim) dtFim.setAttribute("required", "true");
+
+        if (preview) preview.style.display = "block";
+        updateLMPreview();
+      } else {
+        if (periodoGroup) periodoGroup.style.display = "none";
+        if (dtIni) { dtIni.removeAttribute("required"); dtIni.value = ""; }
+        if (dtFim) { dtFim.removeAttribute("required"); dtFim.value = ""; }
+
+        if (preview) preview.style.display = "none";
+
+        if (singleGroup) singleGroup.style.display = "block";
+        if (singleInput) singleInput.setAttribute("required", "true");
+      }
+    }
+
+    function toggleMotivoFields() {
+      toggleDataReferencia();
+      togglePeriodoLM();
+    }
+
     // Mostra / esconde campo "Nome do Substituto" e exige quando "Sim"
     function toggleSubstituto() {
       var select = document.getElementById("havera_substituicao");
@@ -64,8 +108,10 @@
         if (input) input.setAttribute("required", "true");
       } else {
         group.style.display = "none";
-        if (input) input.removeAttribute("required");
-        if (input) input.value = "";
+        if (input) {
+          input.removeAttribute("required");
+          input.value = "";
+        }
       }
     }
 
@@ -76,60 +122,7 @@
       if (tipoFolgaField && motivo) tipoFolgaField.value = motivo.value || "";
     }
 
-    // Validação básica antes de enviar (mesma do seu template)
-    function validateForm(event) {
-      var motivo = document.getElementById("motivo").value;
-      var dataReferenciaInput = document.getElementById("data_referencia");
-      var horasInput = document.getElementById("quantidade_horas");
-      var minutosInput = document.getElementById("quantidade_minutos");
-      var tipoFolgaField = document.getElementById("tipo_folga");
-      var dataFolgaInput = document.getElementById("data");
-      var userId = document.getElementById("user_id");
-
-      if (userId && !userId.value) {
-        alert("Selecione um usuário ativo.");
-        if (event) event.preventDefault();
-        return false;
-      }
-
-      // Preenche tipo_folga com o mesmo valor do motivo
-      if (tipoFolgaField) tipoFolgaField.value = motivo;
-
-      if (motivo === "BH" && dataReferenciaInput && !dataReferenciaInput.value) {
-        alert("A data de referência é obrigatória quando o motivo for Banco de Horas.");
-        if (event) event.preventDefault();
-        return false;
-      }
-
-      if (motivo === "BH") {
-        var h = parseInt(horasInput && horasInput.value ? horasInput.value : "0", 10);
-        var m = parseInt(minutosInput && minutosInput.value ? minutosInput.value : "0", 10);
-
-        if (Number.isNaN(h) || Number.isNaN(m) || h < 0 || m < 0 || m > 59) {
-          alert("Horas e minutos devem ser válidos (minutos entre 0 e 59) para Banco de Horas.");
-          if (event) event.preventDefault();
-          return false;
-        }
-        if ((h + m) === 0) {
-          alert("Informe um total de tempo maior que zero para utilizar Banco de Horas.");
-          if (event) event.preventDefault();
-          return false;
-        }
-
-        if (dataReferenciaInput && dataReferenciaInput.value && dataFolgaInput && dataFolgaInput.value) {
-          var ref = new Date(dataReferenciaInput.value);
-          var folga = new Date(dataFolgaInput.value);
-          if (ref > folga) {
-            alert("A data de referência do Banco de Horas não pode ser posterior à data da folga.");
-            if (event) event.preventDefault();
-            return false;
-          }
-        }
-      }
-      return true;
-    }
-
-    // Atualiza “preview” do usuário selecionado (nome/registro) sem precisar de backend
+    // Preview do usuário selecionado
     function updateUserPreview() {
       var select = document.getElementById("user_id");
       var preview = document.getElementById("user_preview");
@@ -154,12 +147,146 @@
       reg.textContent = r || "—";
     }
 
-    // Ajusta campos iniciais ao carregar
+    function _parseYMD(v){
+      if (!v) return null;
+      var parts = v.split("-");
+      if (parts.length !== 3) return null;
+      var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10), d = parseInt(parts[2], 10);
+      if (!y || !m || !d) return null;
+      return new Date(y, m - 1, d);
+    }
+
+    function _daysBetweenInclusive(a, b){
+      var ms = b.getTime() - a.getTime();
+      var days = Math.floor(ms / (24 * 60 * 60 * 1000));
+      return days + 1;
+    }
+
+    function updateLMPreview(){
+      var motivo = document.getElementById("motivo")?.value;
+      if (motivo !== "LM") return;
+
+      var dtIni = document.getElementById("data_inicio")?.value || "";
+      var dtFim = document.getElementById("data_fim")?.value || "";
+
+      var out = document.getElementById("lm_preview_text");
+      if (!out) return;
+
+      var a = _parseYMD(dtIni);
+      var b = _parseYMD(dtFim);
+      if (!a || !b){
+        out.textContent = "Selecione a data inicial e final para ver a quantidade de dias.";
+        return;
+      }
+      if (b < a){
+        out.textContent = "Período inválido: a data final é menor que a inicial.";
+        return;
+      }
+
+      var total = _daysBetweenInclusive(a, b);
+      out.textContent = "Quantidade de dias no período: " + total + " dia(s).";
+    }
+
+    // Validação antes de enviar
+    function validateForm(event) {
+      var userId = document.getElementById("user_id");
+      var motivo = document.getElementById("motivo")?.value || "";
+      var tipoFolgaField = document.getElementById("tipo_folga");
+
+      var dataFolgaInput = document.getElementById("data");
+      var dataReferenciaInput = document.getElementById("data_referencia");
+      var horasInput = document.getElementById("quantidade_horas");
+      var minutosInput = document.getElementById("quantidade_minutos");
+
+      if (userId && !userId.value) {
+        alert("Selecione um usuário ativo.");
+        if (event) event.preventDefault();
+        return false;
+      }
+
+      if (tipoFolgaField) tipoFolgaField.value = motivo;
+
+      // ===== LM (período) =====
+      if (motivo === "LM") {
+        var dtIniEl = document.getElementById("data_inicio");
+        var dtFimEl = document.getElementById("data_fim");
+
+        var dtIni = (dtIniEl?.value || "").trim();
+        var dtFim = (dtFimEl?.value || "").trim();
+
+        if (!dtIni || !dtFim) {
+          alert("Para Licença Médica (LM), informe a data inicial e a data final do período.");
+          if (event) event.preventDefault();
+          return false;
+        }
+
+        if (dtIni > dtFim) {
+          alert("Período inválido: a data final não pode ser menor que a data inicial.");
+          if (event) event.preventDefault();
+          return false;
+        }
+
+        // Compatibilidade: backend ainda usa 'data' como início
+        if (dataFolgaInput) dataFolgaInput.value = dtIni;
+
+        return true;
+      }
+
+      // ===== BH =====
+      if (motivo === "BH") {
+        if (dataReferenciaInput && !dataReferenciaInput.value) {
+          alert("A data de referência é obrigatória quando o motivo for Banco de Horas.");
+          if (event) event.preventDefault();
+          return false;
+        }
+
+        var h = parseInt(horasInput && horasInput.value ? horasInput.value : "0", 10);
+        var m = parseInt(minutosInput && minutosInput.value ? minutosInput.value : "0", 10);
+
+        if (Number.isNaN(h) || Number.isNaN(m) || h < 0 || m < 0 || m > 59) {
+          alert("Horas e minutos devem ser válidos (minutos entre 0 e 59) para Banco de Horas.");
+          if (event) event.preventDefault();
+          return false;
+        }
+        if ((h + m) === 0) {
+          alert("Informe um total de tempo maior que zero para utilizar Banco de Horas.");
+          if (event) event.preventDefault();
+          return false;
+        }
+
+        if (dataReferenciaInput && dataReferenciaInput.value && dataFolgaInput && dataFolgaInput.value) {
+          var ref = new Date(dataReferenciaInput.value);
+          var folga = new Date(dataFolgaInput.value);
+          if (ref > folga) {
+            alert("A data de referência do Banco de Horas não pode ser posterior à data da folga.");
+            if (event) event.preventDefault();
+            return false;
+          }
+        }
+
+        return true;
+      }
+
+      // ===== Outros motivos (data única) =====
+      if (!dataFolgaInput || !dataFolgaInput.value) {
+        alert("Informe a data da folga.");
+        if (event) event.preventDefault();
+        return false;
+      }
+
+      return true;
+    }
+
     window.addEventListener("load", function () {
-      toggleDataReferencia();
+      toggleMotivoFields();
       toggleSubstituto();
       syncTipoFolga();
       updateUserPreview();
+
+      var dtIniEl = document.getElementById("data_inicio");
+      var dtFimEl = document.getElementById("data_fim");
+      if (dtIniEl) dtIniEl.addEventListener("change", updateLMPreview);
+      if (dtFimEl) dtFimEl.addEventListener("change", updateLMPreview);
 
       // auto-hide flash (8s)
       setTimeout(() => {
@@ -210,7 +337,7 @@
 
     main {
       flex: 1 0 auto;
-      padding: 24px 12px 120px; /* ✅ espaço extra p/ footer */
+      padding: 24px 12px 120px;
       box-sizing: border-box;
     }
 
@@ -226,6 +353,7 @@
 
     .header-desktop, .header-mobile { display: none; flex-shrink: 0; }
 
+    /* Desktop */
     @media (min-width: 769px) {
       .header-desktop {
         display: flex;
@@ -300,6 +428,7 @@
       .btn-home:hover { background-color: #0d8a00; }
     }
 
+    /* Mobile */
     @media (max-width: 768px) {
       .header-mobile {
         display: block;
@@ -377,7 +506,7 @@
       .btn-home-mobile:hover { background-color: #0d8a00; }
     }
 
-    /* ✅ FLASH (agora mostra success/warning/info também) */
+    /* Flash */
     .flash-container{
       margin: 0 auto 14px;
       max-width: 900px;
@@ -398,7 +527,6 @@
       gap:10px;
     }
     .flash i{ margin-top:2px; }
-
     .flash.message{ background:#eff6ff; color:#1e3a8a; border-color:#bfdbfe; border-left:6px solid #3b82f6; }
     .flash.success{ background:#dcfce7; color:#166534; border-color:#bbf7d0; border-left:6px solid #22c55e; }
     .flash.error, .flash.danger{ background:#fee2e2; color:#b91c1c; border-color:#fecaca; border-left:6px solid #ef4444; }
@@ -428,6 +556,7 @@
       background:radial-gradient(circle at 30% 30%,#ffffff 0%,#e0edff 60%,#c7d9ff 100%);
       box-shadow:0 4px 12px rgba(37,99,235,.45);
       color:#2563eb;
+      flex-shrink:0;
     }
 
     .page-header-icon i{ font-size:22px; }
@@ -538,6 +667,60 @@
       .horas-minutos-group input { max-width: 100%; }
     }
 
+    /* ===== LM (padronizado com a página /agendar) ===== */
+    .lm-periodo-wrap{
+      margin-top: 6px;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,0.28);
+      background: linear-gradient(135deg, #fbfdff, #ffffff);
+      box-shadow: 0 8px 18px rgba(15,23,42,.06);
+    }
+
+    .lm-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:#eff6ff;
+      color:#1e3a8a;
+      border:1px solid #bfdbfe;
+      font-weight:900;
+      font-size:0.82rem;
+      letter-spacing:.02em;
+      margin-bottom:10px;
+      user-select:none;
+    }
+
+    .periodo-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      align-items:end;
+    }
+    @media (max-width: 720px){
+      .periodo-grid{ grid-template-columns: 1fr; }
+    }
+
+    .lm-preview{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(148,163,184,0.25);
+      background:#ffffff;
+      box-shadow:0 6px 16px rgba(15,23,42,.06);
+      font-weight:800;
+      font-size:0.88rem;
+      color:#111827;
+      display:none;
+    }
+    .lm-preview .muted{
+      font-weight:700;
+      color:#64748b;
+    }
+
+    /* ===== Botão ===== */
     .submit-row { display: flex; justify-content: flex-end; margin-top: 10px; }
 
     .submit-btn {
@@ -630,7 +813,6 @@
       width: 100%;
       flex-shrink: 0;
 
-      /* ✅ protege contra footer fixado no style.css */
       position: relative !important;
       bottom: auto !important;
       left: auto !important;
@@ -677,11 +859,10 @@
     </div>
   </header>
 
-  <!-- Conteúdo principal -->
   <main>
     <div class="shell">
 
-      <!-- ✅ FLASH (agora todos os tipos aparecem) -->
+      <!-- Flash -->
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           <div class="flash-container" aria-live="polite">
@@ -705,7 +886,7 @@
         {% endif %}
       {% endwith %}
 
-      <!-- Header card da página -->
+      <!-- Header card -->
       <div class="page-header-card">
         <div class="page-header-icon">
           <i class="fas fa-user-shield"></i>
@@ -713,12 +894,12 @@
         <div class="page-header-content">
           <p class="page-header-title">Agendar Folga (Admin)</p>
           <p class="page-header-subtitle">
-            Registre uma folga para um servidor ativo e o sistema enviará o protocolo e e-mail automaticamente.
+            Registre uma folga para um servidor ativo. Para <strong>LM</strong>, você pode lançar um <strong>período</strong>.
           </p>
         </div>
       </div>
 
-      <!-- CARD FORMULÁRIO -->
+      <!-- Card formulário -->
       <div class="card-agendar">
         <div class="card-agendar-header">
           <h1><i class="fas fa-edit"></i> Dados do Agendamento</h1>
@@ -748,16 +929,10 @@
               </div>
             </div>
 
-            <!-- Data da folga -->
-            <div class="input-group">
-              <label for="data"><i class="fas fa-calendar-alt"></i> Data da Folga</label>
-              <input type="date" id="data" name="data" required />
-            </div>
-
             <!-- Motivo -->
             <div class="input-group">
               <label for="motivo"><i class="fas fa-list-alt"></i> Motivo da Ausência</label>
-              <select id="motivo" name="motivo" required onchange="toggleDataReferencia(); syncTipoFolga();">
+              <select id="motivo" name="motivo" required onchange="toggleMotivoFields(); syncTipoFolga();">
                 <option value="AB">Abonada (AB)</option>
                 <option value="BH">Banco de Horas (BH)</option>
                 <option value="DL">Dispensa Legal (DL)</option>
@@ -766,6 +941,42 @@
                 <option value="LM">Licença Médica (LM)</option>
                 <option value="FS">Falta Simples (FS)</option>
               </select>
+            </div>
+
+            <!-- Data única (padrão) -->
+            <div class="input-group" id="data_single_group">
+              <label for="data"><i class="fas fa-calendar-alt"></i> Data da Folga</label>
+              <input type="date" id="data" name="data" required />
+            </div>
+
+            <!-- Período LM (padronizado) -->
+            <div class="input-group" id="periodo_lm_group" style="display:none;">
+              <label><i class="fas fa-notes-medical"></i> Licença Médica — Período</label>
+
+              <div class="lm-periodo-wrap">
+                <div class="lm-badge">
+                  <i class="fas fa-calendar-days"></i>
+                  Período (LM)
+                </div>
+
+                <div class="periodo-grid">
+                  <div class="input-group">
+                    <label for="data_inicio"><i class="fas fa-calendar-plus"></i> Data inicial</label>
+                    <input type="date" id="data_inicio" name="data_inicio" />
+                  </div>
+
+                  <div class="input-group">
+                    <label for="data_fim"><i class="fas fa-calendar-check"></i> Data final</label>
+                    <input type="date" id="data_fim" name="data_fim" />
+                  </div>
+                </div>
+
+                <div class="lm-preview" id="lm_preview">
+                  <div id="lm_preview_text">
+                    <span class="muted">Selecione a data inicial e final para ver a quantidade de dias.</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Haverá substituição -->
@@ -818,7 +1029,7 @@
         </form>
       </div>
 
-      <!-- SEÇÃO INFORMATIVA -->
+      <!-- Informativo -->
       <div class="info-section">
         <h2><i class="fas fa-info-circle"></i> O que acontece após registrar</h2>
         <p>
@@ -830,7 +1041,7 @@
         </p>
       </div>
 
-      <!-- Link Voltar -->
+      <!-- Voltar -->
       <div class="voltar-wrapper">
         <a href="{{ url_for('index') }}" class="voltar-link">
           <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
