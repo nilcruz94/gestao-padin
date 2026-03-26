@@ -457,6 +457,16 @@ class User(UserMixin, db.Model):
         cascade="all, delete-orphan",
     )
 
+    horarios_trabalho = db.relationship(
+        "UserHorarioTrabalho",
+        back_populates="usuario",
+        lazy=True,
+        cascade="all, delete-orphan",
+        order_by="UserHorarioTrabalho.vigencia_inicio.desc(), "
+                 "UserHorarioTrabalho.dia_semana.asc(), "
+                 "UserHorarioTrabalho.hora_inicio.asc()",
+    )
+
 
 class Agendamento(db.Model):
     __tablename__ = "agendamento"
@@ -696,6 +706,60 @@ class ReleaseNoteRead(db.Model):
     __table_args__ = (
         db.UniqueConstraint("user_id", "release_id", name="uq_release_note_read_user_release"),
         Index("ix_release_note_read_user_release", "user_id", "release_id"),
+    )
+
+class UserHorarioTrabalho(db.Model):
+    __tablename__ = "user_horario_trabalho"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    # 0=segunda, 1=terça, 2=quarta, 3=quinta, 4=sexta, 5=sábado, 6=domingo
+    dia_semana = db.Column(db.SmallInteger, nullable=False, index=True)
+
+    hora_inicio = db.Column(db.Time, nullable=False)
+    hora_fim = db.Column(db.Time, nullable=False)
+
+    # Quando esse horário passou a valer
+    vigencia_inicio = db.Column(db.Date, nullable=False, index=True)
+
+    # Opcional: quando deixou de valer
+    vigencia_fim = db.Column(db.Date, nullable=True, index=True)
+
+    ativo = db.Column(db.Boolean, nullable=False, default=True, index=True)
+    observacao = db.Column(db.String(255), nullable=True)
+
+    usuario = db.relationship(
+        "User",
+        back_populates="horarios_trabalho",
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "dia_semana >= 0 AND dia_semana <= 6",
+            name="ck_uht_dia_semana",
+        ),
+        CheckConstraint(
+            "hora_fim > hora_inicio",
+            name="ck_uht_hora_fim_maior",
+        ),
+        CheckConstraint(
+            "(vigencia_fim IS NULL) OR (vigencia_fim >= vigencia_inicio)",
+            name="ck_uht_vigencia_valida",
+        ),
+        Index(
+            "ix_uht_user_dia_vigencia",
+            "user_id",
+            "dia_semana",
+            "vigencia_inicio",
+            "vigencia_fim",
+        ),
     )
 
 
@@ -5053,6 +5117,7 @@ import datetime
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 from flask import request, redirect, url_for, render_template, flash, current_app
 from flask_login import login_required, current_user
 from werkzeug.security import check_password_hash
@@ -5237,12 +5302,21 @@ def confirmar_email(token):
 
 
 # ===========================================
-# PERFIL (corrigido: flashes coerentes + troca de e-mail)
+# PERFIL (corrigido: flashes coerentes + troca de e-mail + horários)
 # ===========================================
 @app.route('/perfil', methods=['GET', 'POST'])
 @login_required
 def perfil():
-    usuario = current_user
+    usuario = (
+        User.query
+        .options(joinedload(User.horarios_trabalho))
+        .filter_by(id=current_user.id)
+        .first()
+    )
+
+    if not usuario:
+        flash("Usuário não encontrado.", "danger")
+        return redirect(url_for("login"))
 
     cargos = sorted([
         "Agente Administrativo", "Professor I", "Professor Adjunto",

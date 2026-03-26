@@ -139,7 +139,6 @@
     }
     .edit-icon:hover{ transform:translateY(-1px); background:#e9f1ff; border-color:#bcd2ff; }
 
-    /* ✅ Select premium */
     .select-wrap{
       position:relative;
       width:100%;
@@ -166,6 +165,103 @@
     }
     .select-wrap:hover select{
       border-color:#bcd2ff;
+    }
+
+    .jornada-inline-box{
+      grid-column:1 / -1;
+      margin-top:2px;
+      padding:8px 10px;
+      border:1px solid #e5e7eb;
+      border-radius:14px;
+      background:#fbfcfe;
+    }
+    .jornada-inline-title{
+      display:flex;
+      align-items:center;
+      gap:7px;
+      font-size:0.84rem;
+      font-weight:800;
+      color:#111827;
+      margin-bottom:6px;
+      line-height:1.2;
+    }
+    .jornada-inline-title i{
+      color:#2563eb;
+      font-size:0.82rem;
+    }
+    .jornada-inline-wrap{
+      display:flex;
+      align-items:center;
+      gap:5px;
+      flex-wrap:nowrap;
+      overflow-x:auto;
+      scrollbar-width:thin;
+      padding-bottom:2px;
+    }
+    .jornada-inline-wrap::-webkit-scrollbar{
+      height:6px;
+    }
+    .jornada-inline-wrap::-webkit-scrollbar-thumb{
+      background:#cbd5e1;
+      border-radius:999px;
+    }
+    .jornada-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      min-height:28px;
+      padding:4px 7px;
+      border-radius:999px;
+      background:#eef4ff;
+      border:1px solid #cfe0ff;
+      color:#1d4ed8;
+      max-width:100%;
+      flex:0 0 auto;
+      white-space:nowrap;
+    }
+    .jornada-pill-dia{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:2px 6px;
+      border-radius:999px;
+      background:#ffffff;
+      border:1px solid #dbe7ff;
+      color:#1e3a8a;
+      font-size:0.66rem;
+      font-weight:800;
+      line-height:1;
+      flex-shrink:0;
+      letter-spacing:.2px;
+    }
+    .jornada-pill-hora{
+      font-size:0.73rem;
+      font-weight:700;
+      line-height:1.15;
+      color:#1e3a8a;
+      white-space:nowrap;
+    }
+    .jornada-pill.empty{
+      background:#f8fafc;
+      border:1px dashed #cbd5e1;
+      color:#64748b;
+    }
+    .jornada-pill.empty .jornada-pill-dia,
+    .jornada-pill.empty .jornada-pill-hora{
+      color:#64748b;
+      border-color:#d7dde5;
+    }
+    @media (max-width:768px){
+      .jornada-inline-wrap{
+        flex-wrap:wrap;
+        overflow-x:visible;
+      }
+      .jornada-pill{
+        white-space:normal;
+      }
+      .jornada-pill-hora{
+        white-space:normal;
+      }
     }
 
     .divider{
@@ -247,7 +343,6 @@
 </head>
 <body>
 
-  <!-- Cabeçalho Desktop -->
   <header class="header-desktop">
     <div class="left-section">
       <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
@@ -264,7 +359,6 @@
     </a>
   </header>
 
-  <!-- Cabeçalho Mobile -->
   <header class="header-mobile">
     <div class="header-top">
       <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
@@ -467,6 +561,91 @@
                     <option value="{{ g }}" {% if graduacao_atual == g %}selected{% endif %}>{{ g }}</option>
                   {% endfor %}
                 </select>
+              </div>
+            </div>
+
+            {% set ns_horarios = namespace(seg='', ter='', qua='', qui='', sex='', total=0) %}
+            {% for h in usuario.horarios_trabalho %}
+              {% if h.ativo and h.dia_semana in [0,1,2,3,4] %}
+                {% set faixa = h.hora_inicio.strftime('%H:%M') ~ '–' ~ h.hora_fim.strftime('%H:%M') %}
+                {% set ns_horarios.total = ns_horarios.total + 1 %}
+                {% if h.dia_semana == 0 %}
+                  {% set ns_horarios.seg = ns_horarios.seg ~ (' / ' if ns_horarios.seg else '') ~ faixa %}
+                {% elif h.dia_semana == 1 %}
+                  {% set ns_horarios.ter = ns_horarios.ter ~ (' / ' if ns_horarios.ter else '') ~ faixa %}
+                {% elif h.dia_semana == 2 %}
+                  {% set ns_horarios.qua = ns_horarios.qua ~ (' / ' if ns_horarios.qua else '') ~ faixa %}
+                {% elif h.dia_semana == 3 %}
+                  {% set ns_horarios.qui = ns_horarios.qui ~ (' / ' if ns_horarios.qui else '') ~ faixa %}
+                {% elif h.dia_semana == 4 %}
+                  {% set ns_horarios.sex = ns_horarios.sex ~ (' / ' if ns_horarios.sex else '') ~ faixa %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+
+            {% set horario_unico_seg_sex =
+              ns_horarios.seg and
+              ns_horarios.seg == ns_horarios.ter and
+              ns_horarios.seg == ns_horarios.qua and
+              ns_horarios.seg == ns_horarios.qui and
+              ns_horarios.seg == ns_horarios.sex
+            %}
+
+            <div class="jornada-inline-box">
+              <div class="jornada-inline-title">
+                <i class="fas fa-clock"></i>
+                <span>Jornada de Trabalho</span>
+              </div>
+
+              <div class="jornada-inline-wrap">
+                {% if ns_horarios.total == 0 %}
+                  <span class="jornada-pill empty">
+                    <span class="jornada-pill-dia">SEG–SEX</span>
+                    <span class="jornada-pill-hora">Sem jornada cadastrada</span>
+                  </span>
+
+                {% elif horario_unico_seg_sex %}
+                  <span class="jornada-pill">
+                    <span class="jornada-pill-dia">SEG–SEX</span>
+                    <span class="jornada-pill-hora">{{ ns_horarios.seg }}</span>
+                  </span>
+
+                {% else %}
+                  {% if ns_horarios.seg %}
+                    <span class="jornada-pill">
+                      <span class="jornada-pill-dia">SEG</span>
+                      <span class="jornada-pill-hora">{{ ns_horarios.seg }}</span>
+                    </span>
+                  {% endif %}
+
+                  {% if ns_horarios.ter %}
+                    <span class="jornada-pill">
+                      <span class="jornada-pill-dia">TER</span>
+                      <span class="jornada-pill-hora">{{ ns_horarios.ter }}</span>
+                    </span>
+                  {% endif %}
+
+                  {% if ns_horarios.qua %}
+                    <span class="jornada-pill">
+                      <span class="jornada-pill-dia">QUA</span>
+                      <span class="jornada-pill-hora">{{ ns_horarios.qua }}</span>
+                    </span>
+                  {% endif %}
+
+                  {% if ns_horarios.qui %}
+                    <span class="jornada-pill">
+                      <span class="jornada-pill-dia">QUI</span>
+                      <span class="jornada-pill-hora">{{ ns_horarios.qui }}</span>
+                    </span>
+                  {% endif %}
+
+                  {% if ns_horarios.sex %}
+                    <span class="jornada-pill">
+                      <span class="jornada-pill-dia">SEX</span>
+                      <span class="jornada-pill-hora">{{ ns_horarios.sex }}</span>
+                    </span>
+                  {% endif %}
+                {% endif %}
               </div>
             </div>
 
