@@ -69,7 +69,6 @@
       font-family:inherit;
     }
 
-    /* ===== CABEÇALHOS ===== */
     .header-desktop,.header-mobile{flex-shrink:0;}
     .header-desktop{display:none;}
     .header-mobile{display:none;}
@@ -198,14 +197,12 @@
       .btn-home-mobile:hover{ background-color:#0d8a00; }
     }
 
-    /* ===== WRAPPER ===== */
     .page{
       width:100%;
       max-width:1180px;
       margin:0 auto;
     }
 
-    /* ===== HEADER CARD ===== */
     .page-header-card{
       background:#ffffff;
       border-radius:var(--radius);
@@ -225,7 +222,7 @@
       width:42px;
       height:42px;
       border-radius:999px;
-      background:radial-gradient(circle at 30% 30%,#ffffff 0%,#e0edff 60%,#c7d9ff 100%);
+      background:radial-gradient(circle at 30% 30%,#ffffff 0,#e0edff 60%,#c7d9ff 100%);
       box-shadow:0 4px 12px rgba(37,99,235,.45);
       color:#2563eb;
       flex-shrink:0;
@@ -252,7 +249,6 @@
       .page-header-subtitle{ font-size:.82rem; }
     }
 
-    /* ===== CARD BASE ===== */
     .content-card{
       width:100%;
       margin:0 auto 24px;
@@ -285,7 +281,6 @@
 
     .filter-card{ margin-bottom:22px; }
 
-    /* ===== BOTÕES ===== */
     .btn{
       border-radius:12px;
       border:1px solid rgba(148,163,184,.45);
@@ -330,7 +325,6 @@
 
     .btn-outline:hover{ background:#eef5ff; }
 
-    /* ===== FILTRO DO PERÍODO ===== */
     .filter-form{ margin-top:10px; }
     .filter-row{
       display:flex;
@@ -377,7 +371,6 @@
       height:46px;
     }
 
-    /* ===== TOOLBAR DA TABELA ===== */
     .toolbar-shell{
       margin:16px 0 14px;
       padding:14px;
@@ -478,7 +471,6 @@
       }
     }
 
-    /* ===== RESUMO ===== */
     .summary-box{
       margin:4px 0 16px;
       padding:12px 14px;
@@ -518,7 +510,6 @@
       }
     }
 
-    /* ===== TABELA ===== */
     .table-wrapper{
       width:100%;
       overflow-x:auto;
@@ -531,8 +522,9 @@
 
     table.ponto-table{
       width:100%;
-      min-width:1120px;
+      min-width:860px;
       border-collapse:collapse;
+      table-layout:fixed;
     }
 
     .ponto-table thead th{
@@ -541,9 +533,9 @@
       font-weight:800;
       border-bottom:1px solid #e5e7eb;
       text-align:center;
-      font-size:.82rem;
+      font-size:.74rem;
       text-transform:uppercase;
-      letter-spacing:.04em;
+      letter-spacing:.02em;
       padding:0;
       white-space:nowrap;
     }
@@ -556,8 +548,8 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:8px;
-      padding:11px 8px;
+      gap:5px;
+      padding:9px 5px;
       font:inherit;
       color:inherit;
       cursor:pointer;
@@ -571,14 +563,14 @@
     }
 
     .th-sort .sort-icon{
-      font-size:.8rem;
+      font-size:.72rem;
       opacity:.7;
     }
 
     .ponto-table td{
-      font-size:.87rem;
+      font-size:.81rem;
       text-align:center;
-      padding:10px 8px;
+      padding:8px 5px;
       border-bottom:1px solid #e5e7eb;
       vertical-align:middle;
     }
@@ -586,7 +578,7 @@
     .ponto-table tr:last-child td{ border-bottom:none; }
 
     .ponto-row{
-      cursor:pointer;
+      cursor:default;
       transition:background .15s ease, box-shadow .15s ease;
     }
 
@@ -597,61 +589,65 @@
       box-shadow:inset 3px 0 0 #16a34a;
     }
 
-    .col-nome,
-    .col-motivo{
-      text-align:left !important;
-    }
-
-    .col-tipo,
+    .col-registro{ width:76px; }
+    .col-nome{ width:190px; text-align:left !important; }
+    .col-tipo{ width:128px; text-align:center !important; }
+    .col-data{ width:84px; }
+    .col-motivo{ width:66px; max-width:66px; text-align:left !important; word-break:break-word; }
+    .col-hora{ width:66px; }
     .col-conferido{
+      width:82px;
       text-align:center !important;
+      cursor:pointer;
+      user-select:none;
     }
 
-    .col-motivo{
-      max-width:260px;
+    .nome-stack{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      gap:4px;
+      min-width:0;
+      max-width:100%;
+    }
+
+    .nome-principal{
+      font-weight:800;
+      color:#111827;
+      line-height:1.2;
       word-break:break-word;
     }
 
-    .status-badge{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:6px;
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:.75rem;
-      font-weight:800;
-      white-space:nowrap;
-      border:1px solid transparent;
-      margin-inline:auto;
+    .jornada-linha{
+      font-size:.64rem;
+      line-height:1.2;
+      color:#475569;
+      font-weight:700;
+      max-width:100%;
+      white-space:normal;
+      overflow-wrap:anywhere;
     }
 
-    .status-badge.conferido{
-      background:var(--success-soft);
-      color:#166534;
-      border-color:#bbf7d0;
-    }
-
-    .status-badge.pendente{
-      background:var(--warning-soft);
-      color:#92400e;
-      border-color:#fde68a;
+    .jornada-linha.empty{
+      color:#94a3b8;
+      font-weight:700;
     }
 
     .tipo-badge{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      gap:6px;
-      padding:6px 12px;
+      padding:5px 8px;
       border-radius:999px;
-      font-size:.75rem;
+      font-size:.68rem;
       font-weight:800;
       white-space:nowrap;
       border:1px solid transparent;
       margin-inline:auto;
-      min-width:150px;
+      min-width:0;
+      max-width:100%;
       text-align:center;
+      line-height:1.1;
     }
 
     .tipo-badge.agendamento{
@@ -664,6 +660,63 @@
       background:#fff4e5;
       color:#9a3412;
       border-color:#fed7aa;
+    }
+
+    .conferencia-box{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:34px;
+      width:100%;
+    }
+
+    .check-toggle{
+      appearance:none;
+      -webkit-appearance:none;
+      border:1.5px solid #cbd5e1;
+      background:linear-gradient(180deg,#ffffff,#f8fafc);
+      width:24px;
+      height:24px;
+      border-radius:8px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:0;
+      cursor:pointer;
+      box-shadow:0 3px 10px rgba(15,23,42,.08);
+      transition:transform .12s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+    }
+
+    .check-toggle:hover{
+      transform:translateY(-1px);
+      border-color:#93c5fd;
+      box-shadow:0 6px 16px rgba(37,99,235,.16);
+    }
+
+    .check-toggle:focus-visible{
+      outline:none;
+      box-shadow:var(--focus);
+      border-color:#2563eb;
+    }
+
+    .check-toggle i{
+      font-size:.78rem;
+      color:#ffffff;
+      opacity:0;
+      transform:scale(.7);
+      transition:opacity .16s ease, transform .16s ease;
+      pointer-events:none;
+    }
+
+    .check-toggle.checked{
+      border-color:#16a34a;
+      background:linear-gradient(135deg,#22c55e,#16a34a);
+      box-shadow:0 8px 18px rgba(22,163,74,.25);
+    }
+
+    .check-toggle.checked i{
+      opacity:1;
+      transform:scale(1);
     }
 
     .empty-filter-state{
@@ -696,7 +749,6 @@
       font-weight:700;
     }
 
-    /* ===== PAGINAÇÃO FRONT ===== */
     .table-meta-row{
       display:flex;
       align-items:center;
@@ -774,7 +826,6 @@
       }
     }
 
-    /* ===== FOOTER ===== */
     footer{
       background:linear-gradient(to right,#222,#444);
       color:#ddd;
@@ -798,7 +849,6 @@
 
   {% set meses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"] %}
 
-  <!-- Cabeçalho Desktop -->
   <header class="header-desktop">
     <div class="left-section">
       <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
@@ -815,7 +865,6 @@
     </a>
   </header>
 
-  <!-- Cabeçalho Mobile -->
   <header class="header-mobile">
     <div class="header-top">
       <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
@@ -847,7 +896,6 @@
         </div>
       </div>
 
-      <!-- Card de filtro do período -->
       <section class="content-card filter-card">
         <h2 class="content-title"><i class="fa-solid fa-filter"></i> Filtro de pagamento</h2>
         <p class="content-subtitle">
@@ -885,7 +933,7 @@
             Pagamento de <strong>{{ meses[mes_selecionado - 1] }}/{{ ano_selecionado }}</strong> —
             período de <strong>{{ periodo_inicio.strftime('%d/%m/%Y') }}</strong> a
             <strong>{{ periodo_fim.strftime('%d/%m/%Y') }}</strong>.
-            Você pode pesquisar, filtrar, ordenar e clicar em uma linha para marcar ou desmarcar como conferida.
+            Você pode pesquisar, filtrar, ordenar e usar a caixa da coluna de conferência para marcar ou desmarcar o registro.
           </p>
 
           {% if registros %}
@@ -1014,36 +1062,36 @@
               <table class="ponto-table">
                 <thead>
                   <tr>
-                    <th>
+                    <th class="col-registro">
                       <button type="button" class="th-sort" data-sort="registro">
                         <span>Registro</span><i class="fa-solid fa-sort sort-icon"></i>
                       </button>
                     </th>
-                    <th>
+                    <th class="col-nome">
                       <button type="button" class="th-sort" data-sort="nome">
                         <span>Nome</span><i class="fa-solid fa-sort sort-icon"></i>
                       </button>
                     </th>
-                    <th>
+                    <th class="col-tipo">
                       <button type="button" class="th-sort" data-sort="tipo">
                         <span>Tipo</span><i class="fa-solid fa-sort sort-icon"></i>
                       </button>
                     </th>
-                    <th>
+                    <th class="col-data">
                       <button type="button" class="th-sort" data-sort="data">
                         <span>Data</span><i class="fa-solid fa-sort sort-icon"></i>
                       </button>
                     </th>
-                    <th>
+                    <th class="col-motivo">
                       <button type="button" class="th-sort" data-sort="motivo">
                         <span>Motivo</span><i class="fa-solid fa-sort sort-icon"></i>
                       </button>
                     </th>
-                    <th>1ª Entrada</th>
-                    <th>1ª Saída</th>
-                    <th>2ª Entrada</th>
-                    <th>2ª Saída</th>
-                    <th>Conferência</th>
+                    <th class="col-hora">1ª Ent.</th>
+                    <th class="col-hora">1ª Saída</th>
+                    <th class="col-hora">2ª Ent.</th>
+                    <th class="col-hora">2ª Saída</th>
+                    <th class="col-conferido">Confer.</th>
                   </tr>
                 </thead>
                 <tbody id="pontoTableBody">
@@ -1053,6 +1101,40 @@
                   {% set data_iso = item.data.strftime('%Y-%m-%d') if item.data else '' %}
                   {% set motivo_texto = item.motivo if item.motivo else 'Sem Motivo' %}
                   {% set tipo_slug = item.tipo_slug if item.tipo_slug is defined else ('agendamento' if item.tipo == 'Agendamento' else 'esquecimento') %}
+
+                  {% if item.usuario %}
+                    {% set horarios_usuario = item.usuario.horarios_trabalho|default([], true) %}
+                  {% else %}
+                    {% set horarios_usuario = [] %}
+                  {% endif %}
+
+                  {% set ns_jornada = namespace(seg='', ter='', qua='', qui='', sex='', total=0) %}
+                  {% for h in horarios_usuario %}
+                    {% if h.ativo and h.dia_semana in [0,1,2,3,4] %}
+                      {% set faixa = h.hora_inicio.strftime('%H:%M') ~ '-' ~ h.hora_fim.strftime('%H:%M') %}
+                      {% set ns_jornada.total = ns_jornada.total + 1 %}
+                      {% if h.dia_semana == 0 %}
+                        {% set ns_jornada.seg = ns_jornada.seg ~ (' / ' if ns_jornada.seg else '') ~ faixa %}
+                      {% elif h.dia_semana == 1 %}
+                        {% set ns_jornada.ter = ns_jornada.ter ~ (' / ' if ns_jornada.ter else '') ~ faixa %}
+                      {% elif h.dia_semana == 2 %}
+                        {% set ns_jornada.qua = ns_jornada.qua ~ (' / ' if ns_jornada.qua else '') ~ faixa %}
+                      {% elif h.dia_semana == 3 %}
+                        {% set ns_jornada.qui = ns_jornada.qui ~ (' / ' if ns_jornada.qui else '') ~ faixa %}
+                      {% elif h.dia_semana == 4 %}
+                        {% set ns_jornada.sex = ns_jornada.sex ~ (' / ' if ns_jornada.sex else '') ~ faixa %}
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
+
+                  {% set jornada_unica_seg_sex =
+                    ns_jornada.seg and
+                    ns_jornada.seg == ns_jornada.ter and
+                    ns_jornada.seg == ns_jornada.qua and
+                    ns_jornada.seg == ns_jornada.qui and
+                    ns_jornada.seg == ns_jornada.sex
+                  %}
+
                   <tr
                     data-id="{{ item.id }}"
                     data-tipo="{{ item.tipo }}"
@@ -1065,43 +1147,67 @@
                     data-busca="{{ (item.registro ~ ' ' ~ nome_usuario ~ ' ' ~ item.tipo ~ ' ' ~ motivo_texto ~ ' ' ~ data_formatada)|lower }}"
                     class="ponto-row {% if item.conferido %}conferido{% endif %}"
                   >
-                    <td>{{ item.registro }}</td>
-                    <td class="col-nome">{{ nome_usuario }}</td>
+                    <td class="col-registro">{{ item.registro }}</td>
+
+                    <td class="col-nome">
+                      <div class="nome-stack">
+                        <div class="nome-principal">{{ nome_usuario }}</div>
+
+                        {% if ns_jornada.total == 0 %}
+                          <div class="jornada-linha empty">Sem jornada cadastrada</div>
+                        {% elif jornada_unica_seg_sex %}
+                          <div class="jornada-linha">SEG-SEX {{ ns_jornada.seg }}</div>
+                        {% else %}
+                          <div class="jornada-linha">
+                            {% set partes = namespace(lista=[]) %}
+                            {% if ns_jornada.seg %}{% set partes.lista = partes.lista + ['SEG ' ~ ns_jornada.seg] %}{% endif %}
+                            {% if ns_jornada.ter %}{% set partes.lista = partes.lista + ['TER ' ~ ns_jornada.ter] %}{% endif %}
+                            {% if ns_jornada.qua %}{% set partes.lista = partes.lista + ['QUA ' ~ ns_jornada.qua] %}{% endif %}
+                            {% if ns_jornada.qui %}{% set partes.lista = partes.lista + ['QUI ' ~ ns_jornada.qui] %}{% endif %}
+                            {% if ns_jornada.sex %}{% set partes.lista = partes.lista + ['SEX ' ~ ns_jornada.sex] %}{% endif %}
+                            {{ partes.lista|join(' • ') }}
+                          </div>
+                        {% endif %}
+                      </div>
+                    </td>
+
                     <td class="col-tipo">
                       <span class="tipo-badge {{ tipo_slug }}">
                         {% if item.tipo == 'Agendamento' %}
-                          <i class="fa-solid fa-calendar-plus"></i>
+                          Agendamento
                         {% else %}
-                          <i class="fa-solid fa-triangle-exclamation"></i>
+                          Esquecimento
                         {% endif %}
-                        {{ item.tipo }}
                       </span>
                     </td>
-                    <td>{{ data_formatada }}</td>
+
+                    <td class="col-data">{{ data_formatada }}</td>
                     <td class="col-motivo">{{ motivo_texto }}</td>
 
                     {% if item.tipo == 'Esquecimento de Ponto' %}
-                      <td>{{ item.horapentrada }}</td>
-                      <td>{{ item.horapsaida }}</td>
-                      <td>{{ item.horasentrada }}</td>
-                      <td>{{ item.horassaida }}</td>
+                      <td class="col-hora">{{ item.horapentrada }}</td>
+                      <td class="col-hora">{{ item.horapsaida }}</td>
+                      <td class="col-hora">{{ item.horasentrada }}</td>
+                      <td class="col-hora">{{ item.horassaida }}</td>
                     {% else %}
-                      <td>—</td>
-                      <td>—</td>
-                      <td>—</td>
-                      <td>—</td>
+                      <td class="col-hora">—</td>
+                      <td class="col-hora">—</td>
+                      <td class="col-hora">—</td>
+                      <td class="col-hora">—</td>
                     {% endif %}
 
                     <td class="col-conferido">
-                      {% if item.conferido %}
-                        <span class="status-badge conferido">
-                          <i class="fa-solid fa-circle-check"></i> Conferido
-                        </span>
-                      {% else %}
-                        <span class="status-badge pendente">
-                          <i class="fa-solid fa-clock"></i> Pendente
-                        </span>
-                      {% endif %}
+                      <div class="conferencia-box">
+                        <button
+                          type="button"
+                          class="check-toggle {% if item.conferido %}checked{% endif %}"
+                          aria-pressed="{{ 'true' if item.conferido else 'false' }}"
+                          aria-label="{% if item.conferido %}Registro conferido. Clique para desmarcar{% else %}Registro pendente. Clique para marcar como conferido{% endif %}"
+                          title="{% if item.conferido %}Conferido{% else %}Pendente{% endif %}"
+                        >
+                          <i class="fa-solid fa-check"></i>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                   {% endfor %}
@@ -1195,9 +1301,10 @@
         tipos.sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
 
         tipos.forEach(tipo => {
+          const label = tipo === "Esquecimento de Ponto" ? "Esquecimento" : tipo;
           const opt = document.createElement("option");
           opt.value = tipo;
-          opt.textContent = tipo;
+          opt.textContent = label;
           if (tipo === selectedTipo) opt.selected = true;
           filtroTipo.appendChild(opt);
         });
@@ -1430,6 +1537,26 @@
         renderTable(true);
       }
 
+      function atualizarVisualConferencia(linha, novoStatus) {
+        linha.classList.toggle("conferido", novoStatus);
+        linha.setAttribute("data-conferido", novoStatus ? "true" : "false");
+
+        const cell = linha.querySelector(".col-conferido");
+        const btn = cell ? cell.querySelector(".check-toggle") : null;
+
+        if (btn) {
+          btn.classList.toggle("checked", novoStatus);
+          btn.setAttribute("aria-pressed", novoStatus ? "true" : "false");
+          btn.setAttribute(
+            "aria-label",
+            novoStatus
+              ? "Registro conferido. Clique para desmarcar"
+              : "Registro pendente. Clique para marcar como conferido"
+          );
+          btn.setAttribute("title", novoStatus ? "Conferido" : "Pendente");
+        }
+      }
+
       [buscaGeral, filtroTipo, filtroConferido, filtroMotivo, ordenacao, direcaoOrdenacao, linhasPorPagina]
         .filter(Boolean)
         .forEach(el => {
@@ -1470,53 +1597,49 @@
         });
       });
 
-      allRows.forEach((linha) => {
+      tbody.addEventListener("click", function (event) {
+        const cell = event.target.closest("td.col-conferido");
+        if (!cell || !tbody.contains(cell)) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const linha = cell.closest("tr.ponto-row");
+        if (!linha) return;
+
         const registroId = linha.getAttribute("data-id");
         const tipo = linha.getAttribute("data-tipo");
         if (!registroId || !tipo) return;
 
-        linha.addEventListener("click", function (event) {
-          if (event.target.closest(".th-sort") || event.target.closest("button") || event.target.closest("a")) return;
+        const novoStatus = linha.getAttribute("data-conferido") !== "true";
 
-          const novoStatus = !linha.classList.contains("conferido");
+        fetch("/atualizar_conferido", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken
+          },
+          body: JSON.stringify({
+            id: registroId,
+            tipo: tipo,
+            conferido: novoStatus
+          }),
+        })
+        .then(async (response) => {
+          let data = {};
+          try { data = await response.json(); } catch (e) {}
 
-          fetch("/atualizar_conferido", {
-            method: "POST",
-            credentials: "same-origin",
-            headers: {
-              "Content-Type": "application/json",
-              "X-CSRFToken": csrfToken
-            },
-            body: JSON.stringify({
-              id: registroId,
-              tipo: tipo,
-              conferido: novoStatus
-            }),
-          })
-          .then(async (response) => {
-            let data = {};
-            try { data = await response.json(); } catch (e) {}
-
-            if (response.ok && data.success) {
-              linha.classList.toggle("conferido", novoStatus);
-              linha.setAttribute("data-conferido", novoStatus ? "true" : "false");
-
-              const badgeCell = linha.querySelector(".col-conferido");
-              if (badgeCell) {
-                badgeCell.innerHTML = novoStatus
-                  ? `<span class="status-badge conferido"><i class="fa-solid fa-circle-check"></i> Conferido</span>`
-                  : `<span class="status-badge pendente"><i class="fa-solid fa-clock"></i> Pendente</span>`;
-              }
-
-              renderTable(false);
-            } else {
-              alert(data.error || "Erro ao atualizar conferência.");
-            }
-          })
-          .catch((error) => {
-            console.error("Erro:", error);
-            alert("Erro ao comunicar com o servidor.");
-          });
+          if (response.ok && data.success) {
+            atualizarVisualConferencia(linha, novoStatus);
+            renderTable(false);
+          } else {
+            alert(data.error || "Erro ao atualizar conferência.");
+          }
+        })
+        .catch((error) => {
+          console.error("Erro:", error);
+          alert("Erro ao comunicar com o servidor.");
         });
       });
 

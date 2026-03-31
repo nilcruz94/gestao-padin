@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Horários de Trabalho - Administração</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, maximum-scale=3, minimum-scale=1" />
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    :root{
+      --primary:#0077ff;
+      --primary-dark:#0051ff;
+      --primary-soft:#dbe9ff;
+      --bg:#f3f4f6;
+      --surface:#ffffff;
+      --border-soft:#e5e7eb;
+      --border-strong:#d1d5db;
+      --text-main:#111827;
+      --text-muted:#6b7280;
+      --success:#16a34a;
+      --success-soft:#dcfce7;
+      --warning:#f59e0b;
+      --warning-soft:#fef3c7;
+      --danger:#dc2626;
+      --danger-soft:#fee2e2;
+      --info:#2563eb;
+      --info-soft:#dbeafe;
+      --card-shadow:0 14px 34px rgba(15,23,42,.10),0 2px 4px rgba(15,23,42,.06);
+      --radius:18px;
+      --focus:0 0 0 3px rgba(37,99,235,.16);
+    }
+
+    *, *::before, *::after{ box-sizing:border-box; }
+
+    html, body{
+      margin:0;
+      padding:0;
+      height:100%;
+      font-family:'Montserrat',sans-serif;
+      background:radial-gradient(circle at top,#e0f2ff 0,#f9fafb 45%,#eef2ff 100%);
+      background-attachment:fixed;
+      color:var(--text-main);
+    }
+
+    body{
+      display:flex;
+      flex-direction:column;
+      min-height:100vh;
+    }
+
+    main{
+      flex:1 0 auto;
+      padding:24px 12px 60px;
+      box-sizing:border-box;
+    }
+
+    .shell{
+      width:100%;
+      max-width:1240px;
+      margin:0 auto;
+    }
+
+    @media (min-width:769px){
+      main{ padding:30px 24px 80px; }
+    }
+
+    .header-desktop,.header-mobile{ display:none; flex-shrink:0; }
+
+    @media (min-width:769px){
+      .header-desktop{
+        display:flex;
+        background-color:#007bff;
+        padding:15px 30px;
+        width:100%;
+        align-items:center;
+        justify-content:space-between;
+        box-sizing:border-box;
+        min-height:110px;
+        position:relative;
+        box-shadow:0 2px 6px rgba(0,0,0,.15);
+        color:#fff;
+      }
+      .left-section{ display:flex; align-items:center; gap:20px; }
+      .logo{
+        width:80px; height:80px; object-fit:contain;
+        border-radius:10px; background-color:#fff; padding:6px;
+      }
+      .text-container{
+        display:flex; flex-direction:column; justify-content:center;
+        text-align:left; color:#fff;
+      }
+      .escola-nome{
+        font-weight:700; font-size:1.6rem; margin:0; line-height:1.1;
+      }
+      .escola-subtitulo{
+        font-weight:600; font-size:1.1rem; margin-top:4px;
+      }
+      .header-center-text-container{
+        position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+        font-weight:800; font-size:1.9rem; color:#fff; letter-spacing:5px;
+        user-select:none; white-space:nowrap; z-index:1;
+        text-shadow:0 2px 5px rgba(0,0,0,.3);
+      }
+      .btn-home{
+        background-color:#0fb300;
+        color:#fff;
+        padding:6px 14px;
+        border-radius:6px;
+        font-weight:700;
+        font-size:1.5rem;
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        gap:8px;
+        box-shadow:0 2px 6px rgba(15,179,0,.8);
+        transition:background-color .3s ease;
+        position:absolute;
+        right:30px;
+        top:50%;
+        transform:translateY(-50%);
+        z-index:2;
+      }
+      .btn-home:hover{ background-color:#0d8a00; }
+    }
+
+    @media (max-width:768px){
+      .header-mobile{
+        display:block;
+        width:100%;
+        box-sizing:border-box;
+        color:#fff;
+        position:sticky;
+        top:0;
+        z-index:1000;
+        box-shadow:0 2px 6px rgba(0,0,0,.15);
+        background-color:#007bff;
+      }
+      .header-top{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:15px;
+        padding:10px 15px;
+        background-color:#007bff;
+        text-align:center;
+      }
+      .logo{
+        width:48px; height:48px; object-fit:contain;
+        border-radius:10px; background-color:#fff; padding:6px;
+      }
+      .text-container{
+        display:flex; flex-direction:column; justify-content:center;
+        color:#fff; text-align:center;
+      }
+      .escola-nome{
+        font-weight:700; font-size:1.3rem; margin:0; line-height:1.1;
+      }
+      .escola-subtitulo{
+        font-weight:600; font-size:1rem; margin-top:2px;
+      }
+      .header-bottom{
+        background-color:#0056b3;
+        text-align:center;
+        padding:12px 10px;
+        font-weight:800;
+        font-size:1rem;
+        letter-spacing:4px;
+        user-select:none;
+        color:#fff;
+        box-shadow:inset 0 -2px 5px rgba(0,0,0,.2);
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        gap:12px;
+        box-sizing:border-box;
+        white-space:nowrap;
+      }
+      .btn-home-mobile{
+        background-color:#0fb300;
+        color:#fff;
+        padding:6px 10px;
+        border-radius:6px;
+        font-weight:600;
+        font-size:1rem;
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        box-shadow:0 2px 6px rgba(15,179,0,.8);
+        transition:background-color .3s ease;
+      }
+      .btn-home-mobile:hover{ background-color:#0d8a00; }
+    }
+
+    .page-header-card{
+      background:#fff;
+      border-radius:var(--radius);
+      padding:16px 18px;
+      margin:0 auto 18px;
+      display:flex;
+      align-items:center;
+      gap:16px;
+      box-shadow:var(--card-shadow);
+      border-left:5px solid var(--primary);
+    }
+
+    .page-header-icon{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:42px;
+      height:42px;
+      border-radius:999px;
+      background:radial-gradient(circle at 30% 30%,#ffffff 0%,#e0edff 60%,#c7d9ff 100%);
+      box-shadow:0 4px 12px rgba(37,99,235,.45);
+      color:#2563eb;
+      flex-shrink:0;
+    }
+
+    .page-header-icon i{ font-size:22px; }
+    .page-header-content{ display:flex; flex-direction:column; gap:4px; }
+    .page-header-title{ font-size:1.15rem; font-weight:800; margin:0; color:var(--text-main); }
+    .page-header-subtitle{ font-size:.9rem; margin:0; color:var(--text-muted); }
+
+    .flash-messages{ margin:0 auto 16px; max-width:1240px; }
+    .flash{
+      padding:10px 12px;
+      margin-bottom:10px;
+      border-radius:10px;
+      font-weight:600;
+      font-size:.9rem;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .flash i{ font-size:1rem; }
+    .flash.success{ background-color:var(--success-soft); color:#065f46; border:1px solid #bbf7d0; }
+    .flash.error,.flash.danger{ background-color:var(--danger-soft); color:#7f1d1d; border:1px solid #fecaca; }
+    .flash.info{ background-color:#e0f2fe; color:#075985; border:1px solid #bae6fd; }
+    .flash.warning{ background-color:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+
+    .content-card{
+      width:100%;
+      margin:0 auto 18px;
+      background:var(--surface);
+      border-radius:16px;
+      box-shadow:var(--card-shadow);
+      padding:18px;
+      border:1px solid rgba(148,163,184,.35);
+      box-sizing:border-box;
+    }
+
+    .content-title{
+      font-size:1.05rem;
+      font-weight:800;
+      margin:0 0 6px;
+      color:var(--text-main);
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .content-title i{ color:var(--primary); }
+
+    .content-subtitle{
+      font-size:.88rem;
+      color:var(--text-muted);
+      margin:0 0 14px;
+      line-height:1.45;
+    }
+
+    .toolbar-grid{
+      display:grid;
+      grid-template-columns:1.5fr 1fr 1fr;
+      gap:12px;
+      align-items:end;
+    }
+
+    @media (max-width:980px){
+      .toolbar-grid{ grid-template-columns:1fr; }
+    }
+
+    .field-group{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:0;
+    }
+
+    .field-label{
+      font-size:.8rem;
+      font-weight:800;
+      color:#475569;
+      display:flex;
+      align-items:center;
+      gap:7px;
+    }
+
+    .field-label i{ color:var(--primary); }
+
+    .form-input,
+    .form-select{
+      width:100%;
+      border:1px solid var(--border-strong);
+      border-radius:14px;
+      padding:11px 13px;
+      font-size:.92rem;
+      font-family:'Montserrat',sans-serif;
+      color:#111827;
+      background:#fff;
+      transition:border-color .18s ease, box-shadow .18s ease;
+      outline:none;
+    }
+
+    .form-input:focus,
+    .form-select:focus{
+      border-color:#60a5fa;
+      box-shadow:var(--focus);
+    }
+
+    .select-wrap{
+      position:relative;
+    }
+
+    .select-wrap select{
+      appearance:none;
+      -webkit-appearance:none;
+      -moz-appearance:none;
+      padding-right:42px;
+    }
+
+    .select-wrap::after{
+      content:"\f078";
+      font-family:"Font Awesome 6 Free";
+      font-weight:900;
+      position:absolute;
+      right:14px;
+      top:50%;
+      transform:translateY(-50%);
+      color:#64748b;
+      pointer-events:none;
+      font-size:.82rem;
+    }
+
+    .meta-row{
+      margin-top:14px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+    }
+
+    .meta-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:#eff6ff;
+      border:1px solid #bfdbfe;
+      font-size:.82rem;
+      font-weight:800;
+      color:#1d4ed8;
+    }
+
+    .meta-pill i{ color:#2563eb; }
+
+    .users-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+      margin-top:14px;
+    }
+
+    .user-card{
+      border:1px solid #e5e7eb;
+      border-radius:18px;
+      background:#fff;
+      box-shadow:0 8px 20px rgba(15,23,42,.05);
+      overflow:hidden;
+    }
+
+    .user-card.hidden-by-filter{
+      display:none;
+    }
+
+    .user-top{
+      padding:14px 16px;
+      display:grid;
+      grid-template-columns:minmax(0,1.5fr) minmax(0,1.1fr) auto;
+      gap:14px;
+      align-items:center;
+    }
+
+    @media (max-width:1024px){
+      .user-top{
+        grid-template-columns:1fr;
+      }
+    }
+
+    .user-main{
+      min-width:0;
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+    }
+
+    .user-avatar{
+      width:44px;
+      height:44px;
+      border-radius:999px;
+      background:linear-gradient(135deg,#0d6efd,#2563eb);
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:1rem;
+      font-weight:800;
+      flex-shrink:0;
+      box-shadow:0 8px 18px rgba(37,99,235,.30);
+    }
+
+    .user-text{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:5px;
+    }
+
+    .user-name{
+      margin:0;
+      font-size:1rem;
+      font-weight:800;
+      color:#0f172a;
+      line-height:1.2;
+      word-break:break-word;
+    }
+
+    .user-subline{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+    }
+
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:5px 10px;
+      border-radius:999px;
+      font-size:.75rem;
+      font-weight:800;
+      white-space:nowrap;
+      border:1px solid transparent;
+    }
+
+    .chip.rf{
+      background:#eff6ff;
+      color:#1d4ed8;
+      border-color:#bfdbfe;
+    }
+
+    .chip.cargo{
+      background:#f8fafc;
+      color:#334155;
+      border-color:#e5e7eb;
+      max-width:100%;
+      white-space:normal;
+    }
+
+    .chip.ok{
+      background:linear-gradient(180deg,#effdf4,#dcfce7);
+      color:#166534;
+      border-color:#bbf7d0;
+    }
+
+    .chip.warn{
+      background:linear-gradient(180deg,#fff7dc,#ffefb3);
+      color:#9a3412;
+      border-color:#f4cf63;
+    }
+
+    .user-summary{
+      min-width:0;
+      padding:12px 14px;
+      border-radius:14px;
+      background:linear-gradient(180deg,#f8fbff,#f3f8ff);
+      border:1px solid #dbeafe;
+    }
+
+    .summary-label{
+      font-size:.76rem;
+      font-weight:800;
+      color:#64748b;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      margin-bottom:6px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .summary-label i{ color:#2563eb; }
+
+    .summary-text{
+      font-size:.84rem;
+      font-weight:800;
+      color:#0f172a;
+      line-height:1.4;
+      word-break:break-word;
+    }
+
+    .summary-text.empty{
+      color:#92400e;
+    }
+
+    .btn{
+      border:none;
+      border-radius:999px;
+      padding:10px 16px;
+      cursor:pointer;
+      font-size:.88rem;
+      font-weight:800;
+      font-family:'Montserrat',sans-serif;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      text-decoration:none;
+      transition:transform .12s ease, box-shadow .18s ease, filter .18s ease;
+      white-space:nowrap;
+    }
+
+    .btn-primary{
+      color:#fff;
+      background:linear-gradient(135deg,#0d6efd,#0b5ed7);
+      box-shadow:0 8px 18px rgba(13,110,253,.28);
+    }
+
+    .btn-primary:hover{ filter:saturate(1.06); transform:translateY(-1px); }
+
+    .btn-success{
+      color:#fff;
+      background:linear-gradient(135deg,#16a34a,#15803d);
+      box-shadow:0 8px 18px rgba(22,163,74,.24);
+    }
+
+    .btn-success:hover{ filter:saturate(1.06); transform:translateY(-1px); }
+
+    .btn-soft{
+      color:#334155;
+      background:#f8fafc;
+      border:1px solid #dbe3ef;
+    }
+
+    .btn-soft:hover{ background:#eef2f7; transform:translateY(-1px); }
+
+    .btn-replicar{
+      color:#fff;
+      background:linear-gradient(135deg,#2563eb,#1d4ed8);
+      box-shadow:0 8px 18px rgba(37,99,235,.22);
+    }
+
+    .btn-replicar:hover{
+      filter:saturate(1.06);
+      transform:translateY(-1px);
+    }
+
+    .btn-limpar{
+      color:#fff;
+      background:linear-gradient(135deg,#ef4444,#dc2626);
+      box-shadow:0 8px 18px rgba(220,38,38,.18);
+    }
+
+    .btn-limpar:hover{
+      filter:saturate(1.06);
+      transform:translateY(-1px);
+    }
+
+    .user-actions{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    @media (max-width:1024px){
+      .user-actions{ justify-content:flex-start; }
+    }
+
+    .user-editor{
+      display:none;
+      border-top:1px solid #e5e7eb;
+      background:linear-gradient(180deg,#fbfdff,#f8fbff);
+      padding:16px;
+    }
+
+    .user-card.is-open .user-editor{
+      display:block;
+    }
+
+    .editor-toolbar{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:12px;
+      align-items:center;
+      margin-bottom:14px;
+    }
+
+    @media (max-width:880px){
+      .editor-toolbar{
+        grid-template-columns:1fr;
+      }
+    }
+
+    .pattern-box{
+      padding:14px;
+      border-radius:16px;
+      background:#fff;
+      border:1px solid #e5e7eb;
+      box-shadow:0 8px 18px rgba(15,23,42,.04);
+    }
+
+    .pattern-title{
+      margin:0 0 10px;
+      font-size:.88rem;
+      font-weight:800;
+      color:#0f172a;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .pattern-title i{ color:#2563eb; }
+
+    .pattern-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:10px;
+    }
+
+    @media (max-width:760px){
+      .pattern-grid{
+        grid-template-columns:1fr 1fr;
+      }
+    }
+
+    @media (max-width:480px){
+      .pattern-grid{
+        grid-template-columns:1fr;
+      }
+    }
+
+    .editor-tools{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      justify-content:center;
+      align-items:center;
+      height:100%;
+      min-height:100%;
+    }
+
+    .editor-tools .btn{
+      min-width:132px;
+    }
+
+    @media (max-width:880px){
+      .editor-tools{
+        justify-content:center;
+      }
+    }
+
+    .week-table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      overflow:hidden;
+      border:1px solid #e5e7eb;
+      border-radius:16px;
+      background:#fff;
+      box-shadow:0 10px 24px rgba(15,23,42,.04);
+    }
+
+    .week-table thead th{
+      background:linear-gradient(180deg,#f8fbff,#eef5ff);
+      color:#0f172a;
+      font-size:.8rem;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      padding:12px 10px;
+      border-bottom:1px solid #e5e7eb;
+      text-align:center;
+      white-space:nowrap;
+    }
+
+    .week-table thead th:first-child{
+      text-align:left;
+      padding-left:14px;
+    }
+
+    .week-table tbody td{
+      padding:10px;
+      border-bottom:1px solid #edf2f7;
+      text-align:center;
+      vertical-align:middle;
+    }
+
+    .week-table tbody tr:last-child td{
+      border-bottom:none;
+    }
+
+    .week-table tbody td:first-child{
+      text-align:left;
+      padding-left:14px;
+      font-size:.88rem;
+      font-weight:800;
+      color:#0f172a;
+      white-space:nowrap;
+    }
+
+    .time-input{
+      width:100%;
+      min-width:92px;
+      border:1px solid #d1d5db;
+      border-radius:12px;
+      padding:9px 10px;
+      font-size:.84rem;
+      font-family:'Montserrat',sans-serif;
+      background:#fff;
+      outline:none;
+      text-align:center;
+    }
+
+    .time-input:focus{
+      border-color:#60a5fa;
+      box-shadow:var(--focus);
+    }
+
+    @media (max-width:900px){
+      .week-table{
+        display:block;
+        overflow-x:auto;
+      }
+      .week-table table,
+      .week-table thead,
+      .week-table tbody,
+      .week-table tr{
+        min-width:760px;
+      }
+    }
+
+    .save-row{
+      margin-top:14px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      justify-content:flex-end;
+    }
+
+    @media (max-width:640px){
+      .save-row{
+        justify-content:stretch;
+      }
+      .save-row .btn{
+        width:100%;
+      }
+    }
+
+    .empty-state{
+      padding:14px 16px;
+      border-radius:14px;
+      border:1px dashed #cbd5e1;
+      background:#f8fafc;
+      color:#475569;
+      font-size:.88rem;
+      font-weight:700;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-top:14px;
+    }
+
+    .empty-state i{ color:#2563eb; }
+
+    footer{
+      background:linear-gradient(to right,#222,#444);
+      color:#ddd;
+      text-align:center;
+      padding:15px 0;
+      font-size:14px;
+      border-top:2px solid #555;
+      box-shadow:0 -2px 10px rgba(0,0,0,.3);
+      flex-shrink:0;
+      width:100%;
+    }
+
+    footer p{
+      margin:5px 0;
+      font-size:15px;
+      font-weight:300;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header-desktop">
+    <div class="left-section">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-center-text-container">
+      <div class="header-center-text">PORTAL DO SERVIDOR</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
+      <i class="fas fa-home"></i>
+    </a>
+  </header>
+
+  <header class="header-mobile">
+    <div class="header-top">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
+      <div class="text-container">
+        <div class="escola-nome">Escola Municipal</div>
+        <div class="escola-subtitulo">José Padin Mouta</div>
+      </div>
+    </div>
+    <div class="header-bottom">
+      <span>PORTAL DO SERVIDOR</span>
+      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <div class="shell">
+
+      <div class="page-header-card">
+        <div class="page-header-icon">
+          <i class="fas fa-business-time"></i>
+        </div>
+        <div class="page-header-content">
+          <p class="page-header-title">Horários de Trabalho</p>
+          <p class="page-header-subtitle">
+            Defina e substitua rapidamente a jornada atual dos servidores, de forma simples e direta.
+          </p>
+        </div>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">
+                {% if category == 'success' %}
+                  <i class="fas fa-check-circle"></i>
+                {% elif category in ['danger', 'error'] %}
+                  <i class="fas fa-exclamation-triangle"></i>
+                {% elif category == 'warning' %}
+                  <i class="fas fa-circle-exclamation"></i>
+                {% else %}
+                  <i class="fas fa-circle-info"></i>
+                {% endif %}
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <section class="content-card">
+        <h2 class="content-title">
+          <i class="fas fa-sliders"></i>
+          Filtros
+        </h2>
+        <p class="content-subtitle">
+          Localize rapidamente o servidor que deseja editar.
+        </p>
+
+        {% set ns_cargos = namespace(lista=[]) %}
+        {% for u in usuarios %}
+          {% set cargo_nome = (u.cargo or 'Sem Cargo Definido') %}
+          {% if cargo_nome not in ns_cargos.lista %}
+            {% set ns_cargos.lista = ns_cargos.lista + [cargo_nome] %}
+          {% endif %}
+        {% endfor %}
+
+        <div class="toolbar-grid">
+          <div class="field-group">
+            <label class="field-label" for="filtroBusca">
+              <i class="fas fa-search"></i> Buscar servidor
+            </label>
+            <input type="text" id="filtroBusca" class="form-input" placeholder="Nome, registro ou cargo...">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="filtroCargo">
+              <i class="fas fa-briefcase"></i> Cargo
+            </label>
+            <div class="select-wrap">
+              <select id="filtroCargo" class="form-select">
+                <option value="todos">Todos os cargos</option>
+                {% for c in ns_cargos.lista|sort %}
+                  <option value="{{ c|lower }}">{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="filtroStatusHorario">
+              <i class="fas fa-clock"></i> Jornada
+            </label>
+            <div class="select-wrap">
+              <select id="filtroStatusHorario" class="form-select">
+                <option value="todos">Todos</option>
+                <option value="com_horario">Com horário</option>
+                <option value="sem_horario">Sem horário</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="meta-row">
+          <div class="meta-pill">
+            <i class="fas fa-users"></i>
+            <span>Servidores visíveis: <strong id="contadorVisiveis">{{ usuarios|length }}</strong></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="content-card">
+        <h2 class="content-title">
+          <i class="fas fa-users-cog"></i>
+          Servidores
+        </h2>
+        <p class="content-subtitle">
+          Clique em <strong>Editar horário</strong> no servidor desejado, ajuste a semana e salve.
+        </p>
+
+        <div class="users-grid" id="usersGrid">
+          {% for usuario in usuarios %}
+            {% set horarios_usuario = usuario.horarios_trabalho|default([], true) %}
+
+            {% set seg = namespace(txt='', c1_i='', c1_f='', c2_i='', c2_f='') %}
+            {% set ter = namespace(txt='', c1_i='', c1_f='', c2_i='', c2_f='') %}
+            {% set qua = namespace(txt='', c1_i='', c1_f='', c2_i='', c2_f='') %}
+            {% set qui = namespace(txt='', c1_i='', c1_f='', c2_i='', c2_f='') %}
+            {% set sex = namespace(txt='', c1_i='', c1_f='', c2_i='', c2_f='') %}
+            {% set ativos = namespace(total=0) %}
+
+            {% for h in horarios_usuario %}
+              {% if h.ativo and h.dia_semana in [0,1,2,3,4] %}
+                {% set faixa = h.hora_inicio.strftime('%H:%M') ~ '-' ~ h.hora_fim.strftime('%H:%M') %}
+                {% set ativos.total = ativos.total + 1 %}
+
+                {% if h.dia_semana == 0 %}
+                  {% set seg.txt = seg.txt ~ (' / ' if seg.txt else '') ~ faixa %}
+                  {% if not seg.c1_i %}
+                    {% set seg.c1_i = h.hora_inicio.strftime('%H:%M') %}
+                    {% set seg.c1_f = h.hora_fim.strftime('%H:%M') %}
+                  {% elif not seg.c2_i %}
+                    {% set seg.c2_i = h.hora_inicio.strftime('%H:%M') %}
+                    {% set seg.c2_f = h.hora_fim.strftime('%H:%M') %}
+                  {% endif %}
+                {% elif h.dia_semana == 1 %}
+                  {% set ter.txt = ter.txt ~ (' / ' if ter.txt else '') ~ faixa %}
+                  {% if not ter.c1_i %}
+                    {% set ter.c1_i = h.hora_inicio.strftime('%H:%M') %}
+                    {% set ter.c1_f = h.hora_fim.strftime('%H:%M') %}
+                  {% elif not ter.c2_i %}
+                    {% set ter.c2_i = h.hora_inicio.strftime('%H:%M') %}
+                    {% set ter.c2_f = h.hora_fim.strftime('%H:%M') %}
+                  {% endif %}
+                {% elif h.dia_semana == 2 %}
+                  {% set qua.txt = qua.txt ~ (' / ' if qua.txt else '') ~ faixa %}
+                  {% if not qua.c1_i %}
+                    {% set qua.c1_i = h.hora_inicio.strftime('%H:%M') %}
+                    {% set qua.c1_f = h.hora_fim.strftime('%H:%M') %}
+                  {% elif not qua.c2_i %}
+                    {% set qua.c2_i = h.hora_inicio.strftime('%H:%M') %}
+                    {% set qua.c2_f = h.hora_fim.strftime('%H:%M') %}
+                  {% endif %}
+                {% elif h.dia_semana == 3 %}
+                  {% set qui.txt = qui.txt ~ (' / ' if qui.txt else '') ~ faixa %}
+                  {% if not qui.c1_i %}
+                    {% set qui.c1_i = h.hora_inicio.strftime('%H:%M') %}
+                    {% set qui.c1_f = h.hora_fim.strftime('%H:%M') %}
+                  {% elif not qui.c2_i %}
+                    {% set qui.c2_i = h.hora_inicio.strftime('%H:%M') %}
+                    {% set qui.c2_f = h.hora_fim.strftime('%H:%M') %}
+                  {% endif %}
+                {% elif h.dia_semana == 4 %}
+                  {% set sex.txt = sex.txt ~ (' / ' if sex.txt else '') ~ faixa %}
+                  {% if not sex.c1_i %}
+                    {% set sex.c1_i = h.hora_inicio.strftime('%H:%M') %}
+                    {% set sex.c1_f = h.hora_fim.strftime('%H:%M') %}
+                  {% elif not sex.c2_i %}
+                    {% set sex.c2_i = h.hora_inicio.strftime('%H:%M') %}
+                    {% set sex.c2_f = h.hora_fim.strftime('%H:%M') %}
+                  {% endif %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+
+            {% set jornada_unica_seg_sex =
+              seg.txt and
+              seg.txt == ter.txt and
+              seg.txt == qua.txt and
+              seg.txt == qui.txt and
+              seg.txt == sex.txt
+            %}
+
+            {% set resumo_lista = namespace(itens=[]) %}
+            {% if seg.txt %}{% set resumo_lista.itens = resumo_lista.itens + ['Seg ' ~ seg.txt] %}{% endif %}
+            {% if ter.txt %}{% set resumo_lista.itens = resumo_lista.itens + ['Ter ' ~ ter.txt] %}{% endif %}
+            {% if qua.txt %}{% set resumo_lista.itens = resumo_lista.itens + ['Qua ' ~ qua.txt] %}{% endif %}
+            {% if qui.txt %}{% set resumo_lista.itens = resumo_lista.itens + ['Qui ' ~ qui.txt] %}{% endif %}
+            {% if sex.txt %}{% set resumo_lista.itens = resumo_lista.itens + ['Sex ' ~ sex.txt] %}{% endif %}
+
+            {% if ativos.total == 0 %}
+              {% set resumo_jornada = 'Sem horário cadastrado' %}
+              {% set status_horario = 'sem_horario' %}
+            {% elif jornada_unica_seg_sex %}
+              {% set resumo_jornada = 'Seg-Sex • ' ~ seg.txt %}
+              {% set status_horario = 'com_horario' %}
+            {% else %}
+              {% set resumo_jornada = resumo_lista.itens|join(' • ') %}
+              {% set status_horario = 'com_horario' %}
+            {% endif %}
+
+            <div
+              class="user-card"
+              data-user-name="{{ usuario.nome|lower }}"
+              data-user-registro="{{ usuario.registro|lower }}"
+              data-user-cargo="{{ (usuario.cargo or 'Sem Cargo Definido')|lower }}"
+              data-user-status="{{ status_horario }}"
+            >
+              <div class="user-top">
+                <div class="user-main">
+                  <div class="user-avatar">
+                    {{ usuario.nome[:1] if usuario.nome else 'U' }}
+                  </div>
+
+                  <div class="user-text">
+                    <p class="user-name">{{ usuario.nome }}</p>
+                    <div class="user-subline">
+                      <span class="chip rf">
+                        <i class="fas fa-id-badge"></i> {{ usuario.registro }}
+                      </span>
+                      <span class="chip cargo">
+                        <i class="fas fa-briefcase"></i> {{ usuario.cargo or 'Sem Cargo Definido' }}
+                      </span>
+                      {% if status_horario == 'com_horario' %}
+                        <span class="chip ok">
+                          <i class="fas fa-circle-check"></i> Com horário
+                        </span>
+                      {% else %}
+                        <span class="chip warn">
+                          <i class="fas fa-circle-exclamation"></i> Sem horário
+                        </span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="user-summary">
+                  <div class="summary-label">
+                    <i class="fas fa-clock"></i> Jornada atual
+                  </div>
+                  <div class="summary-text {% if status_horario == 'sem_horario' %}empty{% endif %}">
+                    {{ resumo_jornada }}
+                  </div>
+                </div>
+
+                <div class="user-actions">
+                  <button type="button" class="btn btn-primary js-toggle-editor">
+                    <i class="fas fa-pen-to-square"></i>
+                    <span>Editar horário</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="user-editor">
+                <form method="POST" action="{{ url_for('admin_horarios_trabalho') }}" class="js-user-form">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="user_id" value="{{ usuario.id }}">
+                  <input type="hidden" name="substituir_ativos" value="1">
+                  <input type="hidden" name="vigencia_fim" value="">
+                  <input type="hidden" name="vigencia_inicio" value="{{ data_hoje_iso if data_hoje_iso is defined else '' }}" class="js-vigencia-inicio">
+                  <div class="js-hidden-fields"></div>
+
+                  <div class="editor-toolbar">
+                    <div class="pattern-box">
+                      <p class="pattern-title">
+                        <i class="fas fa-wand-magic-sparkles"></i> Preenchimento rápido Seg-Sex
+                      </p>
+                      <div class="pattern-grid">
+                        <input type="time" class="form-input js-padrao-inicio-1" placeholder="Faixa 1 início">
+                        <input type="time" class="form-input js-padrao-fim-1" placeholder="Faixa 1 fim">
+                        <input type="time" class="form-input js-padrao-inicio-2" placeholder="Faixa 2 início">
+                        <input type="time" class="form-input js-padrao-fim-2" placeholder="Faixa 2 fim">
+                      </div>
+                    </div>
+
+                    <div class="editor-tools">
+                      <button type="button" class="btn btn-replicar js-apply-week">
+                        <i class="fas fa-copy"></i> Replicar
+                      </button>
+                      <button type="button" class="btn btn-limpar js-clear-week">
+                        <i class="fas fa-eraser"></i> Limpar
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="week-table">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Dia</th>
+                          <th>Faixa 1 início</th>
+                          <th>Faixa 1 fim</th>
+                          <th>Faixa 2 início</th>
+                          <th>Faixa 2 fim</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Segunda</td>
+                          <td><input type="time" class="time-input js-time" data-dia="0" data-slot="1" data-campo="inicio" value="{{ seg.c1_i }}"></td>
+                          <td><input type="time" class="time-input js-time" data-dia="0" data-slot="1" data-campo="fim" value="{{ seg.c1_f }}"></td>
+                          <td><input type="time" class="time-input js-time" data-dia="0" data-slot="2" data-campo="inicio" value="{{ seg.c2_i }}"></td>
+                          <td><input type="time" class="time-input js-time" data-dia="0" data-slot="2" data-campo="fim" value="{{ seg.c2_f }}"></td>
+                        </tr>
+                        <tr>
+                          <td>Terça</td>
+                          <td><input type="time" class="time-input js-time" data-dia="1" data-slot="1" data-campo="inicio" value="{{ ter.c1_i }}"></td>
+                          <td><input type="time" class="time-input js-time" data-dia="1" data-slot="1" data-campo="fim" value="{{ ter.c1_f }}"></td>
+                          <td><input type="time" class="time-input js-time" data-dia="1" data-slot="2" data-campo="inicio" value="{{ ter.c2_i }}"></td>
+                          <td><input type="time" class="time-input js-time" data-dia="1" data-slot="2" data-campo="fim" value="{{ ter.c2_f }}"></td>
+                        </tr>
+                        <tr>
+                          <td>Quarta</td>
+                          <td><input type="time" class="time-input js-time" data-dia="2" data-slot="1" data-campo="inicio" value="{{ qua.c1_i }}"></td>
+                          <td><input type="time" class="time-input js-time" data-dia="2" data-slot="1" data-campo="fim" value="{{ qua.c1_f }}"></td>
+                          <td><input type="time" class="time-input js-time" data-dia="2" data-slot="2" data-campo="inicio" value="{{ qua.c2_i }}"></td>
+                          <td><input type="time" class="time-input js-time" data-dia="2" data-slot="2" data-campo="fim" value="{{ qua.c2_f }}"></td>
+                        </tr>
+                        <tr>
+                          <td>Quinta</td>
+                          <td><input type="time" class="time-input js-time" data-dia="3" data-slot="1" data-campo="inicio" value="{{ qui.c1_i }}"></td>
+                          <td><input type="time" class="time-input js-time" data-dia="3" data-slot="1" data-campo="fim" value="{{ qui.c1_f }}"></td>
+                          <td><input type="time" class="time-input js-time" data-dia="3" data-slot="2" data-campo="inicio" value="{{ qui.c2_i }}"></td>
+                          <td><input type="time" class="time-input js-time" data-dia="3" data-slot="2" data-campo="fim" value="{{ qui.c2_f }}"></td>
+                        </tr>
+                        <tr>
+                          <td>Sexta</td>
+                          <td><input type="time" class="time-input js-time" data-dia="4" data-slot="1" data-campo="inicio" value="{{ sex.c1_i }}"></td>
+                          <td><input type="time" class="time-input js-time" data-dia="4" data-slot="1" data-campo="fim" value="{{ sex.c1_f }}"></td>
+                          <td><input type="time" class="time-input js-time" data-dia="4" data-slot="2" data-campo="inicio" value="{{ sex.c2_i }}"></td>
+                          <td><input type="time" class="time-input js-time" data-dia="4" data-slot="2" data-campo="fim" value="{{ sex.c2_f }}"></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div class="save-row">
+                    <button type="button" class="btn btn-soft js-close-editor">
+                      <i class="fas fa-xmark"></i> Fechar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                      <i class="fas fa-save"></i> Salvar horário
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        {% if not usuarios %}
+          <div class="empty-state">
+            <i class="fas fa-circle-info"></i>
+            Nenhum servidor encontrado para exibição.
+          </div>
+        {% endif %}
+      </section>
+
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
+  </footer>
+
+  <script>
+    (function(){
+      const usersGrid = document.getElementById('usersGrid');
+      const filtroBusca = document.getElementById('filtroBusca');
+      const filtroCargo = document.getElementById('filtroCargo');
+      const filtroStatusHorario = document.getElementById('filtroStatusHorario');
+      const contadorVisiveis = document.getElementById('contadorVisiveis');
+
+      function normalizarTexto(valor){
+        return String(valor || '')
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim();
+      }
+
+      function dataHojeIso(){
+        const agora = new Date();
+        const ano = agora.getFullYear();
+        const mes = String(agora.getMonth() + 1).padStart(2, '0');
+        const dia = String(agora.getDate()).padStart(2, '0');
+        return `${ano}-${mes}-${dia}`;
+      }
+
+      function atualizarContador(){
+        if (!usersGrid || !contadorVisiveis) return;
+        const cards = Array.from(usersGrid.querySelectorAll('.user-card'));
+        const visiveis = cards.filter(card => !card.classList.contains('hidden-by-filter')).length;
+        contadorVisiveis.textContent = String(visiveis);
+      }
+
+      function aplicarFiltros(){
+        if (!usersGrid) return;
+
+        const busca = normalizarTexto(filtroBusca?.value);
+        const cargo = (filtroCargo?.value || 'todos').trim();
+        const status = (filtroStatusHorario?.value || 'todos').trim();
+
+        const cards = usersGrid.querySelectorAll('.user-card');
+
+        cards.forEach(card => {
+          const nome = normalizarTexto(card.getAttribute('data-user-name'));
+          const registro = normalizarTexto(card.getAttribute('data-user-registro'));
+          const cargoCard = normalizarTexto(card.getAttribute('data-user-cargo'));
+          const statusCard = (card.getAttribute('data-user-status') || '').trim();
+
+          const passaBusca =
+            !busca ||
+            nome.includes(busca) ||
+            registro.includes(busca) ||
+            cargoCard.includes(busca);
+
+          const passaCargo =
+            cargo === 'todos' ||
+            cargoCard === normalizarTexto(cargo);
+
+          const passaStatus =
+            status === 'todos' ||
+            statusCard === status;
+
+          card.classList.toggle('hidden-by-filter', !(passaBusca && passaCargo && passaStatus));
+        });
+
+        atualizarContador();
+      }
+
+      if (filtroBusca) filtroBusca.addEventListener('input', aplicarFiltros);
+      if (filtroCargo) filtroCargo.addEventListener('change', aplicarFiltros);
+      if (filtroStatusHorario) filtroStatusHorario.addEventListener('change', aplicarFiltros);
+
+      document.querySelectorAll('.js-toggle-editor').forEach(btn => {
+        btn.addEventListener('click', function(){
+          const card = btn.closest('.user-card');
+          if (!card) return;
+
+          const jaAberto = card.classList.contains('is-open');
+
+          document.querySelectorAll('.user-card.is-open').forEach(c => {
+            c.classList.remove('is-open');
+            const span = c.querySelector('.js-toggle-editor span');
+            if (span) span.textContent = 'Editar horário';
+          });
+
+          if (!jaAberto) {
+            card.classList.add('is-open');
+            const span = btn.querySelector('span');
+            if (span) span.textContent = 'Ocultar';
+          }
+        });
+      });
+
+      document.querySelectorAll('.js-close-editor').forEach(btn => {
+        btn.addEventListener('click', function(){
+          const card = btn.closest('.user-card');
+          if (!card) return;
+          card.classList.remove('is-open');
+          const span = card.querySelector('.js-toggle-editor span');
+          if (span) span.textContent = 'Editar horário';
+        });
+      });
+
+      document.querySelectorAll('.js-apply-week').forEach(btn => {
+        btn.addEventListener('click', function(){
+          const form = btn.closest('.js-user-form');
+          if (!form) return;
+
+          const inicio1 = form.querySelector('.js-padrao-inicio-1')?.value || '';
+          const fim1 = form.querySelector('.js-padrao-fim-1')?.value || '';
+          const inicio2 = form.querySelector('.js-padrao-inicio-2')?.value || '';
+          const fim2 = form.querySelector('.js-padrao-fim-2')?.value || '';
+
+          form.querySelectorAll('.js-time[data-slot="1"][data-campo="inicio"]').forEach(el => el.value = inicio1);
+          form.querySelectorAll('.js-time[data-slot="1"][data-campo="fim"]').forEach(el => el.value = fim1);
+          form.querySelectorAll('.js-time[data-slot="2"][data-campo="inicio"]').forEach(el => el.value = inicio2);
+          form.querySelectorAll('.js-time[data-slot="2"][data-campo="fim"]').forEach(el => el.value = fim2);
+        });
+      });
+
+      document.querySelectorAll('.js-clear-week').forEach(btn => {
+        btn.addEventListener('click', function(){
+          const form = btn.closest('.js-user-form');
+          if (!form) return;
+
+          form.querySelectorAll('.js-time').forEach(el => el.value = '');
+          form.querySelectorAll('.js-padrao-inicio-1, .js-padrao-fim-1, .js-padrao-inicio-2, .js-padrao-fim-2').forEach(el => el.value = '');
+        });
+      });
+
+      function appendHidden(container, name, value){
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        container.appendChild(input);
+      }
+
+      function faixaValida(inicio, fim){
+        if ((!inicio && fim) || (inicio && !fim)) return false;
+        if (inicio && fim && fim <= inicio) return false;
+        return true;
+      }
+
+      document.querySelectorAll('.js-vigencia-inicio').forEach(input => {
+        if (!input.value) {
+          input.value = dataHojeIso();
+        }
+      });
+
+      document.querySelectorAll('.js-user-form').forEach(form => {
+        form.addEventListener('submit', function(e){
+          const hidden = form.querySelector('.js-hidden-fields');
+          if (!hidden) return;
+
+          hidden.innerHTML = '';
+
+          const vigenciaInicio = form.querySelector('.js-vigencia-inicio')?.value || '';
+          if (!vigenciaInicio) {
+            e.preventDefault();
+            alert('Não foi possível definir a data base do cadastro.');
+            return;
+          }
+
+          const dias = [0,1,2,3,4];
+          let encontrouHorario = false;
+
+          for (const dia of dias) {
+            const i1 = form.querySelector('.js-time[data-dia="' + dia + '"][data-slot="1"][data-campo="inicio"]')?.value || '';
+            const f1 = form.querySelector('.js-time[data-dia="' + dia + '"][data-slot="1"][data-campo="fim"]')?.value || '';
+            const i2 = form.querySelector('.js-time[data-dia="' + dia + '"][data-slot="2"][data-campo="inicio"]')?.value || '';
+            const f2 = form.querySelector('.js-time[data-dia="' + dia + '"][data-slot="2"][data-campo="fim"]')?.value || '';
+
+            if (!faixaValida(i1, f1)) {
+              e.preventDefault();
+              alert('Revise a Faixa 1. Preencha início e fim corretamente.');
+              return;
+            }
+
+            if (!faixaValida(i2, f2)) {
+              e.preventDefault();
+              alert('Revise a Faixa 2. Preencha início e fim corretamente.');
+              return;
+            }
+
+            if (i1 && f1) {
+              encontrouHorario = true;
+              appendHidden(hidden, 'dia_semana[]', dia);
+              appendHidden(hidden, 'hora_inicio[]', i1);
+              appendHidden(hidden, 'hora_fim[]', f1);
+            }
+
+            if (i2 && f2) {
+              encontrouHorario = true;
+              appendHidden(hidden, 'dia_semana[]', dia);
+              appendHidden(hidden, 'hora_inicio[]', i2);
+              appendHidden(hidden, 'hora_fim[]', f2);
+            }
+          }
+
+          if (!encontrouHorario) {
+            e.preventDefault();
+            alert('Preencha ao menos uma faixa de horário antes de salvar.');
+          }
+        });
+      });
+
+      aplicarFiltros();
+    })();
+  </script>
+</body>
+</html>

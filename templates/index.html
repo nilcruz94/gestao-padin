@@ -52,16 +52,15 @@
       overflow-x:hidden;
     }
 
-    /* ✅ evita “centralizar vertical” e cria folga pro footer */
     main{
       flex:1 0 auto;
-      padding: 22px 16px 120px; /* ✅ aumentei */
+      padding: 22px 16px 120px;
       display:flex;
       justify-content:center;
       align-items:flex-start;
     }
     @media (min-width:769px){
-      main{ padding: 26px 24px 140px; } /* ✅ aumentei */
+      main{ padding: 26px 24px 140px; }
     }
 
     a:focus-visible, button:focus-visible, .tab:focus-visible{
@@ -70,7 +69,6 @@
       border-radius: 14px;
     }
 
-    /* ========= CABEÇALHO PADRÃO ========= */
     .header-desktop, .header-mobile { display:none; flex-shrink:0; }
 
     @media (min-width: 769px) {
@@ -190,14 +188,12 @@
       .btn-home-mobile:hover{ background-color:#0d8a00; transform:translateY(-1px); }
     }
 
-    /* ========= SHELL ========= */
     .dashboard-shell{
       width:100%;
       max-width:1120px;
       margin:0 auto;
     }
 
-    /* ========= WELCOME ========= */
     .welcome-banner{
       background: var(--card);
       border-radius: var(--radius-lg);
@@ -278,7 +274,6 @@
       .welcome-meta-item{ flex: 1 1 48%; justify-content:flex-start; }
     }
 
-    /* ========= FLASH ========= */
     .flash-container{ margin: 0 0 16px 0; }
     .flash{
       padding: 12px 14px;
@@ -299,7 +294,6 @@
     .flash.warning{ background:#ffedd5; color:#7c2d12; border-color:#fed7aa; border-left:6px solid #fb923c; }
     .flash.info{ background:#dbeafe; color:#1e3a8a; border-color:#bfdbfe; border-left:6px solid #3b82f6; }
 
-    /* ========= TABS ========= */
     .tabs{
       display:flex;
       justify-content:center;
@@ -345,7 +339,6 @@
       text-align:center;
     }
 
-    /* ========= WRAPPER CARDS ========= */
     .cards-container{ display:none; width:100%; }
     .cards-container.active{ display:block; }
 
@@ -356,7 +349,7 @@
       box-shadow: var(--shadow);
       width:100%;
       border:1px solid var(--border);
-      margin-bottom: 18px; /* ✅ folga pro footer */
+      margin-bottom: 18px;
     }
 
     .cards-grid{
@@ -490,7 +483,6 @@
       color:#7f1d1d;
     }
 
-    /* ========= RODAPÉ ========= */
     footer{
       background: linear-gradient(to right, #222, #444);
       color:#ddd;
@@ -501,8 +493,6 @@
       box-shadow:0 -2px 10px rgba(0,0,0,.30);
       flex-shrink:0;
       width:100%;
-
-      /* ✅ FORÇA NÃO FIXAR/OVERLAY (caso style.css esteja fixando) */
       position: relative !important;
       bottom: auto !important;
       left: auto !important;
@@ -511,7 +501,6 @@
     }
     footer p{ margin:5px 0; font-size:0.9rem; }
 
-    /* PATCH MODAL (mantido) ... */
     .patch-modal{ display:none; position:fixed; inset:0; z-index:3000; background: rgba(0,0,0,.55); align-items:center; justify-content:center; padding:12px; }
     .patch-modal.open{ display:flex; }
     .patch-modal-content{ width:100%; max-width:560px; background:#ffffff; border-radius: var(--radius); border:1px solid rgba(148,163,184,.35); box-shadow: 0 18px 60px rgba(0,0,0,.25); overflow:hidden; }
@@ -539,7 +528,6 @@
 
 <body>
 
-  <!-- Cabeçalho Desktop -->
   <header class="header-desktop">
     <div class="left-section">
       <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
@@ -558,7 +546,6 @@
     </a>
   </header>
 
-  <!-- Cabeçalho Mobile -->
   <header class="header-mobile">
     <div class="header-top">
       <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
@@ -578,7 +565,6 @@
   <main>
     <div class="dashboard-shell">
 
-      <!-- Banner -->
       <div class="welcome-banner">
         <div class="welcome-icon" aria-hidden="true">
           <i class="fas fa-handshake"></i>
@@ -603,7 +589,6 @@
         </div>
       </div>
 
-      <!-- Flash -->
       {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
       <div class="flash-container">
@@ -623,7 +608,6 @@
       {% endif %}
       {% endwith %}
 
-      <!-- Tabs -->
       <div class="tabs" role="tablist" aria-label="Seções do Portal">
         <button class="tab active" type="button" data-tab="geral" role="tab" aria-selected="true">
           <i class="fas fa-layer-group" aria-hidden="true"></i> Geral
@@ -638,7 +622,6 @@
 
       <p class="access-services">Acesse os serviços do Portal do Servidor:</p>
 
-      <!-- Aba Geral -->
       <div id="geral" class="cards-container active">
         <div class="cards-wrapper">
           <div class="cards-grid">
@@ -681,9 +664,9 @@
 
             <a href="{{ url_for('relatar_esquecimento') }}" class="card" aria-label="Relatar Esquecimento">
               <i class="fas fa-stopwatch" aria-hidden="true"></i>
-              <div class="card-title">Relatar Esquecimento</div>
+              <div class="card-title">Ausencias e Esquecimentos</div>
               <div class="card-subtitle">
-                <span class="desktop-only">Informe registros de ponto não lançados.</span>
+                <span class="desktop-only">Informe registros de ponto não batidos</span>
                 <span class="mobile-only">Ajuste de ponto.</span>
               </div>
             </a>
@@ -733,7 +716,6 @@
         </div>
       </div>
 
-      <!-- Aba Administrativa -->
       {% if current_user.tipo == 'administrador' %}
       <div id="administrativo" class="cards-container">
         <div class="cards-wrapper">
@@ -775,13 +757,22 @@
               </div>
             </a>
 
-            <!-- ✅ CARD ADMIN: AGENDAR PARA SERVIDOR -->
             <a href="{{ url_for('admin_agendar_para') }}" class="card" aria-label="Agendar para Servidor">
               <i class="fas fa-calendar-plus" aria-hidden="true"></i>
               <div class="card-title">Agendar p/ Servidor</div>
               <div class="card-subtitle">
                 <span class="desktop-only">Registre folga/comunicação em nome de um servidor ativo.</span>
                 <span class="mobile-only">Lançar folga.</span>
+              </div>
+            </a>
+
+            <!-- NOVO CARD -->
+            <a href="{{ url_for('admin_horarios_trabalho') }}" class="card" aria-label="Horários de Trabalho">
+              <i class="fas fa-business-time" aria-hidden="true"></i>
+              <div class="card-title">Horários de Trabalho</div>
+              <div class="card-subtitle">
+                <span class="desktop-only">Defina e atualize a jornada de trabalho dos servidores.</span>
+                <span class="mobile-only">Jornada dos servidores.</span>
               </div>
             </a>
 
@@ -841,7 +832,6 @@
     </div>
   </main>
 
-  <!-- PATCH NOTES MODAL (mantido) -->
   <div id="patchModal" class="patch-modal" role="dialog" aria-modal="true" aria-labelledby="patchModalTitle">
     <div class="patch-modal-content">
       <div class="patch-modal-header">
@@ -882,7 +872,6 @@
   </footer>
 
   <script>
-    // Alternância das abas + aria-selected
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => {
@@ -901,7 +890,6 @@
     });
   </script>
 
-  <!-- PATCH NOTES (mantido) -->
   <script>
     window.IS_ADMIN = {{ 'true' if current_user.tipo == 'administrador' else 'false' }};
 
@@ -1041,5 +1029,5 @@
       loadUnread();
     });
   </script>
-</body>
+</body> 
 </html>

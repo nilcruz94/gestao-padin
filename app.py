@@ -472,23 +472,28 @@ class Agendamento(db.Model):
     __tablename__ = "agendamento"
 
     id = db.Column(db.Integer, primary_key=True)
-    funcionario_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    funcionario_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id"),
+        nullable=False,
+        index=True
+    )
 
     status = db.Column(db.String(50), nullable=False, index=True)
 
-    # dia do registro (um por dia)
+    # Dia efetivo da folga / registro (um por dia)
     data = db.Column(db.Date, nullable=False, index=True)
 
-    # NOVO: fim do período (ex.: LM), opcional
+    # Fim do período (ex.: LM), opcional
     data_fim = db.Column(db.Date, nullable=True, index=True)
 
-    # NOVO: id do lote (LM por período gera vários registros vinculados)
+    # ID do lote (LM por período gera vários registros vinculados)
     lote_id = db.Column(db.String(64), nullable=True, index=True)
 
     motivo = db.Column(db.String(100), nullable=False)
     tipo_folga = db.Column(db.String(50))
 
-    data_referencia = db.Column(db.Date)
+    data_referencia = db.Column(db.Date, nullable=True)
 
     horas = db.Column(db.Integer, nullable=True)
     minutos = db.Column(db.Integer, nullable=True)
@@ -498,12 +503,33 @@ class Agendamento(db.Model):
 
     conferido = db.Column(db.Boolean, default=False, nullable=False)
 
+    # ✅ NOVO: quando o pedido foi realizado no sistema
+    solicitado_em = db.Column(
+        db.DateTime,
+        default=datetime.datetime.utcnow,
+        nullable=False,
+        index=True,
+    )
+
+    # ✅ NOVO: última atualização do registro
+    atualizado_em = db.Column(
+        db.DateTime,
+        default=datetime.datetime.utcnow,
+        onupdate=datetime.datetime.utcnow,
+        nullable=False,
+    )
+
     funcionario = db.relationship(
         "User",
         backref=db.backref("agendamentos_funcionario", lazy=True),
         lazy=True,
         foreign_keys=[funcionario_id],
         overlaps="agendamentos,user_funcionario",
+    )
+
+    __table_args__ = (
+        Index("ix_agendamento_funcionario_data_status", "funcionario_id", "data", "status"),
+        Index("ix_agendamento_lote_data", "lote_id", "data"),
     )
 
 
@@ -532,7 +558,6 @@ class BancoDeHoras(db.Model):
     data_realizacao = db.Column(db.Date, nullable=False, index=True)
     status = db.Column(db.String(50), default="Horas a Serem Deferidas", nullable=False, index=True)
 
-    # ✅ IMPORTANTE: nada posicional indevido aqui (só tipo + kwargs)
     data_criacao = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
     data_atualizacao = db.Column(
         db.DateTime,
@@ -708,6 +733,7 @@ class ReleaseNoteRead(db.Model):
         Index("ix_release_note_read_user_release", "user_id", "release_id"),
     )
 
+
 class UserHorarioTrabalho(db.Model):
     __tablename__ = "user_horario_trabalho"
 
@@ -761,7 +787,6 @@ class UserHorarioTrabalho(db.Model):
             "vigencia_fim",
         ),
     )
-
 
 # ===========================================
 # E-MAIL — Função genérica (corrigida e robusta)
@@ -1186,6 +1211,21 @@ def redefinir_senha(token):
             return redirect(url_for('login'))
 
     return render_template('redefinir_senha.html', token=token)
+
+from zoneinfo import ZoneInfo
+import datetime
+
+TZ_BR = ZoneInfo("America/Sao_Paulo")
+
+def utc_naive_para_brasil(dt):
+    if not dt:
+        return None
+    return dt.replace(tzinfo=datetime.timezone.utc).astimezone(TZ_BR)
+
+def formatar_datahora_brasil(dt, fmt="%d/%m/%Y às %H:%M"):
+    if not dt:
+        return ""
+    return utc_naive_para_brasil(dt).strftime(fmt)
 
 @app.route('/logout', methods=['POST'])
 @login_required
@@ -1817,12 +1857,15 @@ def agendar():
         # Valores do formulário
         tipo_folga = request.form.get('tipo_folga')      # ex.: 'AB', 'BH', 'DS', 'TRE', 'LM', 'FS', 'DL'
         data_folga = request.form.get('data')            # início (sempre)
-        data_fim_str = request.form.get('data_fim')      # ✅ novo (opção 2) - só para LM
+        data_fim_str = request.form.get('data_fim')      # só para LM
         motivo = request.form.get('motivo')              # deve espelhar o select
         data_referencia = request.form.get('data_referencia')
 
         substituicao = request.form.get("havera_substituicao")
         nome_substituto = request.form.get("nome_substituto")
+
+        # ✅ carimbo único do momento da solicitação
+        solicitado_em = datetime.datetime.utcnow()
 
         # ✅ Normaliza textos
         tipo_folga = (tipo_folga or "").strip().upper()
@@ -1879,7 +1922,7 @@ def agendar():
             flash("Data inválida.", "danger")
             return redirect(url_for('agendar'))
 
-        # ✅ NOVO: período para LM (data_fim)
+        # ✅ Período para LM (data_fim)
         data_fim = None
         if tipo_folga == 'LM' and data_fim_str:
             try:
@@ -1893,7 +1936,6 @@ def agendar():
                 return redirect(url_for('agendar'))
 
         # ---- Regras específicas AB (1 por mês; 6 deferidas por ano) ----
-        # (mantém exatamente como era; data_fim NÃO entra aqui)
         if tipo_folga == 'AB':
             agendamento_existente = Agendamento.query.filter(
                 Agendamento.funcionario_id == current_user.id,
@@ -1901,6 +1943,7 @@ def agendar():
                 func.extract('year', Agendamento.data) == data_folga.year,
                 func.extract('month', Agendamento.data) == data_folga.month
             ).first()
+
             if agendamento_existente and agendamento_existente.status != 'indeferido':
                 flash("Você já possui um agendamento 'AB' aprovado ou em análise neste mês.", "danger")
                 return render_template('agendar.html')
@@ -1962,6 +2005,7 @@ def agendar():
         # - 1 e-mail
         # - 1 protocolo (do "registro principal")
         # - N linhas no banco com mesmo lote_id
+        # - todos com o mesmo solicitado_em
         # ==========================================================
         base_kwargs = dict(
             funcionario_id=current_user.id,
@@ -1977,6 +2021,13 @@ def agendar():
 
         has_data_fim = hasattr(Agendamento, "data_fim")
         has_lote_id = hasattr(Agendamento, "lote_id")
+        has_solicitado_em = hasattr(Agendamento, "solicitado_em")
+        has_atualizado_em = hasattr(Agendamento, "atualizado_em")
+
+        if has_solicitado_em:
+            base_kwargs["solicitado_em"] = solicitado_em
+        if has_atualizado_em:
+            base_kwargs["atualizado_em"] = solicitado_em
 
         agendamentos_criados = []
         ag_principal = None
@@ -1996,18 +2047,17 @@ def agendar():
                         kw["data_fim"] = data_fim
 
                     if has_lote_id:
-                        # lote só faz sentido como "período" (data_fim >= data_inicio)
                         kw["lote_id"] = lote_id
 
                     ag = Agendamento(**kw)
                     agendamentos_criados.append(ag)
-
                     dia = dia + datetime.timedelta(days=1)
 
                 db.session.add_all(agendamentos_criados)
                 db.session.commit()
 
                 ag_principal = agendamentos_criados[0]  # representa o período
+
             else:
                 # comportamento antigo (1 registro)
                 kw = dict(base_kwargs)
@@ -2017,7 +2067,7 @@ def agendar():
                 if has_data_fim:
                     kw["data_fim"] = data_fim if (tipo_folga == "LM") else None
 
-                # lote_id não é necessário no modo antigo (mantém sem)
+                # lote_id não é necessário no modo antigo
                 if has_lote_id:
                     kw["lote_id"] = None
 
@@ -2041,6 +2091,7 @@ def agendar():
 
             dt_ini = ag_principal.data
             dt_fim = getattr(ag_principal, "data_fim", None)
+            dt_solicitacao = getattr(ag_principal, "solicitado_em", solicitado_em)
 
             if dt_fim and dt_fim != dt_ini:
                 data_str = f"{dt_ini.strftime('%d/%m/%Y')} → {dt_fim.strftime('%d/%m/%Y')}"
@@ -2048,6 +2099,8 @@ def agendar():
             else:
                 data_str = dt_ini.strftime('%d/%m/%Y')
                 data_label = "Data"
+
+            solicitado_em_str = dt_solicitacao.strftime('%d/%m/%Y às %H:%M')
 
             def _format_tempo_bh(h, m):
                 h = int(h or 0)
@@ -2202,6 +2255,7 @@ def agendar():
             resumo = [
                 ("Motivo", f"<strong>{_escape(descricao_motivo)}</strong>"),
                 (data_label, f"<strong>{_escape(data_str)}</strong>"),
+                ("Solicitado em", f"<strong>{_escape(solicitado_em_str)}</strong>"),
                 ("Status no sistema", f"<span style='font-weight:800;color:#D97706;'>{_escape(status_label)}</span>"),
             ]
 
@@ -2330,6 +2384,7 @@ def agendar():
                 summary_rows=[
                     ("Motivo", descricao_motivo),
                     (data_label, data_str),
+                    ("Solicitado em", solicitado_em_str),
                     ("Status no sistema", status_label),
                     ("Tempo lançado", tempo_bh if tipo_folga == "BH" else ""),
                     ("Data de referência", data_ref_str if tipo_folga == "BH" else ""),
@@ -2409,12 +2464,15 @@ def admin_agendar_para():
         # Valores do formulário (mesmos nomes que sua rota /agendar)
         tipo_folga = request.form.get('tipo_folga')
         data_folga_str = request.form.get('data')         # início (sempre)
-        data_fim_str = request.form.get('data_fim')       # ✅ novo: período LM
+        data_fim_str = request.form.get('data_fim')       # período LM
         motivo = request.form.get('motivo')
         data_referencia = request.form.get('data_referencia')
 
         substituicao = request.form.get("havera_substituicao")
         nome_substituto = request.form.get("nome_substituto")
+
+        # ✅ carimbo único da criação administrativa
+        solicitado_em = datetime.datetime.utcnow()
 
         # ✅ Normaliza textos
         tipo_folga = (tipo_folga or "").strip().upper()
@@ -2470,7 +2528,7 @@ def admin_agendar_para():
             flash("Data inválida.", "danger")
             return redirect(url_for('admin_agendar_para'))
 
-        # ✅ Período LM (gera 1 registro por dia no intervalo) — SEM checkbox (sempre inclui tudo)
+        # ✅ Período LM (gera 1 registro por dia no intervalo)
         data_fim = None
         if tipo_folga == "LM" and data_fim_str:
             try:
@@ -2484,7 +2542,6 @@ def admin_agendar_para():
                 return redirect(url_for('admin_agendar_para'))
 
         # ---- Regras específicas AB (do ALVO) ----
-        # (mantém exatamente como era)
         if tipo_folga == 'AB':
             agendamento_existente = Agendamento.query.filter(
                 Agendamento.funcionario_id == usuario_alvo.id,
@@ -2547,16 +2604,21 @@ def admin_agendar_para():
         # ==========================================================
         # ✅ ADMIN LANÇA E JÁ DEIXA DEFERIDO (SEM PENDÊNCIA)
         # ✅ LM por período: cria N registros (1 por dia) + lote_id + 1 e-mail
+        # ✅ grava solicitado_em
         # ==========================================================
         try:
             registros_criados = []
             lote_id = None
 
+            has_data_fim = hasattr(Agendamento, "data_fim")
+            has_lote_id = hasattr(Agendamento, "lote_id")
+            has_solicitado_em = hasattr(Agendamento, "solicitado_em")
+            has_atualizado_em = hasattr(Agendamento, "atualizado_em")
+
             # LM por período
             if tipo_folga == "LM" and data_fim and data_fim >= data_ini:
-                lote_id = uuid.uuid4().hex
+                lote_id = uuid.uuid4().hex if has_lote_id else None
 
-                # inclui tudo (dias corridos)
                 dia = data_ini
                 while dia <= data_fim:
                     ag_kwargs = dict(
@@ -2573,18 +2635,21 @@ def admin_agendar_para():
                         conferido=True
                     )
 
-                    # se o model tiver (evita quebrar se ambiente sem migração)
-                    if hasattr(Agendamento, "data_fim"):
+                    if has_data_fim:
                         ag_kwargs["data_fim"] = data_fim
-                    if hasattr(Agendamento, "lote_id"):
+                    if has_lote_id:
                         ag_kwargs["lote_id"] = lote_id
+                    if has_solicitado_em:
+                        ag_kwargs["solicitado_em"] = solicitado_em
+                    if has_atualizado_em:
+                        ag_kwargs["atualizado_em"] = solicitado_em
 
                     ag = Agendamento(**ag_kwargs)
                     db.session.add(ag)
                     registros_criados.append(ag)
+
                     dia = dia + datetime.timedelta(days=1)
 
-                # BH/TRE não entram aqui (LM)
                 db.session.commit()
 
                 primeiro = registros_criados[0]
@@ -2594,7 +2659,7 @@ def admin_agendar_para():
                 data_label = "Período"
 
             else:
-                # Caso padrão (1 registro como sempre)
+                # Caso padrão (1 registro)
                 ag_kwargs = dict(
                     funcionario_id=usuario_alvo.id,
                     status='deferido',
@@ -2609,13 +2674,18 @@ def admin_agendar_para():
                     conferido=True
                 )
 
-                # se LM sem data_fim, mantém comportamento antigo:
-                if tipo_folga == "LM" and hasattr(Agendamento, "data_fim"):
+                if tipo_folga == "LM" and has_data_fim:
                     ag_kwargs["data_fim"] = None
+                if has_lote_id:
+                    ag_kwargs["lote_id"] = None
+                if has_solicitado_em:
+                    ag_kwargs["solicitado_em"] = solicitado_em
+                if has_atualizado_em:
+                    ag_kwargs["atualizado_em"] = solicitado_em
 
                 novo_agendamento = Agendamento(**ag_kwargs)
 
-                # ✅ Se BH, aplica o mesmo efeito do /deferir_folgas:
+                # ✅ Se BH, aplica o mesmo efeito do /deferir_folgas
                 if tipo_folga == 'BH':
                     usuario_alvo.banco_horas = int(usuario_alvo.banco_horas or 0) - int(total_minutos)
 
@@ -2651,7 +2721,10 @@ def admin_agendar_para():
             try:
                 gerar_protocolo_agendamento_pdf(primeiro, usuario_alvo)
             except Exception:
-                current_app.logger.exception("Falha ao gerar protocolo PDF do agendamento %s", getattr(primeiro, "id", None))
+                current_app.logger.exception(
+                    "Falha ao gerar protocolo PDF do agendamento %s",
+                    getattr(primeiro, "id", None)
+                )
                 flash("Agendamento deferido e registrado, mas não foi possível gerar o protocolo em PDF neste momento.", "warning")
 
             # =========================
@@ -2660,6 +2733,8 @@ def admin_agendar_para():
             nome = (usuario_alvo.nome or "").strip() or "Servidor(a)"
             status_label = "DEFERIDO"
             admin_nome = (current_user.nome or "").strip() or "Administração"
+            dt_solicitacao = getattr(primeiro, "solicitado_em", solicitado_em)
+            solicitado_em_str = dt_solicitacao.strftime('%d/%m/%Y às %H:%M')
 
             def _format_tempo_bh(h, m):
                 h = int(h or 0)
@@ -2780,6 +2855,8 @@ def admin_agendar_para():
             resumo = [
                 ("Motivo", f"<strong>{_escape(descricao_motivo)}</strong>"),
                 (data_label, f"<strong>{_escape(data_str)}</strong>"),
+                ("Registrado em", f"<strong>{_escape(solicitado_em_str)}</strong>"),
+                ("Registrado por", f"<strong>{_escape(admin_nome)}</strong>"),
                 ("Status no sistema", badge_status),
             ]
 
@@ -2814,7 +2891,8 @@ def admin_agendar_para():
                 title = f"{descricao_motivo} registrado(a)"
                 lead = (
                     f"A unidade escolar registrou em seu nome <strong>{_escape(descricao_motivo)}</strong> "
-                    f"para <strong>{_escape(data_str)}</strong>. (Registrado por: <strong>{_escape(admin_nome)}</strong>)"
+                    f"para <strong>{_escape(data_str)}</strong>. "
+                    f"(Registrado por: <strong>{_escape(admin_nome)}</strong>)"
                 )
                 paragraphs = [
                     "Este registro serve para ciência e organização interna da unidade (cobertura/rotina).",
@@ -2827,7 +2905,6 @@ def admin_agendar_para():
             if nome_substituto:
                 notes.append(f"Haverá substituição por: <strong>{_escape(nome_substituto)}</strong>.")
 
-            # Extra opcional: quantos registros LM foram criados
             if tipo_folga == "LM" and data_fim and data_fim >= data_ini:
                 try:
                     qtd = len(registros_criados)
@@ -2848,17 +2925,25 @@ def admin_agendar_para():
                 f"E.M José Padin Mouta – {title}\n\n"
                 f"Prezado(a) Senhor(a) {nome},\n\n"
                 f"A unidade escolar registrou em seu nome {descricao_motivo} para {data_str}.\n"
+                f"Registrado em: {solicitado_em_str}\n"
+                f"Registrado por: {admin_nome}\n"
                 f"Status no sistema: {status_label}\n"
             )
 
             try:
                 enviar_email(usuario_alvo.email, assunto, mensagem_html, mensagem_texto)
                 if tipo_folga == "LM" and data_fim and data_fim >= data_ini:
-                    flash(f"Período de LM DEFERIDO criado para {usuario_alvo.nome} ({len(registros_criados)} dia(s)) e e-mail enviado.", "success")
+                    flash(
+                        f"Período de LM DEFERIDO criado para {usuario_alvo.nome} ({len(registros_criados)} dia(s)) e e-mail enviado.",
+                        "success"
+                    )
                 else:
                     flash(f"Agendamento DEFERIDO criado para {usuario_alvo.nome} e e-mail enviado.", "success")
             except Exception:
-                current_app.logger.exception("Falha ao enviar e-mail para agendamento %s", getattr(primeiro, "id", None))
+                current_app.logger.exception(
+                    "Falha ao enviar e-mail para agendamento %s",
+                    getattr(primeiro, "id", None)
+                )
                 flash(f"Agendamento criado para {usuario_alvo.nome}, mas o e-mail falhou.", "warning")
 
             return redirect(url_for('admin_agendar_para'))
@@ -3769,6 +3854,19 @@ def deferir_folgas():
 
         return avisos
 
+    def _render_deferir_folgas(folgas, avisos):
+        folgas_por_cargo = defaultdict(list)
+        for f in folgas:
+            cargo = f.funcionario.cargo or "Sem Cargo Definido"
+            folgas_por_cargo[cargo].append(f)
+
+        return render_template(
+            'deferir_folgas.html',
+            folgas_por_cargo=folgas_por_cargo,
+            avisos=avisos,
+            formatar_datahora_brasil=formatar_datahora_brasil
+        )
+
     # ---------- GET ----------
     folgas = buscar_folgas()
     avisos = gerar_avisos(folgas)
@@ -4168,17 +4266,7 @@ def deferir_folgas():
         folgas = buscar_folgas()
         avisos = gerar_avisos(folgas)
 
-    # agrupamento por cargo (igual)
-    folgas_por_cargo = defaultdict(list)
-    for f in folgas:
-        cargo = f.funcionario.cargo or "Sem Cargo Definido"
-        folgas_por_cargo[cargo].append(f)
-
-    return render_template(
-        'deferir_folgas.html',
-        folgas_por_cargo=folgas_por_cargo,
-        avisos=avisos
-    )
+    return _render_deferir_folgas(folgas, avisos)
 
 # ===========================================
 # HISTÓRICO / SALDOS (USUÁRIO)
@@ -8590,6 +8678,311 @@ def debug_uploads():
         protocolos_exists=proto_dir.exists(),
         tre_files=list_files(tre_dir),
         protocolo_files=list_files(proto_dir),
+    )
+
+# ===========================================
+# ADMIN - HORÁRIOS DE TRABALHO
+# ===========================================
+import datetime
+from collections import defaultdict
+from sqlalchemy import asc, desc
+
+def _parse_date_iso(raw):
+    raw = (raw or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.datetime.strptime(raw, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+def _parse_time_hh_mm(raw):
+    raw = (raw or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.datetime.strptime(raw, "%H:%M").time()
+    except ValueError:
+        return None
+
+def _dia_semana_label(dia):
+    mapa = {
+        0: "Segunda-feira",
+        1: "Terça-feira",
+        2: "Quarta-feira",
+        3: "Quinta-feira",
+        4: "Sexta-feira",
+        5: "Sábado",
+        6: "Domingo",
+    }
+    return mapa.get(dia, f"Dia {dia}")
+
+@app.route("/admin/horarios_trabalho", methods=["GET", "POST"])
+@login_required
+@admin_required
+def admin_horarios_trabalho():
+    usuarios = (
+        User.query
+        .filter_by(ativo=True)
+        .order_by(asc(User.nome))
+        .all()
+    )
+
+    dias_semana = [
+        (0, "Segunda-feira"),
+        (1, "Terça-feira"),
+        (2, "Quarta-feira"),
+        (3, "Quinta-feira"),
+        (4, "Sexta-feira"),
+        (5, "Sábado"),
+        (6, "Domingo"),
+    ]
+
+    user_id_raw = request.values.get("user_id")
+    usuario_selecionado = None
+
+    if user_id_raw:
+        try:
+            usuario_selecionado = User.query.filter_by(id=int(user_id_raw)).first()
+        except (TypeError, ValueError):
+            usuario_selecionado = None
+
+    if request.method == "POST":
+        acao = (request.form.get("acao") or "salvar").strip().lower()
+
+        # -----------------------------------
+        # DESATIVAR UM HORÁRIO ESPECÍFICO
+        # -----------------------------------
+        if acao == "desativar":
+            horario_id = request.form.get("horario_id")
+
+            try:
+                horario_id = int(horario_id)
+            except (TypeError, ValueError):
+                flash("Horário inválido.", "danger")
+                return redirect(url_for("admin_horarios_trabalho", user_id=user_id_raw))
+
+            horario = UserHorarioTrabalho.query.get(horario_id)
+            if not horario:
+                flash("Horário não encontrado.", "danger")
+                return redirect(url_for("admin_horarios_trabalho", user_id=user_id_raw))
+
+            try:
+                horario.ativo = False
+                if horario.vigencia_fim is None:
+                    horario.vigencia_fim = datetime.date.today()
+                db.session.commit()
+                flash("Horário desativado com sucesso.", "success")
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Erro ao desativar horário: {str(e)}", "danger")
+
+            return redirect(url_for("admin_horarios_trabalho", user_id=horario.user_id))
+
+        # -----------------------------------
+        # SALVAR NOVOS HORÁRIOS
+        # -----------------------------------
+        try:
+            user_id = int(request.form.get("user_id") or 0)
+        except (TypeError, ValueError):
+            user_id = 0
+
+        usuario = User.query.filter_by(id=user_id).first()
+        if not usuario:
+            flash("Selecione um servidor válido.", "danger")
+            return render_template(
+                "admin_horarios_trabalho.html",
+                usuarios=usuarios,
+                usuario_selecionado=None,
+                horarios_existentes=[],
+                horarios_atuais=[],
+                horarios_por_dia={},
+                dias_semana=dias_semana,
+            )
+
+        vigencia_inicio = _parse_date_iso(request.form.get("vigencia_inicio"))
+        vigencia_fim = _parse_date_iso(request.form.get("vigencia_fim"))
+
+        if not vigencia_inicio:
+            flash("Informe uma vigência inicial válida.", "danger")
+            return redirect(url_for("admin_horarios_trabalho", user_id=usuario.id))
+
+        if vigencia_fim and vigencia_fim < vigencia_inicio:
+            flash("A vigência final não pode ser menor que a vigência inicial.", "danger")
+            return redirect(url_for("admin_horarios_trabalho", user_id=usuario.id))
+
+        substituir_ativos = (request.form.get("substituir_ativos") or "").strip() in ("1", "true", "on", "sim")
+        observacao_geral = (request.form.get("observacao_geral") or "").strip() or None
+
+        dias_raw = request.form.getlist("dia_semana[]")
+        horas_inicio_raw = request.form.getlist("hora_inicio[]")
+        horas_fim_raw = request.form.getlist("hora_fim[]")
+        observacoes_raw = request.form.getlist("observacao[]")
+
+        if not (len(dias_raw) == len(horas_inicio_raw) == len(horas_fim_raw)):
+            flash("Os dados enviados da grade de horários estão inconsistentes.", "danger")
+            return redirect(url_for("admin_horarios_trabalho", user_id=usuario.id))
+
+        # garante mesmo tamanho para observações
+        while len(observacoes_raw) < len(dias_raw):
+            observacoes_raw.append("")
+
+        novos_registros = []
+        erros = []
+
+        for i, (dia_raw, hi_raw, hf_raw, obs_raw) in enumerate(zip(dias_raw, horas_inicio_raw, horas_fim_raw, observacoes_raw), start=1):
+            dia_raw = (dia_raw or "").strip()
+            hi_raw = (hi_raw or "").strip()
+            hf_raw = (hf_raw or "").strip()
+            obs_raw = (obs_raw or "").strip()
+
+            # linha vazia -> ignora
+            if not dia_raw and not hi_raw and not hf_raw and not obs_raw:
+                continue
+
+            try:
+                dia_semana = int(dia_raw)
+            except (TypeError, ValueError):
+                erros.append(f"Linha {i}: dia da semana inválido.")
+                continue
+
+            if dia_semana < 0 or dia_semana > 6:
+                erros.append(f"Linha {i}: dia da semana fora do intervalo permitido.")
+                continue
+
+            hora_inicio = _parse_time_hh_mm(hi_raw)
+            hora_fim = _parse_time_hh_mm(hf_raw)
+
+            if not hora_inicio or not hora_fim:
+                erros.append(f"Linha {i}: informe hora inicial e final válidas.")
+                continue
+
+            if hora_fim <= hora_inicio:
+                erros.append(f"Linha {i}: a hora final deve ser maior que a hora inicial.")
+                continue
+
+            novos_registros.append({
+                "dia_semana": dia_semana,
+                "hora_inicio": hora_inicio,
+                "hora_fim": hora_fim,
+                "observacao": obs_raw or observacao_geral,
+            })
+
+        if erros:
+            for erro in erros:
+                flash(erro, "danger")
+            return redirect(url_for("admin_horarios_trabalho", user_id=usuario.id))
+
+        if not novos_registros:
+            flash("Adicione ao menos um horário válido para salvar.", "warning")
+            return redirect(url_for("admin_horarios_trabalho", user_id=usuario.id))
+
+        # -----------------------------------
+        # valida sobreposição dentro do lote enviado
+        # -----------------------------------
+        agrupados = defaultdict(list)
+        for item in novos_registros:
+            agrupados[item["dia_semana"]].append(item)
+
+        for dia, lista in agrupados.items():
+            lista_ordenada = sorted(lista, key=lambda x: x["hora_inicio"])
+            for idx in range(len(lista_ordenada) - 1):
+                atual = lista_ordenada[idx]
+                prox = lista_ordenada[idx + 1]
+                if prox["hora_inicio"] < atual["hora_fim"]:
+                    flash(
+                        f"Há sobreposição de horários em {_dia_semana_label(dia)} "
+                        f"({atual['hora_inicio'].strftime('%H:%M')}-{atual['hora_fim'].strftime('%H:%M')} "
+                        f"com {prox['hora_inicio'].strftime('%H:%M')}-{prox['hora_fim'].strftime('%H:%M')}).",
+                        "danger"
+                    )
+                    return redirect(url_for("admin_horarios_trabalho", user_id=usuario.id))
+
+        try:
+            # se marcar para substituir, desativa tudo que estiver ativo
+            if substituir_ativos:
+                horarios_ativos = (
+                    UserHorarioTrabalho.query
+                    .filter_by(user_id=usuario.id, ativo=True)
+                    .all()
+                )
+
+                for h in horarios_ativos:
+                    h.ativo = False
+                    if h.vigencia_fim is None:
+                        if h.vigencia_inicio and h.vigencia_inicio < vigencia_inicio:
+                            h.vigencia_fim = vigencia_inicio - datetime.timedelta(days=1)
+                        else:
+                            h.vigencia_fim = h.vigencia_inicio
+
+            objetos = []
+            for item in novos_registros:
+                obj = UserHorarioTrabalho(
+                    user_id=usuario.id,
+                    dia_semana=item["dia_semana"],
+                    hora_inicio=item["hora_inicio"],
+                    hora_fim=item["hora_fim"],
+                    vigencia_inicio=vigencia_inicio,
+                    vigencia_fim=vigencia_fim,
+                    ativo=True,
+                    observacao=item["observacao"],
+                )
+                objetos.append(obj)
+
+            db.session.add_all(objetos)
+            db.session.commit()
+
+            flash(
+                f"Horários de trabalho cadastrados com sucesso para {usuario.nome}.",
+                "success"
+            )
+            return redirect(url_for("admin_horarios_trabalho", user_id=usuario.id))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Erro ao salvar horários: {str(e)}", "danger")
+            return redirect(url_for("admin_horarios_trabalho", user_id=usuario.id))
+
+    # -----------------------------------
+    # GET - carregar horários do usuário selecionado
+    # -----------------------------------
+    horarios_existentes = []
+    horarios_atuais = []
+    horarios_por_dia = defaultdict(list)
+
+    if usuario_selecionado:
+        horarios_existentes = (
+            UserHorarioTrabalho.query
+            .filter_by(user_id=usuario_selecionado.id)
+            .order_by(
+                desc(UserHorarioTrabalho.ativo),
+                desc(UserHorarioTrabalho.vigencia_inicio),
+                asc(UserHorarioTrabalho.dia_semana),
+                asc(UserHorarioTrabalho.hora_inicio),
+            )
+            .all()
+        )
+
+        hoje = datetime.date.today()
+
+        horarios_atuais = [
+            h for h in horarios_existentes
+            if h.ativo
+            and h.vigencia_inicio <= hoje
+            and (h.vigencia_fim is None or h.vigencia_fim >= hoje)
+        ]
+
+        for h in horarios_existentes:
+            horarios_por_dia[h.dia_semana].append(h)
+
+    return render_template(
+        "admin_horarios_trabalho.html",
+        usuarios=usuarios,
+        usuario_selecionado=usuario_selecionado,
+        horarios_existentes=horarios_existentes,
+        horarios_atuais=horarios_atuais,
+        horarios_por_dia=horarios_por_dia,
+        dias_semana=dias_semana,
     )
 
 # ===========================================
