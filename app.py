@@ -3437,6 +3437,7 @@ def relatorio_ponto():
 
         # =========================
         # AGENDAMENTOS
+        # ✅ SOMENTE DEFERIDOS
         # =========================
         agendamentos = (
             Agendamento.query
@@ -3445,7 +3446,8 @@ def relatorio_ponto():
             .filter(
                 User.ativo.is_(True),
                 Agendamento.data >= periodo_inicio,
-                Agendamento.data <= periodo_fim
+                Agendamento.data <= periodo_fim,
+                func.lower(Agendamento.status) == 'deferido'
             )
             .all()
         )
@@ -3616,7 +3618,7 @@ def relatorio_ponto():
         periodo_inicio=periodo_inicio,
         periodo_fim=periodo_fim,
 
-        # mantém filtros disponíveis no template, se quiser usar depois
+        # mantém filtros disponíveis no template
         q=busca,
         tipo_filtro=tipo_filtro,
         motivo_filtro=motivo_filtro,
