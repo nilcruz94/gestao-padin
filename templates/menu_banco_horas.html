@@ -10,7 +10,7 @@
 
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
 
   <style>
@@ -37,6 +37,18 @@
 
     @media (min-width: 769px) {
       main { padding: 30px 24px 90px; align-items: center; }
+    }
+
+    .sr-only{
+      position:absolute !important;
+      width:1px !important;
+      height:1px !important;
+      padding:0 !important;
+      margin:-1px !important;
+      overflow:hidden !important;
+      clip:rect(0,0,0,0) !important;
+      white-space:nowrap !important;
+      border:0 !important;
     }
 
     /* ========== CABEÇALHO PADRÃO ========== */
@@ -130,7 +142,7 @@
     .cards-title { font-size: .95rem; font-weight: 700; color: #2563eb; margin: 0 0 14px; text-align: left; }
 
     .cards-grid {
-      display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)); gap: 16px; justify-content: center;
+      display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)); gap: 16px; justify-content: center; align-items: stretch;
     }
     @media (max-width: 992px) { .cards-grid { grid-template-columns: repeat(2, minmax(150px, 1fr)); } }
     @media (max-width: 600px) {
@@ -138,26 +150,194 @@
       .cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
     }
 
+    .card-shell{
+      position:relative;
+      width:100%;
+      min-width:0;
+    }
+
     .card {
       background: #fff; color: #111827; border-radius: 18px; padding: 14px 10px; text-align: center; text-decoration: none;
       display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 130px;
       box-shadow: 0 4px 12px rgba(15,23,42,.08); font-weight: 700; font-size: .94rem; letter-spacing: .01em; position: relative; overflow: hidden;
       transition: transform .18s ease, box-shadow .22s ease, border-color .18s ease, background-color .18s ease; cursor: pointer; border: 1px solid #e5e7eb;
+      isolation:isolate;
     }
     .card::before {
       content: ""; position: absolute; top: -35%; left: -35%; width: 170%; height: 170%;
       background: radial-gradient(circle at center, rgba(59,130,246,.16) 0%, transparent 60%);
       transform: rotate(18deg); opacity: 0; pointer-events: none; transition: opacity .25s ease; border-radius: 18px; z-index: 0;
     }
-    .card i {
-      font-size: 24px; margin-bottom: 12px; color: #2563eb; z-index: 1;
+
+    .card-main-icon{
+      font-size: 24px;
+      margin-bottom: 12px;
+      color: #2563eb;
+      z-index: 1;
+      position:relative;
       background: radial-gradient(circle at 30% 30%, #fff 0%, #e0edff 60%, #c7d9ff 100%);
-      border-radius: 999px; padding: 10px; display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 999px;
+      padding: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       box-shadow: 0 4px 10px rgba(37,99,235,.35);
     }
+
+    .card-main-icon i{
+      font-size: inherit;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      box-shadow: none;
+      color: inherit;
+    }
+
     .card:hover { transform: translateY(-4px); box-shadow: 0 10px 22px rgba(15,23,42,.16); border-color: #3b82f6; background: #f9fafb; text-decoration: none; }
     .card:hover::before { opacity: 1; }
     .card, .card:hover, .card:focus, .card:visited { color: #111827 !important; text-decoration: none !important; }
+
+    .card-info-btn{
+      position:absolute;
+      top:10px;
+      right:10px;
+      width:31px;
+      height:31px;
+      border-radius:999px;
+      border:1px solid rgba(37,99,235,.22);
+      background:rgba(255,255,255,.96);
+      color:#2563eb;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      box-shadow:0 6px 14px rgba(15,23,42,.10);
+      transition:transform .12s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease;
+      padding:0;
+      font-size:.9rem;
+      font-weight:900;
+      font-family:'Montserrat', sans-serif;
+      backdrop-filter:blur(6px);
+      z-index:4;
+    }
+
+    .card-info-btn:hover,
+    .card-info-btn:focus-visible,
+    .card-info-btn.active{
+      transform:translateY(-1px);
+      background:#ffffff;
+      border-color:#93c5fd;
+      box-shadow:0 10px 22px rgba(37,99,235,.18);
+      outline:none;
+    }
+
+    .card-info-btn i{
+      font-size:.86rem;
+      margin:0;
+      padding:0;
+      background:transparent;
+      box-shadow:none;
+      color:inherit;
+    }
+
+    .hint-popover{
+      position:fixed;
+      left:0;
+      top:0;
+      width:min(320px, calc(100vw - 24px));
+      max-width:calc(100vw - 24px);
+      background:rgba(255,255,255,.98);
+      border:1px solid rgba(148,163,184,.24);
+      border-radius:18px;
+      box-shadow:0 20px 40px rgba(15,23,42,.18);
+      padding:14px 14px 13px;
+      z-index:5000;
+      opacity:0;
+      visibility:hidden;
+      transform:translateY(6px) scale(.98);
+      transition:opacity .16s ease, transform .16s ease, visibility .16s ease;
+      pointer-events:none;
+      backdrop-filter:blur(12px);
+    }
+
+    .hint-popover.show{
+      opacity:1;
+      visibility:visible;
+      transform:translateY(0) scale(1);
+      pointer-events:auto;
+    }
+
+    .hint-popover::before{
+      content:"";
+      position:absolute;
+      width:14px;
+      height:14px;
+      background:rgba(255,255,255,.98);
+      transform:rotate(45deg);
+      border-left:1px solid rgba(148,163,184,.24);
+      border-top:1px solid rgba(148,163,184,.24);
+      left:var(--arrow-left, 24px);
+    }
+
+    .hint-popover[data-placement="top"]::before{
+      bottom:-8px;
+      top:auto;
+      transform:rotate(225deg);
+    }
+
+    .hint-popover[data-placement="bottom"]::before{
+      top:-8px;
+      bottom:auto;
+      transform:rotate(45deg);
+    }
+
+    .hint-popover-title{
+      font-size:.9rem;
+      font-weight:900;
+      color:#0f172a;
+      margin:0 0 7px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      line-height:1.25;
+    }
+
+    .hint-popover-title i{
+      color:#2563eb;
+      font-size:.88rem;
+    }
+
+    .hint-popover-text{
+      font-size:.8rem;
+      line-height:1.5;
+      color:#475569;
+      font-weight:700;
+      margin:0;
+    }
+
+    @media (max-width: 600px){
+      .card-info-btn{
+        top:8px;
+        right:8px;
+        width:29px;
+        height:29px;
+        font-size:.84rem;
+      }
+
+      .hint-popover{
+        width:min(290px, calc(100vw - 18px));
+        max-width:calc(100vw - 18px);
+        padding:13px 13px 12px;
+      }
+
+      .hint-popover-title{
+        font-size:.86rem;
+      }
+
+      .hint-popover-text{
+        font-size:.78rem;
+      }
+    }
 
     /* ========== RODAPÉ ========== */
     footer {
@@ -179,7 +359,7 @@
       </div>
     </div>
     <div class="header-center-text-container">
-      <div class="header-center-text">PORTAL DO SERVIDOR</div>
+      <div class="header-center-text">CENTRAL DA UNIDADE</div>
     </div>
     <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
       <i class="fas fa-home" aria-hidden="true"></i>
@@ -197,7 +377,7 @@
       </div>
     </div>
     <div class="header-bottom">
-      <span>PORTAL DO SERVIDOR</span>
+      <span>CENTRAL DA UNIDADE</span>
       <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
         <i class="fas fa-home" aria-hidden="true"></i>
         <span class="sr-only">Início</span>
@@ -227,32 +407,101 @@
 
           <div class="cards-grid">
             <!-- Ações gerais -->
-            <a href="{{ url_for('cadastrar_horas') }}" class="card" title="Cadastrar suas próprias horas (solicitação)">
-              <i class="fas fa-plus-circle" aria-hidden="true"></i>
-              Cadastrar Horas
-            </a>
+            <div class="card-shell">
+              <a href="{{ url_for('cadastrar_horas') }}" class="card" title="Cadastrar suas próprias horas (solicitação)">
+                <span class="card-main-icon" aria-hidden="true">
+                  <i class="fas fa-plus-circle"></i>
+                </span>
+                Cadastrar Horas
+              </a>
+              <button
+                type="button"
+                class="card-info-btn"
+                aria-label="Mais informações sobre Cadastrar Horas"
+                data-info-title="Cadastrar Horas"
+                data-info-icon="fas fa-plus-circle"
+                data-info-text="Aqui você pode registrar as horas extras que realizou para que elas sejam enviadas ao sistema e fiquem disponíveis para análise."
+              >
+                <i class="fas fa-info"></i>
+              </button>
+            </div>
 
-            <a href="{{ url_for('consultar_horas') }}" class="card" title="Consultar seus registros e saldo">
-              <i class="fas fa-search" aria-hidden="true"></i>
-              Consultar Horas
-            </a>
+            <div class="card-shell">
+              <a href="{{ url_for('consultar_horas') }}" class="card" title="Consultar seus registros e saldo">
+                <span class="card-main-icon" aria-hidden="true">
+                  <i class="fas fa-search"></i>
+                </span>
+                Consultar Horas
+              </a>
+              <button
+                type="button"
+                class="card-info-btn"
+                aria-label="Mais informações sobre Consultar Horas"
+                data-info-title="Consultar Horas"
+                data-info-icon="fas fa-search"
+                data-info-text="Aqui você pode consultar seu saldo de banco de horas, acompanhar os registros já lançados e visualizar as horas que já foram utilizadas ou analisadas."
+              >
+                <i class="fas fa-info"></i>
+              </button>
+            </div>
 
             {% if is_admin %}
-              <!-- Somente Admin -->
-              <a href="{{ url_for('inserir_bh_admin') }}" class="card" title="Inserir crédito de Banco de Horas diretamente para um servidor">
-                <i class="fas fa-database" aria-hidden="true"></i>
-                Inserir Banco de Horas (Admin)
-              </a>
+              <div class="card-shell">
+                <a href="{{ url_for('inserir_bh_admin') }}" class="card" title="Inserir crédito de Banco de Horas diretamente para um servidor">
+                  <span class="card-main-icon" aria-hidden="true">
+                    <i class="fas fa-database"></i>
+                  </span>
+                  Inserir Banco de Horas (Admin)
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Inserir Banco de Horas"
+                  data-info-title="Inserir Banco de Horas (Admin)"
+                  data-info-icon="fas fa-database"
+                  data-info-text="Aqui a administração pode lançar diretamente créditos de banco de horas para um servidor, sem depender do cadastro feito pelo próprio usuário."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
 
-              <a href="{{ url_for('deferir_horas') }}" class="card" title="Analisar e deferir solicitações de horas">
-                <i class="fas fa-check-circle" aria-hidden="true"></i>
-                Deferir Horas
-              </a>
+              <div class="card-shell">
+                <a href="{{ url_for('deferir_horas') }}" class="card" title="Analisar e deferir solicitações de horas">
+                  <span class="card-main-icon" aria-hidden="true">
+                    <i class="fas fa-check-circle"></i>
+                  </span>
+                  Deferir Horas
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Deferir Horas"
+                  data-info-title="Deferir Horas"
+                  data-info-icon="fas fa-check-circle"
+                  data-info-text="Aqui a administração pode analisar os pedidos cadastrados no sistema e decidir quais horas serão aprovadas ou não."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
 
-              <a href="{{ url_for('relatorio_horas_extras') }}" class="card" title="Relatório consolidado por servidor">
-                <i class="fas fa-file-alt" aria-hidden="true"></i>
-                Relatório de Horas Extras
-              </a>
+              <div class="card-shell">
+                <a href="{{ url_for('relatorio_horas_extras') }}" class="card" title="Relatório consolidado por servidor">
+                  <span class="card-main-icon" aria-hidden="true">
+                    <i class="fas fa-file-alt"></i>
+                  </span>
+                  Relatório de Horas Extras
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Relatório de Horas Extras"
+                  data-info-title="Relatório de Horas Extras"
+                  data-info-icon="fas fa-file-alt"
+                  data-info-text="Aqui a administração pode visualizar um relatório consolidado das horas extras registradas no sistema, com informações organizadas por servidor."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
             {% endif %}
           </div>
         </div>
@@ -261,13 +510,20 @@
     </div>
   </main>
 
+  <div id="cardHintPopover" class="hint-popover" data-placement="top" aria-hidden="true">
+    <div class="hint-popover-title" id="cardHintTitle">
+      <i class="fas fa-circle-info"></i>
+      <span>Informações</span>
+    </div>
+    <p class="hint-popover-text" id="cardHintText"></p>
+  </div>
+
   <footer>
     <p>&copy; 2026 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
   </footer>
 
   <!-- JS -->
   <script>
-    // Exponha o token CSRF para uso em futuras requisições fetch/AJAX neste dashboard (padronização)
     (function() {
       const el = document.querySelector('meta[name="csrf-token"]');
       if (el) {
@@ -275,6 +531,192 @@
       }
     })();
   </script>
+
+  <script>
+    (function initCardInfoPopover() {
+      document.addEventListener('DOMContentLoaded', function () {
+        const popover = document.getElementById('cardHintPopover');
+        const titleEl = document.getElementById('cardHintTitle');
+        const textEl = document.getElementById('cardHintText');
+        const buttons = Array.from(document.querySelectorAll('.card-info-btn'));
+        const canHover = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+
+        let activeButton = null;
+        let pinned = false;
+        let hideTimer = null;
+
+        function clearHideTimer() {
+          if (hideTimer) {
+            clearTimeout(hideTimer);
+            hideTimer = null;
+          }
+        }
+
+        function setButtonState(btn, isActive) {
+          buttons.forEach(b => {
+            b.classList.remove('active');
+            b.setAttribute('aria-expanded', 'false');
+          });
+
+          if (btn && isActive) {
+            btn.classList.add('active');
+            btn.setAttribute('aria-expanded', 'true');
+          }
+        }
+
+        function measureAndPosition(btn) {
+          if (!btn) return;
+
+          popover.classList.add('show');
+          popover.style.left = '12px';
+          popover.style.top = '12px';
+          popover.setAttribute('aria-hidden', 'false');
+
+          const btnRect = btn.getBoundingClientRect();
+          const popRect = popover.getBoundingClientRect();
+
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+          const margin = 12;
+          const gap = 12;
+
+          let placement = 'top';
+          let top = btnRect.top - popRect.height - gap;
+
+          if (top < margin) {
+            placement = 'bottom';
+            top = btnRect.bottom + gap;
+          }
+
+          if (placement === 'bottom' && (top + popRect.height > viewportHeight - margin)) {
+            placement = 'top';
+            top = Math.max(margin, btnRect.top - popRect.height - gap);
+          }
+
+          let left = btnRect.left + (btnRect.width / 2) - (popRect.width / 2);
+          left = Math.max(margin, Math.min(left, viewportWidth - popRect.width - margin));
+
+          const arrowCenter = btnRect.left + (btnRect.width / 2);
+          let arrowLeft = arrowCenter - left - 7;
+          arrowLeft = Math.max(18, Math.min(arrowLeft, popRect.width - 26));
+
+          popover.dataset.placement = placement;
+          popover.style.left = `${left}px`;
+          popover.style.top = `${top}px`;
+          popover.style.setProperty('--arrow-left', `${arrowLeft}px`);
+        }
+
+        function openPopover(btn, keepPinned = false) {
+          if (!btn) return;
+
+          clearHideTimer();
+
+          const title = btn.dataset.infoTitle || 'Informações';
+          const text = btn.dataset.infoText || '';
+          const icon = btn.dataset.infoIcon || 'fas fa-circle-info';
+
+          titleEl.innerHTML = `<i class="${icon}"></i><span>${title}</span>`;
+          textEl.textContent = text;
+
+          activeButton = btn;
+          pinned = keepPinned;
+
+          setButtonState(btn, true);
+          measureAndPosition(btn);
+        }
+
+        function closePopover(force = true) {
+          clearHideTimer();
+
+          if (!force && pinned) return;
+
+          popover.classList.remove('show');
+          popover.setAttribute('aria-hidden', 'true');
+          setButtonState(null, false);
+          activeButton = null;
+          pinned = false;
+        }
+
+        function scheduleClose() {
+          clearHideTimer();
+          hideTimer = setTimeout(() => {
+            if (!pinned) closePopover(true);
+          }, 110);
+        }
+
+        buttons.forEach(btn => {
+          btn.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (activeButton === btn && pinned) {
+              closePopover(true);
+              return;
+            }
+
+            openPopover(btn, true);
+          });
+
+          btn.addEventListener('focus', function() {
+            openPopover(btn, false);
+          });
+
+          btn.addEventListener('blur', function() {
+            if (!pinned) scheduleClose();
+          });
+
+          if (canHover) {
+            btn.addEventListener('mouseenter', function() {
+              openPopover(btn, false);
+            });
+
+            btn.addEventListener('mouseleave', function() {
+              if (!pinned) scheduleClose();
+            });
+          }
+        });
+
+        if (canHover) {
+          popover.addEventListener('mouseenter', function() {
+            clearHideTimer();
+          });
+
+          popover.addEventListener('mouseleave', function() {
+            if (!pinned) closePopover(true);
+          });
+        }
+
+        document.addEventListener('click', function(event) {
+          if (
+            activeButton &&
+            !event.target.closest('.card-info-btn') &&
+            !event.target.closest('#cardHintPopover')
+          ) {
+            closePopover(true);
+          }
+        });
+
+        document.addEventListener('keydown', function(event) {
+          if (event.key === 'Escape') {
+            closePopover(true);
+          }
+        });
+
+        window.addEventListener('resize', function() {
+          if (activeButton) {
+            measureAndPosition(activeButton);
+          }
+        });
+
+        window.addEventListener('scroll', function() {
+          if (activeButton) {
+            measureAndPosition(activeButton);
+          }
+        }, true);
+      });
+    })();
+  </script>
+
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>

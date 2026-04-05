@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Portal do Servidor - Início</title>
+  <title>Central da Unidade - Início</title>
 
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -707,7 +707,7 @@
     </div>
 
     <div class="header-center-text-container">
-      <div class="header-center-text">PORTAL DO SERVIDOR</div>
+      <div class="header-center-text">CENTRAL DA UNIDADE</div>
     </div>
 
     <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
@@ -724,7 +724,7 @@
       </div>
     </div>
     <div class="header-bottom">
-      <span>PORTAL DO SERVIDOR</span>
+      <span>CENTRAL DA UNIDADE</span>
       <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
         <i class="fas fa-home"></i>
       </a>
@@ -742,7 +742,7 @@
         <div class="welcome-main-block">
           <p class="welcome-text-main">Olá, {{ current_user.nome }}</p>
           <p class="welcome-text-sub">
-            Bem-vindo ao Portal do Servidor. Utilize os cards abaixo para acessar os serviços disponíveis.
+            Bem-vindo à Central da Unidade. Utilize os cards abaixo para acessar os serviços disponíveis.
           </p>
 
           <div class="welcome-meta">
@@ -789,7 +789,7 @@
         {% endif %}
       </div>
 
-      <p class="access-services">Acesse os serviços do Portal do Servidor:</p>
+      <p class="access-services">Acesse os serviços da central da unidade:</p>
 
       <div id="geral" class="cards-container active">
         <div class="cards-wrapper">

@@ -356,7 +356,7 @@ SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 SMTP_USER = "nilcr94@gmail.com"
 SMTP_PASS = "etvgjtsfgwfdtuof"   # 🔒 Ideal: usar variável de ambiente!
-MAIL_FROM = f"Portal do Servidor <{SMTP_USER}>"
+MAIL_FROM = f"Central da Unidade <{SMTP_USER}>"
 
 # --- Diag rápido de SMTP (opcional) ---
 @app.route("/_smtp_diag")
@@ -1001,7 +1001,7 @@ from werkzeug.security import generate_password_hash
 
 # ✅ Branding (mesmo padrão do sistema)
 BRAND_SCHOOL = "E.M José Padin Mouta"
-BRAND_SYSTEM = "Portal do Servidor"
+BRAND_SYSTEM = "Central da Unidade"
 RESET_TOKEN_MAX_AGE = int(os.getenv("RESET_TOKEN_MAX_AGE", "3600"))  # 1 hora
 
 
@@ -1621,7 +1621,7 @@ def gerar_protocolo_agendamento_pdf(agendamento, usuario) -> str:
 
     c.setFillColor(colors.HexColor("#334155"))
     c.setFont("Helvetica", 9.4)
-    c.drawString(text_x, subtitle_y, "Portal do Servidor — Protocolo Interno")
+    c.drawString(text_x, subtitle_y, "Central da Unidade — Protocolo Interno")
 
     c.setFont("Helvetica", 9.0)
     c.drawRightString(w - margin, subtitle_y, f"Emitido em: {emitido_em}")
@@ -1755,7 +1755,7 @@ def gerar_protocolo_agendamento_pdf(agendamento, usuario) -> str:
     # Observações (box) - abaixo do status
     # ==========================
     obs = (
-        "Este documento é um comprovante interno de registro no Portal do Servidor da unidade escolar. "
+        "Este documento é um comprovante interno de registro na Central da unidade escolar. "
         "Não substitui processos oficiais e não possui, por si só, valor de ato administrativo externo."
     )
 
@@ -2882,7 +2882,7 @@ def admin_agendar_para():
                 )
                 paragraphs = [
                     "Este lançamento foi concluído no sistema no momento do registro (sem pendências).",
-                    "Você pode consultar o registro no Portal do Servidor."
+                    "Você pode consultar o registro na Central da Unidade."
                 ]
                 notes = []
             else:
@@ -5272,10 +5272,10 @@ def send_email_change_confirmation(user, new_email: str) -> None:
     )
     confirm_url = url_for("confirmar_email", token=token, _external=True)
 
-    subject = "Confirmação de e-mail — Portal do Servidor"
+    subject = "Confirmação de e-mail — Central da Unidade"
     text_body = (
         f"Olá, {user.nome or 'Servidor(a)'}.\n\n"
-        "Recebemos um pedido para alterar seu e-mail no Portal do Servidor.\n\n"
+        "Recebemos um pedido para alterar seu e-mail na Central da Unidade.\n\n"
         f"Confirme no link (válido por {EMAIL_CHANGE_MAX_AGE//60} minutos):\n{confirm_url}\n\n"
         "Se você não solicitou, ignore este e-mail."
     )
@@ -5290,7 +5290,7 @@ def send_email_change_confirmation(user, new_email: str) -> None:
                      style="width:100%;max-width:640px;background:#FFFFFF;border-radius:14px;overflow:hidden;border:1px solid #E6E6E6;">
                 <tr>
                   <td style="padding:18px 20px;background:#0F172A;color:#FFFFFF;">
-                    <div style="font-size:14px;opacity:.9;">Portal do Servidor</div>
+                    <div style="font-size:14px;opacity:.9;">Central da Unidade</div>
                     <div style="font-size:20px;font-weight:800;margin-top:6px;">Confirmação de e-mail</div>
                   </td>
                 </tr>
