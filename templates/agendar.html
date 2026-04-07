@@ -71,6 +71,115 @@
         return 0;
       }
 
+      function getMotivoMeta(sigla) {
+        var key = (sigla || "").toUpperCase().trim();
+
+        var map = {
+          AB: {
+            short: "Abonada",
+            title: "Abonada registrada",
+            overlayTitle: "Agendamento registrado",
+            overlayText:
+              "Sua Abonada foi registrada com sucesso e agora está em análise pela administração.",
+            kind: "analise",
+          },
+          BH: {
+            short: "Banco de Horas",
+            title: "Banco de Horas registrado",
+            overlayTitle: "Agendamento registrado",
+            overlayText:
+              "Seu Banco de Horas foi registrado com sucesso e agora está em análise pela administração.",
+            kind: "analise",
+          },
+          TRE: {
+            short: "TRE",
+            title: "TRE registrada",
+            overlayTitle: "Agendamento registrado",
+            overlayText:
+              "Sua solicitação de TRE foi registrada com sucesso e agora está em análise pela administração.",
+            kind: "analise",
+          },
+          DL: {
+            short: "Dispensa Legal",
+            title: "Dispensa Legal registrada",
+            overlayTitle: "Sinalização registrada",
+            overlayText:
+              "Sua Dispensa Legal foi registrada com sucesso como sinalização. Nesse caso, o deferimento serve apenas para o administrador indicar que visualizou o registro.",
+            kind: "sinalizacao",
+          },
+          DS: {
+            short: "Doação de Sangue",
+            title: "Doação de Sangue registrada",
+            overlayTitle: "Sinalização registrada",
+            overlayText:
+              "Sua Doação de Sangue foi registrada com sucesso como sinalização. Nesse caso, o deferimento serve apenas para o administrador indicar que visualizou o registro.",
+            kind: "sinalizacao",
+          },
+          LM: {
+            short: "Licença Médica",
+            title: "Licença Médica registrada",
+            overlayTitle: "Sinalização registrada",
+            overlayText:
+              "Sua Licença Médica foi registrada com sucesso como sinalização. Nesse caso, o deferimento serve apenas para o administrador indicar que visualizou o registro.",
+            kind: "sinalizacao",
+          },
+          FS: {
+            short: "Falta Simples",
+            title: "Falta Simples registrada",
+            overlayTitle: "Sinalização registrada",
+            overlayText:
+              "Sua Falta Simples foi registrada com sucesso como sinalização. Nesse caso, o deferimento serve apenas para o administrador indicar que visualizou o registro.",
+            kind: "sinalizacao",
+          },
+        };
+
+        return (
+          map[key] || {
+            short: key || "Agendamento",
+            title: "Agendamento registrado",
+            overlayTitle: "Registro concluído",
+            overlayText:
+              "Sua solicitação foi registrada com sucesso no sistema.",
+            kind: "geral",
+          }
+        );
+      }
+
+      function expandMotivoSiglasInText(text) {
+        var result = String(text || "");
+
+        var replacements = [
+          { pattern: /\bAB\b/g, replacement: "Abonada" },
+          { pattern: /\bBH\b/g, replacement: "Banco de Horas" },
+          { pattern: /\bDS\b/g, replacement: "Doação de Sangue" },
+          { pattern: /\bDL\b/g, replacement: "Dispensa Legal" },
+          { pattern: /\bLM\b/g, replacement: "Licença Médica" },
+          { pattern: /\bFS\b/g, replacement: "Falta Simples" },
+        ];
+
+        replacements.forEach(function (item) {
+          result = result.replace(item.pattern, item.replacement);
+        });
+
+        return result;
+      }
+
+      function prettifyFlashTextForUser(text) {
+        var out = expandMotivoSiglasInText(text || "");
+
+        out = out.replace(
+          /agendamento 'Abonada' aprovado ou em análise neste mês/gi,
+          "agendamento de Abonada aprovado ou em análise neste mês",
+        );
+
+        out = out.replace(
+          /limite de 6 folgas 'Abonada' deferidas neste ano/gi,
+          "limite de 6 Abonadas deferidas neste ano",
+        );
+
+        return out;
+      }
+
       function closeFlash(el) {
         if (!el) return;
         el.classList.remove("is-visible");
@@ -91,6 +200,11 @@
           closeBtn.addEventListener("click", function () {
             closeFlash(el);
           });
+        }
+
+        var textEl = el.querySelector(".flash-text");
+        if (textEl) {
+          textEl.textContent = prettifyFlashTextForUser(textEl.textContent);
         }
 
         var category = normalizeFlashCategory(el.dataset.category || "info");
@@ -167,7 +281,8 @@
           <div class="flash-progress"></div>
         `;
 
-        flash.querySelector(".flash-text").textContent = message;
+        flash.querySelector(".flash-text").textContent =
+          prettifyFlashTextForUser(message);
         region.appendChild(flash);
         attachFlashBehavior(flash);
 
@@ -212,6 +327,26 @@
         } catch (e) {}
       }
 
+      function saveLastMotivoSelection(sigla) {
+        try {
+          sessionStorage.setItem("agendar_last_motivo", (sigla || "").trim());
+        } catch (e) {}
+      }
+
+      function getLastMotivoSelection() {
+        try {
+          return sessionStorage.getItem("agendar_last_motivo") || "";
+        } catch (e) {
+          return "";
+        }
+      }
+
+      function clearLastMotivoSelection() {
+        try {
+          sessionStorage.removeItem("agendar_last_motivo");
+        } catch (e) {}
+      }
+
       function getMobileOverlay() {
         return document.getElementById("mobileSubmitOverlay");
       }
@@ -236,9 +371,10 @@
             "Estamos registrando sua folga no sistema.",
           );
         } else if (state === "success") {
+          var motivoMeta = getMotivoMeta(getLastMotivoSelection());
           updateMobileOverlayText(
-            "Folga agendada com sucesso",
-            "Sua solicitação foi registrada. Confira o resumo no topo da página.",
+            motivoMeta.overlayTitle,
+            motivoMeta.overlayText,
           );
         } else if (state === "error") {
           updateMobileOverlayText(
@@ -325,14 +461,15 @@
 
             window.setTimeout(function () {
               hideMobileOverlay();
-            }, 1450);
+              clearLastMotivoSelection();
+            }, 1650);
           } else if (outcome === "danger") {
             setMobileOverlayState("error");
             clearPendingSubmitFlag();
 
             window.setTimeout(function () {
               hideMobileOverlay();
-            }, 1600);
+            }, 1650);
           } else {
             clearPendingSubmitFlag();
             hideMobileOverlay();
@@ -539,7 +676,7 @@
 
           if (!dtIni || !dtFim) {
             handleValidationError(
-              "Para Licença Médica (LM), informe a data inicial e a data final do período.",
+              "Para Licença Médica, informe a data inicial e a data final do período.",
             );
             if (event) event.preventDefault();
             return false;
@@ -554,6 +691,7 @@
           }
 
           if (dataFolgaInput) dataFolgaInput.value = dtIni;
+          saveLastMotivoSelection(motivo);
           startMobileSubmitFlow();
           setSubmitLoading(true);
           return true;
@@ -614,6 +752,7 @@
             }
           }
 
+          saveLastMotivoSelection(motivo);
           startMobileSubmitFlow();
           setSubmitLoading(true);
           return true;
@@ -625,6 +764,7 @@
           return false;
         }
 
+        saveLastMotivoSelection(motivo);
         startMobileSubmitFlow();
         setSubmitLoading(true);
         return true;
@@ -714,7 +854,6 @@
         }
       }
 
-      /* ===== OVERLAY MOBILE DE PROCESSAMENTO ===== */
       .mobile-submit-overlay {
         display: none;
       }
