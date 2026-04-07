@@ -1,1061 +1,2267 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Agendar Folga</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agendar Folga</title>
 
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
 
-  <script>
-    // ==========================
-    // Campos dinâmicos por motivo
-    // ==========================
-    function toggleDataReferencia() {
-      var motivo = document.getElementById("motivo")?.value;
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
 
-      var dataReferenciaGroup = document.getElementById("data_banco_horas");
-      var dataReferenciaInput = document.getElementById("data_referencia");
+    <script>
+      (function () {
+        try {
+          var pending = sessionStorage.getItem("agendar_mobile_processing");
+          var ts = parseInt(
+            sessionStorage.getItem("agendar_mobile_processing_ts") || "0",
+            10,
+          );
+          var isFresh = ts && Date.now() - ts < 30000;
 
-      var horasGroup = document.getElementById("horas_group");
-      var minutosGroup = document.getElementById("minutos_group");
-      var horasInput = document.getElementById("quantidade_horas");
-      var minutosInput = document.getElementById("quantidade_minutos");
+          if (pending === "1" && isFresh) {
+            document.documentElement.classList.add("agendar-mobile-pending");
+          } else {
+            sessionStorage.removeItem("agendar_mobile_processing");
+            sessionStorage.removeItem("agendar_mobile_processing_ts");
+          }
+        } catch (e) {}
+      })();
+    </script>
 
-      if (motivo === "BH") {
-        if (dataReferenciaGroup) dataReferenciaGroup.style.display = "block";
-        if (dataReferenciaInput) dataReferenciaInput.setAttribute("required", "true");
+    <script>
+      function normalizeFlashCategory(category) {
+        var cat = (category || "").toLowerCase().trim();
 
-        if (horasGroup) horasGroup.style.display = "flex";
-        if (minutosGroup) minutosGroup.style.display = "flex";
+        if (cat === "error") return "danger";
+        if (cat === "message") return "info";
+        if (cat === "primary") return "info";
+        if (cat === "secondary") return "info";
 
-        if (horasInput) horasInput.setAttribute("required", "true");
-        if (minutosInput) minutosInput.setAttribute("required", "true");
-      } else {
-        if (dataReferenciaGroup) dataReferenciaGroup.style.display = "none";
-        if (dataReferenciaInput) {
-          dataReferenciaInput.removeAttribute("required");
-          dataReferenciaInput.value = "";
+        if (["success", "danger", "warning", "info"].includes(cat)) {
+          return cat;
         }
-
-        if (horasGroup) horasGroup.style.display = "none";
-        if (minutosGroup) minutosGroup.style.display = "none";
-
-        if (horasInput) {
-          horasInput.value = "0";
-          horasInput.removeAttribute("required");
-        }
-        if (minutosInput) {
-          minutosInput.value = "0";
-          minutosInput.removeAttribute("required");
-        }
-      }
-    }
-
-    // Mostra / esconde período LM (período + lote) — LM sempre conta todos os dias (inclusive sáb/dom/feriados)
-    function togglePeriodoLM() {
-      var motivo = document.getElementById("motivo")?.value;
-
-      var singleGroup = document.getElementById("data_single_group");
-      var singleInput = document.getElementById("data");
-
-      var periodoGroup = document.getElementById("periodo_lm_group");
-      var dtIni = document.getElementById("data_inicio");
-      var dtFim = document.getElementById("data_fim");
-
-      var preview = document.getElementById("lm_preview");
-
-      if (motivo === "LM") {
-        if (singleGroup) singleGroup.style.display = "none";
-        if (singleInput) {
-          singleInput.removeAttribute("required");
-        }
-
-        if (periodoGroup) periodoGroup.style.display = "block";
-        if (dtIni) dtIni.setAttribute("required", "true");
-        if (dtFim) dtFim.setAttribute("required", "true");
-
-        if (preview) preview.style.display = "block";
-        updateLMPreview();
-      } else {
-        if (periodoGroup) periodoGroup.style.display = "none";
-        if (dtIni) { dtIni.removeAttribute("required"); dtIni.value = ""; }
-        if (dtFim) { dtFim.removeAttribute("required"); dtFim.value = ""; }
-
-        if (preview) preview.style.display = "none";
-
-        if (singleGroup) singleGroup.style.display = "block";
-        if (singleInput) singleInput.setAttribute("required", "true");
-      }
-    }
-
-    function toggleMotivoFields() {
-      toggleDataReferencia();
-      togglePeriodoLM();
-    }
-
-    // Mostra / esconde campo "Nome do Substituto" e exige quando "Sim"
-    function toggleSubstituto() {
-      var select = document.getElementById("havera_substituicao");
-      var group = document.getElementById("substituto_group");
-      var input = document.getElementById("nome_substituto");
-      if (!select || !group) return;
-
-      if (select.value === "Sim") {
-        group.style.display = "block";
-        if (input) input.setAttribute("required", "true");
-      } else {
-        group.style.display = "none";
-        if (input) {
-          input.removeAttribute("required");
-          input.value = "";
-        }
-      }
-    }
-
-    function _parseYMD(v){
-      if (!v) return null;
-      var parts = v.split("-");
-      if (parts.length !== 3) return null;
-      var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10), d = parseInt(parts[2], 10);
-      if (!y || !m || !d) return null;
-      return new Date(y, m - 1, d);
-    }
-
-    function _daysBetweenInclusive(a, b){
-      var ms = b.getTime() - a.getTime();
-      var days = Math.floor(ms / (24 * 60 * 60 * 1000));
-      return days + 1;
-    }
-
-    function updateLMPreview(){
-      var motivo = document.getElementById("motivo")?.value;
-      if (motivo !== "LM") return;
-
-      var dtIni = document.getElementById("data_inicio")?.value || "";
-      var dtFim = document.getElementById("data_fim")?.value || "";
-
-      var out = document.getElementById("lm_preview_text");
-      if (!out) return;
-
-      var a = _parseYMD(dtIni);
-      var b = _parseYMD(dtFim);
-
-      if (!a || !b){
-        out.textContent = "Informe a data inicial e a data final do período.";
-        return;
-      }
-      if (b < a){
-        out.textContent = "Período inválido: a data final é menor que a inicial.";
-        return;
+        return "info";
       }
 
-      var total = _daysBetweenInclusive(a, b);
-      out.textContent = "Total de dias no período: " + total + " dia(s).";
-    }
-
-    // Validação antes de enviar
-    function validateForm(event) {
-      var motivo = document.getElementById("motivo")?.value || "";
-      var tipoFolgaField = document.getElementById("tipo_folga");
-      var dataFolgaInput = document.getElementById("data");
-
-      if (tipoFolgaField) tipoFolgaField.value = motivo;
-
-      // ===== LM (período) =====
-      if (motivo === "LM") {
-        var dtIniEl = document.getElementById("data_inicio");
-        var dtFimEl = document.getElementById("data_fim");
-
-        var dtIni = (dtIniEl?.value || "").trim();
-        var dtFim = (dtFimEl?.value || "").trim();
-
-        if (!dtIni || !dtFim) {
-          alert("Para Licença Médica (LM), informe a data inicial e a data final do período.");
-          if (event) event.preventDefault();
-          return false;
-        }
-
-        if (dtIni > dtFim) {
-          alert("Período inválido: a data final não pode ser menor que a data inicial.");
-          if (event) event.preventDefault();
-          return false;
-        }
-
-        if (dataFolgaInput) dataFolgaInput.value = dtIni;
-        return true;
+      function getFlashIcon(category) {
+        var cat = normalizeFlashCategory(category);
+        if (cat === "success") return "fa-circle-check";
+        if (cat === "danger") return "fa-circle-xmark";
+        if (cat === "warning") return "fa-triangle-exclamation";
+        return "fa-circle-info";
       }
 
-      // ===== BH =====
-      if (motivo === "BH") {
+      function getFlashDuration(category) {
+        var cat = normalizeFlashCategory(category);
+        if (cat === "success") return 5200;
+        if (cat === "info") return 5000;
+        if (cat === "warning") return 7000;
+        return 0;
+      }
+
+      function closeFlash(el) {
+        if (!el) return;
+        el.classList.remove("is-visible");
+        el.classList.add("is-hiding");
+
+        window.setTimeout(function () {
+          if (el && el.parentNode) {
+            el.parentNode.removeChild(el);
+          }
+        }, 260);
+      }
+
+      function attachFlashBehavior(el) {
+        if (!el) return;
+
+        var closeBtn = el.querySelector(".flash-close");
+        if (closeBtn) {
+          closeBtn.addEventListener("click", function () {
+            closeFlash(el);
+          });
+        }
+
+        var category = normalizeFlashCategory(el.dataset.category || "info");
+        var duration = parseInt(
+          el.dataset.duration || getFlashDuration(category),
+          10,
+        );
+
+        el.style.setProperty("--flash-duration", duration + "ms");
+
+        requestAnimationFrame(function () {
+          el.classList.add("is-visible");
+        });
+
+        if (duration > 0) {
+          window.setTimeout(function () {
+            closeFlash(el);
+          }, duration);
+        }
+      }
+
+      function ensureFlashRegion() {
+        var region = document.getElementById("flashRegion");
+        if (region) return region;
+
+        var shell = document.querySelector(".shell");
+        if (!shell) return null;
+
+        region = document.createElement("div");
+        region.id = "flashRegion";
+        region.className = "flash-region";
+        region.setAttribute("aria-live", "polite");
+        region.setAttribute("aria-atomic", "true");
+
+        shell.insertBefore(region, shell.firstChild);
+        return region;
+      }
+
+      function showInlineFlash(message, category, options) {
+        var opts = options || {};
+        var cat = normalizeFlashCategory(category || "danger");
+        var region = ensureFlashRegion();
+        if (!region) return;
+
+        var flash = document.createElement("div");
+        flash.className = "flash-message flash-" + cat;
+        flash.dataset.category = cat;
+        flash.dataset.duration = String(
+          typeof opts.duration === "number"
+            ? opts.duration
+            : getFlashDuration(cat),
+        );
+
+        flash.innerHTML = `
+          <div class="flash-accent"></div>
+          <div class="flash-icon" aria-hidden="true">
+            <i class="fas ${getFlashIcon(cat)}"></i>
+          </div>
+          <div class="flash-body">
+            <div class="flash-title">${
+              cat === "success"
+                ? "Agendamento enviado"
+                : cat === "danger"
+                  ? "Não foi possível continuar"
+                  : cat === "warning"
+                    ? "Atenção"
+                    : "Informação"
+            }</div>
+            <div class="flash-text"></div>
+          </div>
+          <button type="button" class="flash-close" aria-label="Fechar mensagem">
+            <i class="fas fa-xmark"></i>
+          </button>
+          <div class="flash-progress"></div>
+        `;
+
+        flash.querySelector(".flash-text").textContent = message;
+        region.appendChild(flash);
+        attachFlashBehavior(flash);
+
+        if (opts.scroll !== false) {
+          var rect = region.getBoundingClientRect();
+          if (rect.top < 0 || rect.top > 120) {
+            region.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }
+      }
+
+      function initServerFlashes() {
+        var flashes = document.querySelectorAll(".flash-message");
+        flashes.forEach(function (el) {
+          var category = normalizeFlashCategory(el.dataset.category || "info");
+          el.dataset.category = category;
+          if (!el.dataset.duration) {
+            el.dataset.duration = String(getFlashDuration(category));
+          }
+          attachFlashBehavior(el);
+        });
+      }
+
+      function isMobileViewport() {
+        return window.matchMedia("(max-width: 768px)").matches;
+      }
+
+      function setPendingSubmitFlag() {
+        try {
+          sessionStorage.setItem("agendar_mobile_processing", "1");
+          sessionStorage.setItem(
+            "agendar_mobile_processing_ts",
+            String(Date.now()),
+          );
+        } catch (e) {}
+      }
+
+      function clearPendingSubmitFlag() {
+        try {
+          sessionStorage.removeItem("agendar_mobile_processing");
+          sessionStorage.removeItem("agendar_mobile_processing_ts");
+        } catch (e) {}
+      }
+
+      function getMobileOverlay() {
+        return document.getElementById("mobileSubmitOverlay");
+      }
+
+      function updateMobileOverlayText(title, text) {
+        var titleEl = document.getElementById("mobileSubmitTitle");
+        var textEl = document.getElementById("mobileSubmitText");
+        if (titleEl) titleEl.textContent = title || "";
+        if (textEl) textEl.textContent = text || "";
+      }
+
+      function setMobileOverlayState(state) {
+        var overlay = getMobileOverlay();
+        if (!overlay) return;
+
+        overlay.classList.remove("is-loading", "is-success", "is-error");
+        overlay.classList.add("is-" + state);
+
+        if (state === "loading") {
+          updateMobileOverlayText(
+            "Enviando sua solicitação",
+            "Estamos registrando sua folga no sistema.",
+          );
+        } else if (state === "success") {
+          updateMobileOverlayText(
+            "Folga agendada com sucesso",
+            "Sua solicitação foi registrada. Confira o resumo no topo da página.",
+          );
+        } else if (state === "error") {
+          updateMobileOverlayText(
+            "Não foi possível concluir",
+            "Houve um problema ao registrar sua solicitação. Verifique a mensagem exibida no topo.",
+          );
+        }
+      }
+
+      function showMobileOverlay(state) {
+        if (!isMobileViewport()) return;
+
+        var overlay = getMobileOverlay();
+        if (!overlay) return;
+
+        document.documentElement.classList.add("agendar-mobile-pending");
+        document.body.classList.add("mobile-overlay-visible");
+        overlay.setAttribute("aria-hidden", "false");
+        setMobileOverlayState(state || "loading");
+      }
+
+      function hideMobileOverlay() {
+        var overlay = getMobileOverlay();
+        if (!overlay) return;
+
+        document.documentElement.classList.remove("agendar-mobile-pending");
+        document.body.classList.remove("mobile-overlay-visible");
+        overlay.setAttribute("aria-hidden", "true");
+      }
+
+      function startMobileSubmitFlow() {
+        if (!isMobileViewport()) return;
+        setPendingSubmitFlag();
+        showMobileOverlay("loading");
+      }
+
+      function getFlashOutcome() {
+        var flashes = Array.from(
+          document.querySelectorAll("#flashRegion .flash-message"),
+        );
+
+        var hasDanger = flashes.some(function (el) {
+          return normalizeFlashCategory(el.dataset.category || "") === "danger";
+        });
+
+        if (hasDanger) return "danger";
+
+        var hasSuccessOrWarning = flashes.some(function (el) {
+          var cat = normalizeFlashCategory(el.dataset.category || "");
+          return cat === "success" || cat === "warning";
+        });
+
+        if (hasSuccessOrWarning) return "success";
+
+        return "none";
+      }
+
+      function recoverMobileSubmitFlowOnLoad() {
+        if (!isMobileViewport()) {
+          clearPendingSubmitFlag();
+          hideMobileOverlay();
+          return;
+        }
+
+        var hasPending = false;
+        try {
+          hasPending =
+            sessionStorage.getItem("agendar_mobile_processing") === "1";
+        } catch (e) {}
+
+        if (!hasPending) {
+          hideMobileOverlay();
+          return;
+        }
+
+        showMobileOverlay("loading");
+
+        window.setTimeout(function () {
+          var outcome = getFlashOutcome();
+
+          if (outcome === "success") {
+            setMobileOverlayState("success");
+            clearPendingSubmitFlag();
+
+            window.setTimeout(function () {
+              hideMobileOverlay();
+            }, 1450);
+          } else if (outcome === "danger") {
+            setMobileOverlayState("error");
+            clearPendingSubmitFlag();
+
+            window.setTimeout(function () {
+              hideMobileOverlay();
+            }, 1600);
+          } else {
+            clearPendingSubmitFlag();
+            hideMobileOverlay();
+          }
+        }, 120);
+      }
+
+      function toggleDataReferencia() {
+        var motivo = document.getElementById("motivo")?.value;
+
+        var dataReferenciaGroup = document.getElementById("data_banco_horas");
         var dataReferenciaInput = document.getElementById("data_referencia");
+
+        var horasGroup = document.getElementById("horas_group");
+        var minutosGroup = document.getElementById("minutos_group");
         var horasInput = document.getElementById("quantidade_horas");
         var minutosInput = document.getElementById("quantidade_minutos");
 
-        if (dataReferenciaInput && !dataReferenciaInput.value) {
-          alert("A data de referência é obrigatória quando o motivo for Banco de Horas.");
-          if (event) event.preventDefault();
-          return false;
+        if (motivo === "BH") {
+          if (dataReferenciaGroup) dataReferenciaGroup.style.display = "block";
+          if (dataReferenciaInput)
+            dataReferenciaInput.setAttribute("required", "true");
+
+          if (horasGroup) horasGroup.style.display = "flex";
+          if (minutosGroup) minutosGroup.style.display = "flex";
+
+          if (horasInput) horasInput.setAttribute("required", "true");
+          if (minutosInput) minutosInput.setAttribute("required", "true");
+        } else {
+          if (dataReferenciaGroup) dataReferenciaGroup.style.display = "none";
+          if (dataReferenciaInput) {
+            dataReferenciaInput.removeAttribute("required");
+            dataReferenciaInput.value = "";
+          }
+
+          if (horasGroup) horasGroup.style.display = "none";
+          if (minutosGroup) minutosGroup.style.display = "none";
+
+          if (horasInput) {
+            horasInput.value = "0";
+            horasInput.removeAttribute("required");
+          }
+          if (minutosInput) {
+            minutosInput.value = "0";
+            minutosInput.removeAttribute("required");
+          }
+        }
+      }
+
+      function togglePeriodoLM() {
+        var motivo = document.getElementById("motivo")?.value;
+
+        var singleGroup = document.getElementById("data_single_group");
+        var singleInput = document.getElementById("data");
+
+        var periodoGroup = document.getElementById("periodo_lm_group");
+        var dtIni = document.getElementById("data_inicio");
+        var dtFim = document.getElementById("data_fim");
+
+        var preview = document.getElementById("lm_preview");
+
+        if (motivo === "LM") {
+          if (singleGroup) singleGroup.style.display = "none";
+          if (singleInput) {
+            singleInput.removeAttribute("required");
+          }
+
+          if (periodoGroup) periodoGroup.style.display = "block";
+          if (dtIni) dtIni.setAttribute("required", "true");
+          if (dtFim) dtFim.setAttribute("required", "true");
+
+          if (preview) preview.style.display = "block";
+          updateLMPreview();
+        } else {
+          if (periodoGroup) periodoGroup.style.display = "none";
+          if (dtIni) {
+            dtIni.removeAttribute("required");
+            dtIni.value = "";
+          }
+          if (dtFim) {
+            dtFim.removeAttribute("required");
+            dtFim.value = "";
+          }
+
+          if (preview) preview.style.display = "none";
+
+          if (singleGroup) singleGroup.style.display = "block";
+          if (singleInput) singleInput.setAttribute("required", "true");
+        }
+      }
+
+      function toggleMotivoFields() {
+        toggleDataReferencia();
+        togglePeriodoLM();
+      }
+
+      function toggleSubstituto() {
+        var select = document.getElementById("havera_substituicao");
+        var group = document.getElementById("substituto_group");
+        var input = document.getElementById("nome_substituto");
+        if (!select || !group) return;
+
+        if (select.value === "Sim") {
+          group.style.display = "block";
+          if (input) input.setAttribute("required", "true");
+        } else {
+          group.style.display = "none";
+          if (input) {
+            input.removeAttribute("required");
+            input.value = "";
+          }
+        }
+      }
+
+      function _parseYMD(v) {
+        if (!v) return null;
+        var parts = v.split("-");
+        if (parts.length !== 3) return null;
+        var y = parseInt(parts[0], 10),
+          m = parseInt(parts[1], 10),
+          d = parseInt(parts[2], 10);
+        if (!y || !m || !d) return null;
+        return new Date(y, m - 1, d);
+      }
+
+      function _daysBetweenInclusive(a, b) {
+        var ms = b.getTime() - a.getTime();
+        var days = Math.floor(ms / (24 * 60 * 60 * 1000));
+        return days + 1;
+      }
+
+      function updateLMPreview() {
+        var motivo = document.getElementById("motivo")?.value;
+        if (motivo !== "LM") return;
+
+        var dtIni = document.getElementById("data_inicio")?.value || "";
+        var dtFim = document.getElementById("data_fim")?.value || "";
+
+        var out = document.getElementById("lm_preview_text");
+        if (!out) return;
+
+        var a = _parseYMD(dtIni);
+        var b = _parseYMD(dtFim);
+
+        if (!a || !b) {
+          out.textContent = "Informe a data inicial e a data final do período.";
+          return;
+        }
+        if (b < a) {
+          out.textContent =
+            "Período inválido: a data final é menor que a inicial.";
+          return;
         }
 
-        var h = parseInt(horasInput && horasInput.value ? horasInput.value : "0", 10);
-        var m = parseInt(minutosInput && minutosInput.value ? minutosInput.value : "0", 10);
+        var total = _daysBetweenInclusive(a, b);
+        out.textContent = "Total de dias no período: " + total + " dia(s).";
+      }
 
-        if (Number.isNaN(h) || Number.isNaN(m) || h < 0 || m < 0 || m > 59) {
-          alert("Horas e minutos devem ser válidos (minutos entre 0 e 59) para Banco de Horas.");
-          if (event) event.preventDefault();
-          return false;
-        }
-        if ((h + m) === 0) {
-          alert("Informe um total de tempo maior que zero para utilizar Banco de Horas.");
-          if (event) event.preventDefault();
-          return false;
-        }
+      function setSubmitLoading(isLoading) {
+        var form = document.getElementById("agendarForm");
+        var btn = document.getElementById("submitBtn");
+        if (!btn) return;
 
-        if (dataReferenciaInput && dataReferenciaInput.value && dataFolgaInput && dataFolgaInput.value) {
-          var ref = new Date(dataReferenciaInput.value);
-          var folga = new Date(dataFolgaInput.value);
-          if (ref > folga) {
-            alert("A data de referência do Banco de Horas não pode ser posterior à data da folga.");
+        if (isLoading) {
+          btn.disabled = true;
+          btn.classList.add("is-loading");
+          btn.setAttribute("aria-busy", "true");
+          btn.dataset.originalHtml = btn.innerHTML;
+          btn.innerHTML =
+            '<span class="btn-spinner" aria-hidden="true"></span><span>Enviando solicitação...</span>';
+          if (form) form.classList.add("is-submitting");
+        } else {
+          btn.disabled = false;
+          btn.classList.remove("is-loading");
+          btn.removeAttribute("aria-busy");
+          if (btn.dataset.originalHtml) {
+            btn.innerHTML = btn.dataset.originalHtml;
+          }
+          if (form) form.classList.remove("is-submitting");
+        }
+      }
+
+      function handleValidationError(message) {
+        showInlineFlash(message, "danger");
+        if (isMobileViewport()) {
+          clearPendingSubmitFlag();
+          hideMobileOverlay();
+        }
+      }
+
+      function validateForm(event) {
+        var motivo = document.getElementById("motivo")?.value || "";
+        var tipoFolgaField = document.getElementById("tipo_folga");
+        var dataFolgaInput = document.getElementById("data");
+
+        if (tipoFolgaField) tipoFolgaField.value = motivo;
+
+        if (motivo === "LM") {
+          var dtIniEl = document.getElementById("data_inicio");
+          var dtFimEl = document.getElementById("data_fim");
+
+          var dtIni = (dtIniEl?.value || "").trim();
+          var dtFim = (dtFimEl?.value || "").trim();
+
+          if (!dtIni || !dtFim) {
+            handleValidationError(
+              "Para Licença Médica (LM), informe a data inicial e a data final do período.",
+            );
             if (event) event.preventDefault();
             return false;
           }
+
+          if (dtIni > dtFim) {
+            handleValidationError(
+              "Período inválido: a data final não pode ser menor que a data inicial.",
+            );
+            if (event) event.preventDefault();
+            return false;
+          }
+
+          if (dataFolgaInput) dataFolgaInput.value = dtIni;
+          startMobileSubmitFlow();
+          setSubmitLoading(true);
+          return true;
         }
 
+        if (motivo === "BH") {
+          var dataReferenciaInput = document.getElementById("data_referencia");
+          var horasInput = document.getElementById("quantidade_horas");
+          var minutosInput = document.getElementById("quantidade_minutos");
+
+          if (dataReferenciaInput && !dataReferenciaInput.value) {
+            handleValidationError(
+              "A data de referência é obrigatória quando o motivo for Banco de Horas.",
+            );
+            if (event) event.preventDefault();
+            return false;
+          }
+
+          var h = parseInt(
+            horasInput && horasInput.value ? horasInput.value : "0",
+            10,
+          );
+          var m = parseInt(
+            minutosInput && minutosInput.value ? minutosInput.value : "0",
+            10,
+          );
+
+          if (Number.isNaN(h) || Number.isNaN(m) || h < 0 || m < 0 || m > 59) {
+            handleValidationError(
+              "Horas e minutos devem ser válidos, com minutos entre 0 e 59.",
+            );
+            if (event) event.preventDefault();
+            return false;
+          }
+
+          if (h + m === 0) {
+            handleValidationError(
+              "Informe um total de tempo maior que zero para utilizar Banco de Horas.",
+            );
+            if (event) event.preventDefault();
+            return false;
+          }
+
+          if (
+            dataReferenciaInput &&
+            dataReferenciaInput.value &&
+            dataFolgaInput &&
+            dataFolgaInput.value
+          ) {
+            var ref = new Date(dataReferenciaInput.value);
+            var folga = new Date(dataFolgaInput.value);
+            if (ref > folga) {
+              handleValidationError(
+                "A data de referência do Banco de Horas não pode ser posterior à data da folga.",
+              );
+              if (event) event.preventDefault();
+              return false;
+            }
+          }
+
+          startMobileSubmitFlow();
+          setSubmitLoading(true);
+          return true;
+        }
+
+        if (!dataFolgaInput || !dataFolgaInput.value) {
+          handleValidationError("Informe a data da folga.");
+          if (event) event.preventDefault();
+          return false;
+        }
+
+        startMobileSubmitFlow();
+        setSubmitLoading(true);
         return true;
       }
 
-      // ===== Outros motivos (data única) =====
-      if (!dataFolgaInput || !dataFolgaInput.value) {
-        alert("Informe a data da folga.");
-        if (event) event.preventDefault();
-        return false;
+      window.addEventListener("load", function () {
+        toggleMotivoFields();
+        toggleSubstituto();
+        initServerFlashes();
+        recoverMobileSubmitFlowOnLoad();
+
+        var dtIniEl = document.getElementById("data_inicio");
+        var dtFimEl = document.getElementById("data_fim");
+
+        if (dtIniEl) dtIniEl.addEventListener("change", updateLMPreview);
+        if (dtFimEl) dtFimEl.addEventListener("change", updateLMPreview);
+      });
+    </script>
+
+    <style>
+      :root {
+        --bg: #f3f4f6;
+        --ink: #0f172a;
+        --muted: #6b7280;
+        --brand: #0d6efd;
+        --border-soft: #e5e7eb;
+        --card-shadow:
+          0 14px 34px rgba(15, 23, 42, 0.1), 0 2px 4px rgba(15, 23, 42, 0.06);
+        --radius: 18px;
+
+        --success: #16a34a;
+        --success-soft: #ecfdf3;
+        --success-border: #bbf7d0;
+
+        --danger: #dc2626;
+        --danger-soft: #fef2f2;
+        --danger-border: #fecaca;
+
+        --warning: #d97706;
+        --warning-soft: #fff7ed;
+        --warning-border: #fed7aa;
+
+        --info: #2563eb;
+        --info-soft: #eff6ff;
+        --info-border: #bfdbfe;
       }
 
-      return true;
-    }
-
-    window.addEventListener("load", function () {
-      toggleMotivoFields();
-      toggleSubstituto();
-
-      var dtIniEl = document.getElementById("data_inicio");
-      var dtFimEl = document.getElementById("data_fim");
-
-      if (dtIniEl) dtIniEl.addEventListener("change", updateLMPreview);
-      if (dtFimEl) dtFimEl.addEventListener("change", updateLMPreview);
-    });
-  </script>
-
-  <style>
-    :root {
-      --bg:#f3f4f6;
-      --ink:#0f172a;
-      --muted:#6b7280;
-      --brand:#0d6efd;
-      --border-soft:#e5e7eb;
-      --card-shadow:0 14px 34px rgba(15,23,42,.1), 0 2px 4px rgba(15,23,42,.06);
-      --radius:18px;
-    }
-
-    * , *::before, *::after { box-sizing: border-box; }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: 'Montserrat', sans-serif;
-      background-color: var(--bg);
-      color: var(--ink);
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      overflow-y: auto;
-    }
-
-    main {
-      flex: 1 0 auto;
-      padding: 24px 12px 70px;
-      box-sizing: border-box;
-    }
-
-    .shell {
-      width: 100%;
-      max-width: 900px;
-      margin: 0 auto;
-      min-width: 0;
-    }
-
-    @media (min-width:769px){
-      main{ padding:30px 24px 90px; }
-    }
-
-    /* ===== HEADER (padrão) ===== */
-    .header-desktop, .header-mobile { display: none; flex-shrink: 0; }
-
-    @media (min-width: 769px) {
-      .header-desktop{
-        display:flex;
-        background-color:#007bff;
-        padding:15px 30px;
-        width:100%;
-        align-items:center;
-        justify-content:space-between;
-        box-sizing:border-box;
-        min-height:110px;
-        position:relative;
-        box-shadow:0 2px 6px rgba(0, 0, 0, 0.15);
-        color:white;
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
       }
-      .left-section{ display:flex; align-items:center; gap:20px; }
-      .logo{
-        width:80px; height:80px;
-        object-fit:contain;
-        border-radius:10px;
-        background-color:white;
-        padding:6px;
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: "Montserrat", sans-serif;
+        background-color: var(--bg);
+        color: var(--ink);
       }
-      .text-container{
-        display:flex;
-        flex-direction:column;
-        justify-content:center;
-        text-align:left;
-        color:white;
+
+      body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        overflow-y: auto;
       }
-      .escola-nome{
-        font-weight:700;
-        font-size:1.6rem;
-        margin:0;
-        line-height:1.1;
+
+      main {
+        flex: 1 0 auto;
+        padding: 24px 12px 70px;
+        box-sizing: border-box;
       }
-      .escola-subtitulo{
-        font-weight:600;
-        font-size:1.1rem;
-        margin-top:4px;
+
+      .shell {
+        width: 100%;
+        max-width: 900px;
+        margin: 0 auto;
+        min-width: 0;
       }
-      .header-center-text-container{
-        position:absolute;
-        left:50%;
-        top:50%;
-        transform:translate(-50%, -50%);
-        font-weight:800;
-        font-size:1.9rem;
-        color:white;
-        letter-spacing:5px;
-        user-select:none;
-        white-space:nowrap;
-        z-index:1;
-        text-shadow:0 2px 5px rgba(0,0,0,0.3);
+
+      @media (min-width: 769px) {
+        main {
+          padding: 30px 24px 90px;
+        }
       }
-      .header-center-text{ font-family:'Montserrat',sans-serif; }
-      .btn-home{
-        background-color:#0fb300;
-        color:white;
-        padding:6px 14px;
-        border-radius:6px;
-        font-weight:700;
-        font-size:1.5rem;
-        text-decoration:none;
-        display:flex;
-        align-items:center;
-        gap:8px;
-        box-shadow:0 2px 6px rgba(15,179,0,0.8);
-        transition:background-color 0.3s ease;
-        position:absolute;
-        right:30px;
-        top:50%;
-        transform:translateY(-50%);
-        z-index:2;
+
+      /* ===== OVERLAY MOBILE DE PROCESSAMENTO ===== */
+      .mobile-submit-overlay {
+        display: none;
       }
-      .btn-home:hover{ background-color:#0d8a00; }
-    }
 
-    @media (max-width: 768px) {
-      .header-mobile{
-        display:block;
-        width:100%;
-        box-sizing:border-box;
-        color:white;
-        position:sticky;
-        top:0;
-        z-index:1000;
-        box-shadow:0 2px 6px rgba(0, 0, 0, 0.15);
-        background-color:#007bff;
+      @media (max-width: 768px) {
+        .mobile-submit-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 6000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 18px;
+          opacity: 0;
+          visibility: hidden;
+          pointer-events: none;
+          transition:
+            opacity 0.28s ease,
+            visibility 0.28s ease;
+        }
+
+        html.agendar-mobile-pending .mobile-submit-overlay,
+        body.mobile-overlay-visible .mobile-submit-overlay {
+          opacity: 1;
+          visibility: visible;
+          pointer-events: auto;
+        }
+
+        .mobile-submit-backdrop {
+          position: absolute;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.36);
+          backdrop-filter: blur(7px);
+        }
+
+        .mobile-submit-card {
+          position: relative;
+          z-index: 2;
+          width: min(100%, 360px);
+          background: rgba(255, 255, 255, 0.98);
+          border: 1px solid rgba(226, 232, 240, 0.95);
+          border-radius: 28px;
+          box-shadow:
+            0 30px 80px rgba(15, 23, 42, 0.26),
+            0 8px 24px rgba(15, 23, 42, 0.12);
+          padding: 28px 22px 24px;
+          text-align: center;
+          transform: translateY(12px) scale(0.96);
+          transition:
+            transform 0.32s ease,
+            opacity 0.32s ease;
+        }
+
+        html.agendar-mobile-pending .mobile-submit-card,
+        body.mobile-overlay-visible .mobile-submit-card {
+          transform: translateY(0) scale(1);
+        }
+
+        .mobile-submit-visual {
+          position: relative;
+          width: 92px;
+          height: 92px;
+          margin: 0 auto 18px;
+        }
+
+        .mobile-submit-halo {
+          position: absolute;
+          inset: 0;
+          border-radius: 999px;
+          opacity: 0.98;
+        }
+
+        .mobile-submit-ring {
+          position: absolute;
+          inset: 7px;
+          border-radius: 999px;
+          border: 2px solid rgba(37, 99, 235, 0.16);
+          border-top-color: #2563eb;
+          animation: mobile-submit-spin 0.95s linear infinite;
+        }
+
+        .mobile-submit-dot {
+          position: absolute;
+          inset: 18px;
+          border-radius: 999px;
+          background: radial-gradient(
+            circle at 30% 30%,
+            rgba(219, 234, 254, 0.98) 0%,
+            rgba(191, 219, 254, 0.72) 55%,
+            rgba(147, 197, 253, 0.22) 100%
+          );
+          animation: mobile-submit-pulse 1.5s ease-in-out infinite;
+        }
+
+        .mobile-submit-loading-icon,
+        .mobile-submit-success-icon,
+        .mobile-submit-error-icon {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          transform: translate(-50%, -50%) scale(1);
+          transform-origin: center center;
+          z-index: 3;
+          transition:
+            opacity 0.22s ease,
+            transform 0.22s ease;
+          line-height: 1;
+        }
+
+        .mobile-submit-loading-icon {
+          width: 42px;
+          height: 42px;
+          border-radius: 999px;
+          background: linear-gradient(135deg, #eff6ff, #dbeafe);
+          color: #2563eb;
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.92),
+            0 8px 18px rgba(37, 99, 235, 0.16);
+          font-size: 1rem;
+        }
+
+        .mobile-submit-success-icon {
+          width: 52px;
+          height: 52px;
+          border-radius: 999px;
+          background: linear-gradient(135deg, #16a34a, #22c55e);
+          color: #ffffff;
+          box-shadow:
+            0 14px 30px rgba(22, 163, 74, 0.25),
+            inset 0 1px 0 rgba(255, 255, 255, 0.24);
+          font-size: 1.42rem;
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.78);
+        }
+
+        .mobile-submit-error-icon {
+          width: 52px;
+          height: 52px;
+          border-radius: 999px;
+          background: linear-gradient(135deg, #dc2626, #ef4444);
+          color: #ffffff;
+          box-shadow:
+            0 14px 30px rgba(220, 38, 38, 0.24),
+            inset 0 1px 0 rgba(255, 255, 255, 0.24);
+          font-size: 1.38rem;
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.78);
+        }
+
+        .mobile-submit-loading-icon i,
+        .mobile-submit-success-icon i,
+        .mobile-submit-error-icon i {
+          display: block;
+          line-height: 1;
+        }
+
+        .mobile-submit-title {
+          margin: 0 0 7px;
+          font-size: 0.98rem;
+          font-weight: 800;
+          color: #0f172a;
+          letter-spacing: -0.01em;
+          line-height: 1.28;
+        }
+
+        .mobile-submit-text {
+          margin: 0 auto;
+          max-width: 280px;
+          font-size: 0.86rem;
+          line-height: 1.52;
+          font-weight: 600;
+          color: #64748b;
+        }
+
+        .mobile-submit-overlay.is-loading .mobile-submit-loading-icon,
+        .mobile-submit-overlay.is-loading .mobile-submit-ring,
+        .mobile-submit-overlay.is-loading .mobile-submit-dot {
+          opacity: 1;
+        }
+
+        .mobile-submit-overlay.is-loading .mobile-submit-success-icon,
+        .mobile-submit-overlay.is-loading .mobile-submit-error-icon {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.72);
+        }
+
+        .mobile-submit-overlay.is-success .mobile-submit-ring {
+          animation: none;
+          border-color: rgba(34, 197, 94, 0.18);
+        }
+
+        .mobile-submit-overlay.is-success .mobile-submit-dot {
+          background: radial-gradient(
+            circle at 30% 30%,
+            rgba(220, 252, 231, 0.96) 0%,
+            rgba(187, 247, 208, 0.7) 55%,
+            rgba(134, 239, 172, 0.22) 100%
+          );
+          animation: mobile-submit-pulse-success 0.8s ease-out 1;
+        }
+
+        .mobile-submit-overlay.is-success .mobile-submit-loading-icon,
+        .mobile-submit-overlay.is-success .mobile-submit-error-icon {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.7);
+        }
+
+        .mobile-submit-overlay.is-success .mobile-submit-success-icon {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1);
+          animation: mobile-check-pop 0.42s ease-out;
+        }
+
+        .mobile-submit-overlay.is-error .mobile-submit-ring {
+          animation: none;
+          border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .mobile-submit-overlay.is-error .mobile-submit-dot {
+          background: radial-gradient(
+            circle at 30% 30%,
+            rgba(254, 226, 226, 0.98) 0%,
+            rgba(252, 165, 165, 0.65) 55%,
+            rgba(248, 113, 113, 0.22) 100%
+          );
+          animation: mobile-submit-pulse-error 0.8s ease-out 1;
+        }
+
+        .mobile-submit-overlay.is-error .mobile-submit-loading-icon,
+        .mobile-submit-overlay.is-error .mobile-submit-success-icon {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.7);
+        }
+
+        .mobile-submit-overlay.is-error .mobile-submit-error-icon {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1);
+          animation: mobile-check-pop 0.42s ease-out;
+        }
+
+        @keyframes mobile-submit-spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        @keyframes mobile-submit-pulse {
+          0%,
+          100% {
+            transform: scale(0.96);
+            opacity: 0.95;
+          }
+          50% {
+            transform: scale(1.04);
+            opacity: 1;
+          }
+        }
+
+        @keyframes mobile-submit-pulse-success {
+          0% {
+            transform: scale(0.92);
+            opacity: 0.78;
+          }
+          100% {
+            transform: scale(1.03);
+            opacity: 1;
+          }
+        }
+
+        @keyframes mobile-submit-pulse-error {
+          0% {
+            transform: scale(0.92);
+            opacity: 0.78;
+          }
+          100% {
+            transform: scale(1.03);
+            opacity: 1;
+          }
+        }
+
+        @keyframes mobile-check-pop {
+          0% {
+            transform: translate(-50%, -50%) scale(0.78);
+          }
+          70% {
+            transform: translate(-50%, -50%) scale(1.08);
+          }
+          100% {
+            transform: translate(-50%, -50%) scale(1);
+          }
+        }
       }
-      .header-top{
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        gap:15px;
-        padding:10px 15px;
-        background-color:#007bff;
-        text-align:center;
+
+      .header-desktop,
+      .header-mobile {
+        display: none;
+        flex-shrink: 0;
       }
-      .logo{
-        width:48px; height:48px;
-        object-fit:contain;
-        border-radius:10px;
-        background-color:white;
-        padding:6px;
+
+      @media (min-width: 769px) {
+        .header-desktop {
+          display: flex;
+          background-color: #007bff;
+          padding: 15px 30px;
+          width: 100%;
+          align-items: center;
+          justify-content: space-between;
+          box-sizing: border-box;
+          min-height: 110px;
+          position: relative;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+          color: white;
+        }
+        .left-section {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+        .logo {
+          width: 80px;
+          height: 80px;
+          object-fit: contain;
+          border-radius: 10px;
+          background-color: white;
+          padding: 6px;
+        }
+        .text-container {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          text-align: left;
+          color: white;
+        }
+        .escola-nome {
+          font-weight: 700;
+          font-size: 1.6rem;
+          margin: 0;
+          line-height: 1.1;
+        }
+        .escola-subtitulo {
+          font-weight: 600;
+          font-size: 1.1rem;
+          margin-top: 4px;
+        }
+        .header-center-text-container {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          font-weight: 800;
+          font-size: 1.9rem;
+          color: white;
+          letter-spacing: 5px;
+          user-select: none;
+          white-space: nowrap;
+          z-index: 1;
+          text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        .header-center-text {
+          font-family: "Montserrat", sans-serif;
+        }
+        .btn-home {
+          background-color: #0fb300;
+          color: white;
+          padding: 6px 14px;
+          border-radius: 6px;
+          font-weight: 700;
+          font-size: 1.5rem;
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          box-shadow: 0 2px 6px rgba(15, 179, 0, 0.8);
+          transition: background-color 0.3s ease;
+          position: absolute;
+          right: 30px;
+          top: 50%;
+          transform: translateY(-50%);
+          z-index: 2;
+        }
+        .btn-home:hover {
+          background-color: #0d8a00;
+        }
       }
-      .text-container{
-        display:flex;
-        flex-direction:column;
-        justify-content:center;
-        color:white;
-        text-align:center;
+
+      @media (max-width: 768px) {
+        .header-mobile {
+          display: block;
+          width: 100%;
+          box-sizing: border-box;
+          color: white;
+          position: sticky;
+          top: 0;
+          z-index: 1000;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+          background-color: #007bff;
+        }
+        .header-top {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 15px;
+          padding: 10px 15px;
+          background-color: #007bff;
+          text-align: center;
+        }
+        .logo {
+          width: 48px;
+          height: 48px;
+          object-fit: contain;
+          border-radius: 10px;
+          background-color: white;
+          padding: 6px;
+        }
+        .text-container {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          color: white;
+          text-align: center;
+        }
+        .escola-nome {
+          font-weight: 700;
+          font-size: 1.3rem;
+          margin: 0;
+          line-height: 1.1;
+        }
+        .escola-subtitulo {
+          font-weight: 600;
+          font-size: 1rem;
+          margin-top: 2px;
+        }
+        .header-bottom {
+          background-color: #0056b3;
+          text-align: center;
+          padding: 12px 10px;
+          font-weight: 800;
+          font-size: 1rem;
+          letter-spacing: 4px;
+          user-select: none;
+          color: white;
+          box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 12px;
+          white-space: nowrap;
+        }
+        .btn-home-mobile {
+          background-color: #0fb300;
+          color: white;
+          padding: 6px 10px;
+          border-radius: 6px;
+          font-weight: 600;
+          font-size: 1rem;
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 6px rgba(15, 179, 0, 0.8);
+          transition: background-color 0.3s ease;
+        }
+        .btn-home-mobile:hover {
+          background-color: #0d8a00;
+        }
       }
-      .escola-nome{
-        font-weight:700;
-        font-size:1.3rem;
-        margin:0;
-        line-height:1.1;
+
+      .flash-region {
+        width: 100%;
+        margin: 0 auto 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        position: relative;
+        z-index: 20;
       }
-      .escola-subtitulo{
-        font-weight:600;
-        font-size:1rem;
-        margin-top:2px;
+
+      .flash-message {
+        position: relative;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 14px 13px 12px;
+        border-radius: 16px;
+        border: 1px solid transparent;
+        box-shadow:
+          0 12px 28px rgba(15, 23, 42, 0.1),
+          0 2px 5px rgba(15, 23, 42, 0.05);
+        overflow: hidden;
+        backdrop-filter: blur(8px);
+        transform: translateY(-10px) scale(0.985);
+        opacity: 0;
+        transition:
+          opacity 0.28s ease,
+          transform 0.28s ease,
+          filter 0.28s ease;
+        filter: saturate(0.96);
       }
-      .header-bottom{
-        background-color:#0056b3;
-        text-align:center;
-        padding:12px 10px;
-        font-weight:800;
-        font-size:1rem;
-        letter-spacing:4px;
-        user-select:none;
-        color:white;
-        box-shadow:inset 0 -2px 5px rgba(0, 0, 0, 0.2);
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        gap:12px;
-        white-space:nowrap;
+
+      .flash-message.is-visible {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: saturate(1);
       }
-      .btn-home-mobile{
-        background-color:#0fb300;
-        color:white;
-        padding:6px 10px;
-        border-radius:6px;
-        font-weight:600;
-        font-size:1rem;
-        text-decoration:none;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        box-shadow:0 2px 6px rgba(15,179,0,0.8);
-        transition:background-color 0.3s ease;
+
+      .flash-message.is-hiding {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.985);
+        pointer-events: none;
       }
-      .btn-home-mobile:hover{ background-color:#0d8a00; }
-    }
 
-    /* ===== FLASH ERRO ===== */
-    .danger{
-      color:#721c24;
-      background-color:#f8d7da;
-      padding:10px 14px;
-      border:1px solid #f5c6cb;
-      border-radius:10px;
-      margin:0 auto 14px;
-      max-width:900px;
-      box-sizing:border-box;
-      font-size:0.9rem;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      box-shadow:0 3px 10px rgba(185,28,28,.12);
-    }
+      .flash-accent {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        border-radius: 999px;
+      }
 
-    /* ===== CARD HEADER DA PÁGINA ===== */
-    .page-header-card{
-      background:#ffffff;
-      border-radius:var(--radius);
-      padding:16px 18px;
-      margin:0 auto 16px;
-      display:flex;
-      align-items:center;
-      gap:16px;
-      box-shadow:var(--card-shadow);
-      border-left:5px solid var(--brand);
-      max-width:900px;
-    }
+      .flash-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        font-size: 1rem;
+      }
 
-    .page-header-icon{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      width:42px;
-      height:42px;
-      border-radius:999px;
-      background:radial-gradient(circle at 30% 30%,#ffffff 0%,#e0edff 60%,#c7d9ff 100%);
-      box-shadow:0 4px 12px rgba(37,99,235,.45);
-      color:#2563eb;
-      flex:0 0 auto;
-    }
-    .page-header-icon i{ font-size:22px; }
-    .page-header-content{
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      min-width:0;
-    }
-    .page-header-title{ font-size:1.15rem; font-weight:800; margin:0; color:var(--ink); }
-    .page-header-subtitle{ font-size:0.9rem; margin:0; color:var(--muted); }
+      .flash-body {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
 
-    @media (max-width:600px){
-      .page-header-card{ padding:12px 14px; }
-      .page-header-title{ font-size:1.05rem; }
-      .page-header-subtitle{ font-size:0.82rem; }
-    }
+      .flash-title {
+        font-size: 0.9rem;
+        font-weight: 800;
+        line-height: 1.2;
+      }
 
-    /* ===== CARD PRINCIPAL DO FORMULÁRIO ===== */
-    .card-agendar{
-      width:100%;
-      background:#ffffff;
-      border-radius:var(--radius);
-      box-shadow:var(--card-shadow);
-      padding:18px 18px 20px;
-      border:1px solid rgba(148,163,184,0.25);
-      box-sizing:border-box;
-      margin:0 auto 18px;
-      overflow:hidden;
-    }
+      .flash-text {
+        font-size: 0.88rem;
+        line-height: 1.38;
+        font-weight: 600;
+        color: #374151;
+        word-break: break-word;
+      }
 
-    .card-agendar-header{ margin-bottom:14px; }
+      .flash-close {
+        width: 34px;
+        height: 34px;
+        border: none;
+        background: transparent;
+        border-radius: 10px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #6b7280;
+        transition:
+          background-color 0.2s ease,
+          color 0.2s ease,
+          transform 0.2s ease;
+        flex: 0 0 auto;
+      }
 
-    .card-agendar-header h1{
-      margin:0 0 4px;
-      font-size:1.25rem;
-      color:#0f172a;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      font-weight:800;
-      flex-wrap:wrap;
-    }
-    .card-agendar-header h1 i{ font-size:1.4rem; color:#2563eb; }
-    .card-agendar-header p{ margin:0; font-size:0.9rem; color:#6b7280; }
+      .flash-close:hover {
+        background: rgba(15, 23, 42, 0.06);
+        color: #111827;
+        transform: scale(1.04);
+      }
 
-    /* ===== FORM / INPUTS ===== */
-    .form-grid{
-      display:flex;
-      flex-direction:column;
-      gap:14px;
-      margin-top:4px;
-      min-width:0;
-    }
+      .flash-progress {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 3px;
+        width: 100%;
+        opacity: 0.85;
+        transform-origin: left center;
+        animation: flash-progress linear forwards;
+        animation-duration: var(--flash-duration, 5s);
+      }
 
-    .input-group, .form-group{
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      width:100%;
-      min-width:0;
-    }
+      .flash-message[data-duration="0"] .flash-progress {
+        display: none;
+      }
 
-    .input-group label, .form-group label{
-      font-weight:600;
-      font-size:0.95rem;
-      color:#374151;
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      flex-wrap:wrap;
-      line-height:1.35;
-    }
+      .flash-success {
+        background: rgba(236, 253, 243, 0.92);
+        border-color: var(--success-border);
+      }
+      .flash-success .flash-accent,
+      .flash-success .flash-progress {
+        background: var(--success);
+      }
+      .flash-success .flash-icon {
+        background: rgba(22, 163, 74, 0.1);
+        color: var(--success);
+      }
+      .flash-success .flash-title {
+        color: #166534;
+      }
 
-    .input-group label i, .form-group label i{ color:#007bff; }
+      .flash-danger {
+        background: rgba(254, 242, 242, 0.94);
+        border-color: var(--danger-border);
+      }
+      .flash-danger .flash-accent,
+      .flash-danger .flash-progress {
+        background: var(--danger);
+      }
+      .flash-danger .flash-icon {
+        background: rgba(220, 38, 38, 0.1);
+        color: var(--danger);
+      }
+      .flash-danger .flash-title {
+        color: #991b1b;
+      }
 
-    .input-group input,
-    .input-group select,
-    .form-group input{
-      display:block;
-      width:100%;
-      max-width:100%;
-      min-width:0;
-      padding:12px 12px;
-      border-radius:12px;
-      border:1px solid #d1d5db;
-      font-size:0.95rem;
-      box-sizing:border-box;
-      outline:none;
-      transition:border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
-      background-color:#ffffff;
-      font-family:'Montserrat', sans-serif;
-      color:#111827;
-      line-height:1.25;
-    }
+      .flash-warning {
+        background: rgba(255, 247, 237, 0.94);
+        border-color: var(--warning-border);
+      }
+      .flash-warning .flash-accent,
+      .flash-warning .flash-progress {
+        background: var(--warning);
+      }
+      .flash-warning .flash-icon {
+        background: rgba(217, 119, 6, 0.1);
+        color: var(--warning);
+      }
+      .flash-warning .flash-title {
+        color: #9a3412;
+      }
 
-    .input-group input:focus,
-    .input-group select:focus,
-    .form-group input:focus{
-      border-color:#0d6efd;
-      box-shadow:0 0 0 2px rgba(13,110,253,0.15);
-    }
+      .flash-info {
+        background: rgba(239, 246, 255, 0.94);
+        border-color: var(--info-border);
+      }
+      .flash-info .flash-accent,
+      .flash-info .flash-progress {
+        background: var(--info);
+      }
+      .flash-info .flash-icon {
+        background: rgba(37, 99, 235, 0.1);
+        color: var(--info);
+      }
+      .flash-info .flash-title {
+        color: #1d4ed8;
+      }
 
-    .input-group input[readonly]{
-      background-color:#e5e7eb;
-      color:#4b5563;
-      cursor:not-allowed;
-      border-color:#d1d5db;
-      box-shadow:none;
-    }
-    .input-group input[readonly]:focus{
-      border-color:#d1d5db;
-      box-shadow:none;
-    }
+      @keyframes flash-progress {
+        from {
+          transform: scaleX(1);
+        }
+        to {
+          transform: scaleX(0);
+        }
+      }
 
-    /* FIX principal do campo date no mobile */
-    input[type="date"],
-    input[type="number"],
-    input[type="text"],
-    select{
-      -webkit-appearance:none;
-      appearance:none;
-      border-radius:12px;
-    }
+      @media (max-width: 640px) {
+        .flash-message {
+          grid-template-columns: auto 1fr auto;
+          gap: 10px;
+          padding: 12px 12px 12px 11px;
+          border-radius: 14px;
+        }
+        .flash-icon {
+          width: 34px;
+          height: 34px;
+        }
+        .flash-title {
+          font-size: 0.86rem;
+        }
+        .flash-text {
+          font-size: 0.83rem;
+        }
+      }
 
-    input[type="date"]{
-      min-height:52px;
-      overflow:hidden;
-    }
+      .page-header-card {
+        background: #ffffff;
+        border-radius: var(--radius);
+        padding: 16px 18px;
+        margin: 0 auto 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        box-shadow: var(--card-shadow);
+        border-left: 5px solid var(--brand);
+        max-width: 900px;
+      }
 
-    input[type="date"]::-webkit-date-and-time-value{
-      text-align:left;
-    }
+      .page-header-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 999px;
+        background: radial-gradient(
+          circle at 30% 30%,
+          #ffffff 0%,
+          #e0edff 60%,
+          #c7d9ff 100%
+        );
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.45);
+        color: #2563eb;
+        flex: 0 0 auto;
+      }
+      .page-header-icon i {
+        font-size: 22px;
+      }
+      .page-header-content {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+      }
+      .page-header-title {
+        font-size: 1.15rem;
+        font-weight: 800;
+        margin: 0;
+        color: var(--ink);
+      }
+      .page-header-subtitle {
+        font-size: 0.9rem;
+        margin: 0;
+        color: var(--muted);
+      }
 
-    input[type="date"]::-webkit-calendar-picker-indicator{
-      opacity:1;
-      cursor:pointer;
-    }
+      @media (max-width: 600px) {
+        .page-header-card {
+          padding: 12px 14px;
+        }
+        .page-header-title {
+          font-size: 1.05rem;
+        }
+        .page-header-subtitle {
+          font-size: 0.82rem;
+        }
+      }
 
-    /* Horas / minutos grupo */
-    .horas-minutos-wrapper{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      min-width:0;
-    }
-    .horas-minutos-group{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      min-width:0;
-      width:100%;
-    }
-    .horas-minutos-group .input-group{
-      flex:1 1 0;
-      margin-bottom:0;
-      min-width:0;
-    }
-    .horas-minutos-group input{
-      max-width:100%;
-    }
+      .card-agendar {
+        width: 100%;
+        background: #ffffff;
+        border-radius: var(--radius);
+        box-shadow: var(--card-shadow);
+        padding: 18px 18px 20px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        box-sizing: border-box;
+        margin: 0 auto 18px;
+        overflow: hidden;
+      }
 
-    @media (max-width:768px){
-      .horas-minutos-group{ flex-direction:column; }
-      .horas-minutos-group input{ max-width:100%; }
-    }
+      .card-agendar-header {
+        margin-bottom: 14px;
+      }
 
-    /* Período LM (mais limpo / menos confuso) */
-    .lm-card{
-      margin-top:8px;
-      padding:12px;
-      border-radius:14px;
-      border:1px solid rgba(148,163,184,0.28);
-      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-      box-shadow: 0 10px 22px rgba(15,23,42,.06);
-      width:100%;
-      min-width:0;
-      overflow:hidden;
-    }
+      .card-agendar-header h1 {
+        margin: 0 0 4px;
+        font-size: 1.25rem;
+        color: #0f172a;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 800;
+        flex-wrap: wrap;
+      }
+      .card-agendar-header h1 i {
+        font-size: 1.4rem;
+        color: #2563eb;
+      }
+      .card-agendar-header p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #6b7280;
+      }
 
-    .lm-title{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      font-weight:900;
-      color:#0f172a;
-      margin:0 0 6px 0;
-      font-size:0.95rem;
-      flex-wrap:wrap;
-    }
+      .form-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        margin-top: 4px;
+        min-width: 0;
+      }
 
-    .lm-sub{
-      margin:0 0 10px 0;
-      color:#64748b;
-      font-weight:700;
-      font-size:0.85rem;
-      line-height:1.35;
-    }
+      .input-group,
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        width: 100%;
+        min-width: 0;
+      }
 
-    .periodo-grid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px;
-      align-items:end;
-      min-width:0;
-    }
-    .periodo-grid > *{
-      min-width:0;
-    }
-    @media (max-width: 720px){
-      .periodo-grid{ grid-template-columns: 1fr; }
-    }
+      .input-group label,
+      .form-group label {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: #374151;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        line-height: 1.35;
+      }
 
-    .lm-preview{
-      margin-top:10px;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid rgba(13,110,253,.18);
-      background:#ffffff;
-      font-weight:900;
-      font-size:0.88rem;
-      color:#111827;
-      display:none;
-    }
-
-    /* Botão */
-    .submit-row{
-      display:flex;
-      justify-content:flex-end;
-      margin-top:10px;
-      width:100%;
-    }
-    .submit-btn{
-      background:linear-gradient(135deg,#0d6efd,#0b5ed7);
-      border:none;
-      color:#fff;
-      font-weight:700;
-      border-radius:999px;
-      padding:12px 22px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      cursor:pointer;
-      box-shadow:0 8px 18px rgba(13,110,253,0.35);
-      transition:background-color 0.2s ease, box-shadow 0.2s ease;
-      font-size:0.95rem;
-      white-space:nowrap;
-      max-width:100%;
-    }
-    .submit-btn i{ font-size:1rem; }
-    .submit-btn:hover{
-      background:#0fb300;
-      box-shadow:0 8px 18px rgba(15,179,0,0.45);
-    }
-    .submit-btn:active{ box-shadow:0 4px 10px rgba(15,179,0,0.35); }
-
-    @media (max-width:768px){
-      .submit-row{ justify-content:stretch; }
-      .submit-btn{ width:100%; }
-    }
-
-    /* ===== SEÇÃO INFORMATIVA ===== */
-    .info-section{
-      background-color:#ffffff;
-      padding:16px 16px 18px;
-      margin:0 auto 15px;
-      border-radius:var(--radius);
-      max-width:900px;
-      box-shadow:var(--card-shadow);
-      border:1px solid rgba(148,163,184,0.25);
-      box-sizing:border-box;
-      font-size:0.93rem;
-      overflow:hidden;
-    }
-
-    .info-section h2{
-      margin:0 0 6px;
-      color:#0f172a;
-      font-size:1.02rem;
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      font-weight:800;
-      flex-wrap:wrap;
-    }
-    .info-section h2 i{ color:#2563eb; }
-    .info-section p{
-      margin:6px 0;
-      line-height:1.5;
-      color:#374151;
-    }
-    .info-section ul{ margin:6px 0 4px 20px; padding:0; }
-    .info-section ul li{ margin-bottom:4px; }
-    .info-section a{ color:#2563eb; text-decoration:none; font-weight:600; }
-    .info-section a:hover{ text-decoration:underline; }
-
-    /* ===== LINK VOLTAR ===== */
-    .voltar-link{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      color:#2563eb;
-      font-size:0.96rem;
-      text-decoration:none;
-      margin:0 auto;
-      padding-top:4px;
-      font-weight:600;
-      flex-wrap:wrap;
-    }
-    .voltar-link:hover{ text-decoration:underline; }
-    .voltar-link i{ font-size:0.9rem; }
-    .voltar-wrapper{
-      width:100%;
-      max-width:900px;
-      margin:0 auto;
-      text-align:left;
-    }
-
-    /* ===== FOOTER ===== */
-    footer{
-      background:linear-gradient(to right, #222, #444);
-      color:#ddd;
-      text-align:center;
-      padding:15px 0;
-      font-size:14px;
-      border-top:2px solid #555;
-      box-shadow:0px -2px 10px rgba(0, 0, 0, 0.3);
-      width:100%;
-      flex-shrink:0;
-    }
-
-    @media (max-width: 768px){
-      .card-agendar{
-        padding:16px 14px 18px;
+      .input-group label i,
+      .form-group label i {
+        color: #007bff;
       }
 
       .input-group input,
       .input-group select,
-      .form-group input{
-        font-size:16px; /* evita zoom automático no iPhone */
+      .form-group input {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        padding: 12px 12px;
+        border-radius: 12px;
+        border: 1px solid #d1d5db;
+        font-size: 0.95rem;
+        box-sizing: border-box;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s,
+          background-color 0.2s;
+        background-color: #ffffff;
+        font-family: "Montserrat", sans-serif;
+        color: #111827;
+        line-height: 1.25;
       }
-    }
-  </style>
-</head>
 
-<body class="page-agendar">
-  <!-- Cabeçalho Desktop -->
-  <header class="header-desktop">
-    <div class="left-section">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
-      <div class="text-container">
-        <div class="escola-nome">Escola Municipal</div>
-        <div class="escola-subtitulo">José Padin Mouta</div>
+      .input-group input:focus,
+      .input-group select:focus,
+      .form-group input:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
+      }
+
+      .input-group input[readonly] {
+        background-color: #e5e7eb;
+        color: #4b5563;
+        cursor: not-allowed;
+        border-color: #d1d5db;
+        box-shadow: none;
+      }
+      .input-group input[readonly]:focus {
+        border-color: #d1d5db;
+        box-shadow: none;
+      }
+
+      input[type="date"],
+      input[type="number"],
+      input[type="text"],
+      select {
+        -webkit-appearance: none;
+        appearance: none;
+        border-radius: 12px;
+      }
+
+      input[type="date"] {
+        min-height: 52px;
+        overflow: hidden;
+      }
+
+      input[type="date"]::-webkit-date-and-time-value {
+        text-align: left;
+      }
+
+      input[type="date"]::-webkit-calendar-picker-indicator {
+        opacity: 1;
+        cursor: pointer;
+      }
+
+      .horas-minutos-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 0;
+      }
+      .horas-minutos-group {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        min-width: 0;
+        width: 100%;
+      }
+      .horas-minutos-group .input-group {
+        flex: 1 1 0;
+        margin-bottom: 0;
+        min-width: 0;
+      }
+      .horas-minutos-group input {
+        max-width: 100%;
+      }
+
+      @media (max-width: 768px) {
+        .horas-minutos-group {
+          flex-direction: column;
+        }
+        .horas-minutos-group input {
+          max-width: 100%;
+        }
+      }
+
+      .lm-card {
+        margin-top: 8px;
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+        width: 100%;
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .lm-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 900;
+        color: #0f172a;
+        margin: 0 0 6px 0;
+        font-size: 0.95rem;
+        flex-wrap: wrap;
+      }
+
+      .lm-sub {
+        margin: 0 0 10px 0;
+        color: #64748b;
+        font-weight: 700;
+        font-size: 0.85rem;
+        line-height: 1.35;
+      }
+
+      .periodo-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        align-items: end;
+        min-width: 0;
+      }
+      .periodo-grid > * {
+        min-width: 0;
+      }
+      @media (max-width: 720px) {
+        .periodo-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .lm-preview {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(13, 110, 253, 0.18);
+        background: #ffffff;
+        font-weight: 900;
+        font-size: 0.88rem;
+        color: #111827;
+        display: none;
+      }
+
+      .submit-row {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 10px;
+        width: 100%;
+      }
+      .submit-btn {
+        background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+        border: none;
+        color: #fff;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 12px 22px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        cursor: pointer;
+        box-shadow: 0 8px 18px rgba(13, 110, 253, 0.35);
+        transition:
+          background-color 0.2s ease,
+          box-shadow 0.2s ease,
+          transform 0.18s ease,
+          opacity 0.2s ease;
+        font-size: 0.95rem;
+        white-space: nowrap;
+        max-width: 100%;
+      }
+      .submit-btn i {
+        font-size: 1rem;
+      }
+      .submit-btn:hover {
+        background: #0fb300;
+        box-shadow: 0 8px 18px rgba(15, 179, 0, 0.45);
+        transform: translateY(-1px);
+      }
+      .submit-btn:active {
+        box-shadow: 0 4px 10px rgba(15, 179, 0, 0.35);
+      }
+
+      .submit-btn.is-loading,
+      .submit-btn:disabled {
+        cursor: wait;
+        opacity: 0.96;
+        transform: none;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        box-shadow: 0 8px 18px rgba(37, 99, 235, 0.28);
+      }
+
+      .btn-spinner {
+        width: 16px;
+        height: 16px;
+        border-radius: 999px;
+        border: 2px solid rgba(255, 255, 255, 0.35);
+        border-top-color: #ffffff;
+        display: inline-block;
+        animation: spin 0.75s linear infinite;
+        flex: 0 0 auto;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .card-agendar form.is-submitting {
+        pointer-events: none;
+      }
+
+      @media (max-width: 768px) {
+        .submit-row {
+          justify-content: stretch;
+        }
+        .submit-btn {
+          width: 100%;
+        }
+      }
+
+      .info-section {
+        background-color: #ffffff;
+        padding: 16px 16px 18px;
+        margin: 0 auto 15px;
+        border-radius: var(--radius);
+        max-width: 900px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        box-sizing: border-box;
+        font-size: 0.93rem;
+        overflow: hidden;
+      }
+
+      .info-section h2 {
+        margin: 0 0 6px;
+        color: #0f172a;
+        font-size: 1.02rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 800;
+        flex-wrap: wrap;
+      }
+      .info-section h2 i {
+        color: #2563eb;
+      }
+      .info-section p {
+        margin: 6px 0;
+        line-height: 1.5;
+        color: #374151;
+      }
+      .info-section ul {
+        margin: 6px 0 4px 20px;
+        padding: 0;
+      }
+      .info-section ul li {
+        margin-bottom: 4px;
+      }
+      .info-section a {
+        color: #2563eb;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .info-section a:hover {
+        text-decoration: underline;
+      }
+
+      .voltar-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #2563eb;
+        font-size: 0.96rem;
+        text-decoration: none;
+        margin: 0 auto;
+        padding-top: 4px;
+        font-weight: 600;
+        flex-wrap: wrap;
+      }
+      .voltar-link:hover {
+        text-decoration: underline;
+      }
+      .voltar-link i {
+        font-size: 0.9rem;
+      }
+      .voltar-wrapper {
+        width: 100%;
+        max-width: 900px;
+        margin: 0 auto;
+        text-align: left;
+      }
+
+      footer {
+        background: linear-gradient(to right, #222, #444);
+        color: #ddd;
+        text-align: center;
+        padding: 15px 0;
+        font-size: 14px;
+        border-top: 2px solid #555;
+        box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
+        width: 100%;
+        flex-shrink: 0;
+      }
+
+      @media (max-width: 768px) {
+        .card-agendar {
+          padding: 16px 14px 18px;
+        }
+
+        .input-group input,
+        .input-group select,
+        .form-group input {
+          font-size: 16px;
+        }
+      }
+    </style>
+  </head>
+
+  <body class="page-agendar">
+    <div
+      id="mobileSubmitOverlay"
+      class="mobile-submit-overlay is-loading"
+      aria-hidden="true"
+    >
+      <div class="mobile-submit-backdrop"></div>
+
+      <div class="mobile-submit-card" role="status" aria-live="polite">
+        <div class="mobile-submit-visual">
+          <div class="mobile-submit-halo"></div>
+          <div class="mobile-submit-ring"></div>
+          <div class="mobile-submit-dot"></div>
+
+          <div class="mobile-submit-loading-icon" aria-hidden="true">
+            <i class="fas fa-paper-plane"></i>
+          </div>
+
+          <div class="mobile-submit-success-icon" aria-hidden="true">
+            <i class="fas fa-check"></i>
+          </div>
+
+          <div class="mobile-submit-error-icon" aria-hidden="true">
+            <i class="fas fa-xmark"></i>
+          </div>
+        </div>
+
+        <p id="mobileSubmitTitle" class="mobile-submit-title">
+          Enviando sua solicitação
+        </p>
+        <p id="mobileSubmitText" class="mobile-submit-text">
+          Estamos registrando sua folga no sistema.
+        </p>
       </div>
     </div>
 
-    <div class="header-center-text-container">
-      <div class="header-center-text">CENTRAL DA UNIDADE</div>
-    </div>
-
-    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
-      <i class="fas fa-home"></i>
-    </a>
-  </header>
-
-  <!-- Cabeçalho Mobile -->
-  <header class="header-mobile">
-    <div class="header-top">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
-      <div class="text-container">
-        <div class="escola-nome">Escola Municipal</div>
-        <div class="escola-subtitulo">José Padin Mouta</div>
+    <header class="header-desktop">
+      <div class="left-section">
+        <img
+          src="{{ url_for('static', filename='img/logo.png') }}"
+          alt="Logo da Escola"
+          class="logo"
+        />
+        <div class="text-container">
+          <div class="escola-nome">Escola Municipal</div>
+          <div class="escola-subtitulo">José Padin Mouta</div>
+        </div>
       </div>
-    </div>
-    <div class="header-bottom">
-      <span>CENTRAL DA UNIDADE</span>
-      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+
+      <div class="header-center-text-container">
+        <div class="header-center-text">CENTRAL DA UNIDADE</div>
+      </div>
+
+      <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
         <i class="fas fa-home"></i>
       </a>
-    </div>
-  </header>
+    </header>
 
-  <main>
-    <div class="shell">
-
-      <!-- Flash de erro (danger) -->
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            {% if category == "danger" %}
-              <div class="danger">
-                <i class="fas fa-exclamation-circle"></i>
-                {{ message }}
-              </div>
-            {% endif %}
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
-
-      <!-- Header card da página -->
-      <div class="page-header-card">
-        <div class="page-header-icon">
-          <i class="fas fa-calendar-day"></i>
-        </div>
-        <div class="page-header-content">
-          <p class="page-header-title">Agendar Folga</p>
-          <p class="page-header-subtitle">
-            Selecione o motivo e informe as datas necessárias para registrar sua solicitação.
-          </p>
+    <header class="header-mobile">
+      <div class="header-top">
+        <img
+          src="{{ url_for('static', filename='img/logo.png') }}"
+          alt="Logo da Escola"
+          class="logo"
+        />
+        <div class="text-container">
+          <div class="escola-nome">Escola Municipal</div>
+          <div class="escola-subtitulo">José Padin Mouta</div>
         </div>
       </div>
-
-      <!-- CARD FORMULÁRIO -->
-      <div class="card-agendar">
-        <div class="card-agendar-header">
-          <h1><i class="fas fa-edit"></i> Dados do Agendamento</h1>
-          <p>Preencha os campos e clique em <strong>Solicitar Agendamento</strong>.</p>
-        </div>
-
-        <form method="POST" onsubmit="return validateForm(event)">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-          <div class="form-grid">
-
-            <!-- Nome -->
-            <div class="input-group">
-              <label for="nome"><i class="fas fa-user"></i> Nome do Funcionário</label>
-              <input type="text" id="nome" name="nome" value="{{ current_user.nome }}" readonly />
-            </div>
-
-            <!-- Registro funcional -->
-            <div class="input-group">
-              <label for="registro"><i class="fas fa-id-card"></i> Registro Funcional</label>
-              <input type="text" id="registro" name="registro" value="{{ current_user.registro }}" readonly />
-            </div>
-
-            <!-- Motivo -->
-            <div class="input-group">
-              <label for="motivo"><i class="fas fa-list-alt"></i> Motivo da Ausência</label>
-              <select id="motivo" name="motivo" required onchange="toggleMotivoFields()">
-                <option value="AB">Abonada (AB)</option>
-                <option value="BH">Banco de Horas (BH)</option>
-                <option value="DL">Dispensa Legal (DL)</option>
-                <option value="DS">Doação de Sangue (DS)</option>
-                <option value="TRE">TRE (TRE)</option>
-                <option value="LM">Licença Médica (LM)</option>
-                <option value="FS">Falta Simples (FS)</option>
-              </select>
-            </div>
-
-            <!-- Data única (padrão) -->
-            <div class="input-group" id="data_single_group">
-              <label for="data"><i class="fas fa-calendar-alt"></i> Data da Folga</label>
-              <input type="date" id="data" name="data" required />
-            </div>
-
-            <!-- Período LM -->
-            <div class="input-group" id="periodo_lm_group" style="display:none;">
-              <div class="lm-card">
-                <div class="lm-title">
-                  <i class="fas fa-notes-medical" style="color:#2563eb;"></i>
-                  Licença Médica (LM) — Período
-                </div>
-                <p class="lm-sub">Informe a data de início e a data de término do afastamento.</p>
-
-                <div class="periodo-grid">
-                  <div class="input-group">
-                    <label for="data_inicio">Data inicial</label>
-                    <input type="date" id="data_inicio" name="data_inicio" />
-                  </div>
-
-                  <div class="input-group">
-                    <label for="data_fim">Data final</label>
-                    <input type="date" id="data_fim" name="data_fim" />
-                  </div>
-                </div>
-
-                <div class="lm-preview" id="lm_preview">
-                  <div id="lm_preview_text">Informe a data inicial e a data final do período.</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Haverá substituição -->
-            <div class="input-group">
-              <label for="havera_substituicao"><i class="fas fa-user-check"></i> Haverá Substituição? (para professores)</label>
-              <select id="havera_substituicao" name="havera_substituicao" required onchange="toggleSubstituto()">
-                <option value="Não">Não</option>
-                <option value="Sim">Sim</option>
-              </select>
-            </div>
-
-            <!-- Nome do substituto -->
-            <div class="input-group" id="substituto_group" style="display: none;">
-              <label for="nome_substituto"><i class="fas fa-user"></i> Nome do Substituto(a)</label>
-              <input type="text" id="nome_substituto" name="nome_substituto" />
-            </div>
-
-            <!-- Data de referência BH -->
-            <div class="form-group" id="data_banco_horas" style="display: none;">
-              <label for="data_referencia"><i class="fas fa-calendar-day"></i> Data de Referência (BH)</label>
-              <input type="date" id="data_referencia" name="data_referencia" />
-            </div>
-
-            <!-- Horas / minutos BH -->
-            <div class="horas-minutos-wrapper">
-              <div class="horas-minutos-group" id="horas_group" style="display: none;">
-                <div class="input-group">
-                  <label for="quantidade_horas"><i class="fas fa-clock"></i> Horas a utilizar</label>
-                  <input type="number" id="quantidade_horas" name="quantidade_horas" min="0" placeholder="Horas" value="0" />
-                </div>
-
-                <div class="input-group" id="minutos_group" style="display: none;">
-                  <label for="quantidade_minutos"><i class="fas fa-clock"></i> Minutos a utilizar</label>
-                  <input type="number" id="quantidade_minutos" name="quantidade_minutos" min="0" max="59" placeholder="Minutos" value="0" />
-                </div>
-              </div>
-            </div>
-
-            <!-- Tipo folga (hidden) -->
-            <input type="hidden" id="tipo_folga" name="tipo_folga" value="" />
-
-            <div class="submit-row">
-              <button type="submit" class="submit-btn">
-                <i class="fas fa-calendar-check"></i> Solicitar Agendamento
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-
-      <!-- SEÇÃO INFORMATIVA -->
-      <div class="info-section">
-        <h2><i class="fas fa-info-circle"></i> Acompanhamento do seu agendamento</h2>
-        <p>
-          Ao enviar sua solicitação, você receberá um <strong>protocolo de agendamento</strong> por e-mail.
-          Caso não localize na caixa de entrada, verifique também a pasta de spam e marque nosso domínio como confiável.
-        </p>
-        <p>
-          Quando sua solicitação for <strong>deferida</strong> ou <strong>indeferida</strong>, você também será notificado automaticamente.
-        </p>
-        <p>Você pode acompanhar o status das solicitações em:</p>
-        <ul>
-          <li><a href="{{ url_for('minhas_justificativas') }}">Minhas Justificativas</a></li>
-          <li><a href="{{ url_for('calendario') }}">Calendário</a></li>
-        </ul>
-      </div>
-
-      <!-- Link Voltar -->
-      <div class="voltar-wrapper">
-        <a href="{{ url_for('index') }}" class="voltar-link">
-          <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
+      <div class="header-bottom">
+        <span>CENTRAL DA UNIDADE</span>
+        <a
+          href="{{ url_for('index') }}"
+          class="btn-home-mobile"
+          title="Página Inicial"
+        >
+          <i class="fas fa-home"></i>
         </a>
       </div>
+    </header>
 
-    </div>
-  </main>
+    <main>
+      <div class="shell">
+        <div
+          id="flashRegion"
+          class="flash-region"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %} {% for category, message in messages %} {% set flash_cat =
+          category %} {% if flash_cat == 'error' %} {% set flash_cat = 'danger'
+          %} {% elif flash_cat == 'message' %} {% set flash_cat = 'info' %} {%
+          endif %}
 
-  <footer>
-    <p>&copy; 2026 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-  </footer>
-</body>
+          <div
+            class="flash-message flash-{{ flash_cat if flash_cat in ['success','danger','warning','info'] else 'info' }}"
+            data-category="{{ flash_cat if flash_cat in ['success','danger','warning','info'] else 'info' }}"
+            data-duration="{% if flash_cat == 'success' %}5200{% elif flash_cat == 'info' %}5000{% elif flash_cat == 'warning' %}7000{% else %}0{% endif %}"
+          >
+            <div class="flash-accent"></div>
+
+            <div class="flash-icon" aria-hidden="true">
+              {% if flash_cat == 'success' %}
+              <i class="fas fa-circle-check"></i>
+              {% elif flash_cat == 'danger' %}
+              <i class="fas fa-circle-xmark"></i>
+              {% elif flash_cat == 'warning' %}
+              <i class="fas fa-triangle-exclamation"></i>
+              {% else %}
+              <i class="fas fa-circle-info"></i>
+              {% endif %}
+            </div>
+
+            <div class="flash-body">
+              <div class="flash-title">
+                {% if flash_cat == 'success' %} Agendamento enviado {% elif
+                flash_cat == 'danger' %} Não foi possível concluir {% elif
+                flash_cat == 'warning' %} Atenção {% else %} Informação {% endif
+                %}
+              </div>
+              <div class="flash-text">{{ message }}</div>
+            </div>
+
+            <button
+              type="button"
+              class="flash-close"
+              aria-label="Fechar mensagem"
+            >
+              <i class="fas fa-xmark"></i>
+            </button>
+
+            <div class="flash-progress"></div>
+          </div>
+          {% endfor %} {% endif %} {% endwith %}
+        </div>
+
+        <div class="page-header-card">
+          <div class="page-header-icon">
+            <i class="fas fa-calendar-day"></i>
+          </div>
+          <div class="page-header-content">
+            <p class="page-header-title">Agendar Folga</p>
+            <p class="page-header-subtitle">
+              Selecione o motivo e informe as datas necessárias para registrar
+              sua solicitação.
+            </p>
+          </div>
+        </div>
+
+        <div class="card-agendar">
+          <div class="card-agendar-header">
+            <h1><i class="fas fa-edit"></i> Dados do Agendamento</h1>
+            <p>
+              Preencha os campos e clique em
+              <strong>Solicitar Agendamento</strong>.
+            </p>
+          </div>
+
+          <form
+            id="agendarForm"
+            method="POST"
+            onsubmit="return validateForm(event);"
+          >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+            <div class="form-grid">
+              <div class="input-group">
+                <label for="nome"
+                  ><i class="fas fa-user"></i> Nome do Funcionário</label
+                >
+                <input
+                  type="text"
+                  id="nome"
+                  name="nome"
+                  value="{{ current_user.nome }}"
+                  readonly
+                />
+              </div>
+
+              <div class="input-group">
+                <label for="registro"
+                  ><i class="fas fa-id-card"></i> Registro Funcional</label
+                >
+                <input
+                  type="text"
+                  id="registro"
+                  name="registro"
+                  value="{{ current_user.registro }}"
+                  readonly
+                />
+              </div>
+
+              <div class="input-group">
+                <label for="motivo"
+                  ><i class="fas fa-list-alt"></i> Motivo da Ausência</label
+                >
+                <select
+                  id="motivo"
+                  name="motivo"
+                  required
+                  onchange="toggleMotivoFields()"
+                >
+                  <option value="AB">Abonada (AB)</option>
+                  <option value="BH">Banco de Horas (BH)</option>
+                  <option value="DL">Dispensa Legal (DL)</option>
+                  <option value="DS">Doação de Sangue (DS)</option>
+                  <option value="TRE">TRE (TRE)</option>
+                  <option value="LM">Licença Médica (LM)</option>
+                  <option value="FS">Falta Simples (FS)</option>
+                </select>
+              </div>
+
+              <div class="input-group" id="data_single_group">
+                <label for="data"
+                  ><i class="fas fa-calendar-alt"></i> Data da Folga</label
+                >
+                <input type="date" id="data" name="data" required />
+              </div>
+
+              <div
+                class="input-group"
+                id="periodo_lm_group"
+                style="display: none"
+              >
+                <div class="lm-card">
+                  <div class="lm-title">
+                    <i class="fas fa-notes-medical" style="color: #2563eb"></i>
+                    Licença Médica (LM) — Período
+                  </div>
+                  <p class="lm-sub">
+                    Informe a data de início e a data de término do afastamento.
+                  </p>
+
+                  <div class="periodo-grid">
+                    <div class="input-group">
+                      <label for="data_inicio">Data inicial</label>
+                      <input type="date" id="data_inicio" name="data_inicio" />
+                    </div>
+
+                    <div class="input-group">
+                      <label for="data_fim">Data final</label>
+                      <input type="date" id="data_fim" name="data_fim" />
+                    </div>
+                  </div>
+
+                  <div class="lm-preview" id="lm_preview">
+                    <div id="lm_preview_text">
+                      Informe a data inicial e a data final do período.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="havera_substituicao"
+                  ><i class="fas fa-user-check"></i> Haverá Substituição? (para
+                  professores)</label
+                >
+                <select
+                  id="havera_substituicao"
+                  name="havera_substituicao"
+                  required
+                  onchange="toggleSubstituto()"
+                >
+                  <option value="Não">Não</option>
+                  <option value="Sim">Sim</option>
+                </select>
+              </div>
+
+              <div
+                class="input-group"
+                id="substituto_group"
+                style="display: none"
+              >
+                <label for="nome_substituto"
+                  ><i class="fas fa-user"></i> Nome do Substituto(a)</label
+                >
+                <input
+                  type="text"
+                  id="nome_substituto"
+                  name="nome_substituto"
+                />
+              </div>
+
+              <div
+                class="form-group"
+                id="data_banco_horas"
+                style="display: none"
+              >
+                <label for="data_referencia"
+                  ><i class="fas fa-calendar-day"></i> Data de Referência
+                  (BH)</label
+                >
+                <input
+                  type="date"
+                  id="data_referencia"
+                  name="data_referencia"
+                />
+              </div>
+
+              <div class="horas-minutos-wrapper">
+                <div
+                  class="horas-minutos-group"
+                  id="horas_group"
+                  style="display: none"
+                >
+                  <div class="input-group">
+                    <label for="quantidade_horas"
+                      ><i class="fas fa-clock"></i> Horas a utilizar</label
+                    >
+                    <input
+                      type="number"
+                      id="quantidade_horas"
+                      name="quantidade_horas"
+                      min="0"
+                      placeholder="Horas"
+                      value="0"
+                    />
+                  </div>
+
+                  <div
+                    class="input-group"
+                    id="minutos_group"
+                    style="display: none"
+                  >
+                    <label for="quantidade_minutos"
+                      ><i class="fas fa-clock"></i> Minutos a utilizar</label
+                    >
+                    <input
+                      type="number"
+                      id="quantidade_minutos"
+                      name="quantidade_minutos"
+                      min="0"
+                      max="59"
+                      placeholder="Minutos"
+                      value="0"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <input type="hidden" id="tipo_folga" name="tipo_folga" value="" />
+
+              <div class="submit-row">
+                <button type="submit" id="submitBtn" class="submit-btn">
+                  <i class="fas fa-calendar-check"></i>
+                  <span>Solicitar Agendamento</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="info-section">
+          <h2>
+            <i class="fas fa-info-circle"></i> Acompanhamento do seu agendamento
+          </h2>
+          <p>
+            Ao enviar sua solicitação, você receberá um
+            <strong>protocolo de agendamento</strong> por e-mail. Caso não
+            localize na caixa de entrada, verifique também a pasta de spam e
+            marque nosso domínio como confiável.
+          </p>
+          <p>
+            Quando sua solicitação for <strong>deferida</strong> ou
+            <strong>indeferida</strong>, você também será notificado
+            automaticamente.
+          </p>
+          <p>Você pode acompanhar o status das solicitações em:</p>
+          <ul>
+            <li>
+              <a href="{{ url_for('minhas_justificativas') }}"
+                >Minhas Justificativas</a
+              >
+            </li>
+            <li><a href="{{ url_for('calendario') }}">Calendário</a></li>
+          </ul>
+        </div>
+
+        <div class="voltar-wrapper">
+          <a href="{{ url_for('index') }}" class="voltar-link">
+            <i class="fas fa-arrow-left"></i> Voltar para a Página Inicial
+          </a>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>
+        &copy; 2026 - Desenvolvido por Nilson Cruz | Todos os direitos
+        reservados
+      </p>
+    </footer>
+  </body>
 </html>

@@ -1,52 +1,50 @@
-from flask import (
-    Flask,
-    session,
-    render_template,
-    redirect,
-    url_for,
-    request,
-    flash,
-    make_response,
-    abort,
-    jsonify,
-    send_from_directory,
-    send_file,
-    current_app,
-)
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_login import (
-    LoginManager,
-    UserMixin,
-    login_user,
-    login_required,
-    logout_user,
-    current_user,
-)
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
-
-import os
-import io
-import smtplib
-import ssl
 import calendar
 import datetime
-from datetime import timedelta, date
+import io
+import os
+import smtplib
+import ssl
+from datetime import date, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from sqlalchemy import func, or_, case, asc, text
-from sqlalchemy.orm import joinedload, selectinload
-
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import cm, mm
-from reportlab.lib import colors
+from flask import (
+    Flask,
+    abort,
+    current_app,
+    flash,
+    jsonify,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    send_from_directory,
+    session,
+    url_for,
+)
+from flask_login import (
+    LoginManager,
+    UserMixin,
+    current_user,
+    login_required,
+    login_user,
+    logout_user,
+)
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
 
 # ======== CSRF / Segurança =========
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from markupsafe import Markup
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import cm, mm
+from reportlab.pdfgen import canvas
+from sqlalchemy import asc, case, func, or_, text
+from sqlalchemy.orm import joinedload, selectinload
+from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 
 # ===========================================
 # ✅ EXTENSÕES (instância ÚNICA)
@@ -66,6 +64,7 @@ app = Flask(__name__)
 # ProxyFix (Render / reverse proxy)
 # ===========================================
 from werkzeug.middleware.proxy_fix import ProxyFix
+
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
 
 # ===========================================
@@ -73,6 +72,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
 # ===========================================
 try:
     from dotenv import load_dotenv  # pip install python-dotenv
+
     load_dotenv()
 except Exception:
     pass
@@ -83,7 +83,24 @@ except Exception:
 import re
 
 PT_SMALL_WORDS = {"da", "de", "do", "das", "dos", "e", "d", "del", "della", "di", "du"}
-ROMAN = {"i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii", "xiii", "xiv", "xv"}
+ROMAN = {
+    "i",
+    "ii",
+    "iii",
+    "iv",
+    "v",
+    "vi",
+    "vii",
+    "viii",
+    "ix",
+    "x",
+    "xi",
+    "xii",
+    "xiii",
+    "xiv",
+    "xv",
+}
+
 
 def pt_title(s: str) -> str:
     s = (s or "").strip()
@@ -132,6 +149,7 @@ def pt_title(s: str) -> str:
 
     return " ".join(out)
 
+
 def abbr_name(s: str) -> str:
     full = pt_title(s)
     parts = [p for p in full.split() if p]
@@ -147,6 +165,7 @@ def abbr_name(s: str) -> str:
         break
     return f"{first} {initial}".strip()
 
+
 # ===========================================
 # Filtros Jinja (defina 1x só)
 # ===========================================
@@ -154,18 +173,31 @@ def abbr_name(s: str) -> str:
 def _pt_title_filter(value):
     return pt_title(value)
 
+
 @app.template_filter("abbr_name")
 def _abbr_name_filter(value):
     return abbr_name(value)
+
 
 # ===========================================
 # Config básica (Render / Prod / Dev)
 # ===========================================
 from pathlib import Path
-from urllib.parse import urlparse, parse_qsl, urlencode
+from urllib.parse import parse_qsl, urlencode, urlparse
+
 
 def _is_truthy(v: str) -> bool:
-    return str(v or "").strip().lower() in ("1", "true", "t", "sim", "s", "yes", "y", "on")
+    return str(v or "").strip().lower() in (
+        "1",
+        "true",
+        "t",
+        "sim",
+        "s",
+        "yes",
+        "y",
+        "on",
+    )
+
 
 IS_RENDER = bool(os.environ.get("RENDER")) or bool(os.environ.get("RENDER_SERVICE_ID"))
 ENV_NAME = (os.environ.get("FLASK_ENV") or os.environ.get("ENV") or "").strip().lower()
@@ -174,7 +206,9 @@ IS_PROD = IS_RENDER or (ENV_NAME == "production")
 # ===========================================
 # Banco (PostgreSQL)
 # ===========================================
-db_url = (os.environ.get("DATABASE_URL") or os.environ.get("SQLALCHEMY_DATABASE_URI") or "").strip()
+db_url = (
+    os.environ.get("DATABASE_URL") or os.environ.get("SQLALCHEMY_DATABASE_URI") or ""
+).strip()
 
 # ✅ Correção defensiva: se colaram "DATABASE_URL=postgresql://...." como valor
 if db_url.startswith("DATABASE_URL="):
@@ -186,13 +220,14 @@ if db_url.startswith("SQLALCHEMY_DATABASE_URI="):
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
+
 def _ensure_sslmode_require(url: str) -> str:
     try:
         p = urlparse(url)
         if p.scheme not in ("postgresql", "postgres"):
             return url
 
-        host = (p.hostname or "")
+        host = p.hostname or ""
         is_renderish = ("render.com" in host) or host.startswith("dpg-")
         if not is_renderish:
             return url
@@ -205,6 +240,7 @@ def _ensure_sslmode_require(url: str) -> str:
         return url
     except Exception:
         return url
+
 
 if db_url:
     db_url = _ensure_sslmode_require(db_url)
@@ -239,13 +275,19 @@ if not db_url.startswith("sqlite"):
 secret_key = (os.environ.get("SECRET_KEY") or "").strip()
 if not secret_key:
     if IS_PROD:
-        raise RuntimeError("SECRET_KEY não configurada em produção (Render). Configure a env var SECRET_KEY.")
+        raise RuntimeError(
+            "SECRET_KEY não configurada em produção (Render). Configure a env var SECRET_KEY."
+        )
     secret_key = "dev-secret-CHANGE-ME"
 app.config["SECRET_KEY"] = secret_key
 
-app.config["SESSION_COOKIE_SAMESITE"] = (os.environ.get("SESSION_COOKIE_SAMESITE") or "Lax").strip()
+app.config["SESSION_COOKIE_SAMESITE"] = (
+    os.environ.get("SESSION_COOKIE_SAMESITE") or "Lax"
+).strip()
 secure_default = "True" if IS_PROD else "False"
-app.config["SESSION_COOKIE_SECURE"] = _is_truthy(os.environ.get("SESSION_COOKIE_SECURE", secure_default))
+app.config["SESSION_COOKIE_SECURE"] = _is_truthy(
+    os.environ.get("SESSION_COOKIE_SECURE", secure_default)
+)
 
 # ===========================================
 # CSRF
@@ -253,6 +295,7 @@ app.config["SESSION_COOKIE_SECURE"] = _is_truthy(os.environ.get("SESSION_COOKIE_
 app.config["WTF_CSRF_ENABLED"] = True
 app.config["WTF_CSRF_TIME_LIMIT"] = 60 * 60 * 8
 csrf.init_app(app)
+
 
 @app.context_processor
 def inject_csrf_token():
@@ -263,22 +306,28 @@ def inject_csrf_token():
         ),
     )
 
+
 # ===========================================
 # Salt / Links externos
 # ===========================================
 pwd_salt = (os.environ.get("SECURITY_PASSWORD_SALT") or "").strip()
 if not pwd_salt:
     if IS_PROD:
-        raise RuntimeError("SECURITY_PASSWORD_SALT não configurada em produção (Render). Configure essa env var.")
+        raise RuntimeError(
+            "SECURITY_PASSWORD_SALT não configurada em produção (Render). Configure essa env var."
+        )
     pwd_salt = "dev-salt-CHANGE-ME"
 
 app.config["SECURITY_PASSWORD_SALT"] = pwd_salt
-app.config["PREFERRED_URL_SCHEME"] = (os.environ.get("PREFERRED_URL_SCHEME") or ("https" if IS_PROD else "http")).strip()
+app.config["PREFERRED_URL_SCHEME"] = (
+    os.environ.get("PREFERRED_URL_SCHEME") or ("https" if IS_PROD else "http")
+).strip()
 
 # ===========================================
 # Debug de 403 (Render)
 # ===========================================
 from werkzeug.exceptions import Forbidden
+
 
 @app.errorhandler(Forbidden)
 def _dbg_forbidden(e):
@@ -293,8 +342,9 @@ def _dbg_forbidden(e):
     )
     return e, 403
 
-from pathlib import Path
+
 import os
+from pathlib import Path
 
 # ===========================================
 # Config Uploads (TRE persistente)
@@ -337,6 +387,7 @@ migrate.init_app(app, db)
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
+
 # ===========================================
 # Healthcheck DB (p/ testar Render)
 # ===========================================
@@ -349,14 +400,16 @@ def health_db():
         current_app.logger.exception("DB health failed")
         return {"ok": False, "error": str(ex)}, 500
 
+
 # ===========================================
 # Configurações de Email (SMTP)
 # ===========================================
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 SMTP_USER = "nilcr94@gmail.com"
-SMTP_PASS = "etvgjtsfgwfdtuof"   # 🔒 Ideal: usar variável de ambiente!
+SMTP_PASS = "etvgjtsfgwfdtuof"  # 🔒 Ideal: usar variável de ambiente!
 MAIL_FROM = f"Central da Unidade <{SMTP_USER}>"
+
 
 # --- Diag rápido de SMTP (opcional) ---
 @app.route("/_smtp_diag")
@@ -378,7 +431,11 @@ def _smtp_diag():
                 s.login(SMTP_USER, SMTP_PASS)
             return "SMTP OK (465/SSL) — fallback"
         except Exception as e2:
-            return f"SMTP FAIL: {type(e).__name__}: {e} | Fallback: {type(e2).__name__}: {e2}", 500
+            return (
+                f"SMTP FAIL: {type(e).__name__}: {e} | Fallback: {type(e2).__name__}: {e2}",
+                500,
+            )
+
 
 # ===========================================
 # TERMO DE USO — versão vigente
@@ -389,10 +446,12 @@ TERMO_VERSION = "2025-01-15"
 # MODELOS
 # ===========================================
 import datetime
+
 from flask_login import UserMixin
 from sqlalchemy import CheckConstraint, Index
 
 # (assumindo que você já tem db = SQLAlchemy(app))
+
 
 class User(UserMixin, db.Model):
     __tablename__ = "user"
@@ -463,8 +522,8 @@ class User(UserMixin, db.Model):
         lazy=True,
         cascade="all, delete-orphan",
         order_by="UserHorarioTrabalho.vigencia_inicio.desc(), "
-                 "UserHorarioTrabalho.dia_semana.asc(), "
-                 "UserHorarioTrabalho.hora_inicio.asc()",
+        "UserHorarioTrabalho.dia_semana.asc(), "
+        "UserHorarioTrabalho.hora_inicio.asc()",
     )
 
 
@@ -473,10 +532,7 @@ class Agendamento(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     funcionario_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id"),
-        nullable=False,
-        index=True
+        db.Integer, db.ForeignKey("user.id"), nullable=False, index=True
     )
 
     status = db.Column(db.String(50), nullable=False, index=True)
@@ -528,7 +584,9 @@ class Agendamento(db.Model):
     )
 
     __table_args__ = (
-        Index("ix_agendamento_funcionario_data_status", "funcionario_id", "data", "status"),
+        Index(
+            "ix_agendamento_funcionario_data_status", "funcionario_id", "data", "status"
+        ),
         Index("ix_agendamento_lote_data", "lote_id", "data"),
     )
 
@@ -537,7 +595,9 @@ class Folga(db.Model):
     __tablename__ = "folga"
 
     id = db.Column(db.Integer, primary_key=True)
-    funcionario_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    funcionario_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), nullable=False, index=True
+    )
     data = db.Column(db.Date, nullable=False, index=True)
     motivo = db.Column(db.String(50), nullable=False)
     status = db.Column(db.String(50), default="Pendente", nullable=False, index=True)
@@ -549,16 +609,22 @@ class BancoDeHoras(db.Model):
     __tablename__ = "banco_de_horas"
 
     id = db.Column(db.Integer, primary_key=True)
-    funcionario_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    funcionario_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), nullable=False, index=True
+    )
 
     horas = db.Column(db.Integer, nullable=False)
     minutos = db.Column(db.Integer, nullable=False)
     total_minutos = db.Column(db.Integer, default=0, nullable=False)
 
     data_realizacao = db.Column(db.Date, nullable=False, index=True)
-    status = db.Column(db.String(50), default="Horas a Serem Deferidas", nullable=False, index=True)
+    status = db.Column(
+        db.String(50), default="Horas a Serem Deferidas", nullable=False, index=True
+    )
 
-    data_criacao = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
+    data_criacao = db.Column(
+        db.DateTime, default=datetime.datetime.utcnow, nullable=False
+    )
     data_atualizacao = db.Column(
         db.DateTime,
         default=datetime.datetime.utcnow,
@@ -585,31 +651,43 @@ class EsquecimentoPonto(db.Model):
     hora_segunda_entrada = db.Column(db.Time, nullable=True)
     hora_segunda_saida = db.Column(db.Time, nullable=True)
 
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), nullable=False, index=True
+    )
     conferido = db.Column(db.Boolean, default=False, nullable=False)
     motivo = db.Column(db.Text, nullable=True)
 
-    usuario = db.relationship("User", backref=db.backref("esquecimentos_ponto", lazy=True))
+    usuario = db.relationship(
+        "User", backref=db.backref("esquecimentos_ponto", lazy=True)
+    )
 
 
 class TRE(db.Model):
     __tablename__ = "tre"
 
     id = db.Column(db.Integer, primary_key=True)
-    funcionario_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    funcionario_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), nullable=False, index=True
+    )
 
     dias_folga = db.Column(db.Integer, nullable=False)
     arquivo_pdf = db.Column(db.String(255), nullable=True)
 
-    data_envio = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
+    data_envio = db.Column(
+        db.DateTime, default=datetime.datetime.utcnow, nullable=False
+    )
 
     status = db.Column(db.String(20), default="pendente", nullable=False, index=True)
     dias_validados = db.Column(db.Integer, nullable=True)
     parecer_admin = db.Column(db.Text, nullable=True)
     validado_em = db.Column(db.DateTime, nullable=True)
-    validado_por_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True, index=True)
+    validado_por_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), nullable=True, index=True
+    )
 
-    origem = db.Column(db.String(20), nullable=False, default="upload", index=True)  # upload | admin_ajuste
+    origem = db.Column(
+        db.String(20), nullable=False, default="upload", index=True
+    )  # upload | admin_ajuste
     descricao = db.Column(db.String(255), nullable=True)
 
     funcionario = db.relationship(
@@ -642,12 +720,19 @@ class Evento(db.Model):
     hora_inicio = db.Column(db.Time, nullable=True)
     hora_fim = db.Column(db.Time, nullable=True)
 
-    criado_por_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True, index=True)
+    criado_por_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), nullable=True, index=True
+    )
     ativo = db.Column(db.Boolean, nullable=False, default=True, index=True)
     cor = db.Column(db.String(20), nullable=True)
 
     criado_em = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
-    atualizado_em = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
+    atualizado_em = db.Column(
+        db.DateTime,
+        default=datetime.datetime.utcnow,
+        onupdate=datetime.datetime.utcnow,
+        nullable=False,
+    )
 
     vistos = db.relationship(
         "EventoVisto",
@@ -675,8 +760,18 @@ class EventoVisto(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
-    evento_id = db.Column(db.Integer, db.ForeignKey("evento.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    evento_id = db.Column(
+        db.Integer,
+        db.ForeignKey("evento.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
 
     visto_em = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
 
@@ -694,12 +789,18 @@ class ReleaseNote(db.Model):
     version = db.Column(db.String(40), nullable=False, index=True)
     title = db.Column(db.String(180), nullable=False)
     body = db.Column(db.Text, nullable=False)
-    severity = db.Column(db.String(20), nullable=False, default="info")  # info|improvement|fix|breaking
+    severity = db.Column(
+        db.String(20), nullable=False, default="info"
+    )  # info|improvement|fix|breaking
 
     is_published = db.Column(db.Boolean, nullable=False, default=False, index=True)
 
-    created_by_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True, index=True)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False, index=True)
+    created_by_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), nullable=True, index=True
+    )
+    created_at = db.Column(
+        db.DateTime, default=datetime.datetime.utcnow, nullable=False, index=True
+    )
 
     reads = db.relationship(
         "ReleaseNoteRead",
@@ -723,13 +824,25 @@ class ReleaseNoteRead(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
-    release_id = db.Column(db.Integer, db.ForeignKey("release_note.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    release_id = db.Column(
+        db.Integer,
+        db.ForeignKey("release_note.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
 
     read_at = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
 
     __table_args__ = (
-        db.UniqueConstraint("user_id", "release_id", name="uq_release_note_read_user_release"),
+        db.UniqueConstraint(
+            "user_id", "release_id", name="uq_release_note_read_user_release"
+        ),
         Index("ix_release_note_read_user_release", "user_id", "release_id"),
     )
 
@@ -788,6 +901,7 @@ class UserHorarioTrabalho(db.Model):
         ),
     )
 
+
 # ===========================================
 # E-MAIL — Função genérica (corrigida e robusta)
 # ===========================================
@@ -803,22 +917,29 @@ def enviar_email(destinatario, assunto, mensagem_html, mensagem_texto=None):
         raise ValueError("destinatario vazio")
 
     msg = MIMEMultipart("alternative")
-    msg['From'] = MAIL_FROM
-    msg['To'] = destinatario
-    msg['Subject'] = assunto or "(sem assunto)"
+    msg["From"] = MAIL_FROM
+    msg["To"] = destinatario
+    msg["Subject"] = assunto or "(sem assunto)"
 
     if not mensagem_texto:
-        mensagem_texto = "Por favor, visualize este e-mail em um cliente que suporte HTML."
+        mensagem_texto = (
+            "Por favor, visualize este e-mail em um cliente que suporte HTML."
+        )
 
-    msg.attach(MIMEText(mensagem_texto, 'plain', 'utf-8'))
-    msg.attach(MIMEText(mensagem_html or "", 'html', 'utf-8'))
+    msg.attach(MIMEText(mensagem_texto, "plain", "utf-8"))
+    msg.attach(MIMEText(mensagem_html or "", "html", "utf-8"))
 
     ctx = ssl.create_default_context()
 
     # Tentativa 1: 587 + STARTTLS
     try:
-        current_app.logger.info("SMTP[TLS587] host=%s port=%s user=%s from=%s",
-                                SMTP_SERVER, SMTP_PORT, SMTP_USER, MAIL_FROM)
+        current_app.logger.info(
+            "SMTP[TLS587] host=%s port=%s user=%s from=%s",
+            SMTP_SERVER,
+            SMTP_PORT,
+            SMTP_USER,
+            MAIL_FROM,
+        )
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=25) as server:
             server.ehlo()
             server.starttls(context=ctx)
@@ -837,57 +958,71 @@ def enviar_email(destinatario, assunto, mensagem_html, mensagem_texto=None):
 
     # Tentativa 2: 465 + SSL
     with smtplib.SMTP_SSL(SMTP_SERVER, 465, context=ctx, timeout=25) as server:
-        current_app.logger.info("SMTP[SSL465] host=%s port=%s user=%s from=%s",
-                                SMTP_SERVER, 465, SMTP_USER, MAIL_FROM)
+        current_app.logger.info(
+            "SMTP[SSL465] host=%s port=%s user=%s from=%s",
+            SMTP_SERVER,
+            465,
+            SMTP_USER,
+            MAIL_FROM,
+        )
         server.ehlo()
         server.login(SMTP_USER, SMTP_PASS)
         server.sendmail(SMTP_USER, [destinatario], msg.as_string())
+
 
 # ===== Helpers de TERMO =====
 def _tem_termo_vigente(user) -> bool:
     return bool(user) and (user.versao_termo or "").strip() == TERMO_VERSION
 
+
 # ===========================================
 # Middlewares de segurança e CSRF
 # ===========================================
-@app.route('/csrf-token', methods=['GET'])
+@app.route("/csrf-token", methods=["GET"])
 def get_csrf_token():
     token = generate_csrf()
-    resp = jsonify({'csrf_token': token})
-    resp.set_cookie('csrf_token', token, samesite='Lax', secure=False, httponly=False)
+    resp = jsonify({"csrf_token": token})
+    resp.set_cookie("csrf_token", token, samesite="Lax", secure=False, httponly=False)
     return resp
+
 
 from urllib.parse import urlparse
 
+
 @app.before_request
 def _enforce_same_origin_on_unsafe():
-    if request.method in ('POST', 'PUT', 'PATCH', 'DELETE'):
-        origin = request.headers.get('Origin')
-        referer = request.headers.get('Referer')
-        host = request.host_url.rstrip('/')
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        origin = request.headers.get("Origin")
+        referer = request.headers.get("Referer")
+        host = request.host_url.rstrip("/")
         if origin and not origin.startswith(host):
             abort(403)
         if referer:
             parsed = urlparse(referer)
             ref = f"{parsed.scheme}://{parsed.netloc}"
-            if not ref.startswith(request.host_url.rstrip('/')):
+            if not ref.startswith(request.host_url.rstrip("/")):
                 abort(403)
+
 
 @app.after_request
 def _set_security_headers(resp):
-    resp.headers['X-Frame-Options'] = 'DENY'
-    resp.headers['X-Content-Type-Options'] = 'nosniff'
+    resp.headers["X-Frame-Options"] = "DENY"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
     return resp
+
 
 # Garante um cookie csrf_token disponível para front-end (AJAX)
 @app.after_request
 def _ensure_csrf_cookie(resp):
     try:
         token = generate_csrf()
-        resp.set_cookie('csrf_token', token, samesite='Lax', secure=False, httponly=False)
+        resp.set_cookie(
+            "csrf_token", token, samesite="Lax", secure=False, httponly=False
+        )
     except Exception:
         pass
     return resp
+
 
 @app.before_request
 def _require_terms_acceptance():
@@ -926,68 +1061,73 @@ def _require_terms_acceptance():
 
     return redirect(url_for("termo_uso"))
 
+
 # ===========================================
 # AUTENTICAÇÃO / TERMO
 # ===========================================
-@app.route('/login', methods=['GET', 'POST'])
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == 'POST':
-        email = request.form['email']
-        senha = request.form['password']
+    if request.method == "POST":
+        email = request.form["email"]
+        senha = request.form["password"]
         user = User.query.filter_by(email=email).first()
 
         if user and check_password_hash(user.senha, senha):
-            if user.status == 'pendente':
-                flash('Seu registro está pendente de aprovação. Por favor, aguarde a confirmação do administrador.', 'warning')
-                return render_template('login.html')
-            elif user.status == 'rejeitado':
-                flash('Seu acesso foi recusado. Contate um administrador.', 'danger')
-                return render_template('login.html')
+            if user.status == "pendente":
+                flash(
+                    "Seu registro está pendente de aprovação. Por favor, aguarde a confirmação do administrador.",
+                    "warning",
+                )
+                return render_template("login.html")
+            elif user.status == "rejeitado":
+                flash("Seu acesso foi recusado. Contate um administrador.", "danger")
+                return render_template("login.html")
 
             login_user(user)
 
             if not _tem_termo_vigente(user):
-                return redirect(url_for('termo_uso'))
+                return redirect(url_for("termo_uso"))
 
-            return redirect(url_for('index'))
+            return redirect(url_for("index"))
         else:
-            flash('Email ou senha incorretos', 'danger')
+            flash("Email ou senha incorretos", "danger")
 
-    return render_template('login.html')
+    return render_template("login.html")
 
 
-@app.route('/termo_uso', methods=['GET', 'POST'])
+@app.route("/termo_uso", methods=["GET", "POST"])
 @login_required
 def termo_uso():
-    if request.method == 'POST':
-        acao = request.form.get('acao')
+    if request.method == "POST":
+        acao = request.form.get("acao")
 
-        if acao == 'aceito':
+        if acao == "aceito":
             current_user.aceitou_termo = True
             current_user.versao_termo = TERMO_VERSION
             db.session.commit()
             flash("Termo aceito com sucesso.", "success")
-            return redirect(url_for('index'))
+            return redirect(url_for("index"))
 
-        elif acao == 'nao_aceito':
+        elif acao == "nao_aceito":
             flash("Você precisa aceitar o termo para usar o sistema.", "danger")
             logout_user()
-            return redirect(url_for('login'))
+            return redirect(url_for("login"))
 
     if _tem_termo_vigente(current_user):
-        return redirect(url_for('index'))
+        return redirect(url_for("index"))
 
-    return render_template('termo_uso.html', termo_versao=TERMO_VERSION)
+    return render_template("termo_uso.html", termo_versao=TERMO_VERSION)
 
 
-@app.route('/aceitar_termo', methods=['POST'])
+@app.route("/aceitar_termo", methods=["POST"])
 @login_required
 def aceitar_termo():
     current_user.aceitou_termo = True
     current_user.versao_termo = TERMO_VERSION
     db.session.commit()
-    flash('Termo de uso aceito com sucesso.', 'success')
-    return redirect(url_for('index'))
+    flash("Termo de uso aceito com sucesso.", "success")
+    return redirect(url_for("index"))
+
 
 # ======================================================
 # RECUPERAÇÃO / REDEFINIÇÃO DE SENHA POR E-MAIL (Gmail)
@@ -995,8 +1135,9 @@ def aceitar_termo():
 # ======================================================
 import os
 import smtplib
-from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-from flask import request, redirect, url_for, render_template, flash, current_app
+
+from flask import current_app, flash, redirect, render_template, request, url_for
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from werkzeug.security import generate_password_hash
 
 # ✅ Branding (mesmo padrão do sistema)
@@ -1011,10 +1152,10 @@ def _escape_html(s) -> str:
     s = str(s)
     return (
         s.replace("&", "&amp;")
-         .replace("<", "&lt;")
-         .replace(">", "&gt;")
-         .replace('"', "&quot;")
-         .replace("'", "&#39;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&#39;")
     )
 
 
@@ -1034,7 +1175,7 @@ def verify_reset_token(token: str) -> int | None:
         data = s.loads(
             token,
             salt=app.config["SECURITY_PASSWORD_SALT"],
-            max_age=RESET_TOKEN_MAX_AGE
+            max_age=RESET_TOKEN_MAX_AGE,
         )
         return int(data.get("uid", 0))
     except SignatureExpired:
@@ -1150,55 +1291,64 @@ def send_password_reset_email(user) -> None:
     enviar_email(user.email, subject, html_body, text_body)
 
 
-@app.route('/recuperar_senha', methods=['GET', 'POST'])
+@app.route("/recuperar_senha", methods=["GET", "POST"])
 def recuperar_senha():
     """
     Formulário (e-mail + registro). Se POST válido, envia e-mail com link.
     Resposta sempre genérica (não revela se usuário existe).
     """
-    if request.method == 'POST':
-        email = (request.form.get('email') or "").strip().lower()
-        registro = (request.form.get('registro') or "").strip()
+    if request.method == "POST":
+        email = (request.form.get("email") or "").strip().lower()
+        registro = (request.form.get("registro") or "").strip()
 
         usuario = User.query.filter(
-            User.email.ilike(email),
-            User.registro == registro
+            User.email.ilike(email), User.registro == registro
         ).first()
 
         try:
             if usuario and usuario.email:
                 send_password_reset_email(usuario)
 
-            flash("Se os dados conferirem, enviaremos um e-mail com instruções.", "info")
-            return redirect(url_for('login'))
+            flash(
+                "Se os dados conferirem, enviaremos um e-mail com instruções.", "info"
+            )
+            return redirect(url_for("login"))
 
         except smtplib.SMTPAuthenticationError:
-            current_app.logger.exception("SMTPAuthenticationError ao enviar e-mail de redefinição")
-            flash("Não foi possível enviar o e-mail no momento. Verifique as credenciais SMTP.", "danger")
+            current_app.logger.exception(
+                "SMTPAuthenticationError ao enviar e-mail de redefinição"
+            )
+            flash(
+                "Não foi possível enviar o e-mail no momento. Verifique as credenciais SMTP.",
+                "danger",
+            )
         except Exception:
             current_app.logger.exception("Erro ao enviar e-mail de redefinição")
-            flash("Não foi possível enviar o e-mail no momento. Tente novamente.", "danger")
+            flash(
+                "Não foi possível enviar o e-mail no momento. Tente novamente.",
+                "danger",
+            )
 
-    return render_template('recuperar_senha.html')
+    return render_template("recuperar_senha.html")
 
 
-@app.route('/redefinir_senha/<token>', methods=['GET', 'POST'])
+@app.route("/redefinir_senha/<token>", methods=["GET", "POST"])
 def redefinir_senha(token):
     """
     Valida o token e permite a redefinição da senha sem autenticação prévia.
     """
     user_id = verify_reset_token(token)
     if not user_id:
-        return redirect(url_for('recuperar_senha'))
+        return redirect(url_for("recuperar_senha"))
 
     usuario = User.query.get(user_id)
     if not usuario:
         flash("Usuário não encontrado.", "danger")
-        return redirect(url_for('recuperar_senha'))
+        return redirect(url_for("recuperar_senha"))
 
-    if request.method == 'POST':
-        nova_senha = (request.form.get('nova_senha') or "").strip()
-        confirmar  = (request.form.get('confirmar_senha') or "").strip()
+    if request.method == "POST":
+        nova_senha = (request.form.get("nova_senha") or "").strip()
+        confirmar = (request.form.get("confirmar_senha") or "").strip()
 
         if len(nova_senha) < 6:
             flash("A nova senha deve ter pelo menos 6 caracteres.", "warning")
@@ -1208,36 +1358,41 @@ def redefinir_senha(token):
             usuario.senha = generate_password_hash(nova_senha)
             db.session.commit()
             flash("Senha redefinida com sucesso! Faça login.", "success")
-            return redirect(url_for('login'))
+            return redirect(url_for("login"))
 
-    return render_template('redefinir_senha.html', token=token)
+    return render_template("redefinir_senha.html", token=token)
 
-from zoneinfo import ZoneInfo
+
 import datetime
+from zoneinfo import ZoneInfo
 
 TZ_BR = ZoneInfo("America/Sao_Paulo")
+
 
 def utc_naive_para_brasil(dt):
     if not dt:
         return None
     return dt.replace(tzinfo=datetime.timezone.utc).astimezone(TZ_BR)
 
+
 def formatar_datahora_brasil(dt, fmt="%d/%m/%Y às %H:%M"):
     if not dt:
         return ""
     return utc_naive_para_brasil(dt).strftime(fmt)
 
-@app.route('/logout', methods=['POST'])
+
+@app.route("/logout", methods=["POST"])
 @login_required
 def logout():
     logout_user()
     flash("Você saiu do sistema. Para acessá-lo, faça login novamente.", "success")
-    return redirect(url_for('login'))
+    return redirect(url_for("login"))
+
 
 # ===========================================
 # PÁGINA INICIAL
 # ===========================================
-@app.route('/index', methods=['GET', 'POST'])
+@app.route("/index", methods=["GET", "POST"])
 @login_required
 def index():
     usuario = current_user
@@ -1250,23 +1405,27 @@ def index():
         "Data de Nascimento": usuario.data_nascimento,
         "CPF": usuario.cpf,
         "RG": usuario.rg,
-        "Cargo": usuario.cargo
+        "Cargo": usuario.cargo,
     }
-    campos_pendentes = [campo for campo, valor in campos_obrigatorios.items() if not valor]
+    campos_pendentes = [
+        campo for campo, valor in campos_obrigatorios.items() if not valor
+    ]
     if campos_pendentes:
         mensagem = f"""
             Atenção! Complete seu perfil. Os seguintes campos estão em branco: {', '.join(campos_pendentes)}.
             <a href="{url_for('informar_dados')}" class="link-perfil">Clique aqui para preenchê-los</a>.
         """
         flash(mensagem, "warning")
-        return redirect(url_for('informar_dados'))
+        return redirect(url_for("informar_dados"))
 
     campos_opcionais = {
         "Data de Emissão do RG": usuario.data_emissao_rg,
         "Órgão Emissor": usuario.orgao_emissor,
         "Graduação": usuario.graduacao,
     }
-    campos_faltantes_opcionais = [campo for campo, valor in campos_opcionais.items() if not valor]
+    campos_faltantes_opcionais = [
+        campo for campo, valor in campos_opcionais.items() if not valor
+    ]
     if campos_faltantes_opcionais:
         mensagem_opcional = f"""
             Você pode completar seu perfil com os seguintes dados: {', '.join(campos_faltantes_opcionais)}.
@@ -1296,42 +1455,44 @@ def index():
                         data_fmt = data_principal.strftime("%d/%m/%Y")
                     except Exception:
                         data_fmt = str(data_principal)
-                    itens.append(f"• <strong>{ev.get('nome', 'Evento')}</strong> <span style='opacity:.85'>( {data_fmt} )</span>")
+                    itens.append(
+                        f"• <strong>{ev.get('nome', 'Evento')}</strong> <span style='opacity:.85'>( {data_fmt} )</span>"
+                    )
                 else:
                     itens.append(f"• <strong>{ev.get('nome', 'Evento')}</strong>")
 
-            flash(
-                "Novos eventos no calendário:<br>" + "<br>".join(itens),
-                "warning"
-            )
+            flash("Novos eventos no calendário:<br>" + "<br>".join(itens), "warning")
 
-            _marcar_eventos_como_vistos(usuario.id, [ev["id"] for ev in novos_eventos if ev.get("id")])
+            _marcar_eventos_como_vistos(
+                usuario.id, [ev["id"] for ev in novos_eventos if ev.get("id")]
+            )
     except Exception:
         # Não derruba o index por falha de notificação; mantém UX do portal
         pass
 
-    return render_template('index.html', usuario=usuario)
+    return render_template("index.html", usuario=usuario)
+
 
 # ===========================================
 # MINHAS JUSTIFICATIVAS (com paginação/filtros no back-end)
 # GET /minhas_justificativas?page=1&per_page=10&q=tre&status=em_espera
 # Para JSON: /minhas_justificativas?...&format=json
 # ===========================================
-@app.route('/minhas_justificativas')
+@app.route("/minhas_justificativas")
 @login_required
 def minhas_justificativas():
     # Parâmetros de paginação/consulta
-    page = request.args.get('page', default=1, type=int)
-    per_page = request.args.get('per_page', default=10, type=int)
+    page = request.args.get("page", default=1, type=int)
+    per_page = request.args.get("per_page", default=10, type=int)
     per_page = max(5, min(per_page, 50))  # limita entre 5 e 50
-    q = (request.args.get('q', default='', type=str) or '').strip()
-    status = (request.args.get('status', default='', type=str) or '').strip().lower()
+    q = (request.args.get("q", default="", type=str) or "").strip()
+    status = (request.args.get("status", default="", type=str) or "").strip().lower()
 
     # Query base
     query = Agendamento.query.filter(Agendamento.funcionario_id == current_user.id)
 
     # Filtro por status (opcional)
-    if status in ('em_espera', 'pendente', 'deferido', 'indeferido'):
+    if status in ("em_espera", "pendente", "deferido", "indeferido"):
         query = query.filter(Agendamento.status == status)
 
     # Busca por texto (motivo) e/ou data (dd/mm/yyyy ou yyyy-mm-dd)
@@ -1361,7 +1522,8 @@ def minhas_justificativas():
     pages = (total + per_page - 1) // per_page  # ceil
 
     # Opcional: resposta JSON para AJAX
-    if request.args.get('format') == 'json':
+    if request.args.get("format") == "json":
+
         def _ser(a):
             return {
                 "id": a.id,
@@ -1372,24 +1534,27 @@ def minhas_justificativas():
                 "substituicao": getattr(a, "substituicao", None),
                 "nome_substituto": getattr(a, "nome_substituto", None),
             }
-        return jsonify({
-            "page": page,
-            "per_page": per_page,
-            "total": total,
-            "pages": pages,
-            "items": [_ser(a) for a in agendamentos],
-        })
+
+        return jsonify(
+            {
+                "page": page,
+                "per_page": per_page,
+                "total": total,
+                "pages": pages,
+                "items": [_ser(a) for a in agendamentos],
+            }
+        )
 
     # Render HTML
     return render_template(
-        'minhas_justificativas.html',
+        "minhas_justificativas.html",
         agendamentos=agendamentos,
         page=page,
         per_page=per_page,
         total=total,
         pages=pages,
         q=q,
-        status=status
+        status=status,
     )
 
 
@@ -1398,7 +1563,7 @@ def minhas_justificativas():
 # Endpoint chamado pelo HTML via fetch()
 # Retorna JSON: {success: true, nome_substituto: "..."}
 # ===========================================
-@app.route('/agendamento/<int:agendamento_id>/substituto', methods=['POST'])
+@app.route("/agendamento/<int:agendamento_id>/substituto", methods=["POST"])
 @login_required
 def atualizar_substituto_agendamento(agendamento_id):
     """
@@ -1416,42 +1581,45 @@ def atualizar_substituto_agendamento(agendamento_id):
         return jsonify(success=False, error="Acesso negado."), 403
 
     payload = request.get_json(silent=True) or {}
-    nome = (payload.get('nome_substituto') or '').strip()
+    nome = (payload.get("nome_substituto") or "").strip()
 
     # Regra: se preencher nome -> substituicao = "Sim"
     #        se vazio        -> substituicao = "Não" e limpa nome
     if nome:
         ag.nome_substituto = nome
-        if hasattr(ag, 'substituicao'):
+        if hasattr(ag, "substituicao"):
             ag.substituicao = "Sim"
     else:
         ag.nome_substituto = None
-        if hasattr(ag, 'substituicao'):
+        if hasattr(ag, "substituicao"):
             ag.substituicao = "Não"
 
     try:
         db.session.commit()
     except Exception as e:
         db.session.rollback()
-        current_app.logger.exception("Erro ao atualizar substituto do agendamento %s: %s", agendamento_id, e)
+        current_app.logger.exception(
+            "Erro ao atualizar substituto do agendamento %s: %s", agendamento_id, e
+        )
         return jsonify(success=False, error="Erro ao salvar no banco."), 500
 
     return jsonify(success=True, nome_substituto=(ag.nome_substituto or "")), 200
+
 
 # ===========================================
 # PROTOCOLO DE AGENDAMENTOS (PDF)
 # ===========================================
 
-import os
 import datetime
+import os
 import textwrap
-from flask import current_app
 
-from reportlab.pdfgen import canvas
+from flask import current_app
+from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
-from reportlab.lib import colors
+from reportlab.pdfgen import canvas
 
 
 def _status_legivel_agendamento(status: str) -> str:
@@ -1474,11 +1642,23 @@ def _status_badge_style(status: str):
     """
     s = (status or "").strip().lower()
     if s == "deferido":
-        return (colors.HexColor("#DCFCE7"), colors.HexColor("#166534"), colors.HexColor("#86EFAC"))
+        return (
+            colors.HexColor("#DCFCE7"),
+            colors.HexColor("#166534"),
+            colors.HexColor("#86EFAC"),
+        )
     if s == "indeferido":
-        return (colors.HexColor("#FEE2E2"), colors.HexColor("#991B1B"), colors.HexColor("#FCA5A5"))
+        return (
+            colors.HexColor("#FEE2E2"),
+            colors.HexColor("#991B1B"),
+            colors.HexColor("#FCA5A5"),
+        )
     # em_espera / pendente / default
-    return (colors.HexColor("#FEF3C7"), colors.HexColor("#92400E"), colors.HexColor("#FCD34D"))
+    return (
+        colors.HexColor("#FEF3C7"),
+        colors.HexColor("#92400E"),
+        colors.HexColor("#FCD34D"),
+    )
 
 
 def _motivo_legivel(motivo: str) -> str:
@@ -1493,9 +1673,11 @@ def _motivo_legivel(motivo: str) -> str:
     }.get(m, m or "Agendamento")
 
 
-from pathlib import Path
 import os
+from pathlib import Path
+
 from flask import current_app
+
 
 def _protocolo_agendamento_abs_path(agendamento_id: int) -> str:
     """
@@ -1539,16 +1721,32 @@ def gerar_protocolo_agendamento_pdf(agendamento, usuario) -> str:
 
     # Ano do protocolo: usa o ano da data solicitada (agendamento.data).
     # Se não existir por algum motivo, cai no ano atual.
-    ano_protocolo = getattr(agendamento, "data", None).year if getattr(agendamento, "data", None) else agora.year
+    ano_protocolo = (
+        getattr(agendamento, "data", None).year
+        if getattr(agendamento, "data", None)
+        else agora.year
+    )
 
     protocolo_num = f"AG-{agendamento.id:06d}/{ano_protocolo}"
 
     emitido_em = agora.strftime("%d/%m/%Y %H:%M")
 
-    data_agendada = agendamento.data.strftime("%d/%m/%Y") if getattr(agendamento, "data", None) else "—"
-    data_ref = agendamento.data_referencia.strftime("%d/%m/%Y") if getattr(agendamento, "data_referencia", None) else "—"
+    data_agendada = (
+        agendamento.data.strftime("%d/%m/%Y")
+        if getattr(agendamento, "data", None)
+        else "—"
+    )
+    data_ref = (
+        agendamento.data_referencia.strftime("%d/%m/%Y")
+        if getattr(agendamento, "data_referencia", None)
+        else "—"
+    )
 
-    motivo_raw = (getattr(agendamento, "motivo", None) or getattr(agendamento, "tipo_folga", None) or "").strip()
+    motivo_raw = (
+        getattr(agendamento, "motivo", None)
+        or getattr(agendamento, "tipo_folga", None)
+        or ""
+    ).strip()
     motivo = _motivo_legivel(motivo_raw)
 
     status_raw = getattr(agendamento, "status", None)
@@ -1658,7 +1856,16 @@ def gerar_protocolo_agendamento_pdf(agendamento, usuario) -> str:
     c.setFillColor(colors.HexColor("#F1F5F9"))
     c.setStrokeColor(colors.HexColor("#F1F5F9"))
     c.setLineWidth(0)
-    _round_rect(c, card_x + 1.2 * mm, card_bottom - 1.2 * mm, card_w, card_h, 10, stroke=0, fill=1)
+    _round_rect(
+        c,
+        card_x + 1.2 * mm,
+        card_bottom - 1.2 * mm,
+        card_w,
+        card_h,
+        10,
+        stroke=0,
+        fill=1,
+    )
 
     # card
     c.setFillColor(colors.white)
@@ -1723,7 +1930,10 @@ def gerar_protocolo_agendamento_pdf(agendamento, usuario) -> str:
 
     if motivo_raw == "BH":
         kv("Data referência (BH)", data_ref)
-        kv("Tempo (BH)", f"{int(getattr(agendamento, 'horas', 0) or 0)}h {int(getattr(agendamento, 'minutos', 0) or 0)}min")
+        kv(
+            "Tempo (BH)",
+            f"{int(getattr(agendamento, 'horas', 0) or 0)}h {int(getattr(agendamento, 'minutos', 0) or 0)}min",
+        )
 
     sub = getattr(agendamento, "substituicao", None)
     if sub:
@@ -1790,7 +2000,9 @@ def gerar_protocolo_agendamento_pdf(agendamento, usuario) -> str:
     # ==========================
     c.setFillColor(colors.HexColor("#64748B"))
     c.setFont("Helvetica", 8)
-    c.drawString(margin, 12 * mm, "E.M. José Padin Mouta • Protocolo gerado automaticamente")
+    c.drawString(
+        margin, 12 * mm, "E.M. José Padin Mouta • Protocolo gerado automaticamente"
+    )
     c.drawRightString(w - margin, 12 * mm, "Página 1/1")
 
     c.showPage()
@@ -1800,8 +2012,10 @@ def gerar_protocolo_agendamento_pdf(agendamento, usuario) -> str:
 
 
 import os
-from flask import send_file, abort, current_app
-from flask_login import login_required, current_user
+
+from flask import abort, current_app, send_file
+from flask_login import current_user, login_required
+
 
 @app.route("/agendamentos/<int:agendamento_id>/protocolo", methods=["GET"])
 @login_required
@@ -1822,7 +2036,9 @@ def agendamento_protocolo(agendamento_id):
     try:
         pdf_path = gerar_protocolo_agendamento_pdf(ag, usuario)
     except Exception:
-        current_app.logger.exception("Erro ao gerar protocolo do agendamento %s", agendamento_id)
+        current_app.logger.exception(
+            "Erro ao gerar protocolo do agendamento %s", agendamento_id
+        )
         abort(500)
 
     # Entrega o arquivo
@@ -1830,9 +2046,9 @@ def agendamento_protocolo(agendamento_id):
     resp = send_file(
         pdf_path,
         mimetype="application/pdf",
-        as_attachment=False,          # True se quiser forçar download
+        as_attachment=False,  # True se quiser forçar download
         download_name=download_name,
-        conditional=True
+        conditional=True,
     )
 
     # Evita cache (pra não abrir “versão antiga” do PDF)
@@ -1840,26 +2056,31 @@ def agendamento_protocolo(agendamento_id):
     resp.headers["Pragma"] = "no-cache"
     return resp
 
+
 # ===========================================
 # AGENDAR FOLGA (com período LM -> cria N registros + 1 e-mail)
 # ===========================================
-import uuid
 import datetime
+import uuid
+
 from sqlalchemy import func
 
-@app.route('/agendar', methods=['GET', 'POST'])
+
+@app.route("/agendar", methods=["GET", "POST"])
 @login_required
 def agendar():
-    if request.method == 'POST':
+    if request.method == "POST":
         # 🔹 Mantém o saldo de TRE sempre correto antes de validar
         sync_tre_user(current_user.id)
 
         # Valores do formulário
-        tipo_folga = request.form.get('tipo_folga')      # ex.: 'AB', 'BH', 'DS', 'TRE', 'LM', 'FS', 'DL'
-        data_folga = request.form.get('data')            # início (sempre)
-        data_fim_str = request.form.get('data_fim')      # só para LM
-        motivo = request.form.get('motivo')              # deve espelhar o select
-        data_referencia = request.form.get('data_referencia')
+        tipo_folga = request.form.get(
+            "tipo_folga"
+        )  # ex.: 'AB', 'BH', 'DS', 'TRE', 'LM', 'FS', 'DL'
+        data_folga = request.form.get("data")  # início (sempre)
+        data_fim_str = request.form.get("data_fim")  # só para LM
+        motivo = request.form.get("motivo")  # deve espelhar o select
+        data_referencia = request.form.get("data_referencia")
 
         substituicao = request.form.get("havera_substituicao")
         nome_substituto = request.form.get("nome_substituto")
@@ -1883,118 +2104,137 @@ def agendar():
             nome_substituto = None
 
         # ---- Validação específica para TRE ----
-        if tipo_folga == 'TRE':
+        if tipo_folga == "TRE":
             usuario = User.query.get(current_user.id)
             tre_total = int(usuario.tre_total or 0)
             tre_usuf = int(usuario.tre_usufruidas or 0)
             tre_restantes = max(tre_total - tre_usuf, 0)
 
-            pedidos_abertos = (
-                Agendamento.query
-                .filter(
-                    Agendamento.funcionario_id == current_user.id,
-                    Agendamento.motivo == 'TRE',
-                    Agendamento.status.in_(['em_espera', 'pendente'])
-                )
-                .count()
-            )
+            pedidos_abertos = Agendamento.query.filter(
+                Agendamento.funcionario_id == current_user.id,
+                Agendamento.motivo == "TRE",
+                Agendamento.status.in_(["em_espera", "pendente"]),
+            ).count()
 
             saldo_disponivel_para_solicitar = tre_restantes - pedidos_abertos
             if saldo_disponivel_para_solicitar <= 0:
-                flash("Você não possui TREs disponíveis para agendar no momento.", "danger")
-                return render_template('agendar.html')
+                flash(
+                    "Você não possui TREs disponíveis para agendar no momento.",
+                    "danger",
+                )
+                return render_template("agendar.html")
 
         # Descrição amigável
         descricao_motivo = {
-            'AB':  'Abonada',
-            'BH':  'Banco de Horas',
-            'DS':  'Doação de Sangue',
-            'TRE': 'TRE',
-            'LM':  'Licença Médica',
-            'FS':  'Falta Simples (FS)',
-            'DL':  'Dispensa Legal',
-        }.get(tipo_folga, 'Agendamento')
+            "AB": "Abonada",
+            "BH": "Banco de Horas",
+            "DS": "Doação de Sangue",
+            "TRE": "TRE",
+            "LM": "Licença Médica",
+            "FS": "Falta Simples (FS)",
+            "DL": "Dispensa Legal",
+        }.get(tipo_folga, "Agendamento")
 
         # ---- Validação e parsing da data da folga (INÍCIO) ----
         try:
-            data_folga = datetime.datetime.strptime(data_folga, '%Y-%m-%d').date()
+            data_folga = datetime.datetime.strptime(data_folga, "%Y-%m-%d").date()
         except (TypeError, ValueError):
             flash("Data inválida.", "danger")
-            return redirect(url_for('agendar'))
+            return redirect(url_for("agendar"))
 
         # ✅ Período para LM (data_fim)
         data_fim = None
-        if tipo_folga == 'LM' and data_fim_str:
+        if tipo_folga == "LM" and data_fim_str:
             try:
-                data_fim = datetime.datetime.strptime(data_fim_str, '%Y-%m-%d').date()
+                data_fim = datetime.datetime.strptime(data_fim_str, "%Y-%m-%d").date()
             except (TypeError, ValueError):
                 flash("Data final inválida.", "danger")
-                return redirect(url_for('agendar'))
+                return redirect(url_for("agendar"))
 
             if data_fim < data_folga:
-                flash("Período inválido: a data final não pode ser menor que a data inicial.", "danger")
-                return redirect(url_for('agendar'))
+                flash(
+                    "Período inválido: a data final não pode ser menor que a data inicial.",
+                    "danger",
+                )
+                return redirect(url_for("agendar"))
 
         # ---- Regras específicas AB (1 por mês; 6 deferidas por ano) ----
-        if tipo_folga == 'AB':
+        if tipo_folga == "AB":
             agendamento_existente = Agendamento.query.filter(
                 Agendamento.funcionario_id == current_user.id,
-                Agendamento.motivo == 'AB',
-                func.extract('year', Agendamento.data) == data_folga.year,
-                func.extract('month', Agendamento.data) == data_folga.month
+                Agendamento.motivo == "AB",
+                func.extract("year", Agendamento.data) == data_folga.year,
+                func.extract("month", Agendamento.data) == data_folga.month,
             ).first()
 
-            if agendamento_existente and agendamento_existente.status != 'indeferido':
-                flash("Você já possui um agendamento 'AB' aprovado ou em análise neste mês.", "danger")
-                return render_template('agendar.html')
+            if agendamento_existente and agendamento_existente.status != "indeferido":
+                flash(
+                    "Você já possui um agendamento 'AB' aprovado ou em análise neste mês.",
+                    "danger",
+                )
+                return render_template("agendar.html")
 
             agendamentos_ab_deferidos = Agendamento.query.filter(
                 Agendamento.funcionario_id == current_user.id,
-                Agendamento.motivo == 'AB',
-                func.extract('year', Agendamento.data) == data_folga.year,
-                Agendamento.status == 'deferido'
+                Agendamento.motivo == "AB",
+                func.extract("year", Agendamento.data) == data_folga.year,
+                Agendamento.status == "deferido",
             ).count()
 
             if agendamentos_ab_deferidos >= 6:
-                flash("Você já atingiu o limite de 6 folgas 'AB' deferidas neste ano.", "danger")
-                return render_template('agendar.html')
+                flash(
+                    "Você já atingiu o limite de 6 folgas 'AB' deferidas neste ano.",
+                    "danger",
+                )
+                return render_template("agendar.html")
 
         # ---- Banco de Horas: validação de data de referência ----
-        if tipo_folga == 'BH' and data_referencia:
+        if tipo_folga == "BH" and data_referencia:
             try:
-                data_referencia = datetime.datetime.strptime(data_referencia, '%Y-%m-%d').date()
+                data_referencia = datetime.datetime.strptime(
+                    data_referencia, "%Y-%m-%d"
+                ).date()
             except ValueError:
                 flash("Data de referência inválida.", "danger")
-                return redirect(url_for('agendar'))
+                return redirect(url_for("agendar"))
         else:
             data_referencia = None
 
         # Horas/minutos (para BH; para outros motivos mantém 0/0)
         try:
-            horas = int(request.form.get('quantidade_horas', '0').strip() or 0)
-            minutos = int(request.form.get('quantidade_minutos', '0').strip() or 0)
+            horas = int(request.form.get("quantidade_horas", "0").strip() or 0)
+            minutos = int(request.form.get("quantidade_minutos", "0").strip() or 0)
         except ValueError:
             flash("Horas ou minutos inválidos.", "danger")
-            return redirect(url_for('agendar'))
+            return redirect(url_for("agendar"))
 
         total_minutos = (horas * 60) + minutos
         usuario = User.query.get(current_user.id)
 
-        if tipo_folga == 'BH':
+        if tipo_folga == "BH":
             # Consistência do tempo informado
             if minutos < 0 or minutos > 59 or horas < 0 or total_minutos == 0:
-                flash("Informe um tempo válido para Banco de Horas (minutos entre 0 e 59 e total > 0).", "danger")
-                return redirect(url_for('agendar'))
+                flash(
+                    "Informe um tempo válido para Banco de Horas (minutos entre 0 e 59 e total > 0).",
+                    "danger",
+                )
+                return redirect(url_for("agendar"))
 
             # Data de referência não pode ser posterior à data da folga (início)
             if data_referencia and data_referencia > data_folga:
-                flash("A data de referência do Banco de Horas não pode ser posterior à data da folga.", "danger")
-                return redirect(url_for('agendar'))
+                flash(
+                    "A data de referência do Banco de Horas não pode ser posterior à data da folga.",
+                    "danger",
+                )
+                return redirect(url_for("agendar"))
 
             # Saldo suficiente
             if (usuario.banco_horas or 0) < total_minutos:
-                flash("Você não possui horas suficientes no banco de horas para este agendamento.", "danger")
-                return redirect(url_for('index'))
+                flash(
+                    "Você não possui horas suficientes no banco de horas para este agendamento.",
+                    "danger",
+                )
+                return redirect(url_for("agendar"))
         else:
             # Para motivos diferentes de BH, zera horas/minutos
             horas = 0
@@ -2009,7 +2249,7 @@ def agendar():
         # ==========================================================
         base_kwargs = dict(
             funcionario_id=current_user.id,
-            status='em_espera',
+            status="em_espera",
             motivo=tipo_folga,
             tipo_folga=tipo_folga,
             data_referencia=data_referencia,
@@ -2080,8 +2320,13 @@ def agendar():
             try:
                 gerar_protocolo_agendamento_pdf(ag_principal, current_user)
             except Exception:
-                current_app.logger.exception("Falha ao gerar protocolo PDF do agendamento %s", ag_principal.id)
-                flash("Agendamento registrado, mas não foi possível gerar o protocolo em PDF neste momento.", "warning")
+                current_app.logger.exception(
+                    "Falha ao gerar protocolo PDF do agendamento %s", ag_principal.id
+                )
+                flash(
+                    "Agendamento registrado, mas não foi possível gerar o protocolo em PDF neste momento.",
+                    "warning",
+                )
 
             # =========================
             # E-MAILS PERSONALIZADOS
@@ -2094,13 +2339,15 @@ def agendar():
             dt_solicitacao = getattr(ag_principal, "solicitado_em", solicitado_em)
 
             if dt_fim and dt_fim != dt_ini:
-                data_str = f"{dt_ini.strftime('%d/%m/%Y')} → {dt_fim.strftime('%d/%m/%Y')}"
+                data_str = (
+                    f"{dt_ini.strftime('%d/%m/%Y')} → {dt_fim.strftime('%d/%m/%Y')}"
+                )
                 data_label = "Período"
             else:
-                data_str = dt_ini.strftime('%d/%m/%Y')
+                data_str = dt_ini.strftime("%d/%m/%Y")
                 data_label = "Data"
 
-            solicitado_em_str = dt_solicitacao.strftime('%d/%m/%Y às %H:%M')
+            solicitado_em_str = dt_solicitacao.strftime("%d/%m/%Y às %H:%M")
 
             def _format_tempo_bh(h, m):
                 h = int(h or 0)
@@ -2112,20 +2359,30 @@ def agendar():
                     parts.append(f"{m}min")
                 return " ".join(parts) if parts else "0min"
 
-            tempo_bh = _format_tempo_bh(getattr(ag_principal, "horas", 0), getattr(ag_principal, "minutos", 0))
-            data_ref_str = ag_principal.data_referencia.strftime('%d/%m/%Y') if ag_principal.data_referencia else None
+            tempo_bh = _format_tempo_bh(
+                getattr(ag_principal, "horas", 0), getattr(ag_principal, "minutos", 0)
+            )
+            data_ref_str = (
+                ag_principal.data_referencia.strftime("%d/%m/%Y")
+                if ag_principal.data_referencia
+                else None
+            )
 
             def _escape(s):
                 if s is None:
                     return ""
-                return (str(s)
-                        .replace("&", "&amp;")
-                        .replace("<", "&lt;")
-                        .replace(">", "&gt;")
-                        .replace('"', "&quot;")
-                        .replace("'", "&#39;"))
+                return (
+                    str(s)
+                    .replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace('"', "&quot;")
+                    .replace("'", "&#39;")
+                )
 
-            def build_email_html(title, greeting_name, lead, paragraphs, summary_rows, note_lines=None):
+            def build_email_html(
+                title, greeting_name, lead, paragraphs, summary_rows, note_lines=None
+            ):
                 greeting_name = _escape(greeting_name)
                 title = _escape(title)
                 note_lines = note_lines or []
@@ -2153,7 +2410,13 @@ def agendar():
 
                 notes_html = ""
                 if note_lines:
-                    li = "".join([f"<li style='margin:0 0 6px 0;'>{x}</li>" for x in note_lines if x])
+                    li = "".join(
+                        [
+                            f"<li style='margin:0 0 6px 0;'>{x}</li>"
+                            for x in note_lines
+                            if x
+                        ]
+                    )
                     notes_html = f"""
                       <div style="margin-top:14px;padding:12px 12px;border:1px dashed #D7D7D7;border-radius:10px;background:#FAFAFA;">
                         <div style="font-weight:700;color:#333;margin-bottom:8px;">Observações</div>
@@ -2217,7 +2480,14 @@ def agendar():
                 """
                 return html
 
-            def build_email_text(subject_title, greeting_name, lead, paragraphs, summary_rows, note_lines=None):
+            def build_email_text(
+                subject_title,
+                greeting_name,
+                lead,
+                paragraphs,
+                summary_rows,
+                note_lines=None,
+            ):
                 note_lines = note_lines or []
                 lines = []
                 lines.append(f"E.M José Padin Mouta – {subject_title}")
@@ -2228,16 +2498,25 @@ def agendar():
                 lines.append("")
                 for p in paragraphs:
                     if p:
-                        txt = (p.replace("<strong>", "").replace("</strong>", "")
-                                 .replace("<u>", "").replace("</u>", ""))
+                        txt = (
+                            p.replace("<strong>", "")
+                            .replace("</strong>", "")
+                            .replace("<u>", "")
+                            .replace("</u>", "")
+                        )
                         lines.append(txt)
                         lines.append("")
                 lines.append("Resumo do registro:")
                 for k, v in summary_rows:
                     if v is None or v == "":
                         continue
-                    vv = (str(v).replace("<strong>", "").replace("</strong>", "")
-                               .replace("<span", "").replace("</span>", ""))
+                    vv = (
+                        str(v)
+                        .replace("<strong>", "")
+                        .replace("</strong>", "")
+                        .replace("<span", "")
+                        .replace("</span>", "")
+                    )
                     lines.append(f"- {k}: {vv}")
                 if note_lines:
                     lines.append("")
@@ -2256,23 +2535,32 @@ def agendar():
                 ("Motivo", f"<strong>{_escape(descricao_motivo)}</strong>"),
                 (data_label, f"<strong>{_escape(data_str)}</strong>"),
                 ("Solicitado em", f"<strong>{_escape(solicitado_em_str)}</strong>"),
-                ("Status no sistema", f"<span style='font-weight:800;color:#D97706;'>{_escape(status_label)}</span>"),
+                (
+                    "Status no sistema",
+                    f"<span style='font-weight:800;color:#D97706;'>{_escape(status_label)}</span>",
+                ),
             ]
 
             if tipo_folga == "BH":
-                resumo.append(("Tempo lançado", f"<strong>{_escape(tempo_bh)}</strong>"))
+                resumo.append(
+                    ("Tempo lançado", f"<strong>{_escape(tempo_bh)}</strong>")
+                )
                 if data_ref_str:
                     resumo.append(("Data de referência", _escape(data_ref_str)))
 
             if nome_substituto:
                 resumo.append(("Haverá substituição", "Sim"))
-                resumo.append(("Substituto", f"<strong>{_escape(nome_substituto)}</strong>"))
+                resumo.append(
+                    ("Substituto", f"<strong>{_escape(nome_substituto)}</strong>")
+                )
             else:
                 resumo.append(("Haverá substituição", "Não"))
 
             # ==== Conteúdo por motivo ====
             if tipo_folga == "LM":
-                assunto = "E.M José Padin Mouta – Comunicação de Licença Médica registrada"
+                assunto = (
+                    "E.M José Padin Mouta – Comunicação de Licença Médica registrada"
+                )
                 title = "Comunicação de Licença Médica (LM)"
                 if dt_fim and dt_fim != dt_ini:
                     lead = f"Registramos sua comunicação de <strong>Licença Médica (LM)</strong> para o período <strong>{_escape(data_str)}</strong>."
@@ -2286,7 +2574,9 @@ def agendar():
                 notes = []
 
             elif tipo_folga == "DL":
-                assunto = "E.M José Padin Mouta – Comunicação de Dispensa Legal registrada"
+                assunto = (
+                    "E.M José Padin Mouta – Comunicação de Dispensa Legal registrada"
+                )
                 title = "Comunicação de Dispensa Legal (DL)"
                 lead = f"Registramos sua comunicação de <strong>Dispensa Legal (DL)</strong> para <strong>{_escape(data_str)}</strong>."
                 paragraphs = [
@@ -2297,7 +2587,9 @@ def agendar():
                 notes = []
 
             elif tipo_folga == "DS":
-                assunto = "E.M José Padin Mouta – Comunicação de Doação de Sangue registrada"
+                assunto = (
+                    "E.M José Padin Mouta – Comunicação de Doação de Sangue registrada"
+                )
                 title = "Comunicação de Doação de Sangue (DS)"
                 lead = f"Registramos sua comunicação de <strong>Doação de Sangue (DS)</strong> para <strong>{_escape(data_str)}</strong>."
                 paragraphs = [
@@ -2307,7 +2599,9 @@ def agendar():
                 notes = []
 
             elif tipo_folga == "FS":
-                assunto = "E.M José Padin Mouta – Comunicação de Falta Simples registrada"
+                assunto = (
+                    "E.M José Padin Mouta – Comunicação de Falta Simples registrada"
+                )
                 title = "Comunicação de Falta Simples (FS)"
                 lead = f"Registramos sua comunicação de <strong>Falta Simples (FS)</strong> para <strong>{_escape(data_str)}</strong>."
                 paragraphs = [
@@ -2336,7 +2630,9 @@ def agendar():
                 ]
                 notes = []
                 if data_ref_str:
-                    notes.append(f"Data de referência informada: <strong>{_escape(data_ref_str)}</strong>.")
+                    notes.append(
+                        f"Data de referência informada: <strong>{_escape(data_ref_str)}</strong>."
+                    )
 
             elif tipo_folga == "TRE":
                 assunto = "E.M José Padin Mouta – TRE agendada"
@@ -2359,7 +2655,9 @@ def agendar():
                 notes = []
 
             if nome_substituto:
-                notes.append(f"Haverá substituição por: <strong>{_escape(nome_substituto)}</strong>.")
+                notes.append(
+                    f"Haverá substituição por: <strong>{_escape(nome_substituto)}</strong>."
+                )
 
             mensagem_html = build_email_html(
                 title=title,
@@ -2367,7 +2665,7 @@ def agendar():
                 lead=lead,
                 paragraphs=paragraphs,
                 summary_rows=resumo,
-                note_lines=notes
+                note_lines=notes,
             )
 
             mensagem_texto = build_email_text(
@@ -2377,9 +2675,11 @@ def agendar():
                 paragraphs=[
                     "Este e-mail confirma o registro no sistema para fins administrativos.",
                     "Consulte o status no sistema para acompanhar o andamento.",
-                    ("LM/DL/DS/FS são comunicações e o status EM ESPERA é apenas administrativo."
-                     if tipo_folga in ("LM", "DL", "DS", "FS") else
-                     "O status EM ESPERA indica que o registro aguarda análise conforme o fluxo administrativo.")
+                    (
+                        "LM/DL/DS/FS são comunicações e o status EM ESPERA é apenas administrativo."
+                        if tipo_folga in ("LM", "DL", "DS", "FS")
+                        else "O status EM ESPERA indica que o registro aguarda análise conforme o fluxo administrativo."
+                    ),
                 ],
                 summary_rows=[
                     ("Motivo", descricao_motivo),
@@ -2392,43 +2692,55 @@ def agendar():
                     ("Substituto", nome_substituto or ""),
                 ],
                 note_lines=[
-                    ("A escola não defere nem indefere Licença Médica; é responsabilidade do órgão central."
-                     if tipo_folga == "LM" else None),
-                    ("DL/DS/FS: quando existir deferimento no fluxo, é apenas sinalização."
-                     if tipo_folga in ("DL", "DS", "FS") else None),
-                ]
+                    (
+                        "A escola não defere nem indefere Licença Médica; é responsabilidade do órgão central."
+                        if tipo_folga == "LM"
+                        else None
+                    ),
+                    (
+                        "DL/DS/FS: quando existir deferimento no fluxo, é apenas sinalização."
+                        if tipo_folga in ("DL", "DS", "FS")
+                        else None
+                    ),
+                ],
             )
 
             # ✅ Envia e-mail (1x)
             try:
                 enviar_email(current_user.email, assunto, mensagem_html, mensagem_texto)
-                flash("Agendamento realizado com sucesso. Você receberá um e-mail de confirmação.", "success")
+                flash(
+                    "Agendamento realizado com sucesso. Você receberá um e-mail de confirmação.",
+                    "success",
+                )
             except Exception:
                 current_app.logger.exception(
-                    "Falha ao enviar e-mail de confirmação do agendamento principal %s", ag_principal.id
+                    "Falha ao enviar e-mail de confirmação do agendamento principal %s",
+                    ag_principal.id,
                 )
                 flash(
                     "Agendamento realizado com sucesso, mas não foi possível enviar o e-mail de confirmação neste momento.",
-                    "warning"
+                    "warning",
                 )
 
         except Exception as e:
             db.session.rollback()
             flash(f"Erro ao salvar agendamento: {str(e)}", "danger")
 
-        return redirect(url_for('index'))
+        return redirect(url_for("agendar"))
 
-    return render_template('agendar.html')
+    return render_template("agendar.html")
+
 
 # ROTA AGENDAR PARA
 
-from functools import wraps
 import datetime
 import uuid
+from functools import wraps
 
-from flask import request, render_template, redirect, url_for, flash, current_app
+from flask import current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user
 from sqlalchemy import func
+
 
 def admin_required(f):
     @wraps(f)
@@ -2437,16 +2749,17 @@ def admin_required(f):
             flash("Acesso restrito ao administrador.", "danger")
             return redirect(url_for("index"))
         return f(*args, **kwargs)
+
     return wrapper
 
 
-@app.route('/admin/agendar_para', methods=['GET', 'POST'])
+@app.route("/admin/agendar_para", methods=["GET", "POST"])
 @login_required
 @admin_required
 def admin_agendar_para():
     usuarios_ativos = User.query.filter_by(ativo=True).order_by(User.nome.asc()).all()
 
-    if request.method == 'POST':
+    if request.method == "POST":
         # --- usuário alvo ---
         try:
             alvo_id = int(request.form.get("user_id") or 0)
@@ -2462,11 +2775,11 @@ def admin_agendar_para():
         sync_tre_user(usuario_alvo.id)
 
         # Valores do formulário (mesmos nomes que sua rota /agendar)
-        tipo_folga = request.form.get('tipo_folga')
-        data_folga_str = request.form.get('data')         # início (sempre)
-        data_fim_str = request.form.get('data_fim')       # período LM
-        motivo = request.form.get('motivo')
-        data_referencia = request.form.get('data_referencia')
+        tipo_folga = request.form.get("tipo_folga")
+        data_folga_str = request.form.get("data")  # início (sempre)
+        data_fim_str = request.form.get("data_fim")  # período LM
+        motivo = request.form.get("motivo")
+        data_referencia = request.form.get("data_referencia")
 
         substituicao = request.form.get("havera_substituicao")
         nome_substituto = request.form.get("nome_substituto")
@@ -2490,112 +2803,139 @@ def admin_agendar_para():
             nome_substituto = None
 
         # ---- Validação específica para TRE (do ALVO) ----
-        if tipo_folga == 'TRE':
+        if tipo_folga == "TRE":
             tre_total = int(usuario_alvo.tre_total or 0)
             tre_usuf = int(usuario_alvo.tre_usufruidas or 0)
             tre_restantes = max(tre_total - tre_usuf, 0)
 
-            pedidos_abertos = (
-                Agendamento.query
-                .filter(
-                    Agendamento.funcionario_id == usuario_alvo.id,
-                    Agendamento.motivo == 'TRE',
-                    Agendamento.status.in_(['em_espera', 'pendente'])
-                )
-                .count()
-            )
+            pedidos_abertos = Agendamento.query.filter(
+                Agendamento.funcionario_id == usuario_alvo.id,
+                Agendamento.motivo == "TRE",
+                Agendamento.status.in_(["em_espera", "pendente"]),
+            ).count()
 
             saldo_disponivel_para_solicitar = tre_restantes - pedidos_abertos
             if saldo_disponivel_para_solicitar <= 0:
-                flash("Este usuário não possui TREs disponíveis para agendar no momento.", "danger")
-                return render_template("admin_agendar_para.html", usuarios=usuarios_ativos)
+                flash(
+                    "Este usuário não possui TREs disponíveis para agendar no momento.",
+                    "danger",
+                )
+                return render_template(
+                    "admin_agendar_para.html", usuarios=usuarios_ativos
+                )
 
         # Descrição amigável
         descricao_motivo = {
-            'AB':  'Abonada',
-            'BH':  'Banco de Horas',
-            'DS':  'Doação de Sangue',
-            'TRE': 'TRE',
-            'LM':  'Licença Médica',
-            'FS':  'Falta Simples (FS)',
-            'DL':  'Dispensa Legal',
-        }.get(tipo_folga, 'Agendamento')
+            "AB": "Abonada",
+            "BH": "Banco de Horas",
+            "DS": "Doação de Sangue",
+            "TRE": "TRE",
+            "LM": "Licença Médica",
+            "FS": "Falta Simples (FS)",
+            "DL": "Dispensa Legal",
+        }.get(tipo_folga, "Agendamento")
 
         # ---- Validação e parsing da data INICIAL ----
         try:
-            data_ini = datetime.datetime.strptime(data_folga_str, '%Y-%m-%d').date()
+            data_ini = datetime.datetime.strptime(data_folga_str, "%Y-%m-%d").date()
         except (TypeError, ValueError):
             flash("Data inválida.", "danger")
-            return redirect(url_for('admin_agendar_para'))
+            return redirect(url_for("admin_agendar_para"))
 
         # ✅ Período LM (gera 1 registro por dia no intervalo)
         data_fim = None
         if tipo_folga == "LM" and data_fim_str:
             try:
-                data_fim = datetime.datetime.strptime(data_fim_str, '%Y-%m-%d').date()
+                data_fim = datetime.datetime.strptime(data_fim_str, "%Y-%m-%d").date()
             except (TypeError, ValueError):
                 flash("Data final inválida.", "danger")
-                return redirect(url_for('admin_agendar_para'))
+                return redirect(url_for("admin_agendar_para"))
 
             if data_fim < data_ini:
-                flash("Período inválido: a data final não pode ser menor que a data inicial.", "danger")
-                return redirect(url_for('admin_agendar_para'))
+                flash(
+                    "Período inválido: a data final não pode ser menor que a data inicial.",
+                    "danger",
+                )
+                return redirect(url_for("admin_agendar_para"))
 
         # ---- Regras específicas AB (do ALVO) ----
-        if tipo_folga == 'AB':
+        if tipo_folga == "AB":
             agendamento_existente = Agendamento.query.filter(
                 Agendamento.funcionario_id == usuario_alvo.id,
-                Agendamento.motivo == 'AB',
-                func.extract('year', Agendamento.data) == data_ini.year,
-                func.extract('month', Agendamento.data) == data_ini.month
+                Agendamento.motivo == "AB",
+                func.extract("year", Agendamento.data) == data_ini.year,
+                func.extract("month", Agendamento.data) == data_ini.month,
             ).first()
-            if agendamento_existente and agendamento_existente.status != 'indeferido':
-                flash("Este usuário já possui um agendamento 'AB' aprovado ou em análise neste mês.", "danger")
-                return render_template("admin_agendar_para.html", usuarios=usuarios_ativos)
+            if agendamento_existente and agendamento_existente.status != "indeferido":
+                flash(
+                    "Este usuário já possui um agendamento 'AB' aprovado ou em análise neste mês.",
+                    "danger",
+                )
+                return render_template(
+                    "admin_agendar_para.html", usuarios=usuarios_ativos
+                )
 
             agendamentos_ab_deferidos = Agendamento.query.filter(
                 Agendamento.funcionario_id == usuario_alvo.id,
-                Agendamento.motivo == 'AB',
-                func.extract('year', Agendamento.data) == data_ini.year,
-                Agendamento.status == 'deferido'
+                Agendamento.motivo == "AB",
+                func.extract("year", Agendamento.data) == data_ini.year,
+                Agendamento.status == "deferido",
             ).count()
 
             if agendamentos_ab_deferidos >= 6:
-                flash("Este usuário já atingiu o limite de 6 folgas 'AB' deferidas neste ano.", "danger")
-                return render_template("admin_agendar_para.html", usuarios=usuarios_ativos)
+                flash(
+                    "Este usuário já atingiu o limite de 6 folgas 'AB' deferidas neste ano.",
+                    "danger",
+                )
+                return render_template(
+                    "admin_agendar_para.html", usuarios=usuarios_ativos
+                )
 
         # ---- Banco de Horas: validação de data de referência ----
-        if tipo_folga == 'BH' and data_referencia:
+        if tipo_folga == "BH" and data_referencia:
             try:
-                data_referencia = datetime.datetime.strptime(data_referencia, '%Y-%m-%d').date()
+                data_referencia = datetime.datetime.strptime(
+                    data_referencia, "%Y-%m-%d"
+                ).date()
             except ValueError:
                 flash("Data de referência inválida.", "danger")
-                return redirect(url_for('admin_agendar_para'))
+                return redirect(url_for("admin_agendar_para"))
         else:
             data_referencia = None
 
         # Horas/minutos (para BH; para outros motivos mantém 0/0)
         try:
-            horas = int((request.form.get('quantidade_horas', '0') or "0").strip() or 0)
-            minutos = int((request.form.get('quantidade_minutos', '0') or "0").strip() or 0)
+            horas = int((request.form.get("quantidade_horas", "0") or "0").strip() or 0)
+            minutos = int(
+                (request.form.get("quantidade_minutos", "0") or "0").strip() or 0
+            )
         except ValueError:
             flash("Horas ou minutos inválidos.", "danger")
-            return redirect(url_for('admin_agendar_para'))
+            return redirect(url_for("admin_agendar_para"))
 
         total_minutos = (horas * 60) + minutos
 
-        if tipo_folga == 'BH':
+        if tipo_folga == "BH":
             if minutos < 0 or minutos > 59 or horas < 0 or total_minutos == 0:
-                flash("Informe um tempo válido para Banco de Horas (minutos entre 0 e 59 e total > 0).", "danger")
-                return redirect(url_for('admin_agendar_para'))
+                flash(
+                    "Informe um tempo válido para Banco de Horas (minutos entre 0 e 59 e total > 0).",
+                    "danger",
+                )
+                return redirect(url_for("admin_agendar_para"))
 
             if data_referencia and data_referencia > data_ini:
-                flash("A data de referência do Banco de Horas não pode ser posterior à data da folga.", "danger")
-                return redirect(url_for('admin_agendar_para'))
+                flash(
+                    "A data de referência do Banco de Horas não pode ser posterior à data da folga.",
+                    "danger",
+                )
+                return redirect(url_for("admin_agendar_para"))
 
             if (usuario_alvo.banco_horas or 0) < total_minutos:
-                flash("Este usuário não possui horas suficientes no banco de horas para este agendamento.", "danger")
-                return redirect(url_for('admin_agendar_para'))
+                flash(
+                    "Este usuário não possui horas suficientes no banco de horas para este agendamento.",
+                    "danger",
+                )
+                return redirect(url_for("admin_agendar_para"))
         else:
             horas = 0
             minutos = 0
@@ -2623,7 +2963,7 @@ def admin_agendar_para():
                 while dia <= data_fim:
                     ag_kwargs = dict(
                         funcionario_id=usuario_alvo.id,
-                        status='deferido',
+                        status="deferido",
                         data=dia,
                         motivo=tipo_folga,
                         tipo_folga=tipo_folga,
@@ -2632,7 +2972,7 @@ def admin_agendar_para():
                         minutos=0,
                         substituicao=substituicao,
                         nome_substituto=nome_substituto,
-                        conferido=True
+                        conferido=True,
                     )
 
                     if has_data_fim:
@@ -2662,7 +3002,7 @@ def admin_agendar_para():
                 # Caso padrão (1 registro)
                 ag_kwargs = dict(
                     funcionario_id=usuario_alvo.id,
-                    status='deferido',
+                    status="deferido",
                     data=data_ini,
                     motivo=tipo_folga,
                     tipo_folga=tipo_folga,
@@ -2671,7 +3011,7 @@ def admin_agendar_para():
                     minutos=minutos,
                     substituicao=substituicao,
                     nome_substituto=nome_substituto,
-                    conferido=True
+                    conferido=True,
                 )
 
                 if tipo_folga == "LM" and has_data_fim:
@@ -2686,8 +3026,10 @@ def admin_agendar_para():
                 novo_agendamento = Agendamento(**ag_kwargs)
 
                 # ✅ Se BH, aplica o mesmo efeito do /deferir_folgas
-                if tipo_folga == 'BH':
-                    usuario_alvo.banco_horas = int(usuario_alvo.banco_horas or 0) - int(total_minutos)
+                if tipo_folga == "BH":
+                    usuario_alvo.banco_horas = int(usuario_alvo.banco_horas or 0) - int(
+                        total_minutos
+                    )
 
                     novo_banco_horas = BancoDeHoras(
                         funcionario_id=usuario_alvo.id,
@@ -2705,16 +3047,17 @@ def admin_agendar_para():
                 db.session.commit()
 
                 # ✅ Após deferir TRE via agendamento, sincroniza saldo
-                if tipo_folga == 'TRE':
+                if tipo_folga == "TRE":
                     try:
                         sync_tre_user(usuario_alvo.id)
                     except Exception:
                         current_app.logger.exception(
-                            "Falha ao sincronizar TRE do usuário %s após deferimento", usuario_alvo.id
+                            "Falha ao sincronizar TRE do usuário %s após deferimento",
+                            usuario_alvo.id,
                         )
 
                 primeiro = novo_agendamento
-                data_str = primeiro.data.strftime('%d/%m/%Y')
+                data_str = primeiro.data.strftime("%d/%m/%Y")
                 data_label = "Data"
 
             # ✅ gera/salva protocolo PDF (1 vez)
@@ -2723,9 +3066,12 @@ def admin_agendar_para():
             except Exception:
                 current_app.logger.exception(
                     "Falha ao gerar protocolo PDF do agendamento %s",
-                    getattr(primeiro, "id", None)
+                    getattr(primeiro, "id", None),
                 )
-                flash("Agendamento deferido e registrado, mas não foi possível gerar o protocolo em PDF neste momento.", "warning")
+                flash(
+                    "Agendamento deferido e registrado, mas não foi possível gerar o protocolo em PDF neste momento.",
+                    "warning",
+                )
 
             # =========================
             # E-MAIL para o USUÁRIO ALVO (1 e-mail só; período para LM)
@@ -2734,7 +3080,7 @@ def admin_agendar_para():
             status_label = "DEFERIDO"
             admin_nome = (current_user.nome or "").strip() or "Administração"
             dt_solicitacao = getattr(primeiro, "solicitado_em", solicitado_em)
-            solicitado_em_str = dt_solicitacao.strftime('%d/%m/%Y às %H:%M')
+            solicitado_em_str = dt_solicitacao.strftime("%d/%m/%Y às %H:%M")
 
             def _format_tempo_bh(h, m):
                 h = int(h or 0)
@@ -2746,20 +3092,30 @@ def admin_agendar_para():
                     parts.append(f"{m}min")
                 return " ".join(parts) if parts else "0min"
 
-            tempo_bh = _format_tempo_bh(getattr(primeiro, "horas", 0), getattr(primeiro, "minutos", 0))
-            data_ref_str = primeiro.data_referencia.strftime('%d/%m/%Y') if getattr(primeiro, "data_referencia", None) else None
+            tempo_bh = _format_tempo_bh(
+                getattr(primeiro, "horas", 0), getattr(primeiro, "minutos", 0)
+            )
+            data_ref_str = (
+                primeiro.data_referencia.strftime("%d/%m/%Y")
+                if getattr(primeiro, "data_referencia", None)
+                else None
+            )
 
             def _escape(s):
                 if s is None:
                     return ""
-                return (str(s)
-                        .replace("&", "&amp;")
-                        .replace("<", "&lt;")
-                        .replace(">", "&gt;")
-                        .replace('"', "&quot;")
-                        .replace("'", "&#39;"))
+                return (
+                    str(s)
+                    .replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace('"', "&quot;")
+                    .replace("'", "&#39;")
+                )
 
-            def build_email_html(title, greeting_name, lead, paragraphs, summary_rows, note_lines=None):
+            def build_email_html(
+                title, greeting_name, lead, paragraphs, summary_rows, note_lines=None
+            ):
                 greeting_name = _escape(greeting_name)
                 title = _escape(title)
                 note_lines = note_lines or []
@@ -2787,7 +3143,13 @@ def admin_agendar_para():
 
                 notes_html = ""
                 if note_lines:
-                    li = "".join([f"<li style='margin:0 0 6px 0;'>{x}</li>" for x in note_lines if x])
+                    li = "".join(
+                        [
+                            f"<li style='margin:0 0 6px 0;'>{x}</li>"
+                            for x in note_lines
+                            if x
+                        ]
+                    )
                     notes_html = f"""
                       <div style="margin-top:14px;padding:12px 12px;border:1px dashed #D7D7D7;border-radius:10px;background:#FAFAFA;">
                         <div style="font-weight:700;color:#333;margin-bottom:8px;">Observações</div>
@@ -2850,7 +3212,9 @@ def admin_agendar_para():
                 </html>
                 """
 
-            badge_status = "<span style='font-weight:800;color:#16A34A;'>DEFERIDO</span>"
+            badge_status = (
+                "<span style='font-weight:800;color:#16A34A;'>DEFERIDO</span>"
+            )
 
             resumo = [
                 ("Motivo", f"<strong>{_escape(descricao_motivo)}</strong>"),
@@ -2861,13 +3225,17 @@ def admin_agendar_para():
             ]
 
             if tipo_folga == "BH":
-                resumo.append(("Tempo lançado", f"<strong>{_escape(tempo_bh)}</strong>"))
+                resumo.append(
+                    ("Tempo lançado", f"<strong>{_escape(tempo_bh)}</strong>")
+                )
                 if data_ref_str:
                     resumo.append(("Data de referência", _escape(data_ref_str)))
 
             if nome_substituto:
                 resumo.append(("Haverá substituição", "Sim"))
-                resumo.append(("Substituto", f"<strong>{_escape(nome_substituto)}</strong>"))
+                resumo.append(
+                    ("Substituto", f"<strong>{_escape(nome_substituto)}</strong>")
+                )
             else:
                 resumo.append(("Haverá substituição", "Não"))
 
@@ -2882,7 +3250,7 @@ def admin_agendar_para():
                 )
                 paragraphs = [
                     "Este lançamento foi concluído no sistema no momento do registro (sem pendências).",
-                    "Você pode consultar o registro na Central da Unidade."
+                    "Você pode consultar o registro na Central da Unidade.",
                 ]
                 notes = []
             else:
@@ -2896,14 +3264,18 @@ def admin_agendar_para():
                 )
                 paragraphs = [
                     "Este registro serve para ciência e organização interna da unidade (cobertura/rotina).",
-                    "No sistema, ele consta como <strong>DEFERIDO</strong> apenas para indicar que foi registrado e concluído."
+                    "No sistema, ele consta como <strong>DEFERIDO</strong> apenas para indicar que foi registrado e concluído.",
                 ]
                 notes = []
 
             if tipo_folga == "BH" and data_ref_str:
-                notes.append(f"Data de referência informada: <strong>{_escape(data_ref_str)}</strong>.")
+                notes.append(
+                    f"Data de referência informada: <strong>{_escape(data_ref_str)}</strong>."
+                )
             if nome_substituto:
-                notes.append(f"Haverá substituição por: <strong>{_escape(nome_substituto)}</strong>.")
+                notes.append(
+                    f"Haverá substituição por: <strong>{_escape(nome_substituto)}</strong>."
+                )
 
             if tipo_folga == "LM" and data_fim and data_fim >= data_ini:
                 try:
@@ -2918,7 +3290,7 @@ def admin_agendar_para():
                 lead=lead,
                 paragraphs=paragraphs,
                 summary_rows=resumo,
-                note_lines=notes
+                note_lines=notes,
             )
 
             mensagem_texto = (
@@ -2935,18 +3307,24 @@ def admin_agendar_para():
                 if tipo_folga == "LM" and data_fim and data_fim >= data_ini:
                     flash(
                         f"Período de LM DEFERIDO criado para {usuario_alvo.nome} ({len(registros_criados)} dia(s)) e e-mail enviado.",
-                        "success"
+                        "success",
                     )
                 else:
-                    flash(f"Agendamento DEFERIDO criado para {usuario_alvo.nome} e e-mail enviado.", "success")
+                    flash(
+                        f"Agendamento DEFERIDO criado para {usuario_alvo.nome} e e-mail enviado.",
+                        "success",
+                    )
             except Exception:
                 current_app.logger.exception(
                     "Falha ao enviar e-mail para agendamento %s",
-                    getattr(primeiro, "id", None)
+                    getattr(primeiro, "id", None),
                 )
-                flash(f"Agendamento criado para {usuario_alvo.nome}, mas o e-mail falhou.", "warning")
+                flash(
+                    f"Agendamento criado para {usuario_alvo.nome}, mas o e-mail falhou.",
+                    "warning",
+                )
 
-            return redirect(url_for('admin_agendar_para'))
+            return redirect(url_for("admin_agendar_para"))
 
         except Exception as e:
             db.session.rollback()
@@ -2955,11 +3333,12 @@ def admin_agendar_para():
 
     return render_template("admin_agendar_para.html", usuarios=usuarios_ativos)
 
+
 # ===========================================
 # CALENDÁRIO
 # ===========================================
-@app.route('/calendario', methods=['GET', 'POST'])
-@app.route('/calendario/<int:year>/<int:month>', methods=['GET', 'POST'])
+@app.route("/calendario", methods=["GET", "POST"])
+@app.route("/calendario/<int:year>/<int:month>", methods=["GET", "POST"])
 @login_required
 def calendario(year=None, month=None):
     inicio_ano = 2025
@@ -2984,24 +3363,25 @@ def calendario(year=None, month=None):
 
     try:
         first_day_of_month = datetime.date(year, month, 1)
-        last_day_of_month = datetime.date(year, month, calendar.monthrange(year, month)[1])
+        last_day_of_month = datetime.date(
+            year, month, calendar.monthrange(year, month)[1]
+        )
     except ValueError as e:
         return f"Erro ao calcular datas: {e}", 400
 
-    estados_validos = ['em_espera', 'deferido', 'indeferido']
+    estados_validos = ["em_espera", "deferido", "indeferido"]
 
     # ---------------------------
     # AGENDAMENTOS (como já era)
     # ---------------------------
     agendamentos = (
-        Agendamento.query
-        .filter(
+        Agendamento.query.filter(
             Agendamento.data >= first_day_of_month,
-            Agendamento.data <= last_day_of_month
+            Agendamento.data <= last_day_of_month,
         )
         .filter(Agendamento.status.in_(estados_validos))
-        .filter(~func.lower(Agendamento.motivo).like('%ajuste%'))
-        .filter(~func.lower(Agendamento.motivo).like('%recuper%'))
+        .filter(~func.lower(Agendamento.motivo).like("%ajuste%"))
+        .filter(~func.lower(Agendamento.motivo).like("%recuper%"))
         .all()
     )
 
@@ -3013,31 +3393,43 @@ def calendario(year=None, month=None):
     # EVENTOS DA ESCOLA (NOVO)
     # ---------------------------
     eventos = (
-        Evento.query
-        .filter(Evento.ativo.is_(True))
+        Evento.query.filter(Evento.ativo.is_(True))
         .filter(
             (
                 # Evento SEM período (apenas data_evento)
-                (Evento.data_inicio.is_(None) & Evento.data_fim.is_(None) &
-                 (Evento.data_evento >= first_day_of_month) & (Evento.data_evento <= last_day_of_month))
+                (
+                    Evento.data_inicio.is_(None)
+                    & Evento.data_fim.is_(None)
+                    & (Evento.data_evento >= first_day_of_month)
+                    & (Evento.data_evento <= last_day_of_month)
+                )
             )
-            |
-            (
+            | (
                 # Evento COM período completo
-                (Evento.data_inicio.isnot(None) & Evento.data_fim.isnot(None) &
-                 (Evento.data_inicio <= last_day_of_month) & (Evento.data_fim >= first_day_of_month))
+                (
+                    Evento.data_inicio.isnot(None)
+                    & Evento.data_fim.isnot(None)
+                    & (Evento.data_inicio <= last_day_of_month)
+                    & (Evento.data_fim >= first_day_of_month)
+                )
             )
-            |
-            (
+            | (
                 # Evento com só data_inicio
-                (Evento.data_inicio.isnot(None) & Evento.data_fim.is_(None) &
-                 (Evento.data_inicio >= first_day_of_month) & (Evento.data_inicio <= last_day_of_month))
+                (
+                    Evento.data_inicio.isnot(None)
+                    & Evento.data_fim.is_(None)
+                    & (Evento.data_inicio >= first_day_of_month)
+                    & (Evento.data_inicio <= last_day_of_month)
+                )
             )
-            |
-            (
+            | (
                 # Evento com só data_fim
-                (Evento.data_inicio.is_(None) & Evento.data_fim.isnot(None) &
-                 (Evento.data_fim >= first_day_of_month) & (Evento.data_fim <= last_day_of_month))
+                (
+                    Evento.data_inicio.is_(None)
+                    & Evento.data_fim.isnot(None)
+                    & (Evento.data_fim >= first_day_of_month)
+                    & (Evento.data_fim <= last_day_of_month)
+                )
             )
         )
         .order_by(
@@ -3046,7 +3438,7 @@ def calendario(year=None, month=None):
             Evento.data_fim.asc().nullsfirst(),
             Evento.hora_inicio.asc().nullsfirst(),
             Evento.hora_fim.asc().nullsfirst(),
-            Evento.nome.asc()
+            Evento.nome.asc(),
         )
         .all()
     )
@@ -3061,11 +3453,17 @@ def calendario(year=None, month=None):
             start = _clamp_date(ev.data_inicio, first_day_of_month, last_day_of_month)
             end = _clamp_date(ev.data_fim, first_day_of_month, last_day_of_month)
         elif ev.data_inicio and not ev.data_fim:
-            start = end = _clamp_date(ev.data_inicio, first_day_of_month, last_day_of_month)
+            start = end = _clamp_date(
+                ev.data_inicio, first_day_of_month, last_day_of_month
+            )
         elif ev.data_fim and not ev.data_inicio:
-            start = end = _clamp_date(ev.data_fim, first_day_of_month, last_day_of_month)
+            start = end = _clamp_date(
+                ev.data_fim, first_day_of_month, last_day_of_month
+            )
         else:
-            start = end = _clamp_date(ev.data_evento, first_day_of_month, last_day_of_month)
+            start = end = _clamp_date(
+                ev.data_evento, first_day_of_month, last_day_of_month
+            )
 
         cursor = start
         while cursor <= end:
@@ -3073,7 +3471,7 @@ def calendario(year=None, month=None):
             cursor += datetime.timedelta(days=1)
 
     return render_template(
-        'calendario.html',
+        "calendario.html",
         year=year,
         month=month,
         prev_month=prev_month,
@@ -3086,7 +3484,7 @@ def calendario(year=None, month=None):
         calendar=calendar,
         datetime=datetime,
         inicio_ano=inicio_ano,
-        fim_ano=fim_ano
+        fim_ano=fim_ano,
     )
 
 
@@ -3096,7 +3494,7 @@ def calendario(year=None, month=None):
 # Endpoint usado no HTML:
 #   POST /admin/agendamento/<id>/substituto
 # ===========================================
-@app.route('/admin/agendamento/<int:ag_id>/substituto', methods=['POST'])
+@app.route("/admin/agendamento/<int:ag_id>/substituto", methods=["POST"])
 @login_required
 def admin_set_substituto_agendamento(ag_id):
     # ✅ trava no backend (mesmo que alguém force o JS)
@@ -3112,7 +3510,15 @@ def admin_set_substituto_agendamento(ag_id):
 
     # opcional: limite defensivo
     if len(nome) > 255:
-        return jsonify({"success": False, "error": "Nome do substituto muito longo (máx. 255)."}), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "Nome do substituto muito longo (máx. 255).",
+                }
+            ),
+            400,
+        )
 
     # vazio => remove
     ag.nome_substituto = nome if nome else None
@@ -3123,160 +3529,185 @@ def admin_set_substituto_agendamento(ag_id):
     except Exception:
         db.session.rollback()
         return jsonify({"success": False, "error": "Erro ao salvar substituição."}), 500
-    
+
 
 # ===========================================
 # COMPLETAR DADOS OBRIGATÓRIOS
 # ===========================================
-@app.route('/informar_dados', methods=['GET', 'POST'])
+@app.route("/informar_dados", methods=["GET", "POST"])
 @login_required
 def informar_dados():
     usuario = current_user
 
-    if request.method == 'POST':
+    if request.method == "POST":
         campos_atualizar = {
-            'cpf': request.form.get('cpf'),
-            'rg': request.form.get('rg'),
-            'data_nascimento': request.form.get('data_nascimento'),
-            'celular': request.form.get('celular'),
-            'cargo': request.form.get('cargo')
+            "cpf": request.form.get("cpf"),
+            "rg": request.form.get("rg"),
+            "data_nascimento": request.form.get("data_nascimento"),
+            "celular": request.form.get("celular"),
+            "cargo": request.form.get("cargo"),
         }
 
         for campo, valor in campos_atualizar.items():
             if valor:
                 setattr(usuario, campo, valor)
 
-        if campos_atualizar['cargo']:
+        if campos_atualizar["cargo"]:
             cargos_validos = [
-                "Agente Administrativo", "Professor I", "Professor Adjunto",
-                "Professor II", "Professor III", "Professor IV",
-                "Servente I", "Servente II", "Servente",
-                "Diretor de Unidade Escolar", "Assistente de Direção",
-                "Pedagoga Comunitaria", "Assistente Tecnico Pedagogico",
-                "Secretario de Unidade Escolar", "Educador de Desenvolvimento Infanto Juvenil",
-                "Atendente de Educação I", "Atendente de Educação II",
-                "Trabalhador", "Inspetor de Aluno"
+                "Agente Administrativo",
+                "Professor I",
+                "Professor Adjunto",
+                "Professor II",
+                "Professor III",
+                "Professor IV",
+                "Servente I",
+                "Servente II",
+                "Servente",
+                "Diretor de Unidade Escolar",
+                "Assistente de Direção",
+                "Pedagoga Comunitaria",
+                "Assistente Tecnico Pedagogico",
+                "Secretario de Unidade Escolar",
+                "Educador de Desenvolvimento Infanto Juvenil",
+                "Atendente de Educação I",
+                "Atendente de Educação II",
+                "Trabalhador",
+                "Inspetor de Aluno",
             ]
-            cargo = campos_atualizar['cargo']
+            cargo = campos_atualizar["cargo"]
             if cargo not in cargos_validos:
-                flash('Cargo inválido. Por favor, selecione um cargo válido.', 'danger')
-                return render_template('informar_dados.html', usuario=usuario)
+                flash("Cargo inválido. Por favor, selecione um cargo válido.", "danger")
+                return render_template("informar_dados.html", usuario=usuario)
 
         db.session.commit()
-        flash("Dados atualizados com sucesso! Você agora pode acessar o sistema.", "success")
-        return redirect(url_for('index'))
+        flash(
+            "Dados atualizados com sucesso! Você agora pode acessar o sistema.",
+            "success",
+        )
+        return redirect(url_for("index"))
 
-    return render_template('informar_dados.html', usuario=usuario)
+    return render_template("informar_dados.html", usuario=usuario)
+
 
 # ===========================================
 # REGISTRO
 # ===========================================
-from email_validator import validate_email, EmailNotValidError
+from email_validator import EmailNotValidError, validate_email
 
-@app.route('/register', methods=['GET', 'POST'])
+
+@app.route("/register", methods=["GET", "POST"])
 def register():
-    if request.method == 'POST':
-        nome = request.form['nome']
-        registro = request.form['registro']
-        email = request.form['email']
-        senha = request.form['senha']
-        confirmar_senha = request.form['confirmar_senha']
-        cpf = request.form['cpf']
-        rg = request.form['rg']
-        data_nascimento = request.form['data_nascimento']
-        celular = request.form['celular']
-        cargo = request.form['cargo']
+    if request.method == "POST":
+        nome = request.form["nome"]
+        registro = request.form["registro"]
+        email = request.form["email"]
+        senha = request.form["senha"]
+        confirmar_senha = request.form["confirmar_senha"]
+        cpf = request.form["cpf"]
+        rg = request.form["rg"]
+        data_nascimento = request.form["data_nascimento"]
+        celular = request.form["celular"]
+        cargo = request.form["cargo"]
 
         if senha != confirmar_senha:
-            flash('As senhas não coincidem', 'danger')
-            return render_template('register.html')
+            flash("As senhas não coincidem", "danger")
+            return render_template("register.html")
 
         try:
             validate_email(email)
         except EmailNotValidError as e:
-            flash(f'E-mail inválido: {str(e)}', 'danger')
-            return render_template('register.html')
+            flash(f"E-mail inválido: {str(e)}", "danger")
+            return render_template("register.html")
 
         if User.query.filter_by(email=email).first():
-            flash('Este e-mail já está em uso', 'danger')
-            return render_template('register.html')
+            flash("Este e-mail já está em uso", "danger")
+            return render_template("register.html")
 
         campos_obrigatorios = {
             "CPF": cpf,
             "RG": rg,
             "Data de Nascimento": data_nascimento,
             "Celular": celular,
-            "Cargo": cargo
+            "Cargo": cargo,
         }
-        campos_pendentes = [campo for campo, valor in campos_obrigatorios.items() if not valor]
+        campos_pendentes = [
+            campo for campo, valor in campos_obrigatorios.items() if not valor
+        ]
         if campos_pendentes:
-            mensagem = f"Os seguintes campos são obrigatórios: {', '.join(campos_pendentes)}."
-            flash(mensagem, 'danger')
-            return render_template('register.html')
+            mensagem = (
+                f"Os seguintes campos são obrigatórios: {', '.join(campos_pendentes)}."
+            )
+            flash(mensagem, "danger")
+            return render_template("register.html")
 
-        senha_hash = generate_password_hash(senha, method='pbkdf2:sha256')
+        senha_hash = generate_password_hash(senha, method="pbkdf2:sha256")
 
         new_user = User(
             nome=nome,
             registro=registro,
             email=email,
             senha=senha_hash,
-            tipo='funcionario',
-            status='pendente',
+            tipo="funcionario",
+            status="pendente",
             cpf=cpf,
             rg=rg,
             data_nascimento=data_nascimento,
             celular=celular,
-            cargo=cargo
+            cargo=cargo,
         )
 
         db.session.add(new_user)
         db.session.commit()
 
-        flash('Usuário registrado com sucesso. Aguardando aprovação do administrador.', 'info')
-        return redirect(url_for('login'))
+        flash(
+            "Usuário registrado com sucesso. Aguardando aprovação do administrador.",
+            "info",
+        )
+        return redirect(url_for("login"))
 
-    return render_template('register.html')
+    return render_template("register.html")
+
 
 # ===========================================
 # APROVAR USUÁRIOS
 # ===========================================
-@app.route('/aprovar_usuarios', methods=['GET', 'POST'])
+@app.route("/aprovar_usuarios", methods=["GET", "POST"])
 @login_required
 def aprovar_usuarios():
-    if current_user.tipo != 'administrador':
-        flash('Você não tem permissão para acessar essa página.', 'danger')
-        return redirect(url_for('index'))
+    if current_user.tipo != "administrador":
+        flash("Você não tem permissão para acessar essa página.", "danger")
+        return redirect(url_for("index"))
 
-    usuarios_pendentes = User.query.filter_by(status='pendente').all()
+    usuarios_pendentes = User.query.filter_by(status="pendente").all()
 
-    if request.method == 'POST':
-        usuario_id = request.form.get('usuario_id')
-        acao = request.form.get('acao')
+    if request.method == "POST":
+        usuario_id = request.form.get("usuario_id")
+        acao = request.form.get("acao")
 
         if acao is None:
-            flash('Ação não especificada', 'danger')
-            return redirect(url_for('aprovar_usuarios'))
+            flash("Ação não especificada", "danger")
+            return redirect(url_for("aprovar_usuarios"))
 
         usuario = User.query.get(usuario_id)
         if usuario:
-            if acao == 'aprovar':
-                usuario.status = 'aprovado'
-                flash(f'Usuário {usuario.nome} aprovado com sucesso!', 'success')
-            elif acao == 'recusar':
-                usuario.status = 'rejeitado'
-                flash(f'Usuário {usuario.nome} recusado.', 'danger')
+            if acao == "aprovar":
+                usuario.status = "aprovado"
+                flash(f"Usuário {usuario.nome} aprovado com sucesso!", "success")
+            elif acao == "recusar":
+                usuario.status = "rejeitado"
+                flash(f"Usuário {usuario.nome} recusado.", "danger")
 
             db.session.commit()
 
-        return redirect(url_for('aprovar_usuarios'))
+        return redirect(url_for("aprovar_usuarios"))
 
-    return render_template('aprovar_usuarios.html', usuarios=usuarios_pendentes)
+    return render_template("aprovar_usuarios.html", usuarios=usuarios_pendentes)
+
 
 # ===========================================
 # DELETAR AGENDAMENTO (FUNCIONÁRIO)
 # ===========================================
-@app.route('/delete_agendamento/<int:id>', methods=['POST'])
+@app.route("/delete_agendamento/<int:id>", methods=["POST"])
 @login_required
 def delete_agendamento(id):
     agendamento = Agendamento.query.get_or_404(id)
@@ -3284,32 +3715,40 @@ def delete_agendamento(id):
     if agendamento.funcionario_id == current_user.id:
         db.session.delete(agendamento)
         db.session.commit()
-        flash('Agendamento excluído com sucesso.', 'success')
+        flash("Agendamento excluído com sucesso.", "success")
     else:
-        flash('Você não tem permissão para excluir este agendamento.', 'danger')
+        flash("Você não tem permissão para excluir este agendamento.", "danger")
 
-    return redirect(url_for('minhas_justificativas'))
+    return redirect(url_for("minhas_justificativas"))
+
 
 # ===========================================
 # ESQUECIMENTO DE PONTO
 # ===========================================
-@app.route('/relatar_esquecimento', methods=['GET', 'POST'])
+@app.route("/relatar_esquecimento", methods=["GET", "POST"])
 @login_required
 def relatar_esquecimento():
-    if request.method == 'POST':
-        data_esquecimento = request.form.get('data_esquecimento')
-        hora_primeira_entrada = request.form.get('hora_primeira_entrada') or None
-        hora_primeira_saida = request.form.get('hora_primeira_saida') or None
-        hora_segunda_entrada = request.form.get('hora_segunda_entrada') or None
-        hora_segunda_saida = request.form.get('hora_segunda_saida') or None
+    if request.method == "POST":
+        data_esquecimento = request.form.get("data_esquecimento")
+        hora_primeira_entrada = request.form.get("hora_primeira_entrada") or None
+        hora_primeira_saida = request.form.get("hora_primeira_saida") or None
+        hora_segunda_entrada = request.form.get("hora_segunda_entrada") or None
+        hora_segunda_saida = request.form.get("hora_segunda_saida") or None
 
-        if not any([hora_primeira_entrada, hora_primeira_saida, hora_segunda_entrada, hora_segunda_saida]):
-            flash('Você deve preencher ao menos um campo de horário.', 'danger')
-            return redirect(url_for('relatar_esquecimento'))
+        if not any(
+            [
+                hora_primeira_entrada,
+                hora_primeira_saida,
+                hora_segunda_entrada,
+                hora_segunda_saida,
+            ]
+        ):
+            flash("Você deve preencher ao menos um campo de horário.", "danger")
+            return redirect(url_for("relatar_esquecimento"))
 
-        motivo = request.form.get('motivo') or None
+        motivo = request.form.get("motivo") or None
 
-        nova_data = datetime.datetime.strptime(data_esquecimento, '%Y-%m-%d').date()
+        nova_data = datetime.datetime.strptime(data_esquecimento, "%Y-%m-%d").date()
 
         novo_esquecimento = EsquecimentoPonto(
             user_id=current_user.id,
@@ -3320,20 +3759,21 @@ def relatar_esquecimento():
             hora_primeira_saida=hora_primeira_saida,
             hora_segunda_entrada=hora_segunda_entrada,
             hora_segunda_saida=hora_segunda_saida,
-            motivo=motivo
+            motivo=motivo,
         )
 
         try:
             db.session.add(novo_esquecimento)
             db.session.commit()
-            flash('Registro de esquecimento enviado com sucesso!', 'success')
+            flash("Registro de esquecimento enviado com sucesso!", "success")
         except Exception as e:
             db.session.rollback()
-            flash(f'Erro ao salvar o registro: {e}', 'danger')
+            flash(f"Erro ao salvar o registro: {e}", "danger")
 
-        return redirect(url_for('relatar_esquecimento'))
+        return redirect(url_for("relatar_esquecimento"))
 
-    return render_template('relatar_esquecimento.html')
+    return render_template("relatar_esquecimento.html")
+
 
 # ===========================================
 # Helpers (relatórios; CSRF para AJAX)
@@ -3343,7 +3783,10 @@ try:
 except Exception:
     validate_csrf = None
 
-def _periodo_pagamento_10a9(mes: int, ano: int) -> tuple[datetime.datetime, datetime.datetime]:
+
+def _periodo_pagamento_10a9(
+    mes: int, ano: int
+) -> tuple[datetime.datetime, datetime.datetime]:
     if mes < 1 or mes > 12:
         raise ValueError("Mês inválido (1-12)")
     if mes == 1:
@@ -3353,8 +3796,9 @@ def _periodo_pagamento_10a9(mes: int, ano: int) -> tuple[datetime.datetime, date
         mes_anterior = mes - 1
         ano_anterior = ano
     inicio = datetime.datetime(ano_anterior, mes_anterior, 10, 0, 0, 0)
-    fim    = datetime.datetime(ano, mes, 9, 23, 59, 59)
+    fim = datetime.datetime(ano, mes, 9, 23, 59, 59)
     return inicio, fim
+
 
 def _csrf_ok_from_header(req: request) -> bool:
     if validate_csrf is None:
@@ -3367,6 +3811,7 @@ def _csrf_ok_from_header(req: request) -> bool:
         return True
     except Exception:
         return False
+
 
 # ===========================================
 # RELATÓRIO PONTO (10 a 9)
@@ -3400,23 +3845,23 @@ def _relatorio_registro_key(value):
     return s.casefold()
 
 
-@app.route('/relatorio_ponto')
+@app.route("/relatorio_ponto")
 @login_required
 def relatorio_ponto():
-    if getattr(current_user, "tipo", "").lower() != 'administrador':
+    if getattr(current_user, "tipo", "").lower() != "administrador":
         flash("Acesso negado.", "danger")
-        return redirect(url_for('index'))
+        return redirect(url_for("index"))
 
-    mes_selecionado = request.args.get('mes', type=int)
-    ano_selecionado = request.args.get('ano', type=int) or datetime.datetime.now().year
+    mes_selecionado = request.args.get("mes", type=int)
+    ano_selecionado = request.args.get("ano", type=int) or datetime.datetime.now().year
 
     # Filtros/ordenação opcionais no backend
-    busca = (request.args.get('q') or "").strip()
-    tipo_filtro = (request.args.get('tipo') or "todos").strip()
-    motivo_filtro = (request.args.get('motivo') or "").strip()
-    conferido_filtro = _relatorio_parse_bool(request.args.get('conferido'))
-    ordenar_por = (request.args.get('ordenar_por') or "data").strip().lower()
-    direcao = (request.args.get('direcao') or "asc").strip().lower()
+    busca = (request.args.get("q") or "").strip()
+    tipo_filtro = (request.args.get("tipo") or "todos").strip()
+    motivo_filtro = (request.args.get("motivo") or "").strip()
+    conferido_filtro = _relatorio_parse_bool(request.args.get("conferido"))
+    ordenar_por = (request.args.get("ordenar_por") or "data").strip().lower()
+    direcao = (request.args.get("direcao") or "asc").strip().lower()
 
     if direcao not in ("asc", "desc"):
         direcao = "asc"
@@ -3430,24 +3875,25 @@ def relatorio_ponto():
 
     if mes_selecionado:
         try:
-            periodo_inicio, periodo_fim = _periodo_pagamento_10a9(mes_selecionado, ano_selecionado)
+            periodo_inicio, periodo_fim = _periodo_pagamento_10a9(
+                mes_selecionado, ano_selecionado
+            )
         except ValueError:
             flash("Parâmetros de mês/ano inválidos.", "danger")
-            return redirect(url_for('relatorio_ponto'))
+            return redirect(url_for("relatorio_ponto"))
 
         # =========================
         # AGENDAMENTOS
         # ✅ SOMENTE DEFERIDOS
         # =========================
         agendamentos = (
-            Agendamento.query
-            .join(Agendamento.funcionario)
+            Agendamento.query.join(Agendamento.funcionario)
             .options(joinedload(Agendamento.funcionario))
             .filter(
                 User.ativo.is_(True),
                 Agendamento.data >= periodo_inicio,
                 Agendamento.data <= periodo_fim,
-                func.lower(Agendamento.status) == 'deferido'
+                func.lower(Agendamento.status) == "deferido",
             )
             .all()
         )
@@ -3460,42 +3906,42 @@ def relatorio_ponto():
             registro_usuario = (getattr(ag.funcionario, "registro", "") or "").strip()
             motivo = (getattr(ag, "motivo", "") or "").strip()
 
-            registros.append({
-                'id': ag.id,
-                'usuario': ag.funcionario,
-                'registro': registro_usuario,
-                'tipo': 'Agendamento',
-                'tipo_slug': 'agendamento',
-                'data': ag.data,
-                'motivo': motivo or 'Sem Motivo',
-                'horapentrada': '—',
-                'horapsaida': '—',
-                'horasentrada': '—',
-                'horassaida': '—',
-                'conferido': bool(getattr(ag, "conferido", False)),
-
-                # chaves normalizadas para filtro/ordenação
-                '_nome_norm': _relatorio_norm_text(nome_usuario),
-                '_registro_key': _relatorio_registro_key(registro_usuario),
-                '_tipo_norm': _relatorio_norm_text('Agendamento'),
-                '_motivo_norm': _relatorio_norm_text(motivo),
-                '_busca_blob': _relatorio_norm_text(
-                    f"{registro_usuario} {nome_usuario} Agendamento {motivo} "
-                    f"{ag.data.strftime('%d/%m/%Y') if ag.data else ''}"
-                ),
-            })
+            registros.append(
+                {
+                    "id": ag.id,
+                    "usuario": ag.funcionario,
+                    "registro": registro_usuario,
+                    "tipo": "Agendamento",
+                    "tipo_slug": "agendamento",
+                    "data": ag.data,
+                    "motivo": motivo or "Sem Motivo",
+                    "horapentrada": "—",
+                    "horapsaida": "—",
+                    "horasentrada": "—",
+                    "horassaida": "—",
+                    "conferido": bool(getattr(ag, "conferido", False)),
+                    # chaves normalizadas para filtro/ordenação
+                    "_nome_norm": _relatorio_norm_text(nome_usuario),
+                    "_registro_key": _relatorio_registro_key(registro_usuario),
+                    "_tipo_norm": _relatorio_norm_text("Agendamento"),
+                    "_motivo_norm": _relatorio_norm_text(motivo),
+                    "_busca_blob": _relatorio_norm_text(
+                        f"{registro_usuario} {nome_usuario} Agendamento {motivo} "
+                        f"{ag.data.strftime('%d/%m/%Y') if ag.data else ''}"
+                    ),
+                }
+            )
 
         # =========================
         # ESQUECIMENTOS DE PONTO
         # =========================
         esquecimentos = (
-            EsquecimentoPonto.query
-            .join(EsquecimentoPonto.usuario)
+            EsquecimentoPonto.query.join(EsquecimentoPonto.usuario)
             .options(joinedload(EsquecimentoPonto.usuario))
             .filter(
                 User.ativo.is_(True),
                 EsquecimentoPonto.data_esquecimento >= periodo_inicio,
-                EsquecimentoPonto.data_esquecimento <= periodo_fim
+                EsquecimentoPonto.data_esquecimento <= periodo_fim,
             )
             .all()
         )
@@ -3508,30 +3954,31 @@ def relatorio_ponto():
             registro_usuario = (getattr(esc.usuario, "registro", "") or "").strip()
             motivo = (getattr(esc, "motivo", "") or "").strip()
 
-            registros.append({
-                'id': esc.id,
-                'usuario': esc.usuario,
-                'registro': registro_usuario,
-                'tipo': 'Esquecimento de Ponto',
-                'tipo_slug': 'esquecimento',
-                'data': esc.data_esquecimento,
-                'motivo': motivo or 'Sem Motivo',
-                'horapentrada': esc.hora_primeira_entrada or '—',
-                'horapsaida': esc.hora_primeira_saida or '—',
-                'horasentrada': esc.hora_segunda_entrada or '—',
-                'horassaida': esc.hora_segunda_saida or '—',
-                'conferido': bool(getattr(esc, "conferido", False)),
-
-                # chaves normalizadas para filtro/ordenação
-                '_nome_norm': _relatorio_norm_text(nome_usuario),
-                '_registro_key': _relatorio_registro_key(registro_usuario),
-                '_tipo_norm': _relatorio_norm_text('Esquecimento de Ponto'),
-                '_motivo_norm': _relatorio_norm_text(motivo),
-                '_busca_blob': _relatorio_norm_text(
-                    f"{registro_usuario} {nome_usuario} Esquecimento de Ponto {motivo} "
-                    f"{esc.data_esquecimento.strftime('%d/%m/%Y') if esc.data_esquecimento else ''}"
-                ),
-            })
+            registros.append(
+                {
+                    "id": esc.id,
+                    "usuario": esc.usuario,
+                    "registro": registro_usuario,
+                    "tipo": "Esquecimento de Ponto",
+                    "tipo_slug": "esquecimento",
+                    "data": esc.data_esquecimento,
+                    "motivo": motivo or "Sem Motivo",
+                    "horapentrada": esc.hora_primeira_entrada or "—",
+                    "horapsaida": esc.hora_primeira_saida or "—",
+                    "horasentrada": esc.hora_segunda_entrada or "—",
+                    "horassaida": esc.hora_segunda_saida or "—",
+                    "conferido": bool(getattr(esc, "conferido", False)),
+                    # chaves normalizadas para filtro/ordenação
+                    "_nome_norm": _relatorio_norm_text(nome_usuario),
+                    "_registro_key": _relatorio_registro_key(registro_usuario),
+                    "_tipo_norm": _relatorio_norm_text("Esquecimento de Ponto"),
+                    "_motivo_norm": _relatorio_norm_text(motivo),
+                    "_busca_blob": _relatorio_norm_text(
+                        f"{registro_usuario} {nome_usuario} Esquecimento de Ponto {motivo} "
+                        f"{esc.data_esquecimento.strftime('%d/%m/%Y') if esc.data_esquecimento else ''}"
+                    ),
+                }
+            )
 
         # =========================
         # FILTROS OPCIONAIS NO BACKEND
@@ -3541,27 +3988,23 @@ def relatorio_ponto():
         motivo_filtro_norm = _relatorio_norm_text(motivo_filtro)
 
         if busca_norm:
-            registros = [
-                r for r in registros
-                if busca_norm in r.get('_busca_blob', '')
-            ]
+            registros = [r for r in registros if busca_norm in r.get("_busca_blob", "")]
 
         if tipo_filtro_norm and tipo_filtro_norm != "todos":
             registros = [
-                r for r in registros
-                if r.get('_tipo_norm', '') == tipo_filtro_norm
+                r for r in registros if r.get("_tipo_norm", "") == tipo_filtro_norm
             ]
 
         if motivo_filtro_norm:
             registros = [
-                r for r in registros
-                if motivo_filtro_norm in r.get('_motivo_norm', '')
+                r for r in registros if motivo_filtro_norm in r.get("_motivo_norm", "")
             ]
 
         if conferido_filtro is not None:
             registros = [
-                r for r in registros
-                if bool(r.get('conferido', False)) is conferido_filtro
+                r
+                for r in registros
+                if bool(r.get("conferido", False)) is conferido_filtro
             ]
 
         # =========================
@@ -3570,59 +4013,58 @@ def relatorio_ponto():
         if ordenar_por == "nome":
             registros.sort(
                 key=lambda r: (
-                    r.get('_nome_norm', ''),
-                    r.get('data') or datetime.datetime.min.date()
+                    r.get("_nome_norm", ""),
+                    r.get("data") or datetime.datetime.min.date(),
                 ),
-                reverse=(direcao == "desc")
+                reverse=(direcao == "desc"),
             )
         elif ordenar_por == "registro":
             registros.sort(
                 key=lambda r: (
-                    r.get('_registro_key', ''),
-                    r.get('data') or datetime.datetime.min.date()
+                    r.get("_registro_key", ""),
+                    r.get("data") or datetime.datetime.min.date(),
                 ),
-                reverse=(direcao == "desc")
+                reverse=(direcao == "desc"),
             )
         elif ordenar_por == "tipo":
             registros.sort(
                 key=lambda r: (
-                    r.get('_tipo_norm', ''),
-                    r.get('_nome_norm', ''),
-                    r.get('data') or datetime.datetime.min.date()
+                    r.get("_tipo_norm", ""),
+                    r.get("_nome_norm", ""),
+                    r.get("data") or datetime.datetime.min.date(),
                 ),
-                reverse=(direcao == "desc")
+                reverse=(direcao == "desc"),
             )
         elif ordenar_por == "motivo":
             registros.sort(
                 key=lambda r: (
-                    r.get('_motivo_norm', ''),
-                    r.get('_nome_norm', ''),
-                    r.get('data') or datetime.datetime.min.date()
+                    r.get("_motivo_norm", ""),
+                    r.get("_nome_norm", ""),
+                    r.get("data") or datetime.datetime.min.date(),
                 ),
-                reverse=(direcao == "desc")
+                reverse=(direcao == "desc"),
             )
         else:
             registros.sort(
                 key=lambda r: (
-                    r.get('data') or datetime.datetime.min.date(),
-                    r.get('_nome_norm', '')
+                    r.get("data") or datetime.datetime.min.date(),
+                    r.get("_nome_norm", ""),
                 ),
-                reverse=(direcao == "desc")
+                reverse=(direcao == "desc"),
             )
 
     return render_template(
-        'relatorio_ponto.html',
+        "relatorio_ponto.html",
         registros=registros,
         mes_selecionado=mes_selecionado,
         ano_selecionado=ano_selecionado,
         periodo_inicio=periodo_inicio,
         periodo_fim=periodo_fim,
-
         # mantém filtros disponíveis no template
         q=busca,
         tipo_filtro=tipo_filtro,
         motivo_filtro=motivo_filtro,
-        conferido_filtro=request.args.get('conferido', 'todos'),
+        conferido_filtro=request.args.get("conferido", "todos"),
         ordenar_por=ordenar_por,
         direcao=direcao,
     )
@@ -3632,10 +4074,10 @@ def relatorio_ponto():
 # ATUALIZAR CONFERIDO
 # ===========================================
 @csrf.exempt
-@app.route('/atualizar_conferido', methods=['POST'])
+@app.route("/atualizar_conferido", methods=["POST"])
 @login_required
 def atualizar_conferido():
-    if getattr(current_user, "tipo", "").lower() != 'administrador':
+    if getattr(current_user, "tipo", "").lower() != "administrador":
         return jsonify({"success": False, "error": "Acesso negado."}), 403
 
     if not _csrf_ok_from_header(request):
@@ -3671,15 +4113,20 @@ def atualizar_conferido():
         db.session.commit()
     except Exception as e:
         db.session.rollback()
-        current_app.logger.exception("Erro ao atualizar conferido do relatório de ponto: %s", e)
+        current_app.logger.exception(
+            "Erro ao atualizar conferido do relatório de ponto: %s", e
+        )
         return jsonify({"success": False, "error": "Erro ao salvar no banco."}), 500
 
-    return jsonify({
-        "success": True,
-        "id": registro_id,
-        "tipo": tipo,
-        "conferido": bool(registro.conferido)
-    })
+    return jsonify(
+        {
+            "success": True,
+            "id": registro_id,
+            "tipo": tipo,
+            "conferido": bool(registro.conferido),
+        }
+    )
+
 
 # ===========================================
 # DEFERIR FOLGAS (com lote_id para LM por período)
@@ -3691,7 +4138,8 @@ from collections import defaultdict
 
 from sqlalchemy import asc, func
 
-@app.route('/deferir_folgas', methods=['GET', 'POST'])
+
+@app.route("/deferir_folgas", methods=["GET", "POST"])
 @login_required
 def deferir_folgas():
     # ---------- helpers ----------
@@ -3726,11 +4174,10 @@ def deferir_folgas():
         if not lote_id:
             return []
         return (
-            Agendamento.query
-            .filter(
+            Agendamento.query.filter(
                 Agendamento.funcionario_id == ag.funcionario_id,
                 Agendamento.lote_id == lote_id,
-                Agendamento.motivo == "LM"
+                Agendamento.motivo == "LM",
             )
             .order_by(asc(Agendamento.data))
             .all()
@@ -3738,11 +4185,11 @@ def deferir_folgas():
 
     def buscar_folgas():
         # mantém exatamente o mesmo comportamento (admin vê tudo; user vê só dele)
-        if current_user.tipo == 'administrador':
+        if current_user.tipo == "administrador":
             folgas_query = (
                 db.session.query(Agendamento)
                 .join(User, Agendamento.funcionario_id == User.id)
-                .filter(Agendamento.status.in_(['em_espera', 'pendente']))
+                .filter(Agendamento.status.in_(["em_espera", "pendente"]))
                 .order_by(asc(User.cargo))
             )
         else:
@@ -3751,7 +4198,7 @@ def deferir_folgas():
                 .join(User, Agendamento.funcionario_id == User.id)
                 .filter(
                     Agendamento.funcionario_id == current_user.id,
-                    Agendamento.status.in_(['em_espera', 'pendente'])
+                    Agendamento.status.in_(["em_espera", "pendente"]),
                 )
                 .order_by(asc(User.cargo))
             )
@@ -3765,7 +4212,7 @@ def deferir_folgas():
         ✅ Dedup de avisos para LM em lote (para não repetir o mesmo alerta 8x).
         """
         avisos = []
-        if current_user.tipo != 'administrador':
+        if current_user.tipo != "administrador":
             return avisos
 
         seen_lotes = set()  # (funcionario_id, lote_id)
@@ -3773,12 +4220,15 @@ def deferir_folgas():
         for folga_espera in folgas_em_espera:
             # dedup para lote LM
             if _is_lote_lm(folga_espera):
-                key = (folga_espera.funcionario_id, getattr(folga_espera, "lote_id", None))
+                key = (
+                    folga_espera.funcionario_id,
+                    getattr(folga_espera, "lote_id", None),
+                )
                 if key in seen_lotes:
                     continue
                 seen_lotes.add(key)
 
-            cargo = folga_espera.funcionario.cargo or 'Sem Cargo Definido'
+            cargo = folga_espera.funcionario.cargo or "Sem Cargo Definido"
 
             dt_ini = _get_dt_ini(folga_espera)
             dt_fim = _get_dt_fim(folga_espera)
@@ -3819,7 +4269,7 @@ def deferir_folgas():
                 </tr>
                 """
 
-                for (nome, c_ini, c_fim) in conflitos:
+                for nome, c_ini, c_fim in conflitos:
                     linhas += f"""
                     <tr>
                         <td>
@@ -3863,10 +4313,10 @@ def deferir_folgas():
             folgas_por_cargo[cargo].append(f)
 
         return render_template(
-            'deferir_folgas.html',
+            "deferir_folgas.html",
             folgas_por_cargo=folgas_por_cargo,
             avisos=avisos,
-            formatar_datahora_brasil=formatar_datahora_brasil
+            formatar_datahora_brasil=formatar_datahora_brasil,
         )
 
     # ---------- GET ----------
@@ -3874,18 +4324,18 @@ def deferir_folgas():
     avisos = gerar_avisos(folgas)
 
     # ---------- POST ----------
-    if request.method == 'POST':
-        folga_id = request.form.get('folga_id')
-        novo_status = (request.form.get('status') or "").strip().lower()
+    if request.method == "POST":
+        folga_id = request.form.get("folga_id")
+        novo_status = (request.form.get("status") or "").strip().lower()
         folga = Agendamento.query.get(folga_id)
 
         if not folga:
             flash("Agendamento não encontrado.", "danger")
-            return redirect(url_for('deferir_folgas'))
+            return redirect(url_for("deferir_folgas"))
 
         if novo_status not in ("deferido", "indeferido"):
             flash("Status inválido.", "danger")
-            return redirect(url_for('deferir_folgas'))
+            return redirect(url_for("deferir_folgas"))
 
         usuario = User.query.get(folga.funcionario_id)
 
@@ -3908,7 +4358,7 @@ def deferir_folgas():
 
         # Banco de horas: ao deferir, debita saldo e registra movimento (mantém como era)
         # (não aplica para lote LM)
-        if not lote_regs and folga.motivo == 'BH' and novo_status == 'deferido':
+        if not lote_regs and folga.motivo == "BH" and novo_status == "deferido":
             total_minutos = (folga.horas or 0) * 60 + (folga.minutos or 0)
             if (usuario.banco_horas or 0) >= total_minutos:
                 usuario.banco_horas -= total_minutos
@@ -3924,8 +4374,11 @@ def deferir_folgas():
                 )
                 db.session.add(novo_banco_horas)
             else:
-                flash("O funcionário não tem horas suficientes no banco de horas para este agendamento.", "danger")
-                return redirect(url_for('deferir_folgas'))
+                flash(
+                    "O funcionário não tem horas suficientes no banco de horas para este agendamento.",
+                    "danger",
+                )
+                return redirect(url_for("deferir_folgas"))
 
         # Atualiza status (single ou lote)
         if lote_regs:
@@ -3941,26 +4394,38 @@ def deferir_folgas():
             try:
                 gerar_protocolo_agendamento_pdf(folga_principal, usuario)
             except Exception:
-                current_app.logger.exception("Falha ao regenerar protocolo PDF do agendamento %s", folga_principal.id)
-                flash("Status atualizado, mas não foi possível atualizar o protocolo em PDF.", "warning")
+                current_app.logger.exception(
+                    "Falha ao regenerar protocolo PDF do agendamento %s",
+                    folga_principal.id,
+                )
+                flash(
+                    "Status atualizado, mas não foi possível atualizar o protocolo em PDF.",
+                    "warning",
+                )
 
             # TRE sync (mantém como era; lote não é TRE)
-            if not lote_regs and folga.motivo == 'TRE':
+            if not lote_regs and folga.motivo == "TRE":
                 sync_tre_user(usuario.id)
 
             # Flash (mantém padrão; se lote LM, fala “período”)
             if lote_regs:
                 dt_ini_l = min([x.data for x in lote_regs if x.data])
-                dt_fim_l = max([(getattr(x, "data_fim", None) or x.data) for x in lote_regs if x.data])
+                dt_fim_l = max(
+                    [
+                        (getattr(x, "data_fim", None) or x.data)
+                        for x in lote_regs
+                        if x.data
+                    ]
+                )
                 periodo_l = _fmt_periodo(dt_ini_l, dt_fim_l)
                 flash(
                     f"A Licença Médica de {folga_principal.funcionario.nome} ({periodo_l}) foi {novo_status} com sucesso!",
-                    "success" if novo_status == 'deferido' else "danger"
+                    "success" if novo_status == "deferido" else "danger",
                 )
             else:
                 flash(
                     f"A folga de {folga.funcionario.nome} foi {novo_status} com sucesso!",
-                    "success" if novo_status == 'deferido' else "danger"
+                    "success" if novo_status == "deferido" else "danger",
                 )
 
             # =========================
@@ -3970,12 +4435,14 @@ def deferir_folgas():
             def _escape(s):
                 if s is None:
                     return ""
-                return (str(s)
-                        .replace("&", "&amp;")
-                        .replace("<", "&lt;")
-                        .replace(">", "&gt;")
-                        .replace('"', "&quot;")
-                        .replace("'", "&#39;"))
+                return (
+                    str(s)
+                    .replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace('"', "&quot;")
+                    .replace("'", "&#39;")
+                )
 
             def _format_tempo_bh(h, m):
                 h = int(h or 0)
@@ -3987,7 +4454,9 @@ def deferir_folgas():
                     parts.append(f"{m}min")
                 return " ".join(parts) if parts else "0min"
 
-            def build_email_html(title, greeting_name, lead, paragraphs, summary_rows, note_lines=None):
+            def build_email_html(
+                title, greeting_name, lead, paragraphs, summary_rows, note_lines=None
+            ):
                 greeting_name = _escape(greeting_name)
                 title = _escape(title)
                 note_lines = note_lines or []
@@ -4014,7 +4483,13 @@ def deferir_folgas():
 
                 notes_html = ""
                 if note_lines:
-                    li = "".join([f"<li style='margin:0 0 6px 0;'>{x}</li>" for x in note_lines if x])
+                    li = "".join(
+                        [
+                            f"<li style='margin:0 0 6px 0;'>{x}</li>"
+                            for x in note_lines
+                            if x
+                        ]
+                    )
                     notes_html = f"""
                       <div style="margin-top:14px;padding:12px 12px;border:1px dashed #D7D7D7;border-radius:10px;background:#FAFAFA;">
                         <div style="font-weight:700;color:#333;margin-bottom:8px;">Observações</div>
@@ -4078,7 +4553,14 @@ def deferir_folgas():
                 </html>
                 """
 
-            def build_email_text(subject_title, greeting_name, lead, paragraphs, summary_rows, note_lines=None):
+            def build_email_text(
+                subject_title,
+                greeting_name,
+                lead,
+                paragraphs,
+                summary_rows,
+                note_lines=None,
+            ):
                 note_lines = note_lines or []
                 lines = []
                 lines.append(f"E.M José Padin Mouta – {subject_title}")
@@ -4089,16 +4571,25 @@ def deferir_folgas():
                 lines.append("")
                 for p in paragraphs:
                     if p:
-                        txt = (p.replace("<strong>", "").replace("</strong>", "")
-                                 .replace("<u>", "").replace("</u>", ""))
+                        txt = (
+                            p.replace("<strong>", "")
+                            .replace("</strong>", "")
+                            .replace("<u>", "")
+                            .replace("</u>", "")
+                        )
                         lines.append(txt)
                         lines.append("")
                 lines.append("Resumo:")
                 for k, v in summary_rows:
                     if v is None or v == "":
                         continue
-                    vv = (str(v).replace("<strong>", "").replace("</strong>", "")
-                               .replace("<span", "").replace("</span>", ""))
+                    vv = (
+                        str(v)
+                        .replace("<strong>", "")
+                        .replace("</strong>", "")
+                        .replace("<span", "")
+                        .replace("</span>", "")
+                    )
                     lines.append(f"- {k}: {vv}")
                 if note_lines:
                     lines.append("")
@@ -4116,19 +4607,25 @@ def deferir_folgas():
 
             # Mapeamento amigável
             descricao_motivo = {
-                'AB':  'Abonada (AB)',
-                'BH':  'Banco de Horas (BH)',
-                'DS':  'Doação de Sangue (DS)',
-                'TRE': 'TRE',
-                'LM':  'Licença Médica (LM)',
-                'FS':  'Falta Simples (FS)',
-                'DL':  'Dispensa Legal (DL)',
-            }.get(folga_principal.motivo, 'Agendamento')
+                "AB": "Abonada (AB)",
+                "BH": "Banco de Horas (BH)",
+                "DS": "Doação de Sangue (DS)",
+                "TRE": "TRE",
+                "LM": "Licença Médica (LM)",
+                "FS": "Falta Simples (FS)",
+                "DL": "Dispensa Legal (DL)",
+            }.get(folga_principal.motivo, "Agendamento")
 
             # Período (single ou lote)
             if lote_regs:
                 dt_ini = min([x.data for x in lote_regs if x.data])
-                dt_fim = max([(getattr(x, "data_fim", None) or x.data) for x in lote_regs if x.data])
+                dt_fim = max(
+                    [
+                        (getattr(x, "data_fim", None) or x.data)
+                        for x in lote_regs
+                        if x.data
+                    ]
+                )
             else:
                 dt_ini = _get_dt_ini(folga_principal)
                 dt_fim = _get_dt_fim(folga_principal)
@@ -4136,7 +4633,11 @@ def deferir_folgas():
             periodo_str = _fmt_periodo(dt_ini, dt_fim)
 
             tempo_bh = _format_tempo_bh(folga_principal.horas, folga_principal.minutos)
-            data_ref_str = folga_principal.data_referencia.strftime('%d/%m/%Y') if getattr(folga_principal, "data_referencia", None) else None
+            data_ref_str = (
+                folga_principal.data_referencia.strftime("%d/%m/%Y")
+                if getattr(folga_principal, "data_referencia", None)
+                else None
+            )
             nome_substituto = getattr(folga_principal, "nome_substituto", None)
             cargo_usuario = getattr(usuario, "cargo", None) or "—"
             decisao = "DEFERIDO" if novo_status == "deferido" else "INDEFERIDO"
@@ -4163,7 +4664,9 @@ def deferir_folgas():
 
             if nome_substituto:
                 resumo.append(("Substituição", "Sim"))
-                resumo.append(("Substituto", f"<strong>{_escape(nome_substituto)}</strong>"))
+                resumo.append(
+                    ("Substituto", f"<strong>{_escape(nome_substituto)}</strong>")
+                )
             else:
                 resumo.append(("Substituição", "Não"))
 
@@ -4182,23 +4685,37 @@ def deferir_folgas():
                         "Este retorno é <strong>administrativo</strong>, para organização interna (cobertura/substituição).",
                         "<strong>Importante:</strong> concessão/homologação/indeferimento de LM é responsabilidade da <strong>Prefeitura/órgão central</strong>. "
                         "A escola <strong>não defere nem indefere</strong> Licença Médica.",
-                        "No sistema, o status <strong style='color:#16A34A;'>DEFERIDO</strong> indica apenas <strong>ciência administrativa</strong>."
+                        "No sistema, o status <strong style='color:#16A34A;'>DEFERIDO</strong> indica apenas <strong>ciência administrativa</strong>.",
                     ]
                 else:
-                    assunto = "E.M José Padin Mouta – Solicitação deferida" if not motivo_comunicacao else "E.M José Padin Mouta – Ciência registrada"
-                    title = "Solicitação deferida" if not motivo_comunicacao else "Ciência administrativa"
+                    assunto = (
+                        "E.M José Padin Mouta – Solicitação deferida"
+                        if not motivo_comunicacao
+                        else "E.M José Padin Mouta – Ciência registrada"
+                    )
+                    title = (
+                        "Solicitação deferida"
+                        if not motivo_comunicacao
+                        else "Ciência administrativa"
+                    )
                     lead = (
                         f"Sua solicitação de <strong>{_escape(descricao_motivo)}</strong> "
                         f"para o período <strong>{_escape(periodo_str)}</strong> foi <strong style='color:#16A34A;'>DEFERIDA</strong>."
                     )
-                    paragraphs = ["Caso precise de ajustes, procure a secretaria da unidade."]
+                    paragraphs = [
+                        "Caso precise de ajustes, procure a secretaria da unidade."
+                    ]
 
                 if nome_substituto:
-                    notes.append(f"Substituição registrada: <strong>{_escape(nome_substituto)}</strong>.")
+                    notes.append(
+                        f"Substituição registrada: <strong>{_escape(nome_substituto)}</strong>."
+                    )
 
             else:
                 if motivo_comunicacao:
-                    assunto = "E.M José Padin Mouta – Atualização de registro (indeferido)"
+                    assunto = (
+                        "E.M José Padin Mouta – Atualização de registro (indeferido)"
+                    )
                     title = "Atualização de registro – Indeferido"
                     lead = (
                         f"Seu registro de <strong>{_escape(descricao_motivo)}</strong> para o período "
@@ -4209,9 +4726,13 @@ def deferir_folgas():
                         "favor entrar em contato com a secretaria da unidade.",
                     ]
                     if folga_principal.motivo == "LM":
-                        notes.append("Licença Médica: concessão/homologação é responsabilidade do órgão central. A escola não concede LM.")
+                        notes.append(
+                            "Licença Médica: concessão/homologação é responsabilidade do órgão central. A escola não concede LM."
+                        )
                     if folga_principal.motivo in ("DL", "DS", "FS"):
-                        notes.append("Quando aplicável, o status no sistema é apenas sinalização/organização interna.")
+                        notes.append(
+                            "Quando aplicável, o status no sistema é apenas sinalização/organização interna."
+                        )
                 else:
                     assunto = "E.M José Padin Mouta – Solicitação indeferida"
                     title = "Solicitação indeferida"
@@ -4219,7 +4740,9 @@ def deferir_folgas():
                         f"Sua solicitação de <strong>{_escape(descricao_motivo)}</strong> para o período "
                         f"<strong>{_escape(periodo_str)}</strong> foi <strong style='color:#DC2626;'>INDEFERIDA</strong>."
                     )
-                    paragraphs = ["Para esclarecimentos, procure a direção/secretaria da unidade."]
+                    paragraphs = [
+                        "Para esclarecimentos, procure a direção/secretaria da unidade."
+                    ]
 
             mensagem_html = build_email_html(
                 title=title,
@@ -4227,7 +4750,7 @@ def deferir_folgas():
                 lead=lead,
                 paragraphs=paragraphs,
                 summary_rows=resumo,
-                note_lines=notes
+                note_lines=notes,
             )
 
             mensagem_texto = build_email_text(
@@ -4236,9 +4759,11 @@ def deferir_folgas():
                 lead=f"Atualização do seu registro: {descricao_motivo} – {periodo_str} – {decisao}.",
                 paragraphs=[
                     "Este e-mail é uma notificação automática do sistema.",
-                    ("LM/DL/DS/FS: o fluxo no sistema é administrativo (ciência/sinalização)."
-                     if motivo_comunicacao else
-                     "Solicitações: o status indica decisão administrativa no sistema.")
+                    (
+                        "LM/DL/DS/FS: o fluxo no sistema é administrativo (ciência/sinalização)."
+                        if motivo_comunicacao
+                        else "Solicitações: o status indica decisão administrativa no sistema."
+                    ),
                 ],
                 summary_rows=[
                     ("Protocolo", f"#{folga_principal.id}"),
@@ -4246,20 +4771,33 @@ def deferir_folgas():
                     ("Período", periodo_str),
                     ("Decisão", decisao),
                     ("Tempo (BH)", tempo_bh if folga_principal.motivo == "BH" else ""),
-                    ("Data de referência", data_ref_str if folga_principal.motivo == "BH" else ""),
+                    (
+                        "Data de referência",
+                        data_ref_str if folga_principal.motivo == "BH" else "",
+                    ),
                     ("Substituição", "Sim" if nome_substituto else "Não"),
                     ("Substituto", nome_substituto or ""),
                 ],
                 note_lines=[
-                    ("Licença Médica: concessão/homologação é responsabilidade do órgão central." if folga_principal.motivo == "LM" else None),
-                ]
+                    (
+                        "Licença Médica: concessão/homologação é responsabilidade do órgão central."
+                        if folga_principal.motivo == "LM"
+                        else None
+                    ),
+                ],
             )
 
             try:
                 enviar_email(usuario.email, assunto, mensagem_html, mensagem_texto)
             except Exception:
-                current_app.logger.exception("Falha ao enviar e-mail de decisão do agendamento %s", folga_principal.id)
-                flash("Status atualizado, mas não foi possível enviar o e-mail de notificação neste momento.", "warning")
+                current_app.logger.exception(
+                    "Falha ao enviar e-mail de decisão do agendamento %s",
+                    folga_principal.id,
+                )
+                flash(
+                    "Status atualizado, mas não foi possível enviar o e-mail de notificação neste momento.",
+                    "warning",
+                )
 
         except Exception as e:
             db.session.rollback()
@@ -4270,10 +4808,11 @@ def deferir_folgas():
 
     return _render_deferir_folgas(folgas, avisos)
 
+
 # ===========================================
 # HISTÓRICO / SALDOS (USUÁRIO)
 # ===========================================
-@app.route('/historico', methods=['GET'])
+@app.route("/historico", methods=["GET"])
 @login_required
 def historico():
     sync_tre_user(current_user.id)
@@ -4282,17 +4821,13 @@ def historico():
     ano = request.args.get("ano", type=int) or datetime.datetime.now().year
 
     limite_abonadas_ano = 6
-    abonadas_ano = (
-        Agendamento.query
-        .filter(
-            Agendamento.funcionario_id == current_user.id,
-            Agendamento.motivo == 'AB',
-            Agendamento.status == 'deferido',
-            Agendamento.data >= datetime.date(ano, 1, 1),
-            Agendamento.data <= datetime.date(ano, 12, 31),
-        )
-        .count()
-    )
+    abonadas_ano = Agendamento.query.filter(
+        Agendamento.funcionario_id == current_user.id,
+        Agendamento.motivo == "AB",
+        Agendamento.status == "deferido",
+        Agendamento.data >= datetime.date(ano, 1, 1),
+        Agendamento.data <= datetime.date(ano, 12, 31),
+    ).count()
     saldo_abonadas = max(limite_abonadas_ano - abonadas_ano, 0)
 
     tre_total = int(usuario.tre_total or 0)
@@ -4305,30 +4840,31 @@ def historico():
     banco_horas_formatado = f"{horas}h {minutos}min" if total_minutos > 0 else "0h 0min"
 
     ultimas_folgas = (
-        Agendamento.query
-        .filter_by(funcionario_id=current_user.id)
+        Agendamento.query.filter_by(funcionario_id=current_user.id)
         .order_by(Agendamento.data.desc())
         .limit(10)
         .all()
     )
 
     minhas_tres = (
-        TRE.query
-        .filter(TRE.funcionario_id == current_user.id)
+        TRE.query.filter(TRE.funcionario_id == current_user.id)
         .order_by(TRE.data_envio.desc(), TRE.id.desc())
         .all()
     )
 
     pend = def_ = ind = dias_pend = dias_def = 0
     for t in minhas_tres:
-        st = (t.status or '').strip().lower()
-        if st == 'pendente':
+        st = (t.status or "").strip().lower()
+        if st == "pendente":
             pend += 1
             dias_pend += int(t.dias_folga or 0)
-        elif st == 'deferida':
+        elif st == "deferida":
             def_ += 1
-            dias_def += int((t.dias_validados if t.dias_validados is not None else t.dias_folga) or 0)
-        elif st == 'indeferida':
+            dias_def += int(
+                (t.dias_validados if t.dias_validados is not None else t.dias_folga)
+                or 0
+            )
+        elif st == "indeferida":
             ind += 1
 
     tre_stats = {
@@ -4349,7 +4885,7 @@ def historico():
         avisos.append("ℹ️ Você possui muitas horas acumuladas no Banco de Horas.")
 
     return render_template(
-        'historico.html',
+        "historico.html",
         ano=ano,
         limite_abonadas_ano=limite_abonadas_ano,
         abonadas_ano=abonadas_ano,
@@ -4364,21 +4900,24 @@ def historico():
         avisos=avisos,
     )
 
+
 # ===========================================
 # BANCO DE HORAS - CADASTRAR
 # ===========================================
-@app.route('/banco_horas/cadastrar', methods=['GET', 'POST'])
+@app.route("/banco_horas/cadastrar", methods=["GET", "POST"])
 @login_required
 def cadastrar_horas():
     def _escape(s):
         if s is None:
             return ""
-        return (str(s)
-                .replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace('"', "&quot;")
-                .replace("'", "&#39;"))
+        return (
+            str(s)
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+            .replace("'", "&#39;")
+        )
 
     def _format_hm(h, m):
         h = int(h or 0)
@@ -4397,7 +4936,9 @@ def cadastrar_horas():
         m = total_min % 60
         return f"{h}h {m:02d}min"
 
-    def build_email_html(title, greeting_name, lead, paragraphs, summary_rows, note_lines=None):
+    def build_email_html(
+        title, greeting_name, lead, paragraphs, summary_rows, note_lines=None
+    ):
         greeting_name = _escape(greeting_name)
         title = _escape(title)
         note_lines = note_lines or []
@@ -4427,7 +4968,9 @@ def cadastrar_horas():
         # Observações
         notes_html = ""
         if note_lines:
-            li = "".join([f"<li style='margin:0 0 6px 0;'>{x}</li>" for x in note_lines if x])
+            li = "".join(
+                [f"<li style='margin:0 0 6px 0;'>{x}</li>" for x in note_lines if x]
+            )
             notes_html = f"""
               <div style="margin-top:14px;padding:12px 12px;border:1px dashed #D7D7D7;border-radius:10px;background:#FAFAFA;">
                 <div style="font-weight:700;color:#333;margin-bottom:8px;">Observações</div>
@@ -4491,7 +5034,9 @@ def cadastrar_horas():
         </html>
         """
 
-    def build_email_text(subject_title, greeting_name, lead, summary_rows, note_lines=None):
+    def build_email_text(
+        subject_title, greeting_name, lead, summary_rows, note_lines=None
+    ):
         note_lines = note_lines or []
         lines = []
         lines.append(f"E.M José Padin Mouta – {subject_title}")
@@ -4504,8 +5049,13 @@ def cadastrar_horas():
         for k, v in summary_rows:
             if v is None or v == "":
                 continue
-            vv = (str(v).replace("<strong>", "").replace("</strong>", "")
-                       .replace("<span", "").replace("</span>", ""))
+            vv = (
+                str(v)
+                .replace("<strong>", "")
+                .replace("</strong>", "")
+                .replace("<span", "")
+                .replace("</span>", "")
+            )
             lines.append(f"- {k}: {vv}")
         if note_lines:
             lines.append("")
@@ -4521,35 +5071,40 @@ def cadastrar_horas():
         lines.append("E.M José Padin Mouta")
         return "\n".join(lines)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         # Mantém compatibilidade com seu form (mas usamos current_user como fonte confiável)
-        nome = request.form.get('nome', current_user.nome)
-        registro = request.form.get('registro', current_user.registro)
+        nome = request.form.get("nome", current_user.nome)
+        registro = request.form.get("registro", current_user.registro)
 
         try:
-            quantidade_horas = int(request.form.get('quantidade_horas', '0') or 0)
-            quantidade_minutos = int(request.form.get('quantidade_minutos', '0') or 0)
+            quantidade_horas = int(request.form.get("quantidade_horas", "0") or 0)
+            quantidade_minutos = int(request.form.get("quantidade_minutos", "0") or 0)
         except ValueError:
             flash("Informe horas e minutos válidos.", "danger")
-            return redirect(url_for('cadastrar_horas'))
+            return redirect(url_for("cadastrar_horas"))
 
-        data_realizacao = request.form.get('data_realizacao', '')
-        motivo = (request.form.get('motivo', '') or '').strip()
+        data_realizacao = request.form.get("data_realizacao", "")
+        motivo = (request.form.get("motivo", "") or "").strip()
 
         try:
-            data_realizacao = datetime.datetime.strptime(data_realizacao, '%Y-%m-%d').date()
+            data_realizacao = datetime.datetime.strptime(
+                data_realizacao, "%Y-%m-%d"
+            ).date()
         except ValueError:
             flash("Data inválida.", "danger")
-            return redirect(url_for('cadastrar_horas'))
+            return redirect(url_for("cadastrar_horas"))
 
         if quantidade_minutos < 0 or quantidade_minutos > 59 or quantidade_horas < 0:
-            flash("Minutos devem estar entre 0 e 59 e horas não podem ser negativas.", "danger")
-            return redirect(url_for('cadastrar_horas'))
+            flash(
+                "Minutos devem estar entre 0 e 59 e horas não podem ser negativas.",
+                "danger",
+            )
+            return redirect(url_for("cadastrar_horas"))
 
         total_minutos = (quantidade_horas * 60) + quantidade_minutos
         if total_minutos <= 0:
             flash("Informe uma quantidade de tempo maior que zero.", "danger")
-            return redirect(url_for('cadastrar_horas'))
+            return redirect(url_for("cadastrar_horas"))
 
         novo_banco_horas = BancoDeHoras(
             funcionario_id=current_user.id,
@@ -4558,7 +5113,7 @@ def cadastrar_horas():
             total_minutos=total_minutos,
             data_realizacao=data_realizacao,
             motivo=motivo,
-            status='Horas a Serem Deferidas'
+            status="Horas a Serem Deferidas",
         )
 
         try:
@@ -4576,10 +5131,12 @@ def cadastrar_horas():
 
                 # Em espera (minutos e quantidade) — inclui este lançamento recém-commitado
                 pendentes_min = (
-                    db.session.query(func.coalesce(func.sum(BancoDeHoras.total_minutos), 0))
+                    db.session.query(
+                        func.coalesce(func.sum(BancoDeHoras.total_minutos), 0)
+                    )
                     .filter(
                         BancoDeHoras.funcionario_id == current_user.id,
-                        BancoDeHoras.status == 'Horas a Serem Deferidas'
+                        BancoDeHoras.status == "Horas a Serem Deferidas",
                     )
                     .scalar()
                 ) or 0
@@ -4589,7 +5146,7 @@ def cadastrar_horas():
                     db.session.query(func.count(BancoDeHoras.id))
                     .filter(
                         BancoDeHoras.funcionario_id == current_user.id,
-                        BancoDeHoras.status == 'Horas a Serem Deferidas'
+                        BancoDeHoras.status == "Horas a Serem Deferidas",
                     )
                     .scalar()
                 ) or 0
@@ -4597,25 +5154,33 @@ def cadastrar_horas():
 
                 # Créditos deferidos (min) — mesmo critério do seu recalculo: status deferid% e motivo != 'BH'
                 creditos_min = (
-                    db.session.query(func.coalesce(func.sum(BancoDeHoras.horas * 60 + BancoDeHoras.minutos), 0))
+                    db.session.query(
+                        func.coalesce(
+                            func.sum(BancoDeHoras.horas * 60 + BancoDeHoras.minutos), 0
+                        )
+                    )
                     .filter(BancoDeHoras.funcionario_id == current_user.id)
-                    .filter(func.lower(BancoDeHoras.status).like('deferid%'))
-                    .filter(func.upper(BancoDeHoras.motivo) != 'BH')
+                    .filter(func.lower(BancoDeHoras.status).like("deferid%"))
+                    .filter(func.upper(BancoDeHoras.motivo) != "BH")
                     .scalar()
                 ) or 0
                 creditos_min = int(creditos_min)
 
                 # Consumos deferidos (min) — Agendamento BH deferido
                 consumos_min = (
-                    db.session.query(func.coalesce(func.sum(Agendamento.horas * 60 + Agendamento.minutos), 0))
+                    db.session.query(
+                        func.coalesce(
+                            func.sum(Agendamento.horas * 60 + Agendamento.minutos), 0
+                        )
+                    )
                     .filter(Agendamento.funcionario_id == current_user.id)
-                    .filter(func.lower(Agendamento.status).like('deferid%'))
-                    .filter(func.lower(Agendamento.motivo) == 'bh')
+                    .filter(func.lower(Agendamento.status).like("deferid%"))
+                    .filter(func.lower(Agendamento.motivo) == "bh")
                     .scalar()
                 ) or 0
                 consumos_min = int(consumos_min)
 
-                data_str = data_realizacao.strftime('%d/%m/%Y')
+                data_str = data_realizacao.strftime("%d/%m/%Y")
                 lancado_str = _format_hm(quantidade_horas, quantidade_minutos)
 
                 assunto = "E.M José Padin Mouta – Banco de Horas cadastrado (aguardando deferimento)"
@@ -4635,12 +5200,30 @@ def cadastrar_horas():
                     ("Registro", f"<strong>{_escape(usuario.registro)}</strong>"),
                     ("Data de realização", f"<strong>{_escape(data_str)}</strong>"),
                     ("Motivo informado", f"<strong>{_escape(motivo)}</strong>"),
-                    ("Quantidade cadastrada", f"<strong>{_escape(lancado_str)}</strong>"),
-                    ("Status", "<span style='font-weight:800;color:#D97706;'>HORAS A SEREM DEFERIDAS</span>"),
-                    ("Saldo atual a usufruir (BH)", f"<strong>{_escape(_format_hm_from_minutes(saldo_atual_min))}</strong>"),
-                    ("Em espera (BH)", f"<strong>{_escape(_format_hm_from_minutes(pendentes_min))}</strong> <span style='color:#6B7280;'>(em {pendentes_qtd} lançamento(s))</span>"),
-                    ("Créditos deferidos (BH)", f"<strong>{_escape(_format_hm_from_minutes(creditos_min))}</strong>"),
-                    ("Consumos deferidos (BH)", f"<strong>{_escape(_format_hm_from_minutes(consumos_min))}</strong>"),
+                    (
+                        "Quantidade cadastrada",
+                        f"<strong>{_escape(lancado_str)}</strong>",
+                    ),
+                    (
+                        "Status",
+                        "<span style='font-weight:800;color:#D97706;'>HORAS A SEREM DEFERIDAS</span>",
+                    ),
+                    (
+                        "Saldo atual a usufruir (BH)",
+                        f"<strong>{_escape(_format_hm_from_minutes(saldo_atual_min))}</strong>",
+                    ),
+                    (
+                        "Em espera (BH)",
+                        f"<strong>{_escape(_format_hm_from_minutes(pendentes_min))}</strong> <span style='color:#6B7280;'>(em {pendentes_qtd} lançamento(s))</span>",
+                    ),
+                    (
+                        "Créditos deferidos (BH)",
+                        f"<strong>{_escape(_format_hm_from_minutes(creditos_min))}</strong>",
+                    ),
+                    (
+                        "Consumos deferidos (BH)",
+                        f"<strong>{_escape(_format_hm_from_minutes(consumos_min))}</strong>",
+                    ),
                 ]
 
                 notes = [
@@ -4654,7 +5237,7 @@ def cadastrar_horas():
                     lead=lead,
                     paragraphs=paragraphs,
                     summary_rows=resumo,
-                    note_lines=notes
+                    note_lines=notes,
                 )
 
                 mensagem_texto = build_email_text(
@@ -4667,47 +5250,70 @@ def cadastrar_horas():
                         ("Motivo informado", motivo),
                         ("Quantidade cadastrada", lancado_str),
                         ("Status", "HORAS A SEREM DEFERIDAS"),
-                        ("Saldo atual a usufruir (BH)", _format_hm_from_minutes(saldo_atual_min)),
-                        ("Em espera (BH)", f"{_format_hm_from_minutes(pendentes_min)} (em {pendentes_qtd} lançamento(s))"),
-                        ("Créditos deferidos (BH)", _format_hm_from_minutes(creditos_min)),
-                        ("Consumos deferidos (BH)", _format_hm_from_minutes(consumos_min)),
+                        (
+                            "Saldo atual a usufruir (BH)",
+                            _format_hm_from_minutes(saldo_atual_min),
+                        ),
+                        (
+                            "Em espera (BH)",
+                            f"{_format_hm_from_minutes(pendentes_min)} (em {pendentes_qtd} lançamento(s))",
+                        ),
+                        (
+                            "Créditos deferidos (BH)",
+                            _format_hm_from_minutes(creditos_min),
+                        ),
+                        (
+                            "Consumos deferidos (BH)",
+                            _format_hm_from_minutes(consumos_min),
+                        ),
                     ],
                     note_lines=[
                         "O saldo a usufruir só é atualizado após deferimento do crédito pelo administrador.",
                         "Em espera considera lançamentos pendentes (incluindo este).",
-                    ]
+                    ],
                 )
 
                 enviar_email(usuario.email, assunto, mensagem_html, mensagem_texto)
 
             except Exception:
-                current_app.logger.exception("Falha ao enviar e-mail de confirmação do Banco de Horas (/banco_horas/cadastrar)")
-                flash("Banco de horas cadastrado, mas não foi possível enviar o e-mail de confirmação.", "warning")
+                current_app.logger.exception(
+                    "Falha ao enviar e-mail de confirmação do Banco de Horas (/banco_horas/cadastrar)"
+                )
+                flash(
+                    "Banco de horas cadastrado, mas não foi possível enviar o e-mail de confirmação.",
+                    "warning",
+                )
 
-            flash("Banco de horas cadastrado com sucesso! Aguardando deferimento.", "success")
-            return redirect(url_for('consultar_horas'))
+            flash(
+                "Banco de horas cadastrado com sucesso! Aguardando deferimento.",
+                "success",
+            )
+            return redirect(url_for("consultar_horas"))
 
         except Exception as e:
             db.session.rollback()
             flash(f"Erro ao cadastrar banco de horas: {str(e)}", "danger")
 
-    return render_template('cadastrar_horas.html', nome=current_user.nome, registro=current_user.registro)
+    return render_template(
+        "cadastrar_horas.html", nome=current_user.nome, registro=current_user.registro
+    )
 
-@app.route('/banco_horas')
+
+@app.route("/banco_horas")
 @login_required
 def banco_horas():
-    is_admin = current_user.tipo == 'administrador'
-    return render_template('menu_banco_horas.html', is_admin=is_admin)
+    is_admin = current_user.tipo == "administrador"
+    return render_template("menu_banco_horas.html", is_admin=is_admin)
+
 
 # ===========================================
 # CONSULTAR HORAS (USUÁRIO)
 # ===========================================
-@app.route('/consultar_horas')
+@app.route("/consultar_horas")
 @login_required
 def consultar_horas():
     registros = (
-        BancoDeHoras.query
-        .filter_by(funcionario_id=current_user.id)
+        BancoDeHoras.query.filter_by(funcionario_id=current_user.id)
         .order_by(BancoDeHoras.data_realizacao.desc())
         .all()
     )
@@ -4721,10 +5327,10 @@ def consultar_horas():
         h = registro.horas or 0
         m = registro.minutos or 0
 
-        if registro.status == 'Deferido':
+        if registro.status == "Deferido":
             horas_deferidas += h
             minutos_deferidos += m
-        elif registro.status == 'Horas a Serem Deferidas':
+        elif registro.status == "Horas a Serem Deferidas":
             horas_em_espera += h
             minutos_em_espera += m
 
@@ -4745,7 +5351,7 @@ def consultar_horas():
     minutos_a_usufruir = saldo_min % 60
 
     return render_template(
-        'consultar_horas.html',
+        "consultar_horas.html",
         registros=registros,
         horas_deferidas=horas_deferidas,
         minutos_deferidos=minutos_deferidos,
@@ -4754,13 +5360,15 @@ def consultar_horas():
         horas_usufruidas=horas_usufruidas,
         minutos_usufruidos=minutos_usufruidos,
         horas_a_usufruir=horas_a_usufruir,
-        minutos_a_usufruir=minutos_a_usufruir
+        minutos_a_usufruir=minutos_a_usufruir,
     )
+
 
 # ============================
 # INSERIR BANCO DE HORAS (ADMIN)
 # ============================
 import datetime as dt
+
 
 def _normalize_status_bh(raw: str) -> str:
     s = (raw or "").strip().lower()
@@ -4772,14 +5380,15 @@ def _normalize_status_bh(raw: str) -> str:
         return "Em análise"
     return "Em análise"
 
+
 def _recalcular_saldo_minutos(funcionario_id: int):
     creditos_min = (
         db.session.query(
             func.coalesce(func.sum(BancoDeHoras.horas * 60 + BancoDeHoras.minutos), 0)
         )
         .filter(BancoDeHoras.funcionario_id == funcionario_id)
-        .filter(func.lower(BancoDeHoras.status).like('deferid%'))
-        .filter(func.upper(BancoDeHoras.motivo) != 'BH')
+        .filter(func.lower(BancoDeHoras.status).like("deferid%"))
+        .filter(func.upper(BancoDeHoras.motivo) != "BH")
         .scalar()
     )
 
@@ -4788,8 +5397,8 @@ def _recalcular_saldo_minutos(funcionario_id: int):
             func.coalesce(func.sum(Agendamento.horas * 60 + Agendamento.minutos), 0)
         )
         .filter(Agendamento.funcionario_id == funcionario_id)
-        .filter(func.lower(Agendamento.status).like('deferid%'))
-        .filter(func.lower(Agendamento.motivo) == 'bh')
+        .filter(func.lower(Agendamento.status).like("deferid%"))
+        .filter(func.lower(Agendamento.motivo) == "bh")
         .scalar()
     )
 
@@ -4800,57 +5409,63 @@ def _recalcular_saldo_minutos(funcionario_id: int):
         db.session.commit()
     return saldo
 
-@app.route('/banco_horas/inserir', methods=['GET', 'POST'])
+
+@app.route("/banco_horas/inserir", methods=["GET", "POST"])
 @login_required
 def inserir_bh_admin():
-    if current_user.tipo != 'administrador':
+    if current_user.tipo != "administrador":
         flash("Acesso negado.", "danger")
-        return redirect(url_for('banco_horas'))
+        return redirect(url_for("banco_horas"))
 
-    if request.method == 'POST':
+    if request.method == "POST":
         try:
-            funcionario_id = int(request.form.get('funcionario_id', '0') or 0)
+            funcionario_id = int(request.form.get("funcionario_id", "0") or 0)
         except ValueError:
             funcionario_id = 0
 
-        data_realizacao_raw = request.form.get('data_realizacao', '')
-        motivo = (request.form.get('motivo', '') or '').strip()
-        status_raw = request.form.get('status', 'Deferido')
-        horas_raw = request.form.get('horas', '0')
-        minutos_raw = request.form.get('minutos', '0')
+        data_realizacao_raw = request.form.get("data_realizacao", "")
+        motivo = (request.form.get("motivo", "") or "").strip()
+        status_raw = request.form.get("status", "Deferido")
+        horas_raw = request.form.get("horas", "0")
+        minutos_raw = request.form.get("minutos", "0")
 
         if not funcionario_id:
             flash("Selecione um servidor.", "warning")
-            return redirect(url_for('inserir_bh_admin'))
+            return redirect(url_for("inserir_bh_admin"))
 
         try:
-            data_realizacao = dt.datetime.strptime(data_realizacao_raw, "%Y-%m-%d").date()
+            data_realizacao = dt.datetime.strptime(
+                data_realizacao_raw, "%Y-%m-%d"
+            ).date()
         except Exception:
             flash("Data inválida.", "warning")
-            return redirect(url_for('inserir_bh_admin'))
+            return redirect(url_for("inserir_bh_admin"))
 
         try:
             horas = max(0, int(horas_raw or 0))
             minutos = max(0, int(minutos_raw or 0))
         except ValueError:
             flash("Informe horas e minutos válidos.", "warning")
-            return redirect(url_for('inserir_bh_admin'))
+            return redirect(url_for("inserir_bh_admin"))
 
         if minutos >= 60:
             flash("Minutos devem estar entre 0 e 59.", "warning")
-            return redirect(url_for('inserir_bh_admin'))
+            return redirect(url_for("inserir_bh_admin"))
 
         if horas == 0 and minutos == 0:
             flash("Informe uma quantidade de tempo maior que zero.", "warning")
-            return redirect(url_for('inserir_bh_admin'))
+            return redirect(url_for("inserir_bh_admin"))
 
         if not motivo:
             flash("Informe um motivo (evite usar 'BH' aqui).", "warning")
-            return redirect(url_for('inserir_bh_admin'))
+            return redirect(url_for("inserir_bh_admin"))
 
-        if motivo.upper() == 'BH':
-            flash("Motivo 'BH' é reservado para folgas/consumos. Use um motivo descritivo do crédito.", "warning")
-            return redirect(url_for('inserir_bh_admin'))
+        if motivo.upper() == "BH":
+            flash(
+                "Motivo 'BH' é reservado para folgas/consumos. Use um motivo descritivo do crédito.",
+                "warning",
+            )
+            return redirect(url_for("inserir_bh_admin"))
 
         status = _normalize_status_bh(status_raw)
 
@@ -4872,27 +5487,23 @@ def inserir_bh_admin():
         flash(
             f"Crédito inserido com sucesso ({horas}h {minutos:02d}m para o servidor #{funcionario_id}). "
             f"Saldo atual (min): {saldo}.",
-            "success"
+            "success",
         )
-        return redirect(url_for('inserir_bh_admin'))
+        return redirect(url_for("inserir_bh_admin"))
 
-    usuarios = (
-        User.query
-        .filter(User.ativo.is_(True))
-        .order_by(User.nome.asc())
-        .all()
-    )
+    usuarios = User.query.filter(User.ativo.is_(True)).order_by(User.nome.asc()).all()
     return render_template(
-        'inserir_bh_admin.html',
+        "inserir_bh_admin.html",
         usuarios=usuarios,
         hoje=dt.date.today(),
-        padrao_status='Deferido'
+        padrao_status="Deferido",
     )
+
 
 # ===========================================
 # DEFERIR BANCO DE HORAS (ADMIN)
 # ===========================================
-@app.route('/banco_horas/deferir', methods=['GET', 'POST'])
+@app.route("/banco_horas/deferir", methods=["GET", "POST"])
 @login_required
 def deferir_horas():
     # Se você quiser restringir só admin, descomente:
@@ -4903,12 +5514,14 @@ def deferir_horas():
     def _escape(s):
         if s is None:
             return ""
-        return (str(s)
-                .replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace('"', "&quot;")
-                .replace("'", "&#39;"))
+        return (
+            str(s)
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+            .replace("'", "&#39;")
+        )
 
     def _format_hm(h, m):
         h = int(h or 0)
@@ -4927,7 +5540,9 @@ def deferir_horas():
         m = total_min % 60
         return f"{h}h {m:02d}min"
 
-    def build_email_html(title, greeting_name, lead, paragraphs, summary_rows, note_lines=None):
+    def build_email_html(
+        title, greeting_name, lead, paragraphs, summary_rows, note_lines=None
+    ):
         greeting_name = _escape(greeting_name)
         title = _escape(title)
         note_lines = note_lines or []
@@ -4957,7 +5572,9 @@ def deferir_horas():
         # Observações
         notes_html = ""
         if note_lines:
-            li = "".join([f"<li style='margin:0 0 6px 0;'>{x}</li>" for x in note_lines if x])
+            li = "".join(
+                [f"<li style='margin:0 0 6px 0;'>{x}</li>" for x in note_lines if x]
+            )
             notes_html = f"""
               <div style="margin-top:14px;padding:12px 12px;border:1px dashed #D7D7D7;border-radius:10px;background:#FAFAFA;">
                 <div style="font-weight:700;color:#333;margin-bottom:8px;">Observações</div>
@@ -5021,7 +5638,9 @@ def deferir_horas():
         </html>
         """
 
-    def build_email_text(subject_title, greeting_name, lead, summary_rows, note_lines=None):
+    def build_email_text(
+        subject_title, greeting_name, lead, summary_rows, note_lines=None
+    ):
         note_lines = note_lines or []
         lines = []
         lines.append(f"E.M José Padin Mouta – {subject_title}")
@@ -5034,8 +5653,13 @@ def deferir_horas():
         for k, v in summary_rows:
             if v is None or v == "":
                 continue
-            vv = (str(v).replace("<strong>", "").replace("</strong>", "")
-                       .replace("<span", "").replace("</span>", ""))
+            vv = (
+                str(v)
+                .replace("<strong>", "")
+                .replace("</strong>", "")
+                .replace("<span", "")
+                .replace("</span>", "")
+            )
             lines.append(f"- {k}: {vv}")
         if note_lines:
             lines.append("")
@@ -5051,43 +5675,51 @@ def deferir_horas():
         lines.append("E.M José Padin Mouta")
         return "\n".join(lines)
 
-    registros = BancoDeHoras.query.filter_by(status='Horas a Serem Deferidas').all()
+    registros = BancoDeHoras.query.filter_by(status="Horas a Serem Deferidas").all()
 
-    if request.method == 'POST':
-        registro_id = request.form.get('registro_id')
-        action = (request.form.get('action') or '').strip().lower()
+    if request.method == "POST":
+        registro_id = request.form.get("registro_id")
+        action = (request.form.get("action") or "").strip().lower()
 
         banco_horas = BancoDeHoras.query.filter_by(id=registro_id).first()
         if not banco_horas:
             flash("Registro não encontrado.", "danger")
-            return redirect(url_for('deferir_horas'))
+            return redirect(url_for("deferir_horas"))
 
         funcionario = User.query.get(banco_horas.funcionario_id)
         if not funcionario:
             flash("Servidor não encontrado.", "danger")
-            return redirect(url_for('deferir_horas'))
+            return redirect(url_for("deferir_horas"))
 
         # Dados para e-mail
-        data_str = banco_horas.data_realizacao.strftime('%d/%m/%Y')
+        data_str = banco_horas.data_realizacao.strftime("%d/%m/%Y")
         qtd_str = _format_hm(banco_horas.horas, banco_horas.minutos)
         motivo = (banco_horas.motivo or "").strip()
         protocolo = banco_horas.id
 
         # Status/decisão
-        if action == 'deferir':
-            banco_horas.status = 'Deferido'
-            funcionario.banco_horas = int(funcionario.banco_horas or 0) + int(banco_horas.total_minutos or 0)
+        if action == "deferir":
+            banco_horas.status = "Deferido"
+            funcionario.banco_horas = int(funcionario.banco_horas or 0) + int(
+                banco_horas.total_minutos or 0
+            )
             decisao = "DEFERIDO"
             badge = "<span style='font-weight:800;color:#16A34A;'>DEFERIDO</span>"
-            flash(f"Banco de horas de {banco_horas.funcionario.nome} deferido com sucesso!", "success")
-        elif action == 'indeferir':
-            banco_horas.status = 'Indeferido'
+            flash(
+                f"Banco de horas de {banco_horas.funcionario.nome} deferido com sucesso!",
+                "success",
+            )
+        elif action == "indeferir":
+            banco_horas.status = "Indeferido"
             decisao = "INDEFERIDO"
             badge = "<span style='font-weight:800;color:#DC2626;'>INDEFERIDO</span>"
-            flash(f"Banco de horas de {banco_horas.funcionario.nome} indeferido.", "danger")
+            flash(
+                f"Banco de horas de {banco_horas.funcionario.nome} indeferido.",
+                "danger",
+            )
         else:
             flash("Ação inválida.", "danger")
-            return redirect(url_for('deferir_horas'))
+            return redirect(url_for("deferir_horas"))
 
         try:
             db.session.commit()
@@ -5097,10 +5729,12 @@ def deferir_horas():
                 saldo_atual_min = int(funcionario.banco_horas or 0)
 
                 pendentes_min = (
-                    db.session.query(func.coalesce(func.sum(BancoDeHoras.total_minutos), 0))
+                    db.session.query(
+                        func.coalesce(func.sum(BancoDeHoras.total_minutos), 0)
+                    )
                     .filter(
                         BancoDeHoras.funcionario_id == funcionario.id,
-                        BancoDeHoras.status == 'Horas a Serem Deferidas'
+                        BancoDeHoras.status == "Horas a Serem Deferidas",
                     )
                     .scalar()
                 ) or 0
@@ -5110,7 +5744,7 @@ def deferir_horas():
                     db.session.query(func.count(BancoDeHoras.id))
                     .filter(
                         BancoDeHoras.funcionario_id == funcionario.id,
-                        BancoDeHoras.status == 'Horas a Serem Deferidas'
+                        BancoDeHoras.status == "Horas a Serem Deferidas",
                     )
                     .scalar()
                 ) or 0
@@ -5146,8 +5780,14 @@ def deferir_horas():
                     ("Motivo informado", f"<strong>{_escape(motivo)}</strong>"),
                     ("Quantidade", f"<strong>{_escape(qtd_str)}</strong>"),
                     ("Decisão", badge),
-                    ("Saldo atual a usufruir (BH)", f"<strong>{_escape(_format_hm_from_minutes(saldo_atual_min))}</strong>"),
-                    ("Em espera (BH)", f"<strong>{_escape(_format_hm_from_minutes(pendentes_min))}</strong> <span style='color:#6B7280;'>(em {pendentes_qtd} lançamento(s))</span>"),
+                    (
+                        "Saldo atual a usufruir (BH)",
+                        f"<strong>{_escape(_format_hm_from_minutes(saldo_atual_min))}</strong>",
+                    ),
+                    (
+                        "Em espera (BH)",
+                        f"<strong>{_escape(_format_hm_from_minutes(pendentes_min))}</strong> <span style='color:#6B7280;'>(em {pendentes_qtd} lançamento(s))</span>",
+                    ),
                 ]
 
                 mensagem_html = build_email_html(
@@ -5156,7 +5796,7 @@ def deferir_horas():
                     lead=lead,
                     paragraphs=paragraphs,
                     summary_rows=resumo,
-                    note_lines=notes
+                    note_lines=notes,
                 )
 
                 mensagem_texto = build_email_text(
@@ -5169,47 +5809,74 @@ def deferir_horas():
                         ("Motivo informado", motivo),
                         ("Quantidade", qtd_str),
                         ("Decisão", decisao),
-                        ("Saldo atual a usufruir (BH)", _format_hm_from_minutes(saldo_atual_min)),
-                        ("Em espera (BH)", f"{_format_hm_from_minutes(pendentes_min)} (em {pendentes_qtd} lançamento(s))"),
+                        (
+                            "Saldo atual a usufruir (BH)",
+                            _format_hm_from_minutes(saldo_atual_min),
+                        ),
+                        (
+                            "Em espera (BH)",
+                            f"{_format_hm_from_minutes(pendentes_min)} (em {pendentes_qtd} lançamento(s))",
+                        ),
                     ],
                     note_lines=[
-                        ("Saldo atualizado no sistema (após deferimento)." if decisao == "DEFERIDO" else
-                         "Se necessário, realize um novo lançamento com os dados corrigidos.")
-                    ]
+                        (
+                            "Saldo atualizado no sistema (após deferimento)."
+                            if decisao == "DEFERIDO"
+                            else "Se necessário, realize um novo lançamento com os dados corrigidos."
+                        )
+                    ],
                 )
 
                 # Envio (não derruba a decisão se falhar)
                 try:
-                    enviar_email(funcionario.email, assunto, mensagem_html, mensagem_texto)
+                    enviar_email(
+                        funcionario.email, assunto, mensagem_html, mensagem_texto
+                    )
                 except Exception:
-                    current_app.logger.exception("Falha ao enviar e-mail de decisão do BH (registro %s)", banco_horas.id)
-                    flash("Status atualizado, mas não foi possível enviar o e-mail de notificação neste momento.", "warning")
+                    current_app.logger.exception(
+                        "Falha ao enviar e-mail de decisão do BH (registro %s)",
+                        banco_horas.id,
+                    )
+                    flash(
+                        "Status atualizado, mas não foi possível enviar o e-mail de notificação neste momento.",
+                        "warning",
+                    )
 
             except Exception:
-                current_app.logger.exception("Falha ao montar e-mail de decisão do BH (registro %s)", banco_horas.id)
-                flash("Status atualizado, mas houve um problema ao preparar o e-mail de notificação.", "warning")
+                current_app.logger.exception(
+                    "Falha ao montar e-mail de decisão do BH (registro %s)",
+                    banco_horas.id,
+                )
+                flash(
+                    "Status atualizado, mas houve um problema ao preparar o e-mail de notificação.",
+                    "warning",
+                )
 
-            registros = BancoDeHoras.query.filter_by(status='Horas a Serem Deferidas').all()
-            return render_template('deferir_horas.html', registros=registros)
+            registros = BancoDeHoras.query.filter_by(
+                status="Horas a Serem Deferidas"
+            ).all()
+            return render_template("deferir_horas.html", registros=registros)
 
         except Exception as e:
             db.session.rollback()
             flash(f"Erro ao atualizar status: {str(e)}", "danger")
-            return redirect(url_for('deferir_horas'))
+            return redirect(url_for("deferir_horas"))
 
-    return render_template('deferir_horas.html', registros=registros)
+    return render_template("deferir_horas.html", registros=registros)
+
 
 # ===========================================
 # PERFIL + ALTERAÇÃO DE E-MAIL (CONFIRMAÇÃO)
 # ===========================================
-import os
 import datetime
-from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-from sqlalchemy.exc import IntegrityError
+import os
+
+from flask import current_app, flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
-from flask import request, redirect, url_for, render_template, flash, current_app
-from flask_login import login_required, current_user
 from werkzeug.security import check_password_hash
 
 EMAIL_CHANGE_MAX_AGE = int(os.getenv("EMAIL_CHANGE_MAX_AGE", "3600"))  # 1 hora
@@ -5248,16 +5915,22 @@ def verify_email_change_token(token: str):
         data = s.loads(
             token,
             salt=current_app.config["SECURITY_PASSWORD_SALT"],
-            max_age=EMAIL_CHANGE_MAX_AGE
+            max_age=EMAIL_CHANGE_MAX_AGE,
         )
         if not isinstance(data, dict):
             return None
         return data
     except SignatureExpired:
-        flash("O link de confirmação de e-mail expirou. Solicite novamente pelo perfil.", "warning")
+        flash(
+            "O link de confirmação de e-mail expirou. Solicite novamente pelo perfil.",
+            "warning",
+        )
         return None
     except BadSignature:
-        flash("Link de confirmação de e-mail inválido. Solicite novamente pelo perfil.", "danger")
+        flash(
+            "Link de confirmação de e-mail inválido. Solicite novamente pelo perfil.",
+            "danger",
+        )
         return None
     except Exception:
         flash("Não foi possível validar o link de confirmação.", "danger")
@@ -5268,7 +5941,7 @@ def send_email_change_confirmation(user, new_email: str) -> None:
     token = generate_email_change_token(
         user_id=user.id,
         new_email=new_email,
-        old_email=(user.email or "").strip().lower()
+        old_email=(user.email or "").strip().lower(),
     )
     confirm_url = url_for("confirmar_email", token=token, _external=True)
 
@@ -5346,7 +6019,9 @@ def send_email_change_confirmation(user, new_email: str) -> None:
 def confirmar_email(token):
     data = verify_email_change_token(token)
     if not data:
-        return redirect(url_for("perfil") if current_user.is_authenticated else url_for("login"))
+        return redirect(
+            url_for("perfil") if current_user.is_authenticated else url_for("login")
+        )
 
     try:
         user_id = int(data.get("uid", 0))
@@ -5368,14 +6043,23 @@ def confirmar_email(token):
 
     # Garante que o token foi gerado para o e-mail atual na época do pedido
     if (usuario.email or "").strip().lower() != old_email:
-        flash("Este link não é mais válido. Solicite a troca novamente pelo perfil.", "warning")
-        return redirect(url_for("perfil") if current_user.is_authenticated else url_for("login"))
+        flash(
+            "Este link não é mais válido. Solicite a troca novamente pelo perfil.",
+            "warning",
+        )
+        return redirect(
+            url_for("perfil") if current_user.is_authenticated else url_for("login")
+        )
 
     # Evita colisão de e-mail
-    ja_existe = User.query.filter(func.lower(User.email) == new_email, User.id != usuario.id).first()
+    ja_existe = User.query.filter(
+        func.lower(User.email) == new_email, User.id != usuario.id
+    ).first()
     if ja_existe:
         flash("Este e-mail já está em uso. Informe outro.", "danger")
-        return redirect(url_for("perfil") if current_user.is_authenticated else url_for("login"))
+        return redirect(
+            url_for("perfil") if current_user.is_authenticated else url_for("login")
+        )
 
     try:
         usuario.email = new_email
@@ -5388,18 +6072,19 @@ def confirmar_email(token):
         db.session.rollback()
         flash("Não foi possível atualizar o e-mail. Tente novamente.", "danger")
 
-    return redirect(url_for("perfil") if current_user.is_authenticated else url_for("login"))
+    return redirect(
+        url_for("perfil") if current_user.is_authenticated else url_for("login")
+    )
 
 
 # ===========================================
 # PERFIL (corrigido: flashes coerentes + troca de e-mail + horários)
 # ===========================================
-@app.route('/perfil', methods=['GET', 'POST'])
+@app.route("/perfil", methods=["GET", "POST"])
 @login_required
 def perfil():
     usuario = (
-        User.query
-        .options(joinedload(User.horarios_trabalho))
+        User.query.options(joinedload(User.horarios_trabalho))
         .filter_by(id=current_user.id)
         .first()
     )
@@ -5408,21 +6093,36 @@ def perfil():
         flash("Usuário não encontrado.", "danger")
         return redirect(url_for("login"))
 
-    cargos = sorted([
-        "Agente Administrativo", "Professor I", "Professor Adjunto",
-        "Professor II", "Professor III", "Professor IV",
-        "Servente I", "Servente II", "Servente",
-        "Diretor de Unidade Escolar", "Assistente de Direção",
-        "Pedagoga Comunitaria", "Assistente Tecnico Pedagogico",
-        "Secretario de Unidade Escolar", "Educador de Desenvolvimento Infanto Juvenil",
-        "Atendente de Educação I", "Atendente de Educação II",
-        "Trabalhador", "Inspetor de Aluno"
-    ])
+    cargos = sorted(
+        [
+            "Agente Administrativo",
+            "Professor I",
+            "Professor Adjunto",
+            "Professor II",
+            "Professor III",
+            "Professor IV",
+            "Servente I",
+            "Servente II",
+            "Servente",
+            "Diretor de Unidade Escolar",
+            "Assistente de Direção",
+            "Pedagoga Comunitaria",
+            "Assistente Tecnico Pedagogico",
+            "Secretario de Unidade Escolar",
+            "Educador de Desenvolvimento Infanto Juvenil",
+            "Atendente de Educação I",
+            "Atendente de Educação II",
+            "Trabalhador",
+            "Inspetor de Aluno",
+        ]
+    )
 
-    if request.method == 'POST':
+    if request.method == "POST":
         # ====== A) Detecta solicitação de troca de e-mail ======
         novo_email = (request.form.get("novo_email") or "").strip().lower()
-        confirmar_novo_email = (request.form.get("confirmar_novo_email") or "").strip().lower()
+        confirmar_novo_email = (
+            (request.form.get("confirmar_novo_email") or "").strip().lower()
+        )
         senha_atual = (request.form.get("senha_atual") or "").strip()
 
         email_change_requested = bool(novo_email or confirmar_novo_email or senha_atual)
@@ -5431,13 +6131,13 @@ def perfil():
         perfil_alterado = False
         try:
             # celular
-            celular_novo = (request.form.get('celular') or "").strip() or None
+            celular_novo = (request.form.get("celular") or "").strip() or None
             if usuario.celular != celular_novo:
                 usuario.celular = celular_novo
                 perfil_alterado = True
 
             # data_nascimento
-            dn_raw = request.form.get('data_nascimento')
+            dn_raw = request.form.get("data_nascimento")
             if dn_raw is not None:  # veio no form
                 dn_nova = _parse_date_yyyy_mm_dd(dn_raw)
                 if usuario.data_nascimento != dn_nova:
@@ -5445,7 +6145,7 @@ def perfil():
                     perfil_alterado = True
 
             # CPF (NOT NULL no seu modelo) -> só altera se vier preenchido
-            cpf_in = (request.form.get('cpf') or "").strip()
+            cpf_in = (request.form.get("cpf") or "").strip()
             if cpf_in:
                 cpf_norm = _digits_only(cpf_in)
                 if usuario.cpf != cpf_norm:
@@ -5453,13 +6153,13 @@ def perfil():
                     perfil_alterado = True
 
             # RG (NOT NULL no seu modelo) -> só altera se vier preenchido
-            rg_in = (request.form.get('rg') or "").strip()
+            rg_in = (request.form.get("rg") or "").strip()
             if rg_in and usuario.rg != rg_in:
                 usuario.rg = rg_in
                 perfil_alterado = True
 
             # data_emissao_rg
-            der_raw = request.form.get('data_emissao_rg')
+            der_raw = request.form.get("data_emissao_rg")
             if der_raw is not None:
                 der_nova = _parse_date_yyyy_mm_dd(der_raw)
                 if usuario.data_emissao_rg != der_nova:
@@ -5467,82 +6167,102 @@ def perfil():
                     perfil_alterado = True
 
             # orgao_emissor
-            orgao_novo = (request.form.get('orgao_emissor') or "").strip() or None
+            orgao_novo = (request.form.get("orgao_emissor") or "").strip() or None
             if usuario.orgao_emissor != orgao_novo:
                 usuario.orgao_emissor = orgao_novo
                 perfil_alterado = True
 
             # graduacao
-            graduacao_nova = (request.form.get('graduacao') or "").strip() or None
+            graduacao_nova = (request.form.get("graduacao") or "").strip() or None
             if usuario.graduacao != graduacao_nova:
                 usuario.graduacao = graduacao_nova
                 perfil_alterado = True
 
             # cargo
-            cargo_novo = (request.form.get('cargo') or "").strip() or None
+            cargo_novo = (request.form.get("cargo") or "").strip() or None
             if usuario.cargo != cargo_novo:
                 usuario.cargo = cargo_novo
                 perfil_alterado = True
 
             if perfil_alterado:
                 db.session.commit()
-                flash('Perfil atualizado com sucesso!', 'success')
+                flash("Perfil atualizado com sucesso!", "success")
             else:
                 # Só mostra "nada para salvar" quando o usuário NÃO está tentando trocar e-mail
                 if not email_change_requested:
-                    flash('Nenhuma alteração no perfil para salvar.', 'info')
+                    flash("Nenhuma alteração no perfil para salvar.", "info")
 
         except IntegrityError:
             db.session.rollback()
-            flash("CPF, RG ou E-mail já estão em uso por outro usuário. Verifique os dados.", "danger")
-            return redirect(url_for('perfil'))
+            flash(
+                "CPF, RG ou E-mail já estão em uso por outro usuário. Verifique os dados.",
+                "danger",
+            )
+            return redirect(url_for("perfil"))
         except Exception as e:
             db.session.rollback()
-            flash(f'Erro ao atualizar o perfil: {str(e)}', 'danger')
-            return redirect(url_for('perfil'))
+            flash(f"Erro ao atualizar o perfil: {str(e)}", "danger")
+            return redirect(url_for("perfil"))
 
         # ====== C) Troca de e-mail (se solicitada) ======
         if email_change_requested:
             # Se o usuário clicou salvar com algum campo da seção de e-mail preenchido:
             if not novo_email and not confirmar_novo_email and senha_atual:
-                flash("Para alterar o e-mail, informe o novo e-mail e a confirmação.", "warning")
-                return redirect(url_for('perfil'))
+                flash(
+                    "Para alterar o e-mail, informe o novo e-mail e a confirmação.",
+                    "warning",
+                )
+                return redirect(url_for("perfil"))
 
             if not novo_email or not confirmar_novo_email:
                 flash("Preencha o novo e-mail e a confirmação.", "warning")
-                return redirect(url_for('perfil'))
+                return redirect(url_for("perfil"))
 
             if novo_email != confirmar_novo_email:
                 flash("Os e-mails não coincidem.", "danger")
-                return redirect(url_for('perfil'))
+                return redirect(url_for("perfil"))
 
             if "@" not in novo_email:
                 flash("Informe um e-mail válido.", "danger")
-                return redirect(url_for('perfil'))
+                return redirect(url_for("perfil"))
 
             if novo_email == (usuario.email or "").strip().lower():
                 flash("Este já é o seu e-mail atual.", "info")
-                return redirect(url_for('perfil'))
+                return redirect(url_for("perfil"))
 
             if not senha_atual or not check_password_hash(usuario.senha, senha_atual):
-                flash("Senha atual incorreta para solicitar a alteração de e-mail.", "danger")
-                return redirect(url_for('perfil'))
+                flash(
+                    "Senha atual incorreta para solicitar a alteração de e-mail.",
+                    "danger",
+                )
+                return redirect(url_for("perfil"))
 
-            ja_existe = User.query.filter(func.lower(User.email) == novo_email, User.id != usuario.id).first()
+            ja_existe = User.query.filter(
+                func.lower(User.email) == novo_email, User.id != usuario.id
+            ).first()
             if ja_existe:
                 flash("Este e-mail já está em uso. Informe outro.", "danger")
-                return redirect(url_for('perfil'))
+                return redirect(url_for("perfil"))
 
             try:
                 send_email_change_confirmation(usuario, novo_email)
-                flash("Enviamos um link de confirmação para o novo e-mail. Confirme para concluir a alteração.", "success")
+                flash(
+                    "Enviamos um link de confirmação para o novo e-mail. Confirme para concluir a alteração.",
+                    "success",
+                )
             except Exception:
-                current_app.logger.exception("Falha ao enviar confirmação de troca de e-mail")
-                flash("Não foi possível enviar o e-mail de confirmação no momento. Tente novamente.", "danger")
+                current_app.logger.exception(
+                    "Falha ao enviar confirmação de troca de e-mail"
+                )
+                flash(
+                    "Não foi possível enviar o e-mail de confirmação no momento. Tente novamente.",
+                    "danger",
+                )
 
-        return redirect(url_for('perfil'))
+        return redirect(url_for("perfil"))
 
-    return render_template('perfil.html', usuario=usuario, cargos=cargos)
+    return render_template("perfil.html", usuario=usuario, cargos=cargos)
+
 
 # ===========================================
 # RELATÓRIO HORAS EXTRAS (ADMIN)
@@ -5553,9 +6273,13 @@ def _normalize_status(raw: str) -> str:
         return "Deferido"
     if s.startswith("indeferid") or s in {"rejeitado", "rejeitada", "negado", "negada"}:
         return "Indeferido"
-    if any(x in s for x in ["anal", "espera", "aguard", "pendent", "serem deferid", "deferir"]):
+    if any(
+        x in s
+        for x in ["anal", "espera", "aguard", "pendent", "serem deferid", "deferir"]
+    ):
         return "Em análise"
     return "Em análise"
+
 
 def _parse_date(s: str):
     if not s:
@@ -5564,6 +6288,7 @@ def _parse_date(s: str):
         return dt.datetime.strptime(s, "%Y-%m-%d").date()
     except Exception:
         return None
+
 
 def _in_range(date_obj: dt.date, inicio: dt.date | None, fim: dt.date | None) -> bool:
     if date_obj is None:
@@ -5574,15 +6299,20 @@ def _in_range(date_obj: dt.date, inicio: dt.date | None, fim: dt.date | None) ->
         return False
     return True
 
+
 def _min_total(horas, minutos) -> int:
     return int(horas or 0) * 60 + int(minutos or 0)
 
-@app.route('/relatorio_horas_extras')
+
+@app.route("/relatorio_horas_extras")
 @login_required
 def relatorio_horas_extras():
-    if current_user.tipo != 'administrador':
-        flash("Acesso negado. Você não tem permissão para acessar este relatório.", "danger")
-        return redirect(url_for('index'))
+    if current_user.tipo != "administrador":
+        flash(
+            "Acesso negado. Você não tem permissão para acessar este relatório.",
+            "danger",
+        )
+        return redirect(url_for("index"))
 
     inicio = _parse_date(request.args.get("inicio"))
     fim = _parse_date(request.args.get("fim"))
@@ -5590,8 +6320,7 @@ def relatorio_horas_extras():
         inicio, fim = fim, inicio
 
     usuarios = (
-        User.query
-        .options(selectinload(User.banco_de_horas))
+        User.query.options(selectinload(User.banco_de_horas))
         .filter(User.ativo.is_(True))
         .order_by(User.nome.asc())
         .all()
@@ -5599,9 +6328,8 @@ def relatorio_horas_extras():
     user_ids = [u.id for u in usuarios] or [-1]
 
     ags_all = (
-        Agendamento.query
-        .filter(Agendamento.funcionario_id.in_(user_ids))
-        .filter(func.lower(func.trim(Agendamento.motivo)) == 'bh')
+        Agendamento.query.filter(Agendamento.funcionario_id.in_(user_ids))
+        .filter(func.lower(func.trim(Agendamento.motivo)) == "bh")
         .all()
     )
     ags_by_user = defaultdict(list)
@@ -5614,28 +6342,32 @@ def relatorio_horas_extras():
         regs = []
         total_cadastradas_min = 0
 
-        for r in (u.banco_de_horas or []):
-            motivo = (r.motivo or '').strip()
+        for r in u.banco_de_horas or []:
+            motivo = (r.motivo or "").strip()
             motivo_norm = motivo.strip().lower()
             data_r = r.data_realizacao
 
-            is_ajuste = bool(getattr(r, 'is_ajuste', False))
+            is_ajuste = bool(getattr(r, "is_ajuste", False))
             if is_ajuste:
                 continue
 
-            if motivo_norm == 'bh':
+            if motivo_norm == "bh":
                 continue
 
             if (not inicio and not fim) or _in_range(data_r, inicio, fim):
-                regs.append({
-                    "data_realizacao": data_r,
-                    "motivo": motivo,
-                    "horas": int(r.horas or 0),
-                    "minutos": int(r.minutos or 0),
-                    "status_label": _normalize_status(getattr(r, 'status', '') or ''),
-                })
+                regs.append(
+                    {
+                        "data_realizacao": data_r,
+                        "motivo": motivo,
+                        "horas": int(r.horas or 0),
+                        "minutos": int(r.minutos or 0),
+                        "status_label": _normalize_status(
+                            getattr(r, "status", "") or ""
+                        ),
+                    }
+                )
 
-            if _normalize_status(getattr(r, 'status', '') or '') == "Deferido":
+            if _normalize_status(getattr(r, "status", "") or "") == "Deferido":
                 if (not inicio and not fim) or _in_range(data_r, inicio, fim):
                     total_cadastradas_min += _min_total(r.horas, r.minutos)
 
@@ -5645,18 +6377,20 @@ def relatorio_horas_extras():
         total_usufruidas_min = 0
 
         for a in ags_by_user.get(u.id, []):
-            st_raw = getattr(a, 'status', '') or ''
+            st_raw = getattr(a, "status", "") or ""
             st = _normalize_status(st_raw)
             data_a = a.data
 
             if (not inicio and not fim) or _in_range(data_a, inicio, fim):
-                ag_rows.append({
-                    "data": data_a,
-                    "horas": int(a.horas or 0),
-                    "minutos": int(a.minutos or 0),
-                    "data_referencia": getattr(a, 'data_referencia', None),
-                    "status": st_raw,
-                })
+                ag_rows.append(
+                    {
+                        "data": data_a,
+                        "horas": int(a.horas or 0),
+                        "minutos": int(a.minutos or 0),
+                        "data_referencia": getattr(a, "data_referencia", None),
+                        "status": st_raw,
+                    }
+                )
 
             if st == "Deferido":
                 if (not inicio and not fim) or _in_range(data_a, inicio, fim):
@@ -5666,20 +6400,23 @@ def relatorio_horas_extras():
 
         saldo_min = max(0, total_cadastradas_min - total_usufruidas_min)
 
-        usuarios_relatorio.append({
-            "id": u.id,
-            "nome": u.nome,
-            "registro": u.registro,
-            "email": u.email,
-            "horas": saldo_min // 60,
-            "minutos": saldo_min % 60,
-            "total_cadastradas_min": total_cadastradas_min,
-            "total_usufruidas_min": total_usufruidas_min,
-            "registros": regs,
-            "agendamentos_bh": ag_rows,
-        })
+        usuarios_relatorio.append(
+            {
+                "id": u.id,
+                "nome": u.nome,
+                "registro": u.registro,
+                "email": u.email,
+                "horas": saldo_min // 60,
+                "minutos": saldo_min % 60,
+                "total_cadastradas_min": total_cadastradas_min,
+                "total_usufruidas_min": total_usufruidas_min,
+                "registros": regs,
+                "agendamentos_bh": ag_rows,
+            }
+        )
 
-    return render_template('relatorio_horas_extras.html', usuarios=usuarios_relatorio)
+    return render_template("relatorio_horas_extras.html", usuarios=usuarios_relatorio)
+
 
 # ===========================================
 # ADMIN AGENDAMENTOS (página + AJAX + excluir + substituto)
@@ -5687,8 +6424,16 @@ def relatorio_horas_extras():
 import datetime
 import unicodedata
 
-from flask import request, redirect, url_for, render_template, flash, jsonify, current_app
-from flask_login import login_required, current_user
+from flask import (
+    current_app,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
+from flask_login import current_user, login_required
 from sqlalchemy import func, or_
 from sqlalchemy.orm import selectinload
 
@@ -5726,7 +6471,7 @@ def _status_matches(filter_status: str, raw_status: str) -> bool:
     if not filter_status:
         return True
 
-    fs = _norm_status(filter_status)          # "em espera" etc
+    fs = _norm_status(filter_status)  # "em espera" etc
     st = _norm_status(raw_status)
 
     # deferido/deferida
@@ -5794,28 +6539,30 @@ def _fmt_br(val_dt):
     return ""
 
 
-@app.route('/admin/agendamentos', methods=['GET'])
+@app.route("/admin/agendamentos", methods=["GET"])
 @login_required
 def admin_agendamentos():
-    if getattr(current_user, 'tipo', None) != 'administrador':
+    if getattr(current_user, "tipo", None) != "administrador":
         flash("Acesso negado.", "danger")
-        return redirect(url_for('index'))
+        return redirect(url_for("index"))
     return render_template("admin_agendamentos.html")
 
 
-@app.route('/admin/agendamentos/ajax', methods=['GET'])
+@app.route("/admin/agendamentos/ajax", methods=["GET"])
 @login_required
 def admin_agendamentos_ajax():
-    if getattr(current_user, 'tipo', None) != 'administrador':
+    if getattr(current_user, "tipo", None) != "administrador":
         return jsonify({"error": "Acesso negado"}), 403
 
     try:
-        nome     = (request.args.get("nome") or "").strip()
-        status   = (request.args.get("status") or "").strip().lower()   # deferido | indeferido | em_espera | ""
-        cargo    = (request.args.get("cargo") or "").strip()
-        page     = request.args.get("page", 1, type=int)
+        nome = (request.args.get("nome") or "").strip()
+        status = (
+            (request.args.get("status") or "").strip().lower()
+        )  # deferido | indeferido | em_espera | ""
+        cargo = (request.args.get("cargo") or "").strip()
+        page = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 10, type=int)
-        order    = (request.args.get("order") or "desc").strip().lower()
+        order = (request.args.get("order") or "desc").strip().lower()
 
         # sanity
         page = max(1, page)
@@ -5824,11 +6571,9 @@ def admin_agendamentos_ajax():
             order = "desc"
 
         # Base query: usuarios que possuem agendamentos
-        query = (
-            User.query
-            .options(selectinload(User.agendamentos))
-            .filter(User.agendamentos.any())  # só quem tem agendamento
-        )
+        query = User.query.options(selectinload(User.agendamentos)).filter(
+            User.agendamentos.any()
+        )  # só quem tem agendamento
 
         # Somente ativos (se existir a coluna)
         if hasattr(User, "ativo"):
@@ -5850,12 +6595,16 @@ def admin_agendamentos_ajax():
             elif status == "indeferido":
                 query = query.filter(User.agendamentos.any(st_col.like("indeferid%")))
             elif status == "em_espera":
-                query = query.filter(User.agendamentos.any(or_(
-                    st_col.like("%espera%"),
-                    st_col.like("%penden%"),
-                    st_col.like("%aguard%"),
-                    st_col.like("%analis%")
-                )))
+                query = query.filter(
+                    User.agendamentos.any(
+                        or_(
+                            st_col.like("%espera%"),
+                            st_col.like("%penden%"),
+                            st_col.like("%aguard%"),
+                            st_col.like("%analis%"),
+                        )
+                    )
+                )
 
         query = query.order_by(User.nome.asc())
 
@@ -5866,7 +6615,7 @@ def admin_agendamentos_ajax():
         for funci in funcionarios.items:
             ags_tmp = []
 
-            for ag in (funci.agendamentos or []):
+            for ag in funci.agendamentos or []:
                 ag_status_raw = (getattr(ag, "status", "") or "").strip()
 
                 # aplica filtro robusto
@@ -5879,50 +6628,68 @@ def admin_agendamentos_ajax():
                 subs_flag = (getattr(ag, "substituicao", None) or "").strip()
 
                 # opcional: ajuda o front a ordenar melhor se quiser
-                iso = ag_dt.isoformat() if isinstance(ag_dt, datetime.datetime) else None
+                iso = (
+                    ag_dt.isoformat() if isinstance(ag_dt, datetime.datetime) else None
+                )
 
-                ags_tmp.append({
-                    "id": ag.id,
-                    "data": _fmt_br(ag_dt),
-                    "data_iso": iso,
-                    "motivo": getattr(ag, "motivo", None) or "",
-                    "status": _display_status(ag_status_raw),
+                ags_tmp.append(
+                    {
+                        "id": ag.id,
+                        "data": _fmt_br(ag_dt),
+                        "data_iso": iso,
+                        "motivo": getattr(ag, "motivo", None) or "",
+                        "status": _display_status(ag_status_raw),
+                        # (não é usado pelo seu front atual, mas fica coerente)
+                        "delete_url": url_for("admin_delete_agendamento", id=ag.id),
+                        # enviados para o front (edição/visualização)
+                        "nome_substituto": nome_sub,
+                        "substituicao": subs_flag,
+                        "_ord": _ord_key(ag_dt),
+                    }
+                )
 
-                    # (não é usado pelo seu front atual, mas fica coerente)
-                    "delete_url": url_for('admin_delete_agendamento', id=ag.id),
-
-                    # enviados para o front (edição/visualização)
-                    "nome_substituto": nome_sub,
-                    "substituicao": subs_flag,
-
-                    "_ord": _ord_key(ag_dt)
-                })
-
-            reverse = (order != "asc")
+            reverse = order != "asc"
             ags_tmp.sort(key=lambda x: x["_ord"], reverse=reverse)
             for item in ags_tmp:
                 item.pop("_ord", None)
 
             if ags_tmp:
-                dados.append({
-                    "id": funci.id,
-                    "funcionario": (funci.nome or "").title(),
-                    "cargo": funci.cargo or "",
-                    "agendamentos": ags_tmp
-                })
+                dados.append(
+                    {
+                        "id": funci.id,
+                        "funcionario": (funci.nome or "").title(),
+                        "cargo": funci.cargo or "",
+                        "agendamentos": ags_tmp,
+                    }
+                )
 
-        return jsonify({
-            "page": funcionarios.page,
-            "pages": funcionarios.pages,
-            "per_page": funcionarios.per_page,
-            "total": funcionarios.total,
-            "has_next": funcionarios.has_next,
-            "has_prev": funcionarios.has_prev,
-            "next_num": getattr(funcionarios, "next_num", (funcionarios.page + 1 if funcionarios.has_next else None)),
-            "prev_num": getattr(funcionarios, "prev_num", (funcionarios.page - 1 if funcionarios.has_prev else None)),
-            "filters": {"nome": nome, "status": status, "cargo": cargo, "order": order},
-            "dados": dados
-        })
+        return jsonify(
+            {
+                "page": funcionarios.page,
+                "pages": funcionarios.pages,
+                "per_page": funcionarios.per_page,
+                "total": funcionarios.total,
+                "has_next": funcionarios.has_next,
+                "has_prev": funcionarios.has_prev,
+                "next_num": getattr(
+                    funcionarios,
+                    "next_num",
+                    (funcionarios.page + 1 if funcionarios.has_next else None),
+                ),
+                "prev_num": getattr(
+                    funcionarios,
+                    "prev_num",
+                    (funcionarios.page - 1 if funcionarios.has_prev else None),
+                ),
+                "filters": {
+                    "nome": nome,
+                    "status": status,
+                    "cargo": cargo,
+                    "order": order,
+                },
+                "dados": dados,
+            }
+        )
 
     except Exception:
         current_app.logger.exception("Erro em /admin/agendamentos/ajax")
@@ -5931,10 +6698,10 @@ def admin_agendamentos_ajax():
 
 # Exempt + validação manual do header CSRF
 @csrf.exempt
-@app.route('/admin/delete_agendamento/<int:id>', methods=['POST'])
+@app.route("/admin/delete_agendamento/<int:id>", methods=["POST"])
 @login_required
 def admin_delete_agendamento(id):
-    if getattr(current_user, 'tipo', None) != 'administrador':
+    if getattr(current_user, "tipo", None) != "administrador":
         return jsonify({"error": "Acesso negado"}), 403
 
     if not _csrf_ok_from_header(request):
@@ -5944,7 +6711,9 @@ def admin_delete_agendamento(id):
         agendamento = Agendamento.query.get_or_404(id)
         db.session.delete(agendamento)
         db.session.commit()
-        return jsonify({"success": True, "message": "Agendamento excluído com sucesso."})
+        return jsonify(
+            {"success": True, "message": "Agendamento excluído com sucesso."}
+        )
     except Exception:
         db.session.rollback()
         current_app.logger.exception("Erro ao excluir agendamento")
@@ -5953,10 +6722,10 @@ def admin_delete_agendamento(id):
 
 # ✅ ROTA: salvar substituto (M/I/T/N serializado no campo nome_substituto)
 @csrf.exempt
-@app.route('/admin/agendamento/<int:id>/substituto', methods=['POST'])
+@app.route("/admin/agendamento/<int:id>/substituto", methods=["POST"])
 @login_required
 def admin_agendamento_set_substituto(id):
-    if getattr(current_user, 'tipo', None) != 'administrador':
+    if getattr(current_user, "tipo", None) != "administrador":
         return jsonify({"success": False, "error": "Acesso negado"}), 403
 
     if not _csrf_ok_from_header(request):
@@ -5968,7 +6737,15 @@ def admin_agendamento_set_substituto(id):
     nome = (payload.get("nome_substituto") or "").strip()
 
     if len(nome) > 255:
-        return jsonify({"success": False, "error": "Nome do substituto muito longo (máx. 255)."}), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "Nome do substituto muito longo (máx. 255).",
+                }
+            ),
+            400,
+        )
 
     try:
         if nome:
@@ -5979,17 +6756,30 @@ def admin_agendamento_set_substituto(id):
             ag.substituicao = "Não"
 
         db.session.commit()
-        return jsonify({
-            "success": True,
-            "id": ag.id,
-            "nome_substituto": ag.nome_substituto or "",
-            "substituicao": ag.substituicao
-        }), 200
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "id": ag.id,
+                    "nome_substituto": ag.nome_substituto or "",
+                    "substituicao": ag.substituicao,
+                }
+            ),
+            200,
+        )
 
     except Exception:
         db.session.rollback()
-        current_app.logger.exception("Erro ao salvar substituição no agendamento %s", id)
-        return jsonify({"success": False, "error": "Não foi possível salvar a substituição."}), 500
+        current_app.logger.exception(
+            "Erro ao salvar substituição no agendamento %s", id
+        )
+        return (
+            jsonify(
+                {"success": False, "error": "Não foi possível salvar a substituição."}
+            ),
+            500,
+        )
+
 
 # ===========================================
 # RESUMO DE USUÁRIOS / SALDOS (ADMIN)
@@ -6011,10 +6801,19 @@ def admin_agendamento_set_substituto(id):
 # ===========================================
 
 import datetime
+
+from flask import (
+    current_app,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
+from flask_login import current_user, login_required
 from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
-from flask import request, redirect, url_for, render_template, flash, current_app, jsonify
-from flask_login import login_required, current_user
 
 # ✅ Tipos disponíveis para o modal do relatório (frontend)
 REPORT_TYPES = [
@@ -6063,6 +6862,7 @@ def _apply_user_filters(base_query, q: str, status_filtro: str):
         )
 
     return user_q, status_filtro, q
+
 
 def _parse_date_field(value):
     """
@@ -6123,7 +6923,9 @@ def user_info_all():
     q = (request.args.get("q", "", type=str) or "").strip()
     status_filtro = (request.args.get("status", "ativos", type=str) or "ativos").strip()
 
-    user_q, status_filtro_norm, q_norm = _apply_user_filters(User.query, q, status_filtro)
+    user_q, status_filtro_norm, q_norm = _apply_user_filters(
+        User.query, q, status_filtro
+    )
 
     pagination = user_q.order_by(User.nome.asc()).paginate(
         page=page,
@@ -6175,8 +6977,8 @@ def user_info_all():
             "abonadas": ABONADAS_POR_ANO,  # compat/legado
             "tre_registros": int(total_tre),
             "tre_saldo_horas": float(saldo_tre),
-            "bh_registros": 0,             # compat/legado
-            "bh_saldo_horas": 0.0,         # compat/legado
+            "bh_registros": 0,  # compat/legado
+            "bh_saldo_horas": 0.0,  # compat/legado
             "tre_agendamentos": [],
             "bh_agendamentos": [],
         }
@@ -6231,7 +7033,9 @@ def user_info_all():
         status_cond = func.lower(ag_stat) == "deferido"
         tre_filter = or_(func.upper(ag_tipoF) == "TRE", func.upper(ag_mot) == "TRE")
 
-        query = Ag.query.filter(ag_uid.in_(user_ids)).filter(status_cond).filter(tre_filter)
+        query = (
+            Ag.query.filter(ag_uid.in_(user_ids)).filter(status_cond).filter(tre_filter)
+        )
         if ag_data is not None:
             query = query.order_by(ag_data.asc())
         tre_rows = query.all()
@@ -6256,7 +7060,9 @@ def user_info_all():
         status_cond = func.lower(ag_stat) == "deferido"
         bh_filter = or_(func.upper(ag_tipoF) == "BH", func.upper(ag_mot) == "BH")
 
-        query = Ag.query.filter(ag_uid.in_(user_ids)).filter(status_cond).filter(bh_filter)
+        query = (
+            Ag.query.filter(ag_uid.in_(user_ids)).filter(status_cond).filter(bh_filter)
+        )
         if ag_data is not None:
             query = query.order_by(ag_data.asc())
         bh_rows = query.all()
@@ -6279,7 +7085,6 @@ def user_info_all():
         total=pagination.total,
         q=q_norm,
         status=status_filtro_norm,
-
         # modal relatório
         report_types=REPORT_TYPES,
         total_filtrado=total_filtrado,
@@ -6326,8 +7131,7 @@ def admin_atualizar_usuario(user_id):
 
         # duplicidade de registro
         registro_existente = User.query.filter(
-            User.id != usuario.id,
-            User.registro == registro
+            User.id != usuario.id, User.registro == registro
         ).first()
         if registro_existente:
             flash("Já existe outro usuário com esse registro.", "danger")
@@ -6336,8 +7140,7 @@ def admin_atualizar_usuario(user_id):
         # duplicidade de CPF
         if cpf:
             cpf_existente = User.query.filter(
-                User.id != usuario.id,
-                User.cpf == cpf
+                User.id != usuario.id, User.cpf == cpf
             ).first()
             if cpf_existente:
                 flash("Já existe outro usuário com esse CPF.", "danger")
@@ -6346,8 +7149,7 @@ def admin_atualizar_usuario(user_id):
         # duplicidade de RG
         if rg:
             rg_existente = User.query.filter(
-                User.id != usuario.id,
-                User.rg == rg
+                User.id != usuario.id, User.rg == rg
             ).first()
             if rg_existente:
                 flash("Já existe outro usuário com esse RG.", "danger")
@@ -6416,20 +7218,25 @@ def admin_alterar_email(user_id):
 
     if not novo_email or "@" not in novo_email:
         flash("Informe um e-mail válido.", "danger")
-        return redirect(url_for("user_info_all", page=page, per_page=per_page, q=q, status=status))
+        return redirect(
+            url_for("user_info_all", page=page, per_page=per_page, q=q, status=status)
+        )
 
     usuario = User.query.get(user_id)
     if not usuario:
         flash("Usuário não encontrado.", "danger")
-        return redirect(url_for("user_info_all", page=page, per_page=per_page, q=q, status=status))
+        return redirect(
+            url_for("user_info_all", page=page, per_page=per_page, q=q, status=status)
+        )
 
     ja_existe = User.query.filter(
-        func.lower(User.email) == novo_email,
-        User.id != usuario.id
+        func.lower(User.email) == novo_email, User.id != usuario.id
     ).first()
     if ja_existe:
         flash("Este e-mail já está em uso por outro usuário.", "danger")
-        return redirect(url_for("user_info_all", page=page, per_page=per_page, q=q, status=status))
+        return redirect(
+            url_for("user_info_all", page=page, per_page=per_page, q=q, status=status)
+        )
 
     try:
         old_email = (usuario.email or "").strip().lower()
@@ -6448,7 +7255,10 @@ def admin_alterar_email(user_id):
 
         try:
             send_password_reset_email(usuario)
-            flash(f"E-mail atualizado e link de redefinição enviado para {novo_email}.", "success")
+            flash(
+                f"E-mail atualizado e link de redefinição enviado para {novo_email}.",
+                "success",
+            )
         except Exception:
             current_app.logger.exception(
                 "Falha ao enviar e-mail de redefinição após troca de e-mail (admin)"
@@ -6463,10 +7273,14 @@ def admin_alterar_email(user_id):
         flash("Não foi possível atualizar: e-mail já existe no sistema.", "danger")
     except Exception as e:
         db.session.rollback()
-        current_app.logger.exception("Erro ao alterar e-mail do usuário %s: %s", user_id, e)
+        current_app.logger.exception(
+            "Erro ao alterar e-mail do usuário %s: %s", user_id, e
+        )
         flash(f"Erro ao atualizar e-mail: {str(e)}", "danger")
 
-    return redirect(url_for("user_info_all", page=page, per_page=per_page, q=q, status=status))
+    return redirect(
+        url_for("user_info_all", page=page, per_page=per_page, q=q, status=status)
+    )
 
 
 # ===========================================
@@ -6478,13 +7292,17 @@ except Exception:
     CSRFError = None
 
 if CSRFError is not None:
+
     @app.errorhandler(CSRFError)
     def handle_csrf_error(e):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify(
-                success=False,
-                error="Falha de segurança (CSRF). Recarregue a página e tente novamente.",
-            ), 400
+            return (
+                jsonify(
+                    success=False,
+                    error="Falha de segurança (CSRF). Recarregue a página e tente novamente.",
+                ),
+                400,
+            )
         return "Falha de segurança (CSRF). Recarregue a página e tente novamente.", 400
 
 
@@ -6502,7 +7320,9 @@ def toggle_user_ativo(user_id):
     if not hasattr(user, "ativo"):
         return jsonify(success=False, error='Campo "ativo" não existe no usuário.'), 400
 
-    current_app.logger.info("Alterando status do usuário %s (antes: %s)", user.id, user.ativo)
+    current_app.logger.info(
+        "Alterando status do usuário %s (antes: %s)", user.id, user.ativo
+    )
 
     payload = request.get_json(silent=True)
     if payload is None:
@@ -6533,10 +7353,14 @@ def toggle_user_ativo(user_id):
         db.session.commit()
     except Exception as e:
         db.session.rollback()
-        current_app.logger.exception("Erro ao salvar status do usuário %s: %s", user.id, e)
+        current_app.logger.exception(
+            "Erro ao salvar status do usuário %s: %s", user.id, e
+        )
         return jsonify(success=False, error="Erro ao salvar no banco."), 500
 
-    current_app.logger.info("Status do usuário %s alterado para %s", user.id, user.ativo)
+    current_app.logger.info(
+        "Status do usuário %s alterado para %s", user.id, user.ativo
+    )
     return jsonify(success=True, ativo=bool(user.ativo)), 200
 
 
@@ -6624,20 +7448,22 @@ def admin_users_search():
         for u in rows
     ]
 
-    return jsonify({
-        "items": items,
-        "total": total,
-        "has_more": bool(has_more),
-    }), 200
+    return (
+        jsonify(
+            {
+                "items": items,
+                "total": total,
+                "has_more": bool(has_more),
+            }
+        ),
+        200,
+    )
+
 
 import os
 from pathlib import Path
 from typing import Optional
-from flask import current_app
 
-from pathlib import Path
-from typing import Optional
-import os
 from flask import current_app
 
 # ===========================================
@@ -6679,7 +7505,11 @@ app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024  # 20MB
 # Helpers de arquivo
 # ------------------------------------------
 def allowed_file(filename: str) -> bool:
-    return bool(filename) and "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+    return (
+        bool(filename)
+        and "." in filename
+        and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+    )
 
 
 def _upload_base_dir() -> Path:
@@ -6779,6 +7609,7 @@ def _protocolo_agendamento_abs_path(agendamento_id: int) -> str:
     """
     return str(_protocolos_dir() / f"protocolo_agendamento_{agendamento_id}.pdf")
 
+
 # ------------------------------------------
 # ✅ SYNC TRE (CORRIGIDO)
 # - soma TRE.deferida usando dias_validados (se houver) senão dias_folga
@@ -6797,11 +7628,14 @@ def sync_tre_user(usuario_id: int):
             func.coalesce(
                 func.sum(
                     case(
-                        (TRE.status == "deferida", func.coalesce(TRE.dias_validados, TRE.dias_folga)),
-                        else_=0
+                        (
+                            TRE.status == "deferida",
+                            func.coalesce(TRE.dias_validados, TRE.dias_folga),
+                        ),
+                        else_=0,
                     )
                 ),
-                0
+                0,
             )
         )
         .filter(TRE.funcionario_id == usuario_id)
@@ -6821,7 +7655,7 @@ def sync_tre_user(usuario_id: int):
         .filter(
             or_(
                 func.upper(func.trim(Agendamento.motivo)) == "TRE",
-                func.upper(func.trim(Agendamento.tipo_folga)) == "TRE"
+                func.upper(func.trim(Agendamento.tipo_folga)) == "TRE",
             )
         )
         .scalar()
@@ -6889,8 +7723,7 @@ def adicionar_tre():
             return redirect(url_for("adicionar_tre"))
 
     tres_ultimas = (
-        TRE.query
-        .filter_by(funcionario_id=current_user.id)
+        TRE.query.filter_by(funcionario_id=current_user.id)
         .order_by(TRE.data_envio.desc())
         .limit(3)
         .all()
@@ -6902,8 +7735,7 @@ def adicionar_tre():
 @login_required
 def minhas_tres():
     minhas = (
-        TRE.query
-        .filter_by(funcionario_id=current_user.id)
+        TRE.query.filter_by(funcionario_id=current_user.id)
         .order_by(TRE.data_envio.desc())
         .all()
     )
@@ -6916,27 +7748,42 @@ def minhas_tres():
 def download_tre(tre_id: int):
     tre = TRE.query.get_or_404(tre_id)
 
-    if tre.funcionario_id != current_user.id and getattr(current_user, "tipo", "") != "administrador":
+    if (
+        tre.funcionario_id != current_user.id
+        and getattr(current_user, "tipo", "") != "administrador"
+    ):
         flash("Você não tem permissão para acessar este arquivo.", "danger")
         return redirect(url_for("minhas_tres"))
 
     # ✅ agora pode não existir PDF (admin ajuste)
     if not getattr(tre, "arquivo_pdf", None):
-        flash("Esta TRE não possui arquivo PDF anexado (registro/ajuste administrativo).", "info")
-        return redirect(url_for("minhas_tres" if tre.funcionario_id == current_user.id else "admin_tres_list"))
+        flash(
+            "Esta TRE não possui arquivo PDF anexado (registro/ajuste administrativo).",
+            "info",
+        )
+        return redirect(
+            url_for(
+                "minhas_tres"
+                if tre.funcionario_id == current_user.id
+                else "admin_tres_list"
+            )
+        )
 
     pdf_path = _resolve_pdf_path(tre.arquivo_pdf)
 
     current_app.logger.info(
         "Download TRE id=%s filename=%s resolved_path=%s found=%s",
-        tre_id, tre.arquivo_pdf, pdf_path, bool(pdf_path)
+        tre_id,
+        tre.arquivo_pdf,
+        pdf_path,
+        bool(pdf_path),
     )
 
     if not pdf_path:
         flash(
             "Arquivo de TRE não está disponível no servidor no momento. "
             "Isso pode ocorrer após atualização do sistema.",
-            "warning"
+            "warning",
         )
         return redirect(url_for("minhas_tres"))
 
@@ -6945,7 +7792,7 @@ def download_tre(tre_id: int):
         mimetype="application/pdf",
         as_attachment=True,
         download_name=os.path.basename(tre.arquivo_pdf),
-        max_age=0
+        max_age=0,
     )
 
 
@@ -6962,11 +7809,7 @@ def admin_tres_list():
     status = request.args.get("status", "pendente")
     busca = request.args.get("q", "").strip()
 
-    q = (
-        TRE.query
-        .join(User, User.id == TRE.funcionario_id)
-        .filter(User.ativo.is_(True))
-    )
+    q = TRE.query.join(User, User.id == TRE.funcionario_id).filter(User.ativo.is_(True))
 
     if status in ("pendente", "deferida", "indeferida"):
         q = q.filter(TRE.status == status)
@@ -6999,7 +7842,11 @@ def admin_tre_decidir(tre_id: int):
         return jsonify({"error": "Esta TRE já foi analisada."}), 400
 
     if acao == "aprovar":
-        dias_aprovados = int(dias_validados) if (dias_validados and dias_validados > 0) else int(tre.dias_folga or 0)
+        dias_aprovados = (
+            int(dias_validados)
+            if (dias_validados and dias_validados > 0)
+            else int(tre.dias_folga or 0)
+        )
 
         tre.status = "deferida"
         tre.dias_validados = dias_aprovados
@@ -7009,10 +7856,14 @@ def admin_tre_decidir(tre_id: int):
 
         db.session.commit()
         sync_tre_user(user.id)
-        return jsonify({"success": True, "message": f"TRE deferida (+{dias_aprovados} dia(s))."})
+        return jsonify(
+            {"success": True, "message": f"TRE deferida (+{dias_aprovados} dia(s))."}
+        )
 
     tre.status = "indeferida"
-    tre.dias_validados = int(dias_validados) if (dias_validados and dias_validados > 0) else None
+    tre.dias_validados = (
+        int(dias_validados) if (dias_validados and dias_validados > 0) else None
+    )
     tre.parecer_admin = parecer or None
     tre.validado_em = datetime.datetime.utcnow()
     tre.validado_por_id = current_user.id
@@ -7062,7 +7913,9 @@ def admin_tre_lancar():
         except ValueError:
             funcionario_id = 0
 
-        acao = (request.form.get("acao") or "adicionar").strip().lower()  # adicionar|remover
+        acao = (
+            (request.form.get("acao") or "adicionar").strip().lower()
+        )  # adicionar|remover
         dias_in = request.form.get("dias_folga", type=int)
         descricao = (request.form.get("descricao") or "").strip() or None
         parecer = (request.form.get("parecer_admin") or "").strip() or None
@@ -7113,7 +7966,6 @@ def admin_tre_lancar():
             parecer_admin=parecer,
             validado_em=datetime.datetime.utcnow(),
             validado_por_id=current_user.id,
-
             # novas colunas (se existirem)
             origem=getattr(TRE, "origem", None) and "admin_ajuste" or None,
             descricao=descricao,
@@ -7125,7 +7977,10 @@ def admin_tre_lancar():
             sync_tre_user(user.id)
 
             sinal = "+" if dias_final > 0 else ""
-            flash(f"TRE ajustada para {user.nome} ({sinal}{dias_final} dia(s)).", "success")
+            flash(
+                f"TRE ajustada para {user.nome} ({sinal}{dias_final} dia(s)).",
+                "success",
+            )
             return redirect(url_for("admin_tres_list", status="deferida"))
 
         except Exception as e:
@@ -7134,13 +7989,11 @@ def admin_tre_lancar():
             flash("Erro ao lançar/remover TRE. Verifique logs.", "danger")
             return redirect(url_for("admin_tre_lancar"))
 
-    usuarios = (
-        User.query
-        .filter(User.ativo.is_(True))
-        .order_by(User.nome.asc())
-        .all()
+    usuarios = User.query.filter(User.ativo.is_(True)).order_by(User.nome.asc()).all()
+    return render_template(
+        "admin_tre_lancar.html", usuarios=usuarios, hoje=date.today()
     )
-    return render_template("admin_tre_lancar.html", usuarios=usuarios, hoje=date.today())
+
 
 # ==========================================
 # ✅ RELATÓRIO PDF/ZIP (WeasyPrint) — robusto + filtrável + compatível com o modal
@@ -7183,27 +8036,27 @@ def admin_tre_lancar():
 #   app, db, User, Agendamento, sync_tre_user
 # ==========================================
 
-import os
-import io
-import zipfile
 import datetime
+import io
+import os
+import zipfile
 from pathlib import Path
-from typing import Optional, List, Set, Dict, Any, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from flask import (
+    current_app,
+    flash,
+    jsonify,
+    make_response,
+    redirect,
+    render_template,
     request,
     send_file,
-    render_template,
-    redirect,
     url_for,
-    flash,
-    current_app,
-    make_response,
-    jsonify,
 )
-from flask_login import login_required, current_user
+from flask_login import current_user, login_required
+from sqlalchemy import case, func, or_
 from weasyprint import HTML
-from sqlalchemy import func, or_, case
 
 # ---------------------------------------------------------------------
 # CONFIG / CONSTANTES
@@ -7233,11 +8086,21 @@ CODE_TAG: Dict[str, str] = {
     "OUTROS": "out",
 }
 
+
 # ---------------------------------------------------------------------
 # ZIP tuning (reduz gargalo de CPU)
 # ---------------------------------------------------------------------
 def _truthy(v: str) -> bool:
-    return str(v or "").strip().lower() in ("1", "true", "t", "yes", "y", "sim", "s", "on")
+    return str(v or "").strip().lower() in (
+        "1",
+        "true",
+        "t",
+        "yes",
+        "y",
+        "sim",
+        "s",
+        "on",
+    )
 
 
 _ZIP_MODE = (os.environ.get("REPORT_ZIP_COMPRESSION") or "deflated").strip().lower()
@@ -7250,6 +8113,7 @@ try:
     ZIP_COMPRESSLEVEL = int(os.environ.get("REPORT_ZIP_COMPRESSLEVEL", "1"))
 except Exception:
     ZIP_COMPRESSLEVEL = 1
+
 
 # ---------------------------------------------------------------------
 # Helpers (auth / fetch-mode / fail)
@@ -7279,6 +8143,7 @@ def _fail(message: str, category: str = "danger", http_status: int = 400):
 
     flash(message, category)
     return redirect(url_for("user_info_all"))
+
 
 # ---------------------------------------------------------------------
 # Helpers (string/data/saldo)
@@ -7315,7 +8180,9 @@ def _parse_date_arg(name: str) -> Optional[datetime.date]:
         return None
 
 
-def _period_label(dt_ini: Optional[datetime.date], dt_fim: Optional[datetime.date]) -> str:
+def _period_label(
+    dt_ini: Optional[datetime.date], dt_fim: Optional[datetime.date]
+) -> str:
     if dt_ini and dt_fim:
         return f"Período do relatório: {_fmt_date(dt_ini)} até {_fmt_date(dt_fim)}"
     if dt_ini and not dt_fim:
@@ -7356,7 +8223,9 @@ def _detalhes_ag(ag, code: str) -> str:
     det = []
 
     if code == "BH":
-        det.append(f"Tempo: {_format_tempo_bh(getattr(ag,'horas',0), getattr(ag,'minutos',0))}")
+        det.append(
+            f"Tempo: {_format_tempo_bh(getattr(ag,'horas',0), getattr(ag,'minutos',0))}"
+        )
         dt_ref = getattr(ag, "data_referencia", None)
         if dt_ref:
             det.append("Ref.: " + _fmt_date(dt_ref))
@@ -7382,7 +8251,7 @@ def _safe_filename(s: str) -> str:
     s = (s or "").strip()
     if not s:
         return "servidor"
-    for ch in ['/', '\\', ':', '*', '?', '"', '<', '>', '|']:
+    for ch in ["/", "\\", ":", "*", "?", '"', "<", ">", "|"]:
         s = s.replace(ch, "-")
     s = " ".join(s.split())
     return s[:120] if len(s) > 120 else s
@@ -7409,6 +8278,7 @@ def _scope_label(scope: str) -> str:
         return "Individual"
     return scope or "—"
 
+
 # ---------------------------------------------------------------------
 # ✅ LM: agrupar por lote_id e exibir período + dias
 # ---------------------------------------------------------------------
@@ -7429,7 +8299,7 @@ def _aggregate_lm_rows(
     if not ag_list:
         return [], 0, 0
 
-    use_full_period = (dt_ini is None and dt_fim is None)
+    use_full_period = dt_ini is None and dt_fim is None
 
     groups: Dict[str, List["Agendamento"]] = {}
     for ag in ag_list:
@@ -7445,7 +8315,10 @@ def _aggregate_lm_rows(
 
     ordered = sorted(
         groups.values(),
-        key=lambda xs: min([getattr(x, "data", None) for x in xs if getattr(x, "data", None)] or [datetime.date.min]),
+        key=lambda xs: min(
+            [getattr(x, "data", None) for x in xs if getattr(x, "data", None)]
+            or [datetime.date.min]
+        ),
     )
 
     for gs in ordered:
@@ -7477,13 +8350,16 @@ def _aggregate_lm_rows(
             date_str = f"{_fmt_date(start)} → {_fmt_date(end)}"
             det = f"{days} dia(s)"
 
-        rows.append({
-            "date": date_str,
-            "category": CODE_LABEL.get("LM", "Licenças Médicas"),
-            "details": det,
-        })
+        rows.append(
+            {
+                "date": date_str,
+                "category": CODE_LABEL.get("LM", "Licenças Médicas"),
+                "details": det,
+            }
+        )
 
     return rows, len(rows), total_days
+
 
 # ---------------------------------------------------------------------
 # Parsing de filtros (types / user_ids / scope / output / download)
@@ -7572,10 +8448,7 @@ def _resolve_users_for_batch(scope: str) -> List["User"]:
     selected_ids = _parse_user_ids()
     if selected_ids:
         return (
-            User.query
-            .filter(User.id.in_(selected_ids))
-            .order_by(User.nome.asc())
-            .all()
+            User.query.filter(User.id.in_(selected_ids)).order_by(User.nome.asc()).all()
         )
 
     if scope == "selected":
@@ -7583,7 +8456,9 @@ def _resolve_users_for_batch(scope: str) -> List["User"]:
 
     if scope == "ativos_all":
         if hasattr(User, "ativo"):
-            return User.query.filter(User.ativo.is_(True)).order_by(User.nome.asc()).all()
+            return (
+                User.query.filter(User.ativo.is_(True)).order_by(User.nome.asc()).all()
+            )
         return User.query.order_by(User.nome.asc()).all()
 
     if scope == "all":
@@ -7613,10 +8488,8 @@ def _fetch_agendamentos_deferidos(
     if not user_ids:
         return []
 
-    q = (
-        Agendamento.query
-        .filter(Agendamento.funcionario_id.in_(user_ids))
-        .filter(func.lower(Agendamento.status) == "deferido")
+    q = Agendamento.query.filter(Agendamento.funcionario_id.in_(user_ids)).filter(
+        func.lower(Agendamento.status) == "deferido"
     )
 
     if dt_ini:
@@ -7670,7 +8543,9 @@ def _build_report_items(
         try:
             sync_tre_user(u.id)
         except Exception:
-            current_app.logger.exception("Erro ao sincronizar TRE do usuário %s no relatório.", u.id)
+            current_app.logger.exception(
+                "Erro ao sincronizar TRE do usuário %s no relatório.", u.id
+            )
 
         tre_total = int(getattr(u, "tre_total", 0) or 0)
         tre_usuf = int(getattr(u, "tre_usufruidas", 0) or 0)
@@ -7693,7 +8568,9 @@ def _build_report_items(
             "Graduação": _clean_str(getattr(u, "graduacao", None)),
         }
 
-        user_buckets = buckets_by_user.get(u.id) or {code: [] for code in REPORT_CODES_ORDER}
+        user_buckets = buckets_by_user.get(u.id) or {
+            code: [] for code in REPORT_CODES_ORDER
+        }
 
         groups = []
         for code in REPORT_CODES_ORDER:
@@ -7705,17 +8582,26 @@ def _build_report_items(
             lm_total_days = 0  # ✅ usado no resumo quando code == LM
 
             if code == "LM":
-                lm_rows, lm_count, lm_total_days = _aggregate_lm_rows(ag_list, dt_ini, dt_fim)
+                lm_rows, lm_count, lm_total_days = _aggregate_lm_rows(
+                    ag_list, dt_ini, dt_fim
+                )
                 rows = lm_rows
                 count = lm_count
-                extra = (f"TOTAL DIAS LM: {lm_total_days}" if lm_total_days > 0 else "")
+                extra = f"TOTAL DIAS LM: {lm_total_days}" if lm_total_days > 0 else ""
             else:
-                ag_list_sorted = sorted(ag_list, key=lambda x: getattr(x, "data", datetime.date.min) or datetime.date.min)
-                rows = [{
-                    "date": _fmt_date(getattr(ag, "data", None)),
-                    "category": CODE_LABEL.get(code, "Outros"),
-                    "details": _detalhes_ag(ag, code),
-                } for ag in ag_list_sorted]
+                ag_list_sorted = sorted(
+                    ag_list,
+                    key=lambda x: getattr(x, "data", datetime.date.min)
+                    or datetime.date.min,
+                )
+                rows = [
+                    {
+                        "date": _fmt_date(getattr(ag, "data", None)),
+                        "category": CODE_LABEL.get(code, "Outros"),
+                        "details": _detalhes_ag(ag, code),
+                    }
+                    for ag in ag_list_sorted
+                ]
                 count = len(rows)
 
                 extra = ""
@@ -7724,19 +8610,21 @@ def _build_report_items(
                 elif code == "TRE":
                     extra = f"SALDO DISPONÍVEL TRE: {tre_saldo}"
 
-            must_show_due_to_balance = (code in ("BH", "TRE"))
+            must_show_due_to_balance = code in ("BH", "TRE")
             if count == 0 and not must_show_due_to_balance:
                 continue
 
-            groups.append({
-                "code": code,
-                "title": (CODE_LABEL.get(code, "Outros") or "Outros").upper(),
-                "tag": CODE_TAG.get(code, "out"),
-                "count": int(count or 0),              # ✅ para o histórico (linhas/períodos)
-                "lm_total_days": int(lm_total_days),   # ✅ para o resumo (dias)
-                "extra": extra,
-                "rows": rows,
-            })
+            groups.append(
+                {
+                    "code": code,
+                    "title": (CODE_LABEL.get(code, "Outros") or "Outros").upper(),
+                    "tag": CODE_TAG.get(code, "out"),
+                    "count": int(count or 0),  # ✅ para o histórico (linhas/períodos)
+                    "lm_total_days": int(lm_total_days),  # ✅ para o resumo (dias)
+                    "extra": extra,
+                    "rows": rows,
+                }
+            )
 
         # ==========================================================
         # ✅ CORREÇÃO PEDIDA:
@@ -7753,18 +8641,23 @@ def _build_report_items(
                 total_qtd += lm_days
             else:
                 qtd = int(g.get("count") or 0)
-                summary_rows.append({"tipo": CODE_LABEL.get(code, "Outros"), "qtd": qtd})
+                summary_rows.append(
+                    {"tipo": CODE_LABEL.get(code, "Outros"), "qtd": qtd}
+                )
                 total_qtd += qtd
 
-        items.append({
-            "user": u,
-            "dados": dados,
-            "summary_rows": summary_rows,
-            "total_qtd": total_qtd,
-            "groups": groups,
-        })
+        items.append(
+            {
+                "user": u,
+                "dados": dados,
+                "summary_rows": summary_rows,
+                "total_qtd": total_qtd,
+                "groups": groups,
+            }
+        )
 
     return items
+
 
 # ---------------------------------------------------------------------
 # Render + send (PDF/ZIP)
@@ -7773,8 +8666,10 @@ def _render_pdf_from_template(template_name: str, **ctx) -> bytes:
     html_str = render_template(template_name, **ctx)
     pdf_bytes = HTML(string=html_str, base_url=current_app.root_path).write_pdf()
     if not pdf_bytes or not pdf_bytes.lstrip().startswith(b"%PDF"):
-        preview = (pdf_bytes[:300] if pdf_bytes else b"")
-        current_app.logger.error("Relatório: retorno não-PDF. Primeiros bytes: %r", preview)
+        preview = pdf_bytes[:300] if pdf_bytes else b""
+        current_app.logger.error(
+            "Relatório: retorno não-PDF. Primeiros bytes: %r", preview
+        )
         raise RuntimeError("WeasyPrint não retornou um PDF válido.")
     return pdf_bytes
 
@@ -7852,6 +8747,7 @@ def _build_zip_of_individual_pdfs(
     zbio.seek(0)
     return zbio.getvalue()
 
+
 # ---------------------------------------------------------------------
 # ENDPOINT AUXILIAR (modal): contagem de usuários por escopo
 # ---------------------------------------------------------------------
@@ -7887,6 +8783,7 @@ def user_info_report_count():
     total = _users_filtered_all(q, status).count()
     return jsonify(success=True, scope="filtered_all", total=int(total))
 
+
 # ---------------------------------------------------------------------
 # ✅ endpoint leve para “estimativa” no modal (registros por tipo)
 # ---------------------------------------------------------------------
@@ -7902,20 +8799,39 @@ def user_info_report_stats():
     dt_ini = _parse_date_arg("dt_ini")
     dt_fim = _parse_date_arg("dt_fim")
 
-    if (request.args.get("dt_ini") and dt_ini is None) or (request.args.get("dt_fim") and dt_fim is None):
+    if (request.args.get("dt_ini") and dt_ini is None) or (
+        request.args.get("dt_fim") and dt_fim is None
+    ):
         return jsonify(success=False, error="Período inválido. Use AAAA-MM-DD."), 400
     if dt_ini and dt_fim and dt_ini > dt_fim:
-        return jsonify(success=False, error="Período inválido: data inicial maior que data final."), 400
+        return (
+            jsonify(
+                success=False,
+                error="Período inválido: data inicial maior que data final.",
+            ),
+            400,
+        )
 
     selected_types = _parse_types()
     selected_ids = _parse_user_ids()
 
     if eff_scope == "selected" and not selected_ids:
-        return jsonify(success=False, error="Nenhum usuário selecionado (scope=selected)."), 400
+        return (
+            jsonify(
+                success=False, error="Nenhum usuário selecionado (scope=selected)."
+            ),
+            400,
+        )
 
     users = _resolve_users_for_batch(eff_scope)
     if not users:
-        return jsonify(success=False, error="Nenhum usuário encontrado para o escopo informado."), 404
+        return (
+            jsonify(
+                success=False,
+                error="Nenhum usuário encontrado para o escopo informado.",
+            ),
+            404,
+        )
 
     user_ids = [u.id for u in users]
 
@@ -7954,16 +8870,20 @@ def user_info_report_stats():
         counts[c] = v
         total_reg += v
 
-    return jsonify(
-        success=True,
-        scope=eff_scope,
-        users_total=len(users),
-        records_total=int(total_reg),
-        counts_by_type=counts,
-        dt_ini=(dt_ini.isoformat() if dt_ini else None),
-        dt_fim=(dt_fim.isoformat() if dt_fim else None),
-        selected_types=sorted(list(selected_types)),
-    ), 200
+    return (
+        jsonify(
+            success=True,
+            scope=eff_scope,
+            users_total=len(users),
+            records_total=int(total_reg),
+            counts_by_type=counts,
+            dt_ini=(dt_ini.isoformat() if dt_ini else None),
+            dt_fim=(dt_fim.isoformat() if dt_fim else None),
+            selected_types=sorted(list(selected_types)),
+        ),
+        200,
+    )
+
 
 # ---------------------------------------------------------------------
 # ROTAS: lote + individual
@@ -7972,7 +8892,11 @@ def user_info_report_stats():
 @login_required
 def user_info_report():
     if not _is_admin():
-        return _fail("Acesso negado. Esta página é exclusiva para administradores.", "danger", 403)
+        return _fail(
+            "Acesso negado. Esta página é exclusiva para administradores.",
+            "danger",
+            403,
+        )
 
     download = _parse_download()
     scope = _parse_scope()
@@ -7982,11 +8906,15 @@ def user_info_report():
     dt_ini = _parse_date_arg("dt_ini")
     dt_fim = _parse_date_arg("dt_fim")
 
-    if (request.args.get("dt_ini") and dt_ini is None) or (request.args.get("dt_fim") and dt_fim is None):
+    if (request.args.get("dt_ini") and dt_ini is None) or (
+        request.args.get("dt_fim") and dt_fim is None
+    ):
         return _fail("Período inválido. Use o formato AAAA-MM-DD.", "danger", 400)
 
     if dt_ini and dt_fim and dt_ini > dt_fim:
-        return _fail("Período inválido: data inicial maior que data final.", "danger", 400)
+        return _fail(
+            "Período inválido: data inicial maior que data final.", "danger", 400
+        )
 
     selected_types = _parse_types()
     selected_ids = _parse_user_ids()
@@ -7996,7 +8924,9 @@ def user_info_report():
 
     users = _resolve_users_for_batch(eff_scope)
     if not users:
-        return _fail("Nenhum usuário encontrado para gerar o relatório.", "warning", 404)
+        return _fail(
+            "Nenhum usuário encontrado para gerar o relatório.", "warning", 404
+        )
 
     logo_uri = _get_logo_uri()
     emitted_at = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
@@ -8012,13 +8942,23 @@ def user_info_report():
         "generated_by_id": getattr(current_user, "id", None),
         "scope": eff_scope,
         "scope_label": scope_label,
-        "scope_status": (request.args.get("status") or "").strip().lower() if eff_scope == "filtered_all" else "",
-        "scope_q": (request.args.get("q") or "").strip() if eff_scope == "filtered_all" else "",
+        "scope_status": (
+            (request.args.get("status") or "").strip().lower()
+            if eff_scope == "filtered_all"
+            else ""
+        ),
+        "scope_q": (
+            (request.args.get("q") or "").strip() if eff_scope == "filtered_all" else ""
+        ),
         "types": sorted(list(selected_types)),
         "output": output,
         "download": bool(download),
-        "zip_compression": "stored" if ZIP_COMPRESSION == zipfile.ZIP_STORED else "deflated",
-        "zip_level": (None if ZIP_COMPRESSION == zipfile.ZIP_STORED else int(ZIP_COMPRESSLEVEL)),
+        "zip_compression": (
+            "stored" if ZIP_COMPRESSION == zipfile.ZIP_STORED else "deflated"
+        ),
+        "zip_level": (
+            None if ZIP_COMPRESSION == zipfile.ZIP_STORED else int(ZIP_COMPRESSLEVEL)
+        ),
     }
 
     current_app.logger.info(
@@ -8049,7 +8989,9 @@ def user_info_report():
                 scope_label=scope_label,
                 generated_by=generated_by,
             )
-            return _send_bytes(zip_bytes, "relatorios_prontuarios.zip", "application/zip", download)
+            return _send_bytes(
+                zip_bytes, "relatorios_prontuarios.zip", "application/zip", download
+            )
 
         items = _build_report_items(users, dt_ini, dt_fim, selected_types)
 
@@ -8066,29 +9008,43 @@ def user_info_report():
             scope_label=scope_label,
             generated_by=generated_by,
         )
-        return _send_bytes(pdf_bytes, "relatorio_servidores.pdf", "application/pdf", download)
+        return _send_bytes(
+            pdf_bytes, "relatorio_servidores.pdf", "application/pdf", download
+        )
 
     except Exception:
         current_app.logger.exception("Erro ao gerar relatório (WeasyPrint) — lote.")
-        return _fail("Falha ao gerar o relatório. Verifique logs/dependências do WeasyPrint.", "danger", 500)
+        return _fail(
+            "Falha ao gerar o relatório. Verifique logs/dependências do WeasyPrint.",
+            "danger",
+            500,
+        )
 
 
 @app.route("/user_info_report/<int:user_id>")
 @login_required
 def user_info_report_single(user_id: int):
     if not _is_admin():
-        return _fail("Acesso negado. Esta página é exclusiva para administradores.", "danger", 403)
+        return _fail(
+            "Acesso negado. Esta página é exclusiva para administradores.",
+            "danger",
+            403,
+        )
 
     download = _parse_download()
 
     dt_ini = _parse_date_arg("dt_ini")
     dt_fim = _parse_date_arg("dt_fim")
 
-    if (request.args.get("dt_ini") and dt_ini is None) or (request.args.get("dt_fim") and dt_fim is None):
+    if (request.args.get("dt_ini") and dt_ini is None) or (
+        request.args.get("dt_fim") and dt_fim is None
+    ):
         return _fail("Período inválido. Use o formato AAAA-MM-DD.", "danger", 400)
 
     if dt_ini and dt_fim and dt_ini > dt_fim:
-        return _fail("Período inválido: data inicial maior que data final.", "danger", 400)
+        return _fail(
+            "Período inválido: data inicial maior que data final.", "danger", 400
+        )
 
     selected_types = _parse_types()
 
@@ -8136,8 +9092,15 @@ def user_info_report_single(user_id: int):
         return _send_bytes(pdf_bytes, filename, "application/pdf", download)
 
     except Exception:
-        current_app.logger.exception("Erro ao gerar relatório (WeasyPrint) — individual.")
-        return _fail("Falha ao gerar o prontuário. Verifique logs/dependências do WeasyPrint.", "danger", 500)
+        current_app.logger.exception(
+            "Erro ao gerar relatório (WeasyPrint) — individual."
+        )
+        return _fail(
+            "Falha ao gerar o prontuário. Verifique logs/dependências do WeasyPrint.",
+            "danger",
+            500,
+        )
+
 
 # ===========================================
 # EVENTOS (ADMIN) - CRUD COMPLETO
@@ -8156,8 +9119,9 @@ def user_info_report_single(user_id: int):
 
 import datetime as dt
 from functools import wraps
-from flask import render_template, request, redirect, url_for, flash, abort
-from flask_login import login_required, current_user
+
+from flask import abort, flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
 from sqlalchemy import func, text
 
 # Defina a cor padrão fixa aqui (backend não permite edição via form)
@@ -8189,13 +9153,15 @@ def _parse_time_evento(s: str):
 
 def admin_required(view_func):
     """Garante que apenas tipo == 'administrador' acesse."""
+
     @wraps(view_func)
     def _wrapped(*args, **kwargs):
         if not current_user.is_authenticated:
-            return redirect(url_for('login'))
-        if getattr(current_user, 'tipo', None) != 'administrador':
+            return redirect(url_for("login"))
+        if getattr(current_user, "tipo", None) != "administrador":
             abort(403)
         return view_func(*args, **kwargs)
+
     return _wrapped
 
 
@@ -8211,10 +9177,16 @@ def _validar_datas_e_horas(data_evento, data_inicio, data_fim, hora_inicio, hora
         return False, "Informe a data do evento (ou ao menos início/fim)."
 
     if data_inicio and data_fim and data_fim < data_inicio:
-        return False, "Período inválido: a data fim não pode ser menor que a data início."
+        return (
+            False,
+            "Período inválido: a data fim não pode ser menor que a data início.",
+        )
 
     if hora_inicio and hora_fim and hora_fim < hora_inicio:
-        return False, "Horário inválido: a hora fim não pode ser menor que a hora início."
+        return (
+            False,
+            "Horário inválido: a hora fim não pode ser menor que a hora início.",
+        )
 
     return True, None
 
@@ -8236,7 +9208,8 @@ def _get_eventos_nao_vistos(user_id: int, limit: int = 5):
     que ainda não foram vistos pelo usuário (sem registro em evento_visto).
     Não exige Model SQLAlchemy de evento_visto (usa SQL direto).
     """
-    sql = text("""
+    sql = text(
+        """
         SELECT
             e.id,
             e.nome,
@@ -8258,7 +9231,8 @@ def _get_eventos_nao_vistos(user_id: int, limit: int = 5):
           )
         ORDER BY e.criado_em DESC, e.data_evento DESC
         LIMIT :lim
-    """)
+    """
+    )
     return db.session.execute(sql, {"uid": user_id, "lim": limit}).mappings().all()
 
 
@@ -8269,11 +9243,13 @@ def _marcar_eventos_como_vistos(user_id: int, evento_ids):
     if not evento_ids:
         return
 
-    sql = text("""
+    sql = text(
+        """
         INSERT INTO evento_visto (user_id, evento_id, visto_em)
         VALUES (:uid, :eid, timezone('utc', now()))
         ON CONFLICT (user_id, evento_id) DO NOTHING
-    """)
+    """
+    )
     for eid in evento_ids:
         db.session.execute(sql, {"uid": user_id, "eid": int(eid)})
 
@@ -8288,7 +9264,7 @@ def _marcar_eventos_como_vistos(user_id: int, evento_ids):
 @admin_required
 def admin_eventos():
     q = (request.args.get("q") or "").strip()
-    incluir_inativos = (request.args.get("incluir_inativos") == "1")
+    incluir_inativos = request.args.get("incluir_inativos") == "1"
 
     query = Evento.query
 
@@ -8299,27 +9275,20 @@ def admin_eventos():
         q_like = f"%{q}%"
         # evita NULL quebrando o filtro com COALESCE
         query = query.filter(
-            (Evento.nome.ilike(q_like)) |
-            (func.coalesce(Evento.descricao, "").ilike(q_like))
+            (Evento.nome.ilike(q_like))
+            | (func.coalesce(Evento.descricao, "").ilike(q_like))
         )
 
-    eventos = (
-        query
-        .order_by(
-            Evento.ativo.desc(),
-            Evento.data_inicio.asc().nullslast(),
-            Evento.data_evento.asc(),
-            Evento.hora_inicio.asc().nullslast(),
-            Evento.nome.asc()
-        )
-        .all()
-    )
+    eventos = query.order_by(
+        Evento.ativo.desc(),
+        Evento.data_inicio.asc().nullslast(),
+        Evento.data_evento.asc(),
+        Evento.hora_inicio.asc().nullslast(),
+        Evento.nome.asc(),
+    ).all()
 
     return render_template(
-        "admin_eventos.html",
-        eventos=eventos,
-        q=q,
-        incluir_inativos=incluir_inativos
+        "admin_eventos.html", eventos=eventos, q=q, incluir_inativos=incluir_inativos
     )
 
 
@@ -8354,7 +9323,7 @@ def admin_eventos_criar():
     hora_inicio = _parse_time_evento(request.form.get("hora_inicio", ""))
     hora_fim = _parse_time_evento(request.form.get("hora_fim", ""))
 
-    ativo = (request.form.get("ativo") == "1")
+    ativo = request.form.get("ativo") == "1"
 
     if not nome:
         flash("Informe o nome do evento.", "danger")
@@ -8362,7 +9331,9 @@ def admin_eventos_criar():
 
     data_evento = _normalizar_data_evento(data_evento, data_inicio, data_fim)
 
-    ok, msg = _validar_datas_e_horas(data_evento, data_inicio, data_fim, hora_inicio, hora_fim)
+    ok, msg = _validar_datas_e_horas(
+        data_evento, data_inicio, data_fim, hora_inicio, hora_fim
+    )
     if not ok:
         flash(msg, "danger")
         return redirect(url_for("admin_eventos"))
@@ -8377,7 +9348,7 @@ def admin_eventos_criar():
         hora_inicio=hora_inicio,
         hora_fim=hora_fim,
         criado_por_id=current_user.id,
-        ativo=bool(ativo)
+        ativo=bool(ativo),
     )
 
     db.session.add(ev)
@@ -8411,7 +9382,7 @@ def admin_eventos_editar(evento_id):
     hora_inicio = _parse_time_evento(request.form.get("hora_inicio", ""))
     hora_fim = _parse_time_evento(request.form.get("hora_fim", ""))
 
-    ativo = (request.form.get("ativo") == "1")
+    ativo = request.form.get("ativo") == "1"
 
     if not nome:
         flash("Informe o nome do evento.", "danger")
@@ -8419,7 +9390,9 @@ def admin_eventos_editar(evento_id):
 
     data_evento = _normalizar_data_evento(data_evento, data_inicio, data_fim)
 
-    ok, msg = _validar_datas_e_horas(data_evento, data_inicio, data_fim, hora_inicio, hora_fim)
+    ok, msg = _validar_datas_e_horas(
+        data_evento, data_inicio, data_fim, hora_inicio, hora_fim
+    )
     if not ok:
         flash(msg, "danger")
         return redirect(url_for("admin_eventos"))
@@ -8454,11 +9427,13 @@ def admin_eventos_excluir(evento_id):
     flash("Evento excluído (inativado).", "success")
     return redirect(url_for("admin_eventos"))
 
+
 # --- HUB TRE ---
 @app.route("/tre", methods=["GET"], strict_slashes=False)
 @login_required
 def tre_menu():
     return render_template("tre_menu.html")
+
 
 # ===========================================
 # LOGIN MANAGER
@@ -8467,13 +9442,15 @@ def tre_menu():
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+
 # ===========================================
 # PATCH NOTES CONFIGS
 # ===========================================
 
 from functools import wraps
-from flask import abort, jsonify, request, render_template, redirect, url_for, flash
-from flask_login import login_required, current_user
+
+from flask import abort, flash, jsonify, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
 
 # Este trecho assume que você já tem:
 # - app (Flask)
@@ -8498,21 +9475,27 @@ def admin_required(fn):
             abort(403)
 
         return fn(*args, **kwargs)
+
     return wrapper
 
 
 def _unread_release_query_for_user(user_id: int):
     # EXISTS: existe leitura para (user_id, release_id=ReleaseNote.id)?
-    read_exists = db.session.query(ReleaseNoteRead.id).filter(
-        ReleaseNoteRead.user_id == user_id,
-        ReleaseNoteRead.release_id == ReleaseNote.id
-    ).exists()
+    read_exists = (
+        db.session.query(ReleaseNoteRead.id)
+        .filter(
+            ReleaseNoteRead.user_id == user_id,
+            ReleaseNoteRead.release_id == ReleaseNote.id,
+        )
+        .exists()
+    )
 
     # Notes publicadas e NÃO lidas
-    q = (ReleaseNote.query
-         .filter(ReleaseNote.is_published.is_(True))
-         .filter(~read_exists)
-         .order_by(ReleaseNote.created_at.desc()))
+    q = (
+        ReleaseNote.query.filter(ReleaseNote.is_published.is_(True))
+        .filter(~read_exists)
+        .order_by(ReleaseNote.created_at.desc())
+    )
     return q
 
 
@@ -8527,18 +9510,22 @@ def admin_patch_notes_unread():
     if not latest:
         return jsonify({"success": True, "count": 0, "latest": None})
 
-    return jsonify({
-        "success": True,
-        "count": count,
-        "latest": {
-            "id": latest.id,
-            "version": latest.version,
-            "title": latest.title,
-            "body": latest.body,
-            "severity": latest.severity,
-            "created_at": latest.created_at.isoformat() if latest.created_at else None
+    return jsonify(
+        {
+            "success": True,
+            "count": count,
+            "latest": {
+                "id": latest.id,
+                "version": latest.version,
+                "title": latest.title,
+                "body": latest.body,
+                "severity": latest.severity,
+                "created_at": (
+                    latest.created_at.isoformat() if latest.created_at else None
+                ),
+            },
         }
-    })
+    )
 
 
 @app.route("/admin/patch-notes/<int:release_id>/read", methods=["POST"])
@@ -8547,8 +9534,7 @@ def admin_patch_notes_unread():
 def admin_patch_notes_mark_read(release_id):
     # idempotente: se já existe, não cria de novo
     exists = ReleaseNoteRead.query.filter_by(
-        user_id=current_user.id,
-        release_id=release_id
+        user_id=current_user.id, release_id=release_id
     ).first()
 
     if not exists:
@@ -8595,7 +9581,7 @@ def admin_patch_notes_page():
             body=body,
             severity=severity,
             is_published=is_published,
-            created_by_id=current_user.id
+            created_by_id=current_user.id,
         )
         db.session.add(note)
         db.session.commit()
@@ -8603,10 +9589,7 @@ def admin_patch_notes_page():
         flash("Patch note criado com sucesso.", "success")
         return redirect(url_for("admin_patch_notes_page"))
 
-    notes = (ReleaseNote.query
-             .order_by(ReleaseNote.created_at.desc())
-             .limit(50)
-             .all())
+    notes = ReleaseNote.query.order_by(ReleaseNote.created_at.desc()).limit(50).all()
 
     # ✅ Template singular, como você pediu:
     return render_template("admin_patch_note.html", notes=notes)
@@ -8633,14 +9616,18 @@ def admin_patch_notes_delete(release_id):
     flash("Patch note removido.", "success")
     return redirect(url_for("admin_patch_notes_page"))
 
+
 @app.get("/healthz")
 def healthz():
     return "ok", 200
 
+
 import os
 from pathlib import Path
+
 from flask import jsonify
-from flask_login import login_required, current_user
+from flask_login import current_user, login_required
+
 
 @app.get("/__debug/uploads")
 @login_required
@@ -8662,12 +9649,14 @@ def debug_uploads():
         out = []
         for f in sorted(p.glob("*"))[:limit]:
             if f.is_file():
-                out.append({
-                    "name": f.name,
-                    "bytes": f.stat().st_size,
-                    "mtime": int(f.stat().st_mtime),
-                    "path": str(f),
-                })
+                out.append(
+                    {
+                        "name": f.name,
+                        "bytes": f.stat().st_size,
+                        "mtime": int(f.stat().st_mtime),
+                        "path": str(f),
+                    }
+                )
         return out
 
     return jsonify(
@@ -8682,12 +9671,15 @@ def debug_uploads():
         protocolo_files=list_files(proto_dir),
     )
 
+
 # ===========================================
 # ADMIN - HORÁRIOS DE TRABALHO
 # ===========================================
 import datetime
 from collections import defaultdict
+
 from sqlalchemy import asc, desc
+
 
 def _parse_date_iso(raw):
     raw = (raw or "").strip()
@@ -8698,6 +9690,7 @@ def _parse_date_iso(raw):
     except ValueError:
         return None
 
+
 def _parse_time_hh_mm(raw):
     raw = (raw or "").strip()
     if not raw:
@@ -8706,6 +9699,7 @@ def _parse_time_hh_mm(raw):
         return datetime.datetime.strptime(raw, "%H:%M").time()
     except ValueError:
         return None
+
 
 def _dia_semana_label(dia):
     mapa = {
@@ -8719,16 +9713,12 @@ def _dia_semana_label(dia):
     }
     return mapa.get(dia, f"Dia {dia}")
 
+
 @app.route("/admin/horarios_trabalho", methods=["GET", "POST"])
 @login_required
 @admin_required
 def admin_horarios_trabalho():
-    usuarios = (
-        User.query
-        .filter_by(ativo=True)
-        .order_by(asc(User.nome))
-        .all()
-    )
+    usuarios = User.query.filter_by(ativo=True).order_by(asc(User.nome)).all()
 
     dias_semana = [
         (0, "Segunda-feira"),
@@ -8810,10 +9800,17 @@ def admin_horarios_trabalho():
             return redirect(url_for("admin_horarios_trabalho", user_id=usuario.id))
 
         if vigencia_fim and vigencia_fim < vigencia_inicio:
-            flash("A vigência final não pode ser menor que a vigência inicial.", "danger")
+            flash(
+                "A vigência final não pode ser menor que a vigência inicial.", "danger"
+            )
             return redirect(url_for("admin_horarios_trabalho", user_id=usuario.id))
 
-        substituir_ativos = (request.form.get("substituir_ativos") or "").strip() in ("1", "true", "on", "sim")
+        substituir_ativos = (request.form.get("substituir_ativos") or "").strip() in (
+            "1",
+            "true",
+            "on",
+            "sim",
+        )
         observacao_geral = (request.form.get("observacao_geral") or "").strip() or None
 
         dias_raw = request.form.getlist("dia_semana[]")
@@ -8822,7 +9819,9 @@ def admin_horarios_trabalho():
         observacoes_raw = request.form.getlist("observacao[]")
 
         if not (len(dias_raw) == len(horas_inicio_raw) == len(horas_fim_raw)):
-            flash("Os dados enviados da grade de horários estão inconsistentes.", "danger")
+            flash(
+                "Os dados enviados da grade de horários estão inconsistentes.", "danger"
+            )
             return redirect(url_for("admin_horarios_trabalho", user_id=usuario.id))
 
         # garante mesmo tamanho para observações
@@ -8832,7 +9831,9 @@ def admin_horarios_trabalho():
         novos_registros = []
         erros = []
 
-        for i, (dia_raw, hi_raw, hf_raw, obs_raw) in enumerate(zip(dias_raw, horas_inicio_raw, horas_fim_raw, observacoes_raw), start=1):
+        for i, (dia_raw, hi_raw, hf_raw, obs_raw) in enumerate(
+            zip(dias_raw, horas_inicio_raw, horas_fim_raw, observacoes_raw), start=1
+        ):
             dia_raw = (dia_raw or "").strip()
             hi_raw = (hi_raw or "").strip()
             hf_raw = (hf_raw or "").strip()
@@ -8860,15 +9861,19 @@ def admin_horarios_trabalho():
                 continue
 
             if hora_fim <= hora_inicio:
-                erros.append(f"Linha {i}: a hora final deve ser maior que a hora inicial.")
+                erros.append(
+                    f"Linha {i}: a hora final deve ser maior que a hora inicial."
+                )
                 continue
 
-            novos_registros.append({
-                "dia_semana": dia_semana,
-                "hora_inicio": hora_inicio,
-                "hora_fim": hora_fim,
-                "observacao": obs_raw or observacao_geral,
-            })
+            novos_registros.append(
+                {
+                    "dia_semana": dia_semana,
+                    "hora_inicio": hora_inicio,
+                    "hora_fim": hora_fim,
+                    "observacao": obs_raw or observacao_geral,
+                }
+            )
 
         if erros:
             for erro in erros:
@@ -8896,24 +9901,26 @@ def admin_horarios_trabalho():
                         f"Há sobreposição de horários em {_dia_semana_label(dia)} "
                         f"({atual['hora_inicio'].strftime('%H:%M')}-{atual['hora_fim'].strftime('%H:%M')} "
                         f"com {prox['hora_inicio'].strftime('%H:%M')}-{prox['hora_fim'].strftime('%H:%M')}).",
-                        "danger"
+                        "danger",
                     )
-                    return redirect(url_for("admin_horarios_trabalho", user_id=usuario.id))
+                    return redirect(
+                        url_for("admin_horarios_trabalho", user_id=usuario.id)
+                    )
 
         try:
             # se marcar para substituir, desativa tudo que estiver ativo
             if substituir_ativos:
-                horarios_ativos = (
-                    UserHorarioTrabalho.query
-                    .filter_by(user_id=usuario.id, ativo=True)
-                    .all()
-                )
+                horarios_ativos = UserHorarioTrabalho.query.filter_by(
+                    user_id=usuario.id, ativo=True
+                ).all()
 
                 for h in horarios_ativos:
                     h.ativo = False
                     if h.vigencia_fim is None:
                         if h.vigencia_inicio and h.vigencia_inicio < vigencia_inicio:
-                            h.vigencia_fim = vigencia_inicio - datetime.timedelta(days=1)
+                            h.vigencia_fim = vigencia_inicio - datetime.timedelta(
+                                days=1
+                            )
                         else:
                             h.vigencia_fim = h.vigencia_inicio
 
@@ -8936,7 +9943,7 @@ def admin_horarios_trabalho():
 
             flash(
                 f"Horários de trabalho cadastrados com sucesso para {usuario.nome}.",
-                "success"
+                "success",
             )
             return redirect(url_for("admin_horarios_trabalho", user_id=usuario.id))
 
@@ -8954,8 +9961,7 @@ def admin_horarios_trabalho():
 
     if usuario_selecionado:
         horarios_existentes = (
-            UserHorarioTrabalho.query
-            .filter_by(user_id=usuario_selecionado.id)
+            UserHorarioTrabalho.query.filter_by(user_id=usuario_selecionado.id)
             .order_by(
                 desc(UserHorarioTrabalho.ativo),
                 desc(UserHorarioTrabalho.vigencia_inicio),
@@ -8968,7 +9974,8 @@ def admin_horarios_trabalho():
         hoje = datetime.date.today()
 
         horarios_atuais = [
-            h for h in horarios_existentes
+            h
+            for h in horarios_existentes
             if h.ativo
             and h.vigencia_inicio <= hoje
             and (h.vigencia_fim is None or h.vigencia_fim >= hoje)
@@ -8987,8 +9994,9 @@ def admin_horarios_trabalho():
         dias_semana=dias_semana,
     )
 
+
 # ===========================================
 # MAIN
 # ===========================================
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)

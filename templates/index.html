@@ -1,1612 +1,2208 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Central da Unidade - Início</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Central da Unidade - Início</title>
 
-  <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
 
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
 
-  <style>
-    :root{
-      --bg:#f3f4f6;
-      --card:#ffffff;
+    <style>
+      :root {
+        --bg: #f3f4f6;
+        --card: #ffffff;
 
-      --ink:#0f172a;
-      --muted:#6b7280;
+        --ink: #0f172a;
+        --muted: #6b7280;
 
-      --brand:#007bff;
-      --brand-dark:#0056b3;
+        --brand: #007bff;
+        --brand-dark: #0056b3;
 
-      --border:rgba(148,163,184,.42);
-      --border-soft:rgba(0,0,0,.08);
+        --border: rgba(148, 163, 184, 0.42);
+        --border-soft: rgba(0, 0, 0, 0.08);
 
-      --radius:18px;
-      --radius-lg:22px;
+        --radius: 18px;
+        --radius-lg: 22px;
 
-      --shadow: 0 14px 34px rgba(15,23,42,.10), 0 2px 6px rgba(15,23,42,.06);
-      --shadow-soft: 0 10px 24px rgba(15,23,42,.10);
+        --shadow:
+          0 14px 34px rgba(15, 23, 42, 0.1), 0 2px 6px rgba(15, 23, 42, 0.06);
+        --shadow-soft: 0 10px 24px rgba(15, 23, 42, 0.1);
 
-      --focus:0 0 0 3px rgba(0,123,255,.18);
+        --focus: 0 0 0 3px rgba(0, 123, 255, 0.18);
 
-      --good:#16a34a;
-      --bad:#dc2626;
-      --warn:#d97706;
-      --info:#2563eb;
-    }
-
-    * , *::before, *::after { box-sizing: border-box; }
-
-    body{
-      margin:0;
-      font-family:'Montserrat', sans-serif;
-      display:flex;
-      flex-direction:column;
-      min-height:100vh;
-      background: var(--bg);
-      color: var(--ink);
-      overflow-x:hidden;
-    }
-
-    main{
-      flex:1 0 auto;
-      padding: 22px 16px 120px;
-      display:flex;
-      justify-content:center;
-      align-items:flex-start;
-    }
-    @media (min-width:769px){
-      main{ padding: 26px 24px 140px; }
-    }
-
-    a:focus-visible, button:focus-visible, .tab:focus-visible{
-      outline:none;
-      box-shadow: var(--focus);
-      border-radius: 14px;
-    }
-
-    .header-desktop, .header-mobile { display:none; flex-shrink:0; }
-
-    @media (min-width: 769px) {
-      .header-desktop{
-        display:flex;
-        background-color: var(--brand);
-        padding:15px 30px;
-        width:100%;
-        align-items:center;
-        justify-content:space-between;
-        box-sizing:border-box;
-        min-height:110px;
-        position:relative;
-        box-shadow:0 2px 6px rgba(0,0,0,.15);
-        color:#fff;
-      }
-      .left-section{ display:flex; align-items:center; gap:20px; }
-      .logo{
-        width:80px; height:80px; object-fit:contain; border-radius:10px;
-        background-color:#fff; padding:6px;
-      }
-      .text-container{ display:flex; flex-direction:column; justify-content:center; text-align:left; color:#fff; }
-      .escola-nome{ font-weight:700; font-size:1.6rem; margin:0; line-height:1.1; }
-      .escola-subtitulo{ font-weight:600; font-size:1.1rem; margin-top:4px; }
-
-      .header-center-text-container{
-        position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);
-        display:flex; align-items:center; gap:20px; user-select:none; z-index:1;
-      }
-      .header-center-text{
-        font-weight:800; font-size:1.9rem; color:#fff;
-        letter-spacing:5px; white-space:nowrap;
-        text-shadow:0 2px 5px rgba(0,0,0,.30);
+        --good: #16a34a;
+        --bad: #dc2626;
+        --warn: #d97706;
+        --info: #2563eb;
       }
 
-      .btn-home{
-        background-color:#0fb300;
-        color:#fff;
-        padding:6px 14px;
-        border-radius:8px;
-        font-weight:800;
-        font-size:1.5rem;
-        text-decoration:none;
-        display:flex;
-        align-items:center;
-        gap:8px;
-        box-shadow:0 2px 6px rgba(15,179,0,.80);
-        transition: transform .12s ease, background-color .2s ease;
-        position:absolute;
-        right:30px;
-        top:50%;
-        transform:translateY(-50%);
-        z-index:2;
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
       }
-      .btn-home:hover{ background-color:#0d8a00; transform:translateY(-52%); }
-    }
 
-    @media (max-width: 768px){
-      .header-mobile{
-        display:block;
-        width:100%;
-        box-sizing:border-box;
-        color:#fff;
-        position:sticky;
-        top:0;
-        z-index:1000;
-        box-shadow:0 2px 6px rgba(0,0,0,.15);
-        background-color: var(--brand);
+      body {
+        margin: 0;
+        font-family: "Montserrat", sans-serif;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--ink);
+        overflow-x: hidden;
       }
-      .header-top{
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        gap:15px;
-        padding:10px 15px;
-        background-color: var(--brand);
-        text-align:center;
+
+      main {
+        flex: 1 0 auto;
+        padding: 22px 16px 120px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
       }
-      .logo{
-        width:48px; height:48px; object-fit:contain; border-radius:10px;
-        background-color:#fff; padding:6px;
+      @media (min-width: 769px) {
+        main {
+          padding: 26px 24px 140px;
+        }
       }
-      .text-container{ display:flex; flex-direction:column; justify-content:center; color:#fff; text-align:center; }
-      .escola-nome{ font-weight:700; font-size:1.3rem; margin:0; line-height:1.1; }
-      .escola-subtitulo{ font-weight:600; font-size:1rem; margin-top:2px; }
 
-      .header-bottom{
-        background-color: var(--brand-dark);
-        text-align:center;
-        padding:12px 10px;
-        font-weight:900;
-        font-size:1.0rem;
-        letter-spacing:4px;
-        user-select:none;
-        color:#fff;
-        box-shadow: inset 0 -2px 5px rgba(0,0,0,.20);
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        gap:12px;
-        white-space:nowrap;
+      a:focus-visible,
+      button:focus-visible,
+      .tab:focus-visible {
+        outline: none;
+        box-shadow: var(--focus);
+        border-radius: 14px;
       }
-      .btn-home-mobile{
-        background-color:#0fb300;
-        color:#fff;
-        padding:6px 10px;
-        border-radius:8px;
-        font-weight:800;
-        font-size:1rem;
-        text-decoration:none;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        box-shadow:0 2px 6px rgba(15,179,0,.80);
-        transition: transform .12s ease, background-color .2s ease;
+
+      .header-desktop,
+      .header-mobile {
+        display: none;
+        flex-shrink: 0;
       }
-      .btn-home-mobile:hover{ background-color:#0d8a00; transform:translateY(-1px); }
-    }
 
-    .dashboard-shell{
-      width:100%;
-      max-width:1120px;
-      margin:0 auto;
-    }
+      @media (min-width: 769px) {
+        .header-desktop {
+          display: flex;
+          background-color: var(--brand);
+          padding: 15px 30px;
+          width: 100%;
+          align-items: center;
+          justify-content: space-between;
+          box-sizing: border-box;
+          min-height: 110px;
+          position: relative;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+          color: #fff;
+        }
+        .left-section {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+        .logo {
+          width: 80px;
+          height: 80px;
+          object-fit: contain;
+          border-radius: 10px;
+          background-color: #fff;
+          padding: 6px;
+        }
+        .text-container {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          text-align: left;
+          color: #fff;
+        }
+        .escola-nome {
+          font-weight: 700;
+          font-size: 1.6rem;
+          margin: 0;
+          line-height: 1.1;
+        }
+        .escola-subtitulo {
+          font-weight: 600;
+          font-size: 1.1rem;
+          margin-top: 4px;
+        }
 
-    .welcome-banner{
-      background: var(--card);
-      border-radius: var(--radius-lg);
-      padding:16px 18px;
-      margin-bottom:18px;
-      display:flex;
-      gap:14px;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-      position:relative;
-      overflow:hidden;
-    }
-    .welcome-banner::before{
-      content:"";
-      position:absolute;
-      left:0; top:0; bottom:0;
-      width:6px;
-      background: linear-gradient(180deg, var(--brand), #2563eb);
-    }
-    .welcome-icon{
-      width:46px; height:46px;
-      border-radius:16px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      flex-shrink:0;
-      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
-      box-shadow: 0 8px 18px rgba(37,99,235,.22);
-      color:#2563eb;
-      margin-left:6px;
-    }
-    .welcome-icon i{ font-size:20px; }
+        .header-center-text-container {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          user-select: none;
+          z-index: 1;
+        }
+        .header-center-text {
+          font-weight: 800;
+          font-size: 1.9rem;
+          color: #fff;
+          letter-spacing: 5px;
+          white-space: nowrap;
+          text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
 
-    .welcome-main-block{ display:flex; flex-direction:column; gap:6px; width:100%; }
-    .welcome-text-main{
-      font-size:1.1rem;
-      font-weight:900;
-      color: var(--ink);
-      margin:0;
-      letter-spacing:.2px;
-    }
-    .welcome-text-sub{
-      font-size:0.92rem;
-      color: var(--muted);
-      margin:0;
-      line-height:1.35;
-    }
-
-    .welcome-meta{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px 10px;
-      margin-top:6px;
-    }
-    .welcome-meta-item{
-      font-size:0.85rem;
-      color:#374151;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:6px 10px;
-      border-radius:999px;
-      background:#f8fafc;
-      border:1px solid rgba(0,0,0,.06);
-      white-space:nowrap;
-      font-weight:800;
-    }
-    .welcome-meta-item i{ color: var(--brand); }
-    .welcome-meta-item span{ color:#111827; }
-
-    @media (max-width:700px){
-      .welcome-banner{ padding:12px 14px; }
-      .welcome-icon{ margin-left:6px; }
-    }
-    @media (max-width:600px){
-      .welcome-text-main{ font-size:1.0rem; }
-      .welcome-text-sub{ font-size:0.84rem; }
-      .welcome-meta-item{ flex: 1 1 48%; justify-content:flex-start; }
-    }
-
-    .flash-container{ margin: 0 0 16px 0; }
-    .flash{
-      padding: 12px 14px;
-      margin: 8px 0;
-      border-radius: 16px;
-      width: 100%;
-      font-weight:800;
-      font-size: 0.9rem;
-      line-height: 1.35;
-      border: 1px solid transparent;
-      box-shadow: var(--shadow-soft);
-      overflow-wrap:anywhere;
-    }
-    .flash a{ color:inherit; text-decoration:underline; font-weight:900; }
-    .flash.message{ background:#eff6ff; color:#1e3a8a; border-color:#bfdbfe; border-left:6px solid #3b82f6; }
-    .flash.success{ background:#dcfce7; color:#166534; border-color:#bbf7d0; border-left:6px solid #22c55e; }
-    .flash.error, .flash.danger{ background:#fee2e2; color:#b91c1c; border-color:#fecaca; border-left:6px solid #ef4444; }
-    .flash.warning{ background:#ffedd5; color:#7c2d12; border-color:#fed7aa; border-left:6px solid #fb923c; }
-    .flash.info{ background:#dbeafe; color:#1e3a8a; border-color:#bfdbfe; border-left:6px solid #3b82f6; }
-
-    .tabs{
-      display:flex;
-      justify-content:center;
-      gap:10px;
-      flex-wrap:wrap;
-      margin: 8px 0 10px;
-      user-select:none;
-    }
-    .tab{
-      appearance:none;
-      border:1px solid rgba(0,123,255,.35);
-      background:#f5f9ff;
-      padding:10px 16px;
-      cursor:pointer;
-      font-weight:900;
-      border-radius:999px;
-      color:#0f172a;
-      transition: transform .12s ease, box-shadow .2s ease, background-color .2s ease, color .2s ease;
-      font-size:0.9rem;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      box-shadow: 0 6px 16px rgba(15,23,42,.06);
-    }
-    .tab:hover:not(.active){
-      background:#e7f1ff;
-      box-shadow: 0 10px 22px rgba(37,99,235,.18);
-      transform: translateY(-1px);
-      color:#0b3c91;
-    }
-    .tab.active{
-      background: linear-gradient(135deg, var(--brand), #2563eb);
-      color:#fff;
-      border-color:transparent;
-      box-shadow: 0 12px 26px rgba(37,99,235,.28);
-    }
-
-    .access-services{
-      font-weight:900;
-      font-size:0.95rem;
-      color:#2563eb;
-      margin: 6px 0 14px;
-      text-align:center;
-    }
-
-    .cards-container{ display:none; width:100%; }
-    .cards-container.active{ display:block; }
-
-    .cards-wrapper{
-      background: var(--card);
-      padding: 18px 18px 22px;
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow);
-      width:100%;
-      border:1px solid var(--border);
-      margin-bottom: 18px;
-    }
-
-    .cards-grid{
-      display:grid;
-      grid-template-columns: repeat(3, minmax(180px, 1fr));
-      gap: 14px;
-      justify-content:center;
-      align-items:stretch;
-    }
-
-    @media (max-width: 992px){
-      .cards-grid{ grid-template-columns: repeat(2, minmax(160px, 1fr)); }
-    }
-
-    @media (max-width: 600px){
-      .cards-wrapper{ padding: 16px 12px 20px; }
-      .cards-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-    }
-
-    .card-shell{
-      position:relative;
-      width:100%;
-      min-width:0;
-    }
-
-    .logout-form{
-      margin:0;
-      width:100%;
-    }
-
-    .card{
-      background:#ffffff;
-      color:#111827;
-      border-radius: 18px;
-      padding: 14px 12px;
-      text-align:center;
-      text-decoration:none;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      min-height: 150px;
-      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
-      font-weight:900;
-      font-size:0.95rem;
-      position:relative;
-      overflow:hidden;
-      transition: transform .16s ease, box-shadow .2s ease, border-color .18s ease, background-color .18s ease;
-      cursor:pointer;
-      border:1px solid rgba(0,0,0,.08);
-      width:100%;
-      font-family:'Montserrat', sans-serif;
-      isolation:isolate;
-    }
-
-    button.card{
-      border:1px solid rgba(0,0,0,.08);
-      outline:none;
-    }
-
-    .card::before{
-      content:"";
-      position:absolute;
-      inset:-45%;
-      background: radial-gradient(circle at center, rgba(59,130,246,0.16) 0%, transparent 60%);
-      transform: rotate(18deg);
-      opacity:0;
-      transition: opacity .22s ease;
-      pointer-events:none;
-      z-index:0;
-    }
-
-    .card-main-icon{
-      font-size:24px;
-      margin-bottom:10px;
-      color:#2563eb;
-      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0edff 60%, #c7d9ff 100%);
-      border-radius:999px;
-      padding:10px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      box-shadow: 0 8px 16px rgba(37, 99, 235, 0.18);
-      z-index:1;
-      position:relative;
-    }
-
-    .card-main-icon i{
-      color:inherit;
-      font-size:inherit;
-      margin:0;
-      padding:0;
-      background:transparent;
-      box-shadow:none;
-      border-radius:0;
-    }
-
-    .card:hover{
-      transform: translateY(-3px);
-      box-shadow: 0 14px 26px rgba(15, 23, 42, 0.14);
-      border-color: rgba(59,130,246,.50);
-      background-color:#f9fafb;
-      text-decoration:none;
-    }
-    .card:hover::before{ opacity:1; }
-
-    .card-title{
-      font-size:1.0rem;
-      font-weight:900;
-      z-index:1;
-      position:relative;
-    }
-
-    .card-subtitle{
-      margin-top:6px;
-      font-size:0.82rem;
-      font-weight:700;
-      color: var(--muted);
-      z-index:1;
-      position:relative;
-      line-height:1.3;
-      max-width: 92%;
-      display:-webkit-box;
-      -webkit-line-clamp:2;
-      -webkit-box-orient:vertical;
-      overflow:hidden;
-    }
-
-    .card-info-btn{
-      position:absolute;
-      top:10px;
-      right:10px;
-      width:31px;
-      height:31px;
-      border-radius:999px;
-      border:1px solid rgba(37,99,235,.22);
-      background:rgba(255,255,255,.96);
-      color:#2563eb;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      cursor:pointer;
-      box-shadow:0 6px 14px rgba(15,23,42,.10);
-      transition:transform .12s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease;
-      padding:0;
-      font-size:.9rem;
-      font-weight:900;
-      font-family:'Montserrat', sans-serif;
-      backdrop-filter:blur(6px);
-      z-index:4;
-    }
-
-    .card-info-btn:hover,
-    .card-info-btn:focus-visible,
-    .card-info-btn.active{
-      transform:translateY(-1px);
-      background:#ffffff;
-      border-color:#93c5fd;
-      box-shadow:0 10px 22px rgba(37,99,235,.18);
-      outline:none;
-    }
-
-    .card-info-btn i{
-      font-size:.86rem;
-      margin:0;
-      padding:0;
-      background:transparent;
-      box-shadow:none;
-      color:inherit;
-    }
-
-    .desktop-only{ display:inline; }
-    .mobile-only{ display:none; }
-
-    @media (max-width: 600px){
-      .card{ min-height: 140px; padding: 12px 10px; }
-      .card-main-icon{ font-size:22px; margin-bottom:8px; padding:9px; }
-      .desktop-only{ display:none; }
-      .mobile-only{ display:inline; }
-      .card-subtitle{
-        display:block;
-        -webkit-line-clamp:unset;
-        -webkit-box-orient:unset;
-        overflow:visible;
-        max-width: 96%;
-        font-size:0.78rem;
+        .btn-home {
+          background-color: #0fb300;
+          color: #fff;
+          padding: 6px 14px;
+          border-radius: 8px;
+          font-weight: 800;
+          font-size: 1.5rem;
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          box-shadow: 0 2px 6px rgba(15, 179, 0, 0.8);
+          transition:
+            transform 0.12s ease,
+            background-color 0.2s ease;
+          position: absolute;
+          right: 30px;
+          top: 50%;
+          transform: translateY(-50%);
+          z-index: 2;
+        }
+        .btn-home:hover {
+          background-color: #0d8a00;
+          transform: translateY(-52%);
+        }
       }
-      .card-info-btn{
-        top:8px;
-        right:8px;
-        width:29px;
-        height:29px;
-        font-size:.84rem;
+
+      @media (max-width: 768px) {
+        .header-mobile {
+          display: block;
+          width: 100%;
+          box-sizing: border-box;
+          color: #fff;
+          position: sticky;
+          top: 0;
+          z-index: 1000;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+          background-color: var(--brand);
+        }
+        .header-top {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 15px;
+          padding: 10px 15px;
+          background-color: var(--brand);
+          text-align: center;
+        }
+        .logo {
+          width: 48px;
+          height: 48px;
+          object-fit: contain;
+          border-radius: 10px;
+          background-color: #fff;
+          padding: 6px;
+        }
+        .text-container {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          color: #fff;
+          text-align: center;
+        }
+        .escola-nome {
+          font-weight: 700;
+          font-size: 1.3rem;
+          margin: 0;
+          line-height: 1.1;
+        }
+        .escola-subtitulo {
+          font-weight: 600;
+          font-size: 1rem;
+          margin-top: 2px;
+        }
+
+        .header-bottom {
+          background-color: var(--brand-dark);
+          text-align: center;
+          padding: 12px 10px;
+          font-weight: 900;
+          font-size: 1rem;
+          letter-spacing: 4px;
+          user-select: none;
+          color: #fff;
+          box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 12px;
+          white-space: nowrap;
+        }
+        .btn-home-mobile {
+          background-color: #0fb300;
+          color: #fff;
+          padding: 6px 10px;
+          border-radius: 8px;
+          font-weight: 800;
+          font-size: 1rem;
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 6px rgba(15, 179, 0, 0.8);
+          transition:
+            transform 0.12s ease,
+            background-color 0.2s ease;
+        }
+        .btn-home-mobile:hover {
+          background-color: #0d8a00;
+          transform: translateY(-1px);
+        }
       }
-    }
 
-    .logout-btn{
-      background:#fef2f2;
-      color:#991b1b;
-      border-color:#fecaca;
-    }
-    .logout-btn .card-main-icon{
-      color:#991b1b;
-      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #fee2e2 60%, #fecaca 100%);
-      box-shadow: 0 8px 16px rgba(185, 28, 28, 0.18);
-    }
-    .logout-btn:hover{
-      background:#fee2e2;
-      border-color:#fca5a5;
-      box-shadow: 0 14px 26px rgba(185, 28, 28, 0.22);
-      color:#7f1d1d;
-    }
-
-    .hint-popover{
-      position:fixed;
-      left:0;
-      top:0;
-      width:min(320px, calc(100vw - 24px));
-      max-width:calc(100vw - 24px);
-      background:rgba(255,255,255,.98);
-      border:1px solid rgba(148,163,184,.24);
-      border-radius:18px;
-      box-shadow:0 20px 40px rgba(15,23,42,.18);
-      padding:14px 14px 13px;
-      z-index:5000;
-      opacity:0;
-      visibility:hidden;
-      transform:translateY(6px) scale(.98);
-      transition:opacity .16s ease, transform .16s ease, visibility .16s ease;
-      pointer-events:none;
-      backdrop-filter:blur(12px);
-    }
-
-    .hint-popover.show{
-      opacity:1;
-      visibility:visible;
-      transform:translateY(0) scale(1);
-      pointer-events:auto;
-    }
-
-    .hint-popover::before{
-      content:"";
-      position:absolute;
-      width:14px;
-      height:14px;
-      background:rgba(255,255,255,.98);
-      transform:rotate(45deg);
-      border-left:1px solid rgba(148,163,184,.24);
-      border-top:1px solid rgba(148,163,184,.24);
-      left:var(--arrow-left, 24px);
-    }
-
-    .hint-popover[data-placement="top"]::before{
-      bottom:-8px;
-      top:auto;
-      transform:rotate(225deg);
-    }
-
-    .hint-popover[data-placement="bottom"]::before{
-      top:-8px;
-      bottom:auto;
-      transform:rotate(45deg);
-    }
-
-    .hint-popover-title{
-      font-size:.9rem;
-      font-weight:900;
-      color:#0f172a;
-      margin:0 0 7px;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      line-height:1.25;
-    }
-
-    .hint-popover-title i{
-      color:#2563eb;
-      font-size:.88rem;
-    }
-
-    .hint-popover-text{
-      font-size:.8rem;
-      line-height:1.5;
-      color:#475569;
-      font-weight:700;
-      margin:0;
-    }
-
-    @media (max-width: 600px){
-      .hint-popover{
-        width:min(290px, calc(100vw - 18px));
-        max-width:calc(100vw - 18px);
-        padding:13px 13px 12px;
+      .dashboard-shell {
+        width: 100%;
+        max-width: 1120px;
+        margin: 0 auto;
       }
-      .hint-popover-title{
-        font-size:.86rem;
+
+      .welcome-banner {
+        background: var(--card);
+        border-radius: var(--radius-lg);
+        padding: 16px 18px;
+        margin-bottom: 18px;
+        display: flex;
+        gap: 14px;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+        position: relative;
+        overflow: hidden;
       }
-      .hint-popover-text{
-        font-size:.78rem;
+      .welcome-banner::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 6px;
+        background: linear-gradient(180deg, var(--brand), #2563eb);
       }
-    }
+      .welcome-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        background: radial-gradient(
+          circle at 30% 30%,
+          #ffffff 0%,
+          #e0edff 60%,
+          #c7d9ff 100%
+        );
+        box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
+        color: #2563eb;
+        margin-left: 6px;
+      }
+      .welcome-icon i {
+        font-size: 20px;
+      }
 
-    footer{
-      background: linear-gradient(to right, #222, #444);
-      color:#ddd;
-      text-align:center;
-      padding:15px 0;
-      font-size:14px;
-      border-top:2px solid #555;
-      box-shadow:0 -2px 10px rgba(0,0,0,.30);
-      flex-shrink:0;
-      width:100%;
-      position: relative !important;
-      bottom: auto !important;
-      left: auto !important;
-      right: auto !important;
-      z-index: 0 !important;
-    }
-    footer p{ margin:5px 0; font-size:0.9rem; }
+      .welcome-main-block {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        width: 100%;
+      }
+      .welcome-text-main {
+        font-size: 1.1rem;
+        font-weight: 900;
+        color: var(--ink);
+        margin: 0;
+        letter-spacing: 0.2px;
+      }
+      .welcome-text-sub {
+        font-size: 0.92rem;
+        color: var(--muted);
+        margin: 0;
+        line-height: 1.35;
+      }
 
-    .patch-modal{ display:none; position:fixed; inset:0; z-index:3000; background: rgba(0,0,0,.55); align-items:center; justify-content:center; padding:12px; }
-    .patch-modal.open{ display:flex; }
-    .patch-modal-content{ width:100%; max-width:560px; background:#ffffff; border-radius: var(--radius); border:1px solid rgba(148,163,184,.35); box-shadow: 0 18px 60px rgba(0,0,0,.25); overflow:hidden; }
-    .patch-modal-header{ padding:14px 16px; background: linear-gradient(90deg,#f9fafb 0,#eef2ff 100%); display:flex; align-items:center; justify-content:space-between; gap:10px; }
-    .patch-modal-title{ margin:0; font-size:1rem; font-weight:900; color: var(--ink); display:flex; align-items:center; gap:10px; }
-    .patch-badge{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-weight:900; font-size:.75rem; border:1px solid #e5e7eb; background:#f3f4f6; color:#111827; white-space:nowrap; }
-    .patch-badge.info{ background:#dbeafe; border-color:#bfdbfe; color:#1e3a8a; }
-    .patch-badge.improvement{ background:#dcfce7; border-color:#bbf7d0; color:#166534; }
-    .patch-badge.fix{ background:#fff7ed; border-color:#fed7aa; color:#7c2d12; }
-    .patch-badge.breaking{ background:#fee2e2; border-color:#fecaca; color:#b91c1c; }
-    .patch-close{ border:none; background:transparent; cursor:pointer; color:#64748b; font-size:1.1rem; padding:6px 8px; border-radius:10px; transition: background .15s ease, color .15s ease; }
-    .patch-close:hover{ background: rgba(100,116,139,.12); color:#0f172a; }
-    .patch-modal-body{ padding:14px 16px 16px; background:#fff; }
-    .patch-meta{ font-size:.86rem; color: var(--muted); font-weight:900; margin-bottom:10px; display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center; justify-content:flex-start; }
-    .patch-meta span{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:#f1f5f9; border:1px solid #e5e7eb; font-size:.8rem; color:#111827; font-weight:900; }
-    .patch-body{ text-align:left; font-size:.92rem; color:#111827; line-height:1.35rem; max-height:360px; overflow:auto; border:1px solid #e5e7eb; border-radius:14px; padding:12px; background:#f9fafb; white-space:normal; overflow-wrap:anywhere; }
-    .patch-actions{ display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; justify-content:center; }
-    .patch-btn{ padding:10px 12px; border-radius:999px; font-weight:900; cursor:pointer; border:1px solid #e5e7eb; background:#f3f4f6; color:#111827; transition: transform .12s ease, background-color .18s ease, box-shadow .18s ease; display:inline-flex; align-items:center; gap:8px; font-family:'Montserrat', sans-serif; }
-    .patch-btn:hover{ transform: translateY(-1px); background:#e5e7eb; }
-    .patch-btn-primary{ border-color:#1d4ed8; background:#2563eb; color:#fff; box-shadow: 0 6px 16px rgba(37,99,235,.25); }
-    .patch-btn-primary:hover{ background:#1d4ed8; }
-    .patch-btn-soft{ background:#ffffff; border-color:#e5e7eb; }
-  </style>
-</head>
+      .welcome-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 10px;
+        margin-top: 6px;
+      }
+      .welcome-meta-item {
+        font-size: 0.85rem;
+        color: #374151;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #f8fafc;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        white-space: nowrap;
+        font-weight: 800;
+      }
+      .welcome-meta-item i {
+        color: var(--brand);
+      }
+      .welcome-meta-item span {
+        color: #111827;
+      }
 
-<body>
+      @media (max-width: 700px) {
+        .welcome-banner {
+          padding: 12px 14px;
+        }
+        .welcome-icon {
+          margin-left: 6px;
+        }
+      }
+      @media (max-width: 600px) {
+        .welcome-text-main {
+          font-size: 1rem;
+        }
+        .welcome-text-sub {
+          font-size: 0.84rem;
+        }
+        .welcome-meta-item {
+          flex: 1 1 48%;
+          justify-content: flex-start;
+        }
+      }
 
-  <header class="header-desktop">
-    <div class="left-section">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
-      <div class="text-container">
-        <div class="escola-nome">Escola Municipal</div>
-        <div class="escola-subtitulo">José Padin Mouta</div>
+      .flash-container {
+        margin: 0 0 16px 0;
+      }
+      .flash {
+        padding: 12px 14px;
+        margin: 8px 0;
+        border-radius: 16px;
+        width: 100%;
+        font-weight: 800;
+        font-size: 0.9rem;
+        line-height: 1.35;
+        border: 1px solid transparent;
+        box-shadow: var(--shadow-soft);
+        overflow-wrap: anywhere;
+      }
+      .flash a {
+        color: inherit;
+        text-decoration: underline;
+        font-weight: 900;
+      }
+      .flash.message {
+        background: #eff6ff;
+        color: #1e3a8a;
+        border-color: #bfdbfe;
+        border-left: 6px solid #3b82f6;
+      }
+      .flash.success {
+        background: #dcfce7;
+        color: #166534;
+        border-color: #bbf7d0;
+        border-left: 6px solid #22c55e;
+      }
+      .flash.error,
+      .flash.danger {
+        background: #fee2e2;
+        color: #b91c1c;
+        border-color: #fecaca;
+        border-left: 6px solid #ef4444;
+      }
+      .flash.warning {
+        background: #ffedd5;
+        color: #7c2d12;
+        border-color: #fed7aa;
+        border-left: 6px solid #fb923c;
+      }
+      .flash.info {
+        background: #dbeafe;
+        color: #1e3a8a;
+        border-color: #bfdbfe;
+        border-left: 6px solid #3b82f6;
+      }
+
+      .tabs {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 8px 0 10px;
+        user-select: none;
+      }
+      .tab {
+        appearance: none;
+        border: 1px solid rgba(0, 123, 255, 0.35);
+        background: #f5f9ff;
+        padding: 10px 16px;
+        cursor: pointer;
+        font-weight: 900;
+        border-radius: 999px;
+        color: #0f172a;
+        transition:
+          transform 0.12s ease,
+          box-shadow 0.2s ease,
+          background-color 0.2s ease,
+          color 0.2s ease;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+      }
+      .tab:hover:not(.active) {
+        background: #e7f1ff;
+        box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
+        transform: translateY(-1px);
+        color: #0b3c91;
+      }
+      .tab.active {
+        background: linear-gradient(135deg, var(--brand), #2563eb);
+        color: #fff;
+        border-color: transparent;
+        box-shadow: 0 12px 26px rgba(37, 99, 235, 0.28);
+      }
+
+      .access-services {
+        font-weight: 900;
+        font-size: 0.95rem;
+        color: #2563eb;
+        margin: 6px 0 14px;
+        text-align: center;
+      }
+
+      .cards-container {
+        display: none;
+        width: 100%;
+      }
+      .cards-container.active {
+        display: block;
+      }
+
+      .cards-wrapper {
+        background: var(--card);
+        padding: 18px 18px 22px;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow);
+        width: 100%;
+        border: 1px solid var(--border);
+        margin-bottom: 18px;
+      }
+
+      .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(180px, 1fr));
+        gap: 14px;
+        justify-content: center;
+        align-items: stretch;
+      }
+
+      @media (max-width: 992px) {
+        .cards-grid {
+          grid-template-columns: repeat(2, minmax(160px, 1fr));
+        }
+      }
+
+      @media (max-width: 600px) {
+        .cards-wrapper {
+          padding: 16px 12px 20px;
+        }
+        .cards-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+        }
+      }
+
+      .card-shell {
+        position: relative;
+        width: 100%;
+        min-width: 0;
+      }
+
+      .logout-form {
+        margin: 0;
+        width: 100%;
+      }
+
+      .card {
+        background: #ffffff;
+        color: #111827;
+        border-radius: 18px;
+        padding: 14px 12px;
+        text-align: center;
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 150px;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+        font-weight: 900;
+        font-size: 0.95rem;
+        position: relative;
+        overflow: hidden;
+        transition:
+          transform 0.16s ease,
+          box-shadow 0.2s ease,
+          border-color 0.18s ease,
+          background-color 0.18s ease;
+        cursor: pointer;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        width: 100%;
+        font-family: "Montserrat", sans-serif;
+        isolation: isolate;
+      }
+
+      button.card {
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        outline: none;
+      }
+
+      .card::before {
+        content: "";
+        position: absolute;
+        inset: -45%;
+        background: radial-gradient(
+          circle at center,
+          rgba(59, 130, 246, 0.16) 0%,
+          transparent 60%
+        );
+        transform: rotate(18deg);
+        opacity: 0;
+        transition: opacity 0.22s ease;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .card-main-icon {
+        font-size: 24px;
+        margin-bottom: 10px;
+        color: #2563eb;
+        background: radial-gradient(
+          circle at 30% 30%,
+          #ffffff 0%,
+          #e0edff 60%,
+          #c7d9ff 100%
+        );
+        border-radius: 999px;
+        padding: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 16px rgba(37, 99, 235, 0.18);
+        z-index: 1;
+        position: relative;
+      }
+
+      .card-main-icon i {
+        color: inherit;
+        font-size: inherit;
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
+        border-radius: 0;
+      }
+
+      .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 14px 26px rgba(15, 23, 42, 0.14);
+        border-color: rgba(59, 130, 246, 0.5);
+        background-color: #f9fafb;
+        text-decoration: none;
+      }
+      .card:hover::before {
+        opacity: 1;
+      }
+
+      .card-title {
+        font-size: 1rem;
+        font-weight: 900;
+        z-index: 1;
+        position: relative;
+      }
+
+      .card-subtitle {
+        margin-top: 6px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--muted);
+        z-index: 1;
+        position: relative;
+        line-height: 1.3;
+        max-width: 92%;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .card-info-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 31px;
+        height: 31px;
+        border-radius: 999px;
+        border: 1px solid rgba(37, 99, 235, 0.22);
+        background: rgba(255, 255, 255, 0.96);
+        color: #2563eb;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 6px 14px rgba(15, 23, 42, 0.1);
+        transition:
+          transform 0.12s ease,
+          box-shadow 0.18s ease,
+          background-color 0.18s ease,
+          border-color 0.18s ease;
+        padding: 0;
+        font-size: 0.9rem;
+        font-weight: 900;
+        font-family: "Montserrat", sans-serif;
+        backdrop-filter: blur(6px);
+        z-index: 4;
+      }
+
+      .card-info-btn:hover,
+      .card-info-btn:focus-visible,
+      .card-info-btn.active {
+        transform: translateY(-1px);
+        background: #ffffff;
+        border-color: #93c5fd;
+        box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
+        outline: none;
+      }
+
+      .card-info-btn i {
+        font-size: 0.86rem;
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
+        color: inherit;
+      }
+
+      .desktop-only {
+        display: inline;
+      }
+      .mobile-only {
+        display: none;
+      }
+
+      @media (max-width: 600px) {
+        .card {
+          min-height: 140px;
+          padding: 12px 10px;
+        }
+        .card-main-icon {
+          font-size: 22px;
+          margin-bottom: 8px;
+          padding: 9px;
+        }
+        .desktop-only {
+          display: none;
+        }
+        .mobile-only {
+          display: inline;
+        }
+        .card-subtitle {
+          display: block;
+          -webkit-line-clamp: unset;
+          -webkit-box-orient: unset;
+          overflow: visible;
+          max-width: 96%;
+          font-size: 0.78rem;
+        }
+        .card-info-btn {
+          top: 8px;
+          right: 8px;
+          width: 29px;
+          height: 29px;
+          font-size: 0.84rem;
+        }
+      }
+
+      .logout-btn {
+        background: #fef2f2;
+        color: #991b1b;
+        border-color: #fecaca;
+      }
+      .logout-btn .card-main-icon {
+        color: #991b1b;
+        background: radial-gradient(
+          circle at 30% 30%,
+          #ffffff 0%,
+          #fee2e2 60%,
+          #fecaca 100%
+        );
+        box-shadow: 0 8px 16px rgba(185, 28, 28, 0.18);
+      }
+      .logout-btn:hover {
+        background: #fee2e2;
+        border-color: #fca5a5;
+        box-shadow: 0 14px 26px rgba(185, 28, 28, 0.22);
+        color: #7f1d1d;
+      }
+
+      .hint-popover {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: min(320px, calc(100vw - 24px));
+        max-width: calc(100vw - 24px);
+        background: rgba(255, 255, 255, 0.98);
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        border-radius: 18px;
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+        padding: 14px 14px 13px;
+        z-index: 5000;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(6px) scale(0.98);
+        transition:
+          opacity 0.16s ease,
+          transform 0.16s ease,
+          visibility 0.16s ease;
+        pointer-events: none;
+        backdrop-filter: blur(12px);
+      }
+
+      .hint-popover.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+      }
+
+      .hint-popover::before {
+        content: "";
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        background: rgba(255, 255, 255, 0.98);
+        transform: rotate(45deg);
+        border-left: 1px solid rgba(148, 163, 184, 0.24);
+        border-top: 1px solid rgba(148, 163, 184, 0.24);
+        left: var(--arrow-left, 24px);
+      }
+
+      .hint-popover[data-placement="top"]::before {
+        bottom: -8px;
+        top: auto;
+        transform: rotate(225deg);
+      }
+
+      .hint-popover[data-placement="bottom"]::before {
+        top: -8px;
+        bottom: auto;
+        transform: rotate(45deg);
+      }
+
+      .hint-popover-title {
+        font-size: 0.9rem;
+        font-weight: 900;
+        color: #0f172a;
+        margin: 0 0 7px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        line-height: 1.25;
+      }
+
+      .hint-popover-title i {
+        color: #2563eb;
+        font-size: 0.88rem;
+      }
+
+      .hint-popover-text {
+        font-size: 0.8rem;
+        line-height: 1.5;
+        color: #475569;
+        font-weight: 700;
+        margin: 0;
+      }
+
+      @media (max-width: 600px) {
+        .hint-popover {
+          width: min(290px, calc(100vw - 18px));
+          max-width: calc(100vw - 18px);
+          padding: 13px 13px 12px;
+        }
+        .hint-popover-title {
+          font-size: 0.86rem;
+        }
+        .hint-popover-text {
+          font-size: 0.78rem;
+        }
+      }
+
+      footer {
+        background: linear-gradient(to right, #222, #444);
+        color: #ddd;
+        text-align: center;
+        padding: 15px 0;
+        font-size: 14px;
+        border-top: 2px solid #555;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+        flex-shrink: 0;
+        width: 100%;
+        position: relative !important;
+        bottom: auto !important;
+        left: auto !important;
+        right: auto !important;
+        z-index: 0 !important;
+      }
+      footer p {
+        margin: 5px 0;
+        font-size: 0.9rem;
+      }
+
+      .patch-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 3000;
+        background: rgba(0, 0, 0, 0.55);
+        align-items: center;
+        justify-content: center;
+        padding: 12px;
+      }
+      .patch-modal.open {
+        display: flex;
+      }
+      .patch-modal-content {
+        width: 100%;
+        max-width: 560px;
+        background: #ffffff;
+        border-radius: var(--radius);
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+      }
+      .patch-modal-header {
+        padding: 14px 16px;
+        background: linear-gradient(90deg, #f9fafb 0, #eef2ff 100%);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .patch-modal-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 900;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .patch-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-weight: 900;
+        font-size: 0.75rem;
+        border: 1px solid #e5e7eb;
+        background: #f3f4f6;
+        color: #111827;
+        white-space: nowrap;
+      }
+      .patch-badge.info {
+        background: #dbeafe;
+        border-color: #bfdbfe;
+        color: #1e3a8a;
+      }
+      .patch-badge.improvement {
+        background: #dcfce7;
+        border-color: #bbf7d0;
+        color: #166534;
+      }
+      .patch-badge.fix {
+        background: #fff7ed;
+        border-color: #fed7aa;
+        color: #7c2d12;
+      }
+      .patch-badge.breaking {
+        background: #fee2e2;
+        border-color: #fecaca;
+        color: #b91c1c;
+      }
+      .patch-close {
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        color: #64748b;
+        font-size: 1.1rem;
+        padding: 6px 8px;
+        border-radius: 10px;
+        transition:
+          background 0.15s ease,
+          color 0.15s ease;
+      }
+      .patch-close:hover {
+        background: rgba(100, 116, 139, 0.12);
+        color: #0f172a;
+      }
+      .patch-modal-body {
+        padding: 14px 16px 16px;
+        background: #fff;
+      }
+      .patch-meta {
+        font-size: 0.86rem;
+        color: var(--muted);
+        font-weight: 900;
+        margin-bottom: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 10px;
+        align-items: center;
+        justify-content: flex-start;
+      }
+      .patch-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #f1f5f9;
+        border: 1px solid #e5e7eb;
+        font-size: 0.8rem;
+        color: #111827;
+        font-weight: 900;
+      }
+      .patch-body {
+        text-align: left;
+        font-size: 0.92rem;
+        color: #111827;
+        line-height: 1.35rem;
+        max-height: 360px;
+        overflow: auto;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 12px;
+        background: #f9fafb;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+      .patch-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .patch-btn {
+        padding: 10px 12px;
+        border-radius: 999px;
+        font-weight: 900;
+        cursor: pointer;
+        border: 1px solid #e5e7eb;
+        background: #f3f4f6;
+        color: #111827;
+        transition:
+          transform 0.12s ease,
+          background-color 0.18s ease,
+          box-shadow 0.18s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: "Montserrat", sans-serif;
+      }
+      .patch-btn:hover {
+        transform: translateY(-1px);
+        background: #e5e7eb;
+      }
+      .patch-btn-primary {
+        border-color: #1d4ed8;
+        background: #2563eb;
+        color: #fff;
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
+      }
+      .patch-btn-primary:hover {
+        background: #1d4ed8;
+      }
+      .patch-btn-soft {
+        background: #ffffff;
+        border-color: #e5e7eb;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="header-desktop">
+      <div class="left-section">
+        <img
+          src="{{ url_for('static', filename='img/logo.png') }}"
+          alt="Logo da Escola"
+          class="logo"
+        />
+        <div class="text-container">
+          <div class="escola-nome">Escola Municipal</div>
+          <div class="escola-subtitulo">José Padin Mouta</div>
+        </div>
       </div>
-    </div>
 
-    <div class="header-center-text-container">
-      <div class="header-center-text">CENTRAL DA UNIDADE</div>
-    </div>
-
-    <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
-      <i class="fas fa-home"></i>
-    </a>
-  </header>
-
-  <header class="header-mobile">
-    <div class="header-top">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo da Escola" class="logo" />
-      <div class="text-container">
-        <div class="escola-nome">Escola Municipal</div>
-        <div class="escola-subtitulo">José Padin Mouta</div>
+      <div class="header-center-text-container">
+        <div class="header-center-text">CENTRAL DA UNIDADE</div>
       </div>
-    </div>
-    <div class="header-bottom">
-      <span>CENTRAL DA UNIDADE</span>
-      <a href="{{ url_for('index') }}" class="btn-home-mobile" title="Página Inicial">
+
+      <a href="{{ url_for('index') }}" class="btn-home" title="Página Inicial">
         <i class="fas fa-home"></i>
       </a>
-    </div>
-  </header>
+    </header>
 
-  <main>
-    <div class="dashboard-shell">
-
-      <div class="welcome-banner">
-        <div class="welcome-icon" aria-hidden="true">
-          <i class="fas fa-handshake"></i>
+    <header class="header-mobile">
+      <div class="header-top">
+        <img
+          src="{{ url_for('static', filename='img/logo.png') }}"
+          alt="Logo da Escola"
+          class="logo"
+        />
+        <div class="text-container">
+          <div class="escola-nome">Escola Municipal</div>
+          <div class="escola-subtitulo">José Padin Mouta</div>
         </div>
+      </div>
+      <div class="header-bottom">
+        <span>CENTRAL DA UNIDADE</span>
+        <a
+          href="{{ url_for('index') }}"
+          class="btn-home-mobile"
+          title="Página Inicial"
+        >
+          <i class="fas fa-home"></i>
+        </a>
+      </div>
+    </header>
 
-        <div class="welcome-main-block">
-          <p class="welcome-text-main">Olá, {{ current_user.nome }}</p>
-          <p class="welcome-text-sub">
-            Bem-vindo à Central da Unidade. Utilize os cards abaixo para acessar os serviços disponíveis.
-          </p>
+    <main>
+      <div class="dashboard-shell">
+        <div class="welcome-banner">
+          <div class="welcome-icon" aria-hidden="true">
+            <i class="fas fa-handshake"></i>
+          </div>
 
-          <div class="welcome-meta">
-            <div class="welcome-meta-item">
-              <i class="fas fa-id-badge" aria-hidden="true"></i>
-              <span>Registro:</span> {{ current_user.registro }}
-            </div>
-            <div class="welcome-meta-item">
-              <i class="fas fa-briefcase" aria-hidden="true"></i>
-              <span>Cargo:</span> {{ current_user.cargo or 'Não informado' }}
+          <div class="welcome-main-block">
+            <p class="welcome-text-main">Olá, {{ current_user.nome }}</p>
+            <p class="welcome-text-sub">
+              Bem-vindo à Central da Unidade. Utilize os cards abaixo para
+              acessar os serviços disponíveis.
+            </p>
+
+            <div class="welcome-meta">
+              <div class="welcome-meta-item">
+                <i class="fas fa-id-badge" aria-hidden="true"></i>
+                <span>Registro:</span> {{ current_user.registro }}
+              </div>
+              <div class="welcome-meta-item">
+                <i class="fas fa-briefcase" aria-hidden="true"></i>
+                <span>Cargo:</span> {{ current_user.cargo or 'Não informado' }}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-      <div class="flash-container">
-        {% for category, message in messages %}
-          <div class="flash {{ category }}" role="alert">{{ message|safe }}</div>
-        {% endfor %}
-      </div>
-      <script>
-        setTimeout(() => {
-          document.querySelectorAll('.flash').forEach(flash => {
-            flash.style.transition = 'opacity 1s ease';
-            flash.style.opacity = '0';
-            setTimeout(() => flash.remove(), 1000);
-          });
-        }, 8000);
-      </script>
-      {% endif %}
-      {% endwith %}
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+          <div class="flash {{ category }}" role="alert">
+            {{ message|safe }}
+          </div>
+          {% endfor %}
+        </div>
+        <script>
+          setTimeout(() => {
+            document.querySelectorAll(".flash").forEach((flash) => {
+              flash.style.transition = "opacity 1s ease";
+              flash.style.opacity = "0";
+              setTimeout(() => flash.remove(), 1000);
+            });
+          }, 8000);
+        </script>
+        {% endif %} {% endwith %}
 
-      <div class="tabs" role="tablist" aria-label="Seções do Portal">
-        <button class="tab active" type="button" data-tab="geral" role="tab" aria-selected="true">
-          <i class="fas fa-layer-group" aria-hidden="true"></i> Geral
-        </button>
+        <div class="tabs" role="tablist" aria-label="Seções do Portal">
+          <button
+            class="tab active"
+            type="button"
+            data-tab="geral"
+            role="tab"
+            aria-selected="true"
+          >
+            <i class="fas fa-layer-group" aria-hidden="true"></i> Geral
+          </button>
+
+          {% if current_user.tipo == 'administrador' %}
+          <button
+            class="tab"
+            type="button"
+            data-tab="administrativo"
+            role="tab"
+            aria-selected="false"
+          >
+            <i class="fas fa-user-shield" aria-hidden="true"></i> Administrativo
+          </button>
+          {% endif %}
+        </div>
+
+        <p class="access-services">Acesse os serviços da central da unidade:</p>
+
+        <div id="geral" class="cards-container active">
+          <div class="cards-wrapper">
+            <div class="cards-grid">
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('perfil') }}"
+                  class="card"
+                  aria-label="Meu Perfil"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-id-badge"></i
+                  ></span>
+                  <div class="card-title">Meu Perfil</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only"
+                      >Atualize seus dados pessoais e profissionais.</span
+                    >
+                    <span class="mobile-only">Dados pessoais.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Meu Perfil"
+                  data-info-title="Meu Perfil"
+                  data-info-icon="fas fa-id-badge"
+                  data-info-text="Aqui você pode conferir e atualizar seus dados pessoais e profissionais, como celular, documentos, cargo e formação. Manter essas informações corretas ajuda você a usar o sistema sem pendências e com mais facilidade."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('historico') }}"
+                  class="card"
+                  aria-label="Minhas Folgas"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-calendar-check"></i
+                  ></span>
+                  <div class="card-title">Minhas Folgas</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only"
+                      >Consulte saldo, histórico e avisos.</span
+                    >
+                    <span class="mobile-only">Saldo e avisos.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Minhas Folgas"
+                  data-info-title="Minhas Folgas"
+                  data-info-icon="fas fa-calendar-check"
+                  data-info-text="Aqui você pode consultar quantas folgas ainda tem disponíveis, visualizar seu saldo de TRE para utilização e acompanhar um breve histórico com as últimas folgas que já usufruiu."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('minhas_justificativas') }}"
+                  class="card"
+                  aria-label="Meus Agendamentos"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-clipboard-list"></i
+                  ></span>
+                  <div class="card-title">Meus Agendamentos</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only"
+                      >Acompanhe o status das suas solicitações.</span
+                    >
+                    <span class="mobile-only">Status dos pedidos.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Meus Agendamentos"
+                  data-info-title="Meus Agendamentos"
+                  data-info-icon="fas fa-clipboard-list"
+                  data-info-text="Aqui você pode consultar os agendamentos que já fez, acompanhar o andamento de cada solicitação, acessar o protocolo disponível e indicar um substituto para o dia da folga, quando necessário."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('agendar') }}"
+                  class="card"
+                  aria-label="Agendar Folga"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-calendar-plus"></i
+                  ></span>
+                  <div class="card-title">Agendar Folga</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only"
+                      >Solicite folgas e comunique ausências.</span
+                    >
+                    <span class="mobile-only">Nova solicitação.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Agendar Folga"
+                  data-info-title="Agendar Folga"
+                  data-info-icon="fas fa-calendar-plus"
+                  data-info-text="Aqui você pode solicitar a folga para a data desejada, preencher as informações necessárias e enviar o pedido para análise. O sistema confere automaticamente as informações da solicitação, e o protocolo é enviado para o seu e-mail cadastrado."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('relatar_esquecimento') }}"
+                  class="card"
+                  aria-label="Relatar Esquecimento"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-stopwatch"></i
+                  ></span>
+                  <div class="card-title">Ausencias e Esquecimentos</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only"
+                      >Informe registros de ponto não batidos</span
+                    >
+                    <span class="mobile-only">Ajuste de ponto.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Ausencias e Esquecimentos"
+                  data-info-title="Ausencias e Esquecimentos"
+                  data-info-icon="fas fa-stopwatch"
+                  data-info-text="Aqui você pode registrar esquecimentos de ponto ou outras situações em que a marcação não foi realizada corretamente, como falha no equipamento, convocação ou outro motivo. Informe os horários e a justificativa para deixar tudo registrado no sistema."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('calendario') }}"
+                  class="card"
+                  aria-label="Calendário"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-calendar-days"></i
+                  ></span>
+                  <div class="card-title">Calendário</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only"
+                      >Visualize seus agendamentos no calendário.</span
+                    >
+                    <span class="mobile-only">Agenda.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Calendário"
+                  data-info-title="Calendário"
+                  data-info-icon="fas fa-calendar-days"
+                  data-info-text="Aqui você pode visualizar, em calendário, as datas que já possuem folgas, lançamentos e outras marcações, facilitando sua organização. Assim, fica mais fácil identificar os dias mais ocupados, os mais livres e se planejar melhor antes de fazer uma nova solicitação."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('tre_menu') }}"
+                  class="card"
+                  aria-label="TRE"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-scale-balanced"></i
+                  ></span>
+                  <div class="card-title">TRE</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only"
+                      >Envie, consulte e gerencie seus dias de TRE.</span
+                    >
+                    <span class="mobile-only">Gestão de TRE.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre TRE"
+                  data-info-title="TRE"
+                  data-info-icon="fas fa-scale-balanced"
+                  data-info-text="Aqui você pode enviar os PDFs das suas TREs, acompanhar o que já foi cadastrado, consultar os envios anteriores e visualizar seu saldo de TREs disponível no sistema."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('banco_horas') }}"
+                  class="card"
+                  aria-label="Banco de Horas"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-hourglass-half"></i
+                  ></span>
+                  <div class="card-title">Banco de Horas</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only"
+                      >Consulte e registre Banco de Horas.</span
+                    >
+                    <span class="mobile-only">Horas e saldo.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Banco de Horas"
+                  data-info-title="Banco de Horas"
+                  data-info-icon="fas fa-hourglass-half"
+                  data-info-text="Aqui você pode visualizar seu saldo de banco de horas, consultar os lançamentos já registrados e cadastrar novas horas realizadas para que fiquem registradas no sistema."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <form
+                method="POST"
+                action="{{ url_for('logout') }}"
+                class="logout-form"
+                aria-label="Sair do sistema"
+              >
+                {% if csrf_token is defined %}
+                <input
+                  type="hidden"
+                  name="csrf_token"
+                  value="{{ csrf_token() }}"
+                />
+                {% endif %}
+                <div class="card-shell">
+                  <button
+                    type="submit"
+                    class="card logout-btn"
+                    title="Sair do sistema"
+                  >
+                    <span class="card-main-icon" aria-hidden="true"
+                      ><i class="fas fa-right-from-bracket"></i
+                    ></span>
+                    <div class="card-title">Sair</div>
+                    <div class="card-subtitle">
+                      <span class="desktop-only"
+                        >Encerre a sessão com segurança.</span
+                      >
+                      <span class="mobile-only">Encerrar sessão.</span>
+                    </div>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
 
         {% if current_user.tipo == 'administrador' %}
-        <button class="tab" type="button" data-tab="administrativo" role="tab" aria-selected="false">
-          <i class="fas fa-user-shield" aria-hidden="true"></i> Administrativo
-        </button>
+        <div id="administrativo" class="cards-container">
+          <div class="cards-wrapper">
+            <div class="cards-grid">
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('deferir_folgas') }}"
+                  class="card"
+                  aria-label="Deferir Folgas"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-calendar-check"></i
+                  ></span>
+                  <div class="card-title">Deferir Folgas</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only"
+                      >Analise e delibere sobre solicitações.</span
+                    >
+                    <span class="mobile-only">Analisar pedidos.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Deferir Folgas"
+                  data-info-title="Deferir Folgas"
+                  data-info-icon="fas fa-calendar-check"
+                  data-info-text="Analise solicitações pendentes, confira possíveis conflitos entre servidores e registre a decisão administrativa diretamente no sistema, com atualização de status e notificações."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('admin_tres_list') }}"
+                  class="card"
+                  aria-label="Deferir TREs"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-file-signature"></i
+                  ></span>
+                  <div class="card-title">Deferir TREs</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only">Valide TREs e ajuste dias.</span>
+                    <span class="mobile-only">Validar TREs.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Deferir TREs"
+                  data-info-title="Deferir TREs"
+                  data-info-icon="fas fa-file-signature"
+                  data-info-text="Valide documentos de TRE, aprove ou ajuste quantidades de dias e acompanhe lançamentos feitos pelos servidores ou pela administração."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('aprovar_usuarios') }}"
+                  class="card"
+                  aria-label="Aprovar Usuários"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-user-check"></i
+                  ></span>
+                  <div class="card-title">Aprovar Usuários</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only">Habilite novos cadastros.</span>
+                    <span class="mobile-only">Liberar acessos.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Aprovar Usuários"
+                  data-info-title="Aprovar Usuários"
+                  data-info-icon="fas fa-user-check"
+                  data-info-text="Analise novos cadastros, aprove ou rejeite solicitações de acesso e mantenha a base de usuários da unidade organizada e segura."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('admin_agendamentos') }}"
+                  class="card"
+                  aria-label="Gerenciar Agendamentos"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-calendar-days"></i
+                  ></span>
+                  <div class="card-title">Gerenciar Agendamentos</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only"
+                      >Liste, filtre e edite agendamentos.</span
+                    >
+                    <span class="mobile-only">Listar/editar.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Gerenciar Agendamentos"
+                  data-info-title="Gerenciar Agendamentos"
+                  data-info-icon="fas fa-calendar-days"
+                  data-info-text="Consulte lançamentos em massa, aplique filtros, revise informações e faça ajustes administrativos em agendamentos já registrados no sistema."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('admin_agendar_para') }}"
+                  class="card"
+                  aria-label="Agendar para Servidor"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-calendar-plus"></i
+                  ></span>
+                  <div class="card-title">Agendar p/ Servidor</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only"
+                      >Registre folga/comunicação em nome de um servidor
+                      ativo.</span
+                    >
+                    <span class="mobile-only">Lançar folga.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Agendar para Servidor"
+                  data-info-title="Agendar p/ Servidor"
+                  data-info-icon="fas fa-calendar-plus"
+                  data-info-text="Permite lançar folgas, comunicações e ausências diretamente em nome de um servidor ativo, acelerando o trabalho administrativo da unidade."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('admin_horarios_trabalho') }}"
+                  class="card"
+                  aria-label="Horários de Trabalho"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-business-time"></i
+                  ></span>
+                  <div class="card-title">Horários de Trabalho</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only"
+                      >Defina e atualize a jornada de trabalho dos
+                      servidores.</span
+                    >
+                    <span class="mobile-only">Jornada dos servidores.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Horários de Trabalho"
+                  data-info-title="Horários de Trabalho"
+                  data-info-icon="fas fa-business-time"
+                  data-info-text="Cadastre e atualize a jornada dos servidores para apoiar relatórios, conferências e futuras validações ligadas ao ponto e aos horários habituais de trabalho."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('user_info_all') }}"
+                  class="card"
+                  aria-label="Prontuários"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-folder-open"></i
+                  ></span>
+                  <div class="card-title">Prontuários</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only"
+                      >Acesse informações de servidores.</span
+                    >
+                    <span class="mobile-only">Dados dos servidores.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Prontuários"
+                  data-info-title="Prontuários"
+                  data-info-icon="fas fa-folder-open"
+                  data-info-text="Consulte dados cadastrais e funcionais dos servidores, com visão mais completa para apoio administrativo, filtros e análises da equipe gestora."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('relatorio_ponto') }}"
+                  class="card"
+                  aria-label="Relatório de Ponto"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-file-lines"></i
+                  ></span>
+                  <div class="card-title">Relatório de Ponto</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only"
+                      >Gere relatórios de frequência.</span
+                    >
+                    <span class="mobile-only">Frequência.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Relatório de Ponto"
+                  data-info-title="Relatório de Ponto"
+                  data-info-icon="fas fa-file-lines"
+                  data-info-text="Gere uma visão consolidada do período, filtre registros, marque conferências e acompanhe esquecimentos e agendamentos deferidos em uma mesma tela."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('relatorio_horas_extras') }}"
+                  class="card"
+                  aria-label="Relatório de Horas Extras"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-clock-rotate-left"></i
+                  ></span>
+                  <div class="card-title">Relatório de Horas Extras</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only"
+                      >Consolide e exporte horas extras.</span
+                    >
+                    <span class="mobile-only">Horas extras.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Relatório de Horas Extras"
+                  data-info-title="Relatório de Horas Extras"
+                  data-info-icon="fas fa-clock-rotate-left"
+                  data-info-text="Consulte totais, filtros e disponibilidade de horas extras por servidor, facilitando conferência, análise e emissão de relatórios administrativos."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <div class="card-shell">
+                <a
+                  href="{{ url_for('admin_eventos') }}"
+                  class="card"
+                  aria-label="Eventos"
+                >
+                  <span class="card-main-icon" aria-hidden="true"
+                    ><i class="fas fa-bullhorn"></i
+                  ></span>
+                  <div class="card-title">Eventos</div>
+                  <div class="card-subtitle">
+                    <span class="desktop-only"
+                      >Crie, edite e gerencie eventos no calendário.</span
+                    >
+                    <span class="mobile-only">Gerenciar eventos.</span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  class="card-info-btn"
+                  aria-label="Mais informações sobre Eventos"
+                  data-info-title="Eventos"
+                  data-info-icon="fas fa-bullhorn"
+                  data-info-text="Crie comunicados e eventos internos com datas, períodos e descrições, mantendo a equipe alinhada com atividades e avisos relevantes no calendário do portal."
+                >
+                  <i class="fas fa-info"></i>
+                </button>
+              </div>
+
+              <form
+                method="POST"
+                action="{{ url_for('logout') }}"
+                class="logout-form"
+                aria-label="Sair do sistema"
+              >
+                <input
+                  type="hidden"
+                  name="csrf_token"
+                  value="{{ csrf_token() }}"
+                />
+                <div class="card-shell">
+                  <button
+                    type="submit"
+                    class="card logout-btn"
+                    title="Sair do sistema"
+                  >
+                    <span class="card-main-icon" aria-hidden="true"
+                      ><i class="fas fa-right-from-bracket"></i
+                    ></span>
+                    <div class="card-title">Sair</div>
+                    <div class="card-subtitle">
+                      <span class="desktop-only"
+                        >Encerre a sessão com segurança.</span
+                      >
+                      <span class="mobile-only">Encerrar sessão.</span>
+                    </div>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
         {% endif %}
       </div>
+    </main>
 
-      <p class="access-services">Acesse os serviços da central da unidade:</p>
+    <div
+      id="cardHintPopover"
+      class="hint-popover"
+      data-placement="top"
+      aria-hidden="true"
+    >
+      <div class="hint-popover-title" id="cardHintTitle">
+        <i class="fas fa-circle-info"></i>
+        <span>Informações</span>
+      </div>
+      <p class="hint-popover-text" id="cardHintText"></p>
+    </div>
 
-      <div id="geral" class="cards-container active">
-        <div class="cards-wrapper">
-          <div class="cards-grid">
+    <div
+      id="patchModal"
+      class="patch-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="patchModalTitle"
+    >
+      <div class="patch-modal-content">
+        <div class="patch-modal-header">
+          <div class="patch-modal-title">
+            <i class="fas fa-wrench"></i>
+            <span id="patchModalTitle">Atualizações do Sistema</span>
+            <span
+              id="patchBadge"
+              class="patch-badge info"
+              title="Tipo da atualização"
+              >Info</span
+            >
+          </div>
 
-            <div class="card-shell">
-              <a href="{{ url_for('perfil') }}" class="card" aria-label="Meu Perfil">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-id-badge"></i></span>
-                <div class="card-title">Meu Perfil</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Atualize seus dados pessoais e profissionais.</span>
-                  <span class="mobile-only">Dados pessoais.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre Meu Perfil"
-                data-info-title="Meu Perfil"
-                data-info-icon="fas fa-id-badge"
-                data-info-text="Aqui você pode conferir e atualizar seus dados pessoais e profissionais, como celular, documentos, cargo e formação. Manter essas informações corretas ajuda você a usar o sistema sem pendências e com mais facilidade."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
+          <button
+            type="button"
+            class="patch-close"
+            aria-label="Fechar"
+            id="patchCloseBtn"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
 
-            <div class="card-shell">
-              <a href="{{ url_for('historico') }}" class="card" aria-label="Minhas Folgas">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-calendar-check"></i></span>
-                <div class="card-title">Minhas Folgas</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Consulte saldo, histórico e avisos.</span>
-                  <span class="mobile-only">Saldo e avisos.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre Minhas Folgas"
-                data-info-title="Minhas Folgas"
-                data-info-icon="fas fa-calendar-check"
-                data-info-text="Aqui você pode consultar quantas folgas ainda tem disponíveis, visualizar seu saldo de TRE para utilização e acompanhar um breve histórico com as últimas folgas que já usufruiu."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
+        <div class="patch-modal-body">
+          <div class="patch-meta" id="patchMeta"></div>
+          <div class="patch-body" id="patchBody"></div>
 
-            <div class="card-shell">
-              <a href="{{ url_for('minhas_justificativas') }}" class="card" aria-label="Meus Agendamentos">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-clipboard-list"></i></span>
-                <div class="card-title">Meus Agendamentos</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Acompanhe o status das suas solicitações.</span>
-                  <span class="mobile-only">Status dos pedidos.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre Meus Agendamentos"
-                data-info-title="Meus Agendamentos"
-                data-info-icon="fas fa-clipboard-list"
-                data-info-text="Aqui você pode consultar os agendamentos que já fez, acompanhar o andamento de cada solicitação, acessar o protocolo disponível e indicar um substituto para o dia da folga, quando necessário."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
+          <div class="patch-actions">
+            <button
+              id="patchReadBtn"
+              type="button"
+              class="patch-btn patch-btn-primary"
+            >
+              <i class="fas fa-check"></i> Entendi
+            </button>
 
-            <div class="card-shell">
-              <a href="{{ url_for('agendar') }}" class="card" aria-label="Agendar Folga">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-calendar-plus"></i></span>
-                <div class="card-title">Agendar Folga</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Solicite folgas e comunique ausências.</span>
-                  <span class="mobile-only">Nova solicitação.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre Agendar Folga"
-                data-info-title="Agendar Folga"
-                data-info-icon="fas fa-calendar-plus"
-                data-info-text="Aqui você pode solicitar a folga para a data desejada, preencher as informações necessárias e enviar o pedido para análise. O sistema confere automaticamente as informações da solicitação, e o protocolo é enviado para o seu e-mail cadastrado."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
+            <button
+              id="patchReadAllBtn"
+              type="button"
+              class="patch-btn patch-btn-soft"
+            >
+              <i class="fas fa-layer-group"></i> Marcar todas como lidas
+            </button>
 
-            <div class="card-shell">
-              <a href="{{ url_for('relatar_esquecimento') }}" class="card" aria-label="Relatar Esquecimento">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-stopwatch"></i></span>
-                <div class="card-title">Ausencias e Esquecimentos</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Informe registros de ponto não batidos</span>
-                  <span class="mobile-only">Ajuste de ponto.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre Ausencias e Esquecimentos"
-                data-info-title="Ausencias e Esquecimentos"
-                data-info-icon="fas fa-stopwatch"
-                data-info-text="Aqui você pode registrar esquecimentos de ponto ou outras situações em que a marcação não foi realizada corretamente, como falha no equipamento, convocação ou outro motivo. Informe os horários e a justificativa para deixar tudo registrado no sistema."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
-
-            <div class="card-shell">
-              <a href="{{ url_for('calendario') }}" class="card" aria-label="Calendário">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-calendar-days"></i></span>
-                <div class="card-title">Calendário</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Visualize seus agendamentos no calendário.</span>
-                  <span class="mobile-only">Agenda.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre Calendário"
-                data-info-title="Calendário"
-                data-info-icon="fas fa-calendar-days"
-                data-info-text="Aqui você pode visualizar, em calendário, as datas que já possuem folgas, lançamentos e outras marcações, facilitando sua organização. Assim, fica mais fácil identificar os dias mais ocupados, os mais livres e se planejar melhor antes de fazer uma nova solicitação."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
-
-            <div class="card-shell">
-              <a href="{{ url_for('tre_menu') }}" class="card" aria-label="TRE">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-scale-balanced"></i></span>
-                <div class="card-title">TRE</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Envie, consulte e gerencie seus dias de TRE.</span>
-                  <span class="mobile-only">Gestão de TRE.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre TRE"
-                data-info-title="TRE"
-                data-info-icon="fas fa-scale-balanced"
-                data-info-text="Aqui você pode enviar os PDFs das suas TREs, acompanhar o que já foi cadastrado, consultar os envios anteriores e visualizar seu saldo de TREs disponível no sistema."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
-
-            <div class="card-shell">
-              <a href="{{ url_for('banco_horas') }}" class="card" aria-label="Banco de Horas">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-hourglass-half"></i></span>
-                <div class="card-title">Banco de Horas</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Consulte e registre Banco de Horas.</span>
-                  <span class="mobile-only">Horas e saldo.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre Banco de Horas"
-                data-info-title="Banco de Horas"
-                data-info-icon="fas fa-hourglass-half"
-                data-info-text="Aqui você pode visualizar seu saldo de banco de horas, consultar os lançamentos já registrados e cadastrar novas horas realizadas para que fiquem registradas no sistema."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
-
-            <form method="POST" action="{{ url_for('logout') }}" class="logout-form" aria-label="Sair do sistema">
-              {% if csrf_token is defined %}
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              {% endif %}
-              <div class="card-shell">
-                <button type="submit" class="card logout-btn" title="Sair do sistema">
-                  <span class="card-main-icon" aria-hidden="true"><i class="fas fa-right-from-bracket"></i></span>
-                  <div class="card-title">Sair</div>
-                  <div class="card-subtitle">
-                    <span class="desktop-only">Encerre a sessão com segurança.</span>
-                    <span class="mobile-only">Encerrar sessão.</span>
-                  </div>
-                </button>
-              </div>
-            </form>
-
+            <button id="patchLaterBtn" type="button" class="patch-btn">
+              <i class="fas fa-clock"></i> Ver depois
+            </button>
           </div>
         </div>
       </div>
-
-      {% if current_user.tipo == 'administrador' %}
-      <div id="administrativo" class="cards-container">
-        <div class="cards-wrapper">
-          <div class="cards-grid">
-
-            <div class="card-shell">
-              <a href="{{ url_for('deferir_folgas') }}" class="card" aria-label="Deferir Folgas">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-calendar-check"></i></span>
-                <div class="card-title">Deferir Folgas</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Analise e delibere sobre solicitações.</span>
-                  <span class="mobile-only">Analisar pedidos.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre Deferir Folgas"
-                data-info-title="Deferir Folgas"
-                data-info-icon="fas fa-calendar-check"
-                data-info-text="Analise solicitações pendentes, confira possíveis conflitos entre servidores e registre a decisão administrativa diretamente no sistema, com atualização de status e notificações."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
-
-            <div class="card-shell">
-              <a href="{{ url_for('admin_tres_list') }}" class="card" aria-label="Deferir TREs">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-file-signature"></i></span>
-                <div class="card-title">Deferir TREs</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Valide TREs e ajuste dias.</span>
-                  <span class="mobile-only">Validar TREs.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre Deferir TREs"
-                data-info-title="Deferir TREs"
-                data-info-icon="fas fa-file-signature"
-                data-info-text="Valide documentos de TRE, aprove ou ajuste quantidades de dias e acompanhe lançamentos feitos pelos servidores ou pela administração."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
-
-            <div class="card-shell">
-              <a href="{{ url_for('aprovar_usuarios') }}" class="card" aria-label="Aprovar Usuários">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-user-check"></i></span>
-                <div class="card-title">Aprovar Usuários</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Habilite novos cadastros.</span>
-                  <span class="mobile-only">Liberar acessos.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre Aprovar Usuários"
-                data-info-title="Aprovar Usuários"
-                data-info-icon="fas fa-user-check"
-                data-info-text="Analise novos cadastros, aprove ou rejeite solicitações de acesso e mantenha a base de usuários da unidade organizada e segura."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
-
-            <div class="card-shell">
-              <a href="{{ url_for('admin_agendamentos') }}" class="card" aria-label="Gerenciar Agendamentos">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-calendar-days"></i></span>
-                <div class="card-title">Gerenciar Agendamentos</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Liste, filtre e edite agendamentos.</span>
-                  <span class="mobile-only">Listar/editar.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre Gerenciar Agendamentos"
-                data-info-title="Gerenciar Agendamentos"
-                data-info-icon="fas fa-calendar-days"
-                data-info-text="Consulte lançamentos em massa, aplique filtros, revise informações e faça ajustes administrativos em agendamentos já registrados no sistema."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
-
-            <div class="card-shell">
-              <a href="{{ url_for('admin_agendar_para') }}" class="card" aria-label="Agendar para Servidor">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-calendar-plus"></i></span>
-                <div class="card-title">Agendar p/ Servidor</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Registre folga/comunicação em nome de um servidor ativo.</span>
-                  <span class="mobile-only">Lançar folga.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre Agendar para Servidor"
-                data-info-title="Agendar p/ Servidor"
-                data-info-icon="fas fa-calendar-plus"
-                data-info-text="Permite lançar folgas, comunicações e ausências diretamente em nome de um servidor ativo, acelerando o trabalho administrativo da unidade."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
-
-            <div class="card-shell">
-              <a href="{{ url_for('admin_horarios_trabalho') }}" class="card" aria-label="Horários de Trabalho">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-business-time"></i></span>
-                <div class="card-title">Horários de Trabalho</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Defina e atualize a jornada de trabalho dos servidores.</span>
-                  <span class="mobile-only">Jornada dos servidores.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre Horários de Trabalho"
-                data-info-title="Horários de Trabalho"
-                data-info-icon="fas fa-business-time"
-                data-info-text="Cadastre e atualize a jornada dos servidores para apoiar relatórios, conferências e futuras validações ligadas ao ponto e aos horários habituais de trabalho."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
-
-            <div class="card-shell">
-              <a href="{{ url_for('user_info_all') }}" class="card" aria-label="Prontuários">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-folder-open"></i></span>
-                <div class="card-title">Prontuários</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Acesse informações de servidores.</span>
-                  <span class="mobile-only">Dados dos servidores.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre Prontuários"
-                data-info-title="Prontuários"
-                data-info-icon="fas fa-folder-open"
-                data-info-text="Consulte dados cadastrais e funcionais dos servidores, com visão mais completa para apoio administrativo, filtros e análises da equipe gestora."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
-
-            <div class="card-shell">
-              <a href="{{ url_for('relatorio_ponto') }}" class="card" aria-label="Relatório de Ponto">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-file-lines"></i></span>
-                <div class="card-title">Relatório de Ponto</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Gere relatórios de frequência.</span>
-                  <span class="mobile-only">Frequência.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre Relatório de Ponto"
-                data-info-title="Relatório de Ponto"
-                data-info-icon="fas fa-file-lines"
-                data-info-text="Gere uma visão consolidada do período, filtre registros, marque conferências e acompanhe esquecimentos e agendamentos deferidos em uma mesma tela."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
-
-            <div class="card-shell">
-              <a href="{{ url_for('relatorio_horas_extras') }}" class="card" aria-label="Relatório de Horas Extras">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-clock-rotate-left"></i></span>
-                <div class="card-title">Relatório de Horas Extras</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Consolide e exporte horas extras.</span>
-                  <span class="mobile-only">Horas extras.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre Relatório de Horas Extras"
-                data-info-title="Relatório de Horas Extras"
-                data-info-icon="fas fa-clock-rotate-left"
-                data-info-text="Consulte totais, filtros e disponibilidade de horas extras por servidor, facilitando conferência, análise e emissão de relatórios administrativos."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
-
-            <div class="card-shell">
-              <a href="{{ url_for('admin_eventos') }}" class="card" aria-label="Eventos">
-                <span class="card-main-icon" aria-hidden="true"><i class="fas fa-bullhorn"></i></span>
-                <div class="card-title">Eventos</div>
-                <div class="card-subtitle">
-                  <span class="desktop-only">Crie, edite e gerencie eventos no calendário.</span>
-                  <span class="mobile-only">Gerenciar eventos.</span>
-                </div>
-              </a>
-              <button
-                type="button"
-                class="card-info-btn"
-                aria-label="Mais informações sobre Eventos"
-                data-info-title="Eventos"
-                data-info-icon="fas fa-bullhorn"
-                data-info-text="Crie comunicados e eventos internos com datas, períodos e descrições, mantendo a equipe alinhada com atividades e avisos relevantes no calendário do portal."
-              >
-                <i class="fas fa-info"></i>
-              </button>
-            </div>
-
-            <form method="POST" action="{{ url_for('logout') }}" class="logout-form" aria-label="Sair do sistema">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <div class="card-shell">
-                <button type="submit" class="card logout-btn" title="Sair do sistema">
-                  <span class="card-main-icon" aria-hidden="true"><i class="fas fa-right-from-bracket"></i></span>
-                  <div class="card-title">Sair</div>
-                  <div class="card-subtitle">
-                    <span class="desktop-only">Encerre a sessão com segurança.</span>
-                    <span class="mobile-only">Encerrar sessão.</span>
-                  </div>
-                </button>
-              </div>
-            </form>
-
-          </div>
-        </div>
-      </div>
-      {% endif %}
-
     </div>
-  </main>
 
-  <div id="cardHintPopover" class="hint-popover" data-placement="top" aria-hidden="true">
-    <div class="hint-popover-title" id="cardHintTitle">
-      <i class="fas fa-circle-info"></i>
-      <span>Informações</span>
-    </div>
-    <p class="hint-popover-text" id="cardHintText"></p>
-  </div>
+    <footer>
+      <p>
+        &copy; 2026 - Desenvolvido por Nilson Cruz | Todos os direitos
+        reservados
+      </p>
+    </footer>
 
-  <div id="patchModal" class="patch-modal" role="dialog" aria-modal="true" aria-labelledby="patchModalTitle">
-    <div class="patch-modal-content">
-      <div class="patch-modal-header">
-        <div class="patch-modal-title">
-          <i class="fas fa-wrench"></i>
-          <span id="patchModalTitle">Atualizações do Sistema</span>
-          <span id="patchBadge" class="patch-badge info" title="Tipo da atualização">Info</span>
-        </div>
+    <script>
+      document.querySelectorAll(".tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          document.querySelectorAll(".tab").forEach((t) => {
+            t.classList.remove("active");
+            t.setAttribute("aria-selected", "false");
+          });
+          document
+            .querySelectorAll(".cards-container")
+            .forEach((c) => c.classList.remove("active"));
 
-        <button type="button" class="patch-close" aria-label="Fechar" id="patchCloseBtn">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
+          tab.classList.add("active");
+          tab.setAttribute("aria-selected", "true");
 
-      <div class="patch-modal-body">
-        <div class="patch-meta" id="patchMeta"></div>
-        <div class="patch-body" id="patchBody"></div>
-
-        <div class="patch-actions">
-          <button id="patchReadBtn" type="button" class="patch-btn patch-btn-primary">
-            <i class="fas fa-check"></i> Entendi
-          </button>
-
-          <button id="patchReadAllBtn" type="button" class="patch-btn patch-btn-soft">
-            <i class="fas fa-layer-group"></i> Marcar todas como lidas
-          </button>
-
-          <button id="patchLaterBtn" type="button" class="patch-btn">
-            <i class="fas fa-clock"></i> Ver depois
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <footer>
-    <p>&copy; 2026 - Desenvolvido por Nilson Cruz | Todos os direitos reservados</p>
-  </footer>
-
-  <script>
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => {
-          t.classList.remove('active');
-          t.setAttribute('aria-selected', 'false');
+          const target = tab.getAttribute("data-tab");
+          const targetEl = document.getElementById(target);
+          if (targetEl) targetEl.classList.add("active");
         });
-        document.querySelectorAll('.cards-container').forEach(c => c.classList.remove('active'));
-
-        tab.classList.add('active');
-        tab.setAttribute('aria-selected', 'true');
-
-        const target = tab.getAttribute('data-tab');
-        const targetEl = document.getElementById(target);
-        if (targetEl) targetEl.classList.add('active');
       });
-    });
-  </script>
+    </script>
 
-  <script>
-    (function initCardInfoPopover() {
-      const popover = document.getElementById('cardHintPopover');
-      const titleEl = document.getElementById('cardHintTitle');
-      const textEl = document.getElementById('cardHintText');
-      const buttons = Array.from(document.querySelectorAll('.card-info-btn'));
-      const canHover = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+    <script>
+      (function initCardInfoPopover() {
+        const popover = document.getElementById("cardHintPopover");
+        const titleEl = document.getElementById("cardHintTitle");
+        const textEl = document.getElementById("cardHintText");
+        const buttons = Array.from(document.querySelectorAll(".card-info-btn"));
+        const canHover = window.matchMedia(
+          "(hover:hover) and (pointer:fine)",
+        ).matches;
 
-      let activeButton = null;
-      let pinned = false;
-      let hideTimer = null;
+        let activeButton = null;
+        let pinned = false;
+        let hideTimer = null;
 
-      function clearHideTimer() {
-        if (hideTimer) {
-          clearTimeout(hideTimer);
-          hideTimer = null;
-        }
-      }
-
-      function setButtonState(btn, isActive) {
-        buttons.forEach(b => {
-          b.classList.remove('active');
-          b.setAttribute('aria-expanded', 'false');
-        });
-
-        if (btn && isActive) {
-          btn.classList.add('active');
-          btn.setAttribute('aria-expanded', 'true');
-        }
-      }
-
-      function measureAndPosition(btn) {
-        if (!btn) return;
-
-        popover.classList.add('show');
-        popover.style.left = '12px';
-        popover.style.top = '12px';
-        popover.setAttribute('aria-hidden', 'false');
-
-        const btnRect = btn.getBoundingClientRect();
-        const popRect = popover.getBoundingClientRect();
-
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-        const margin = 12;
-        const gap = 12;
-
-        let placement = 'top';
-        let top = btnRect.top - popRect.height - gap;
-
-        if (top < margin) {
-          placement = 'bottom';
-          top = btnRect.bottom + gap;
+        function clearHideTimer() {
+          if (hideTimer) {
+            clearTimeout(hideTimer);
+            hideTimer = null;
+          }
         }
 
-        if (placement === 'bottom' && (top + popRect.height > viewportHeight - margin)) {
-          placement = 'top';
-          top = Math.max(margin, btnRect.top - popRect.height - gap);
+        function setButtonState(btn, isActive) {
+          buttons.forEach((b) => {
+            b.classList.remove("active");
+            b.setAttribute("aria-expanded", "false");
+          });
+
+          if (btn && isActive) {
+            btn.classList.add("active");
+            btn.setAttribute("aria-expanded", "true");
+          }
         }
 
-        let left = btnRect.left + (btnRect.width / 2) - (popRect.width / 2);
-        left = Math.max(margin, Math.min(left, viewportWidth - popRect.width - margin));
+        function measureAndPosition(btn) {
+          if (!btn) return;
 
-        const arrowCenter = btnRect.left + (btnRect.width / 2);
-        let arrowLeft = arrowCenter - left - 7;
-        arrowLeft = Math.max(18, Math.min(arrowLeft, popRect.width - 26));
+          popover.classList.add("show");
+          popover.style.left = "12px";
+          popover.style.top = "12px";
+          popover.setAttribute("aria-hidden", "false");
 
-        popover.dataset.placement = placement;
-        popover.style.left = `${left}px`;
-        popover.style.top = `${top}px`;
-        popover.style.setProperty('--arrow-left', `${arrowLeft}px`);
-      }
+          const btnRect = btn.getBoundingClientRect();
+          const popRect = popover.getBoundingClientRect();
 
-      function openPopover(btn, keepPinned = false) {
-        if (!btn) return;
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+          const margin = 12;
+          const gap = 12;
 
-        clearHideTimer();
+          let placement = "top";
+          let top = btnRect.top - popRect.height - gap;
 
-        const title = btn.dataset.infoTitle || 'Informações';
-        const text = btn.dataset.infoText || '';
-        const icon = btn.dataset.infoIcon || 'fas fa-circle-info';
-
-        titleEl.innerHTML = `<i class="${icon}"></i><span>${title}</span>`;
-        textEl.textContent = text;
-
-        activeButton = btn;
-        pinned = keepPinned;
-
-        setButtonState(btn, true);
-        measureAndPosition(btn);
-      }
-
-      function closePopover(force = true) {
-        clearHideTimer();
-
-        if (!force && pinned) return;
-
-        popover.classList.remove('show');
-        popover.setAttribute('aria-hidden', 'true');
-        setButtonState(null, false);
-        activeButton = null;
-        pinned = false;
-      }
-
-      function scheduleClose() {
-        clearHideTimer();
-        hideTimer = setTimeout(() => {
-          if (!pinned) closePopover(true);
-        }, 110);
-      }
-
-      buttons.forEach(btn => {
-        btn.addEventListener('click', function(event) {
-          event.preventDefault();
-          event.stopPropagation();
-
-          if (activeButton === btn && pinned) {
-            closePopover(true);
-            return;
+          if (top < margin) {
+            placement = "bottom";
+            top = btnRect.bottom + gap;
           }
 
-          openPopover(btn, true);
-        });
+          if (
+            placement === "bottom" &&
+            top + popRect.height > viewportHeight - margin
+          ) {
+            placement = "top";
+            top = Math.max(margin, btnRect.top - popRect.height - gap);
+          }
 
-        btn.addEventListener('focus', function() {
-          openPopover(btn, false);
-        });
+          let left = btnRect.left + btnRect.width / 2 - popRect.width / 2;
+          left = Math.max(
+            margin,
+            Math.min(left, viewportWidth - popRect.width - margin),
+          );
 
-        btn.addEventListener('blur', function() {
-          if (!pinned) scheduleClose();
-        });
+          const arrowCenter = btnRect.left + btnRect.width / 2;
+          let arrowLeft = arrowCenter - left - 7;
+          arrowLeft = Math.max(18, Math.min(arrowLeft, popRect.width - 26));
 
-        if (canHover) {
-          btn.addEventListener('mouseenter', function() {
+          popover.dataset.placement = placement;
+          popover.style.left = `${left}px`;
+          popover.style.top = `${top}px`;
+          popover.style.setProperty("--arrow-left", `${arrowLeft}px`);
+        }
+
+        function openPopover(btn, keepPinned = false) {
+          if (!btn) return;
+
+          clearHideTimer();
+
+          const title = btn.dataset.infoTitle || "Informações";
+          const text = btn.dataset.infoText || "";
+          const icon = btn.dataset.infoIcon || "fas fa-circle-info";
+
+          titleEl.innerHTML = `<i class="${icon}"></i><span>${title}</span>`;
+          textEl.textContent = text;
+
+          activeButton = btn;
+          pinned = keepPinned;
+
+          setButtonState(btn, true);
+          measureAndPosition(btn);
+        }
+
+        function closePopover(force = true) {
+          clearHideTimer();
+
+          if (!force && pinned) return;
+
+          popover.classList.remove("show");
+          popover.setAttribute("aria-hidden", "true");
+          setButtonState(null, false);
+          activeButton = null;
+          pinned = false;
+        }
+
+        function scheduleClose() {
+          clearHideTimer();
+          hideTimer = setTimeout(() => {
+            if (!pinned) closePopover(true);
+          }, 110);
+        }
+
+        buttons.forEach((btn) => {
+          btn.addEventListener("click", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (activeButton === btn && pinned) {
+              closePopover(true);
+              return;
+            }
+
+            openPopover(btn, true);
+          });
+
+          btn.addEventListener("focus", function () {
             openPopover(btn, false);
           });
 
-          btn.addEventListener('mouseleave', function() {
+          btn.addEventListener("blur", function () {
             if (!pinned) scheduleClose();
           });
-        }
-      });
 
-      if (canHover) {
-        popover.addEventListener('mouseenter', function() {
-          clearHideTimer();
+          if (canHover) {
+            btn.addEventListener("mouseenter", function () {
+              openPopover(btn, false);
+            });
+
+            btn.addEventListener("mouseleave", function () {
+              if (!pinned) scheduleClose();
+            });
+          }
         });
 
-        popover.addEventListener('mouseleave', function() {
-          if (!pinned) closePopover(true);
+        if (canHover) {
+          popover.addEventListener("mouseenter", function () {
+            clearHideTimer();
+          });
+
+          popover.addEventListener("mouseleave", function () {
+            if (!pinned) closePopover(true);
+          });
+        }
+
+        document.addEventListener("click", function (event) {
+          if (
+            activeButton &&
+            !event.target.closest(".card-info-btn") &&
+            !event.target.closest("#cardHintPopover")
+          ) {
+            closePopover(true);
+          }
         });
+
+        document.addEventListener("keydown", function (event) {
+          if (event.key === "Escape") {
+            closePopover(true);
+          }
+        });
+
+        window.addEventListener("resize", function () {
+          if (activeButton) {
+            measureAndPosition(activeButton);
+          }
+        });
+
+        window.addEventListener(
+          "scroll",
+          function () {
+            if (activeButton) {
+              measureAndPosition(activeButton);
+            }
+          },
+          true,
+        );
+      })();
+    </script>
+
+    <script>
+      window.IS_ADMIN = {{ 'true' if current_user.tipo == 'administrador' else 'false' }};
+
+      function getCSRFToken() {
+        const el = document.querySelector('meta[name="csrf-token"]');
+        return el ? el.getAttribute('content') : '';
       }
 
-      document.addEventListener('click', function(event) {
-        if (
-          activeButton &&
-          !event.target.closest('.card-info-btn') &&
-          !event.target.closest('#cardHintPopover')
-        ) {
-          closePopover(true);
-        }
-      });
-
-      document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-          closePopover(true);
-        }
-      });
-
-      window.addEventListener('resize', function() {
-        if (activeButton) {
-          measureAndPosition(activeButton);
-        }
-      });
-
-      window.addEventListener('scroll', function() {
-        if (activeButton) {
-          measureAndPosition(activeButton);
-        }
-      }, true);
-    })();
-  </script>
-
-  <script>
-    window.IS_ADMIN = {{ 'true' if current_user.tipo == 'administrador' else 'false' }};
-
-    function getCSRFToken() {
-      const el = document.querySelector('meta[name="csrf-token"]');
-      return el ? el.getAttribute('content') : '';
-    }
-
-    function escapeHtml(value) {
-      return String(value ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
-    }
-
-    function nl2brSafe(text) {
-      return escapeHtml(text).replaceAll('\n', '<br>');
-    }
-
-    function fmtDateTime(iso) {
-      if (!iso) return '';
-      const d = new Date(iso);
-      if (isNaN(d.getTime())) return '';
-      try {
-        return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-      } catch {
-        return '';
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      if (!window.IS_ADMIN) return;
-
-      const modal   = document.getElementById('patchModal');
-      const titleEl = document.getElementById('patchModalTitle');
-      const badgeEl = document.getElementById('patchBadge');
-      const metaEl  = document.getElementById('patchMeta');
-      const bodyEl  = document.getElementById('patchBody');
-
-      const btnRead    = document.getElementById('patchReadBtn');
-      const btnReadAll = document.getElementById('patchReadAllBtn');
-      const btnClose   = document.getElementById('patchCloseBtn');
-      const btnLater   = document.getElementById('patchLaterBtn');
-
-      let currentReleaseId = null;
-
-      const sevMap = {
-        info:        { label: 'Info',            cls: 'info',        icon: 'fa-circle-info' },
-        improvement: { label: 'Melhoria',        cls: 'improvement', icon: 'fa-arrow-up-right-dots' },
-        fix:         { label: 'Correção',        cls: 'fix',         icon: 'fa-screwdriver-wrench' },
-        breaking:    { label: 'Mudança crítica', cls: 'breaking',    icon: 'fa-triangle-exclamation' },
-      };
-
-      function openModal(){ modal.classList.add('open'); }
-      function closeModal(){ modal.classList.remove('open'); currentReleaseId = null; }
-
-      function setBadge(severity) {
-        const s = sevMap[severity] || sevMap.info;
-        badgeEl.className = `patch-badge ${s.cls}`;
-        badgeEl.textContent = s.label;
-        badgeEl.title = s.label;
+      function escapeHtml(value) {
+        return String(value ?? '')
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#039;');
       }
 
-      function setMeta(version, severity, count, createdAtIso) {
-        const s = sevMap[severity] || sevMap.info;
-        const dt = fmtDateTime(createdAtIso);
-        const parts = [];
-        if (version) parts.push(`<span><i class="fas fa-code-branch"></i> Versão: ${escapeHtml(version)}</span>`);
-        parts.push(`<span><i class="fas ${s.icon}"></i> Tipo: ${escapeHtml(s.label)}</span>`);
-        if (dt) parts.push(`<span><i class="fas fa-clock"></i> ${escapeHtml(dt)}</span>`);
-        if (typeof count === 'number') parts.push(`<span><i class="fas fa-inbox"></i> Pendentes: ${count}</span>`);
-        metaEl.innerHTML = parts.join('');
+      function nl2brSafe(text) {
+        return escapeHtml(text).replaceAll('\n', '<br>');
       }
 
-      async function loadUnread() {
+      function fmtDateTime(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return '';
         try {
-          const res = await fetch('/admin/patch-notes/unread', { credentials: 'same-origin' });
-          if (!res.ok) return;
-          const data = await res.json().catch(() => ({}));
-          if (!data.success || !data.latest || !data.count) return;
-
-          const r = data.latest;
-          currentReleaseId = r.id;
-
-          titleEl.textContent = r.title || 'Atualizações do Sistema';
-          setBadge(r.severity || 'info');
-          setMeta(r.version || '', r.severity || 'info', data.count || 0, r.created_at || null);
-          bodyEl.innerHTML = nl2brSafe(r.body || '');
-
-          openModal();
-        } catch (e) {
-          console.error('Falha ao carregar patch notes:', e);
+          return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+        } catch {
+          return '';
         }
       }
 
-      btnRead?.addEventListener('click', async () => {
-        if (!currentReleaseId) return;
-        btnRead.disabled = true;
-        try {
-          const csrf = getCSRFToken();
-          const res = await fetch(`/admin/patch-notes/${currentReleaseId}/read`, {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: { 'X-CSRFToken': csrf }
-          });
-          await res.json().catch(() => null);
-          closeModal();
-        } finally {
-          btnRead.disabled = false;
+      document.addEventListener('DOMContentLoaded', () => {
+        if (!window.IS_ADMIN) return;
+
+        const modal   = document.getElementById('patchModal');
+        const titleEl = document.getElementById('patchModalTitle');
+        const badgeEl = document.getElementById('patchBadge');
+        const metaEl  = document.getElementById('patchMeta');
+        const bodyEl  = document.getElementById('patchBody');
+
+        const btnRead    = document.getElementById('patchReadBtn');
+        const btnReadAll = document.getElementById('patchReadAllBtn');
+        const btnClose   = document.getElementById('patchCloseBtn');
+        const btnLater   = document.getElementById('patchLaterBtn');
+
+        let currentReleaseId = null;
+
+        const sevMap = {
+          info:        { label: 'Info',            cls: 'info',        icon: 'fa-circle-info' },
+          improvement: { label: 'Melhoria',        cls: 'improvement', icon: 'fa-arrow-up-right-dots' },
+          fix:         { label: 'Correção',        cls: 'fix',         icon: 'fa-screwdriver-wrench' },
+          breaking:    { label: 'Mudança crítica', cls: 'breaking',    icon: 'fa-triangle-exclamation' },
+        };
+
+        function openModal(){ modal.classList.add('open'); }
+        function closeModal(){ modal.classList.remove('open'); currentReleaseId = null; }
+
+        function setBadge(severity) {
+          const s = sevMap[severity] || sevMap.info;
+          badgeEl.className = `patch-badge ${s.cls}`;
+          badgeEl.textContent = s.label;
+          badgeEl.title = s.label;
         }
-      });
 
-      btnReadAll?.addEventListener('click', async () => {
-        btnReadAll.disabled = true;
-        try {
-          const csrf = getCSRFToken();
-          const res = await fetch('/admin/patch-notes/read-all', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: { 'X-CSRFToken': csrf }
-          });
-          await res.json().catch(() => null);
-          closeModal();
-        } finally {
-          btnReadAll.disabled = false;
+        function setMeta(version, severity, count, createdAtIso) {
+          const s = sevMap[severity] || sevMap.info;
+          const dt = fmtDateTime(createdAtIso);
+          const parts = [];
+          if (version) parts.push(`<span><i class="fas fa-code-branch"></i> Versão: ${escapeHtml(version)}</span>`);
+          parts.push(`<span><i class="fas ${s.icon}"></i> Tipo: ${escapeHtml(s.label)}</span>`);
+          if (dt) parts.push(`<span><i class="fas fa-clock"></i> ${escapeHtml(dt)}</span>`);
+          if (typeof count === 'number') parts.push(`<span><i class="fas fa-inbox"></i> Pendentes: ${count}</span>`);
+          metaEl.innerHTML = parts.join('');
         }
+
+        async function loadUnread() {
+          try {
+            const res = await fetch('/admin/patch-notes/unread', { credentials: 'same-origin' });
+            if (!res.ok) return;
+            const data = await res.json().catch(() => ({}));
+            if (!data.success || !data.latest || !data.count) return;
+
+            const r = data.latest;
+            currentReleaseId = r.id;
+
+            titleEl.textContent = r.title || 'Atualizações do Sistema';
+            setBadge(r.severity || 'info');
+            setMeta(r.version || '', r.severity || 'info', data.count || 0, r.created_at || null);
+            bodyEl.innerHTML = nl2brSafe(r.body || '');
+
+            openModal();
+          } catch (e) {
+            console.error('Falha ao carregar patch notes:', e);
+          }
+        }
+
+        btnRead?.addEventListener('click', async () => {
+          if (!currentReleaseId) return;
+          btnRead.disabled = true;
+          try {
+            const csrf = getCSRFToken();
+            const res = await fetch(`/admin/patch-notes/${currentReleaseId}/read`, {
+              method: 'POST',
+              credentials: 'same-origin',
+              headers: { 'X-CSRFToken': csrf }
+            });
+            await res.json().catch(() => null);
+            closeModal();
+          } finally {
+            btnRead.disabled = false;
+          }
+        });
+
+        btnReadAll?.addEventListener('click', async () => {
+          btnReadAll.disabled = true;
+          try {
+            const csrf = getCSRFToken();
+            const res = await fetch('/admin/patch-notes/read-all', {
+              method: 'POST',
+              credentials: 'same-origin',
+              headers: { 'X-CSRFToken': csrf }
+            });
+            await res.json().catch(() => null);
+            closeModal();
+          } finally {
+            btnReadAll.disabled = false;
+          }
+        });
+
+        btnClose?.addEventListener('click', () => closeModal());
+        btnLater?.addEventListener('click', () => closeModal());
+
+        modal?.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+        loadUnread();
       });
-
-      btnClose?.addEventListener('click', () => closeModal());
-      btnLater?.addEventListener('click', () => closeModal());
-
-      modal?.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
-      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
-
-      loadUnread();
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>
